@@ -1,3 +1,4 @@
+// Package logger provides structured logging functionality for Radarr.
 package logger
 
 import (
@@ -8,10 +9,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Logger provides structured logging for Radarr
 type Logger struct {
 	*zap.SugaredLogger
 }
 
+// New creates a new logger with the given configuration
 func New(cfg config.LogConfig) *Logger {
 	var zapConfig zap.Config
 
@@ -55,10 +58,10 @@ func New(cfg config.LogConfig) *Logger {
 }
 
 func (l *Logger) Fatal(msg string, keysAndValues ...interface{}) {
-	l.SugaredLogger.Fatalw(msg, keysAndValues...)
+	l.Fatalw(msg, keysAndValues...)
 	os.Exit(1)
 }
 
 func (l *Logger) Close() {
-	_ = l.SugaredLogger.Sync()
+	_ = l.Sync()
 }

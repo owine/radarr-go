@@ -1,3 +1,4 @@
+// Package config provides configuration loading and management for Radarr.
 package config
 
 import (
@@ -9,11 +10,13 @@ import (
 )
 
 const (
+	// DefaultRadarrPort is the default port for Radarr server
 	DefaultRadarrPort     = 7878
 	DefaultMaxConnections = 10
 	DefaultDirectoryPerm  = 0755
 )
 
+// Config represents the main configuration structure for Radarr
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
@@ -61,6 +64,7 @@ type StorageConfig struct {
 	BackupDir      string `mapstructure:"backup_directory"`
 }
 
+// Load reads and parses the configuration from file and environment variables
 func Load(configPath, dataDir string) (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")

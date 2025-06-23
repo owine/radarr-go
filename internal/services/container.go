@@ -1,3 +1,4 @@
+// Package services provides business logic and domain services for Radarr.
 package services
 
 import (

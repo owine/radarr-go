@@ -1,3 +1,4 @@
+// Package api provides HTTP handlers and server functionality for the Radarr API.
 package api
 
 import (

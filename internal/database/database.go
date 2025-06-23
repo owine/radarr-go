@@ -1,3 +1,4 @@
+// Package database provides database connection and migration functionality.
 package database
 
 import (
@@ -23,11 +24,13 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
+// Database provides access to the Radarr database
 type Database struct {
 	DB   *sqlx.DB
 	GORM *gorm.DB
 }
 
+// New creates a new database connection
 func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 	var db *sqlx.DB
 	var gormDB *gorm.DB

@@ -1,3 +1,4 @@
+// Package models defines data structures and database models for Radarr.
 package models
 
 import (
