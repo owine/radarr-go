@@ -1,5 +1,13 @@
+version: "2"
+
 run:
   timeout: 5m
+  go: "1.23"
+
+output:
+  formats:
+    - format: colored-line-number
+      path: stdout
 
 linters-settings:
   dupl:
@@ -32,12 +40,16 @@ linters-settings:
   gocyclo:
     min-complexity: 15
   govet:
-    enable:
-      - shadow
+    enable-all: true
+    disable:
+      - fieldalignment # Too noisy for now
   lll:
     line-length: 140
   misspell:
     locale: US
+  gosec:
+    severity: medium
+    confidence: medium
 
 linters:
   disable-all: true
@@ -74,6 +86,9 @@ linters:
     - revive
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new-from-rev: ""
   exclude-rules:
     - path: _test\.go
       linters:
@@ -90,5 +105,7 @@ issues:
     - linters:
         - lll
       source: "^//go:generate "
-  max-issues-per-linter: 0
-  max-same-issues: 0
+  exclude-dirs:
+    - vendor/
+  exclude-files:
+    - ".*\\.pb\\.go$"
