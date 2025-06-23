@@ -1,333 +1,64 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "docker:enableMajor",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    ":separateMultipleMajorReleases",
-    "group:monorepos",
-    "group:recommended",
-    "workarounds:all",
-    "helpers:pinGitHubActionDigests"
+    "config:recommended"
   ],
-  "timezone": "UTC",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
-  "commitMessagePrefix": "deps:",
-  "commitMessageAction": "update",
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "to {{newVersion}}",
-  "prHourlyLimit": 3,
-  "prConcurrentLimit": 15,
-  "branchConcurrentLimit": 25,
-  "semanticCommits": "enabled",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 10,
   "platformAutomerge": true,
-  "assigneesFromCodeOwners": true,
-  "reviewersFromCodeOwners": true,
   "dependencyDashboard": true,
-  "dependencyDashboardTitle": "🤖 Dependency Updates Dashboard",
-  "dependencyDashboardHeader": "This dashboard shows pending updates managed by Renovate with Context7 intelligence.",
-  "dependencyDashboardFooter": "🔍 Updates are prioritized based on security, compatibility, and ecosystem insights.",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 6am on monday"],
-    "commitMessageAction": "lock file maintenance"
-  },
   "packageRules": [
     {
-      "description": "🚨 Security vulnerabilities - immediate action required",
+      "description": "Security updates - immediate processing",
       "matchPackagePatterns": ["*"],
       "isVulnerabilityAlert": true,
-      "addLabels": ["security", "priority-critical"],
+      "addLabels": ["security"],
       "automerge": true,
-      "automergeType": "pr",
       "schedule": ["at any time"],
-      "prPriority": 10,
-      "groupName": null,
-      "reviewers": ["@radarr/security-team"],
-      "commitMessagePrefix": "🔒 security:",
-      "commitMessageTopic": "{{depName}} vulnerability fix"
+      "prPriority": 10
     },
     {
-      "description": "🎯 Go runtime and toolchain updates",
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["golang"],
-      "groupName": null,
-      "automerge": false,
-      "addLabels": ["golang-runtime", "breaking-change"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessagePrefix": "⚡ runtime:",
-      "commitMessageTopic": "Go {{newVersion}}",
-      "prPriority": 8
-    },
-    {
-      "description": "🏗️ Core framework dependencies",
-      "matchManagers": ["gomod"],
-      "matchPackageNames": [
-        "github.com/gin-gonic/gin",
-        "gorm.io/gorm",
-        "github.com/golang-migrate/migrate/v4"
-      ],
-      "groupName": "Core Framework Updates",
-      "groupSlug": "core-framework",
-      "automerge": false,
-      "addLabels": ["core-dependency", "needs-review"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessagePrefix": "🏗️ core:",
-      "commitMessageTopic": "framework dependencies",
-      "prPriority": 7,
-      "minimumReleaseAge": "7 days"
-    },
-    {
-      "description": "🗄️ Database layer dependencies",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": [
-        "github.com/lib/pq",
-        "github.com/mattn/go-sqlite3",
-        "gorm.io/driver/*",
-        "github.com/jackc/pgx/*"
-      ],
-      "groupName": "Database Dependencies",
-      "groupSlug": "database-deps",
-      "automerge": false,
-      "addLabels": ["database", "needs-testing"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessagePrefix": "🗄️ db:",
-      "commitMessageTopic": "database dependencies",
-      "prPriority": 6,
-      "minimumReleaseAge": "5 days"
-    },
-    {
-      "description": "📦 Go major version updates",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["major"],
-      "excludePackageNames": [
-        "github.com/gin-gonic/gin",
-        "gorm.io/gorm",
-        "github.com/golang-migrate/migrate/v4"
-      ],
-      "excludePackagePatterns": [
-        "github.com/lib/pq",
-        "github.com/mattn/go-sqlite3",
-        "gorm.io/driver/*",
-        "github.com/jackc/pgx/*"
-      ],
-      "groupName": "Go Major Updates",
-      "groupSlug": "go-major",
-      "automerge": false,
-      "addLabels": ["major-update", "breaking-change"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessagePrefix": "⬆️ major:",
-      "commitMessageTopic": "Go major dependencies",
-      "prPriority": 5
-    },
-    {
-      "description": "🧪 Testing and development tools",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": [
-        "github.com/stretchr/testify*",
-        "*test*",
-        "*mock*",
-        "*bench*"
-      ],
-      "groupName": "Testing Dependencies",
-      "groupSlug": "testing-deps",
-      "automerge": true,
-      "addLabels": ["testing", "dev-tools"],
-      "commitMessagePrefix": "🧪 test:",
-      "commitMessageTopic": "testing dependencies",
-      "prPriority": 3
-    },
-    {
-      "description": "📊 Observability and logging",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": [
-        "go.uber.org/zap*",
-        "*log*",
-        "*metric*",
-        "*trace*",
-        "*otel*"
-      ],
-      "groupName": "Observability Stack",
-      "groupSlug": "observability",
-      "automerge": true,
-      "addLabels": ["observability", "monitoring"],
-      "commitMessagePrefix": "📊 obs:",
-      "commitMessageTopic": "observability dependencies",
-      "prPriority": 3
-    },
-    {
-      "description": "🛠️ Utility and helper libraries",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": [
-        "github.com/spf13/*",
-        "github.com/google/uuid*",
-        "golang.org/x/*/cmd/*"
-      ],
-      "groupName": "Utility Libraries",
-      "groupSlug": "utilities",
-      "automerge": true,
-      "addLabels": ["utilities", "helpers"],
-      "commitMessagePrefix": "🛠️ util:",
-      "commitMessageTopic": "utility dependencies",
-      "prPriority": 2
-    },
-    {
-      "description": "📦 Standard Go dependencies",
+      "description": "Go dependencies - group minor and patch updates",
       "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Go Dependencies",
-      "groupSlug": "go-deps",
+      "groupName": "Go dependencies",
       "automerge": true,
-      "addLabels": ["go-deps", "routine-update"],
-      "commitMessagePrefix": "📦 deps:",
-      "commitMessageTopic": "Go dependencies",
-      "minimumReleaseAge": "3 days",
-      "prPriority": 1
-    },
-    {
-      "description": "🐳 Docker base images",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Docker Images",
-      "groupSlug": "docker-images",
-      "automerge": true,
-      "addLabels": ["docker", "infrastructure"],
-      "commitMessagePrefix": "🐳 docker:",
-      "commitMessageTopic": "Docker images",
+      "addLabels": ["go"],
       "minimumReleaseAge": "3 days"
     },
     {
-      "description": "🐳 Docker major updates",
-      "matchManagers": ["dockerfile", "docker-compose"],
+      "description": "Go major updates - separate PRs, manual review",
+      "matchManagers": ["gomod"],
       "matchUpdateTypes": ["major"],
-      "groupName": "Docker Major Updates",
-      "groupSlug": "docker-major",
       "automerge": false,
-      "addLabels": ["docker", "major-update", "infrastructure"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessagePrefix": "🐳 docker-major:",
-      "commitMessageTopic": "Docker major updates"
+      "addLabels": ["go", "major"],
+      "minimumReleaseAge": "7 days"
     },
     {
-      "description": "⚡ GitHub Actions",
+      "description": "GitHub Actions - group all updates",
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions",
-      "groupSlug": "github-actions",
       "automerge": true,
-      "addLabels": ["github-actions", "ci-cd"],
-      "commitMessagePrefix": "⚡ ci:",
-      "commitMessageTopic": "GitHub Actions",
+      "addLabels": ["github-actions"],
       "minimumReleaseAge": "2 days"
     },
     {
-      "description": "🔧 Development and build tools",
-      "matchManagers": ["gomod"],
-      "matchPackagePatterns": [
-        "golang.org/x/tools/*",
-        "*lint*",
-        "*format*",
-        "*generate*"
-      ],
-      "groupName": "Development Tools",
-      "groupSlug": "dev-tools",
+      "description": "Docker images - group minor and patch",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Docker images",
       "automerge": true,
-      "addLabels": ["dev-tools", "build"],
-      "commitMessagePrefix": "🔧 tools:",
-      "commitMessageTopic": "development tools",
-      "schedule": ["every weekend"]
-    }
-  ],
-  "regexManagers": [
-    {
-      "description": "Update Go version in Dockerfile",
-      "fileMatch": ["^Dockerfile$"],
-      "matchStrings": [
-        "FROM golang:(?<currentValue>.*?)-alpine"
-      ],
-      "depNameTemplate": "golang",
-      "datasourceTemplate": "docker"
+      "addLabels": ["docker"]
     },
     {
-      "description": "Update Go version in GitHub Actions",
-      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"],
-      "matchStrings": [
-        "go-version: ['\"]?(?<currentValue>.*?)['\"]?"
-      ],
-      "depNameTemplate": "golang",
-      "datasourceTemplate": "golang-version"
+      "description": "Docker major updates - separate PRs",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["docker", "major"]
     }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "🏔️ Alpine Linux base images",
-      "fileMatch": ["^Dockerfile$"],
-      "matchStrings": [
-        "FROM alpine:(?<currentValue>.*?)\\s"
-      ],
-      "depNameTemplate": "alpine",
-      "datasourceTemplate": "docker"
-    },
-    {
-      "customType": "regex", 
-      "description": "📋 Go mod version in CI workflows",
-      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"],
-      "matchStrings": [
-        "GO_VERSION: ['\"]?(?<currentValue>.*?)['\"]?"
-      ],
-      "depNameTemplate": "go",
-      "datasourceTemplate": "golang-version"
-    }
-  ],
-  "hostRules": [
-    {
-      "hostType": "github",
-      "concurrentRequestLimit": 8
-    }
-  ],
-  "ignorePaths": [
-    "**/node_modules/**",
-    "**/vendor/**",
-    "**/.git/**"
-  ],
-  "enabledManagers": [
-    "gomod",
-    "dockerfile",
-    "docker-compose", 
-    "github-actions",
-    "regex"
-  ],
-  "separateMajorMinor": true,
-  "separateMultipleMajor": true,
-  "separateMinorPatch": false,
-  "rollbackPrs": true,
-  "recreateClosed": true,
-  "rebaseWhen": "behind-base-branch",
-  "stabilityDays": 3,
-  "internalChecksFilter": "strict",
-  "transitiveRemediation": true,
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "schedule": ["at any time"],
-    "prPriority": 10,
-    "labels": ["security", "vulnerability"],
-    "commitMessagePrefix": "🔒 security:",
-    "reviewers": ["@radarr/security-team"]
-  },
-  "osvVulnerabilityAlerts": true,
-  "suppressNotifications": ["prIgnoreNotification"],
-  "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}",
-  "prBodyColumns": [
-    "Package",
-    "Change",
-    "Age",
-    "Adoption",
-    "Passing",
-    "Confidence"
-  ],
-  "prFooter": "---\n🤖 This PR was generated by Renovate with Context7 intelligence\n📊 Powered by dependency insights and ecosystem analysis",
-  "onboarding": false,
-  "requireConfig": "optional"
+  ]
 }
