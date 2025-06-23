@@ -6,16 +6,16 @@ toolchain go1.24.4
 
 require (
 	github.com/gin-gonic/gin v1.10.1
-	github.com/golang-migrate/migrate/v4 v4.17.1
+	github.com/golang-migrate/migrate/v4 v4.18.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.25
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.26.0
-	gorm.io/driver/postgres v1.5.4
-	gorm.io/driver/sqlite v1.5.5
-	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
+	gorm.io/driver/postgres v1.5.5
+	gorm.io/driver/sqlite v1.5.6
+	gorm.io/gorm v1.25.7
 )
 
 require (
@@ -68,7 +68,7 @@ require (
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
