@@ -4,11 +4,6 @@ run:
   timeout: 5m
   go: "1.23"
 
-output:
-  formats:
-    - format: colored-line-number
-      path: stdout
-
 linters-settings:
   dupl:
     threshold: 100
