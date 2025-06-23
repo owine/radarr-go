@@ -14,30 +14,30 @@ import (
 
 func TestPingHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	// Create test configuration
 	cfg := &config.Config{
 		Log: config.LogConfig{
 			Level: "error", // Reduce noise in tests
 		},
 	}
-	
+
 	// Create test logger
 	logger := logger.New(cfg.Log)
-	
+
 	// Create test services (can be nil for this test)
 	services := &services.Container{}
-	
+
 	// Create test server
 	server := NewServer(cfg, services, logger)
-	
+
 	// Create test request
-	req, _ := http.NewRequest("GET", "/ping", nil)
+	req, _ := http.NewRequest("GET", "/ping", http.NoBody)
 	w := httptest.NewRecorder()
-	
+
 	// Execute request
 	server.engine.ServeHTTP(w, req)
-	
+
 	// Assert response
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "pong")
@@ -45,7 +45,7 @@ func TestPingHandler(t *testing.T) {
 
 func TestSystemStatusHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	// Create test configuration
 	cfg := &config.Config{
 		Log: config.LogConfig{
@@ -64,23 +64,23 @@ func TestSystemStatusHandler(t *testing.T) {
 			DataDirectory: "./test-data",
 		},
 	}
-	
+
 	// Create test logger
 	logger := logger.New(cfg.Log)
-	
+
 	// Create test services
 	services := &services.Container{}
-	
+
 	// Create test server
 	server := NewServer(cfg, services, logger)
-	
+
 	// Create test request
-	req, _ := http.NewRequest("GET", "/api/v3/system/status", nil)
+	req, _ := http.NewRequest("GET", "/api/v3/system/status", http.NoBody)
 	w := httptest.NewRecorder()
-	
+
 	// Execute request
 	server.engine.ServeHTTP(w, req)
-	
+
 	// Assert response
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "version")

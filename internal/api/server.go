@@ -14,11 +14,11 @@ import (
 )
 
 type Server struct {
-	config    *config.Config
-	services  *services.Container
-	logger    *logger.Logger
-	engine    *gin.Engine
-	server    *http.Server
+	config   *config.Config
+	services *services.Container
+	logger   *logger.Logger
+	engine   *gin.Engine
+	server   *http.Server
 }
 
 func NewServer(cfg *config.Config, services *services.Container, logger *logger.Logger) *Server {
@@ -30,7 +30,7 @@ func NewServer(cfg *config.Config, services *services.Container, logger *logger.
 	engine.Use(gin.Recovery())
 	engine.Use(loggingMiddleware(logger))
 	engine.Use(corsMiddleware())
-	
+
 	// API key middleware for protected routes
 	if cfg.Auth.APIKey != "" {
 		engine.Use(apiKeyMiddleware(cfg.Auth.APIKey))
@@ -58,7 +58,7 @@ func (s *Server) setupRoutes() {
 	{
 		// System info
 		v3.GET("/system/status", s.handleSystemStatus)
-		
+
 		// Movies
 		movieRoutes := v3.Group("/movie")
 		{
@@ -68,7 +68,7 @@ func (s *Server) setupRoutes() {
 			movieRoutes.PUT("/:id", s.handleUpdateMovie)
 			movieRoutes.DELETE("/:id", s.handleDeleteMovie)
 		}
-		
+
 		// Movie files
 		movieFileRoutes := v3.Group("/moviefile")
 		{
@@ -76,22 +76,22 @@ func (s *Server) setupRoutes() {
 			movieFileRoutes.GET("/:id", s.handleGetMovieFile)
 			movieFileRoutes.DELETE("/:id", s.handleDeleteMovieFile)
 		}
-		
+
 		// Quality profiles
 		v3.GET("/qualityprofile", s.handleGetQualityProfiles)
-		
+
 		// Indexers
 		v3.GET("/indexer", s.handleGetIndexers)
-		
+
 		// Download clients
 		v3.GET("/downloadclient", s.handleGetDownloadClients)
-		
+
 		// Queue
 		v3.GET("/queue", s.handleGetQueue)
-		
+
 		// History
 		v3.GET("/history", s.handleGetHistory)
-		
+
 		// Search
 		searchRoutes := v3.Group("/search")
 		{
@@ -101,11 +101,11 @@ func (s *Server) setupRoutes() {
 
 	// Serve static files (if any)
 	s.engine.Static("/static", "./web/static")
-	
+
 	// Try to load HTML templates, but don't fail if they don't exist
 	if _, err := os.Stat("web/templates"); err == nil {
 		s.engine.LoadHTMLGlob("web/templates/*")
-		
+
 		// Default route for SPA
 		s.engine.NoRoute(func(c *gin.Context) {
 			c.HTML(http.StatusOK, "index.html", nil)
@@ -114,8 +114,8 @@ func (s *Server) setupRoutes() {
 		// Default route without templates
 		s.engine.NoRoute(func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
-				"message": "Radarr Go API Server",
-				"version": "1.0.0-go",
+				"message":       "Radarr Go API Server",
+				"version":       "1.0.0-go",
 				"documentation": "Access /api/v3/system/status for system information",
 			})
 		})
@@ -124,21 +124,21 @@ func (s *Server) setupRoutes() {
 
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
-	
+
 	s.server = &http.Server{
-		Addr:    addr,
-		Handler: s.engine,
+		Addr:         addr,
+		Handler:      s.engine,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
 	s.logger.Info("Starting HTTP server", "address", addr)
-	
+
 	if s.config.Server.EnableSSL {
 		return s.server.ListenAndServeTLS(s.config.Server.SSLCertPath, s.config.Server.SSLKeyPath)
 	}
-	
+
 	return s.server.ListenAndServe()
 }
 

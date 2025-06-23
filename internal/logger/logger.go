@@ -14,7 +14,7 @@ type Logger struct {
 
 func New(cfg config.LogConfig) *Logger {
 	var zapConfig zap.Config
-	
+
 	switch cfg.Level {
 	case "debug":
 		zapConfig = zap.NewDevelopmentConfig()
@@ -29,25 +29,26 @@ func New(cfg config.LogConfig) *Logger {
 	default:
 		zapConfig = zap.NewProductionConfig()
 	}
-	
+
 	// Configure output
 	if cfg.Output != "" && cfg.Output != "stdout" {
 		zapConfig.OutputPaths = []string{cfg.Output}
 		zapConfig.ErrorOutputPaths = []string{cfg.Output}
 	}
-	
+
 	// Configure encoding
-	if cfg.Format == "console" {
-		zapConfig.Encoding = "console"
+	const consoleFormat = "console"
+	if cfg.Format == consoleFormat {
+		zapConfig.Encoding = consoleFormat
 		zapConfig.EncoderConfig = zap.NewDevelopmentEncoderConfig()
 	}
-	
+
 	logger, err := zapConfig.Build()
 	if err != nil {
 		// Fallback to basic logger
 		logger = zap.NewNop()
 	}
-	
+
 	return &Logger{
 		SugaredLogger: logger.Sugar(),
 	}
@@ -59,5 +60,5 @@ func (l *Logger) Fatal(msg string, keysAndValues ...interface{}) {
 }
 
 func (l *Logger) Close() {
-	l.SugaredLogger.Sync()
+	_ = l.SugaredLogger.Sync()
 }

@@ -24,19 +24,20 @@ type Database struct {
 	GORM *gorm.DB
 }
 
-func New(cfg config.DatabaseConfig, logger *logger.Logger) (*Database, error) {
+func New(cfg *config.DatabaseConfig, logger *logger.Logger) (*Database, error) {
 	var db *sqlx.DB
 	var gormDB *gorm.DB
 	var err error
 
+	const postgresType = "postgres"
 	switch cfg.Type {
-	case "postgres", "postgresql":
+	case postgresType, "postgresql":
 		connectionString := buildPostgresConnectionString(cfg)
-		db, err = sqlx.Connect("postgres", connectionString)
+		db, err = sqlx.Connect(postgresType, connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 		}
-		
+
 		gormDB, err = gorm.Open(gormPostgres.Open(connectionString), &gorm.Config{
 			Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 		})
@@ -49,12 +50,12 @@ func New(cfg config.DatabaseConfig, logger *logger.Logger) (*Database, error) {
 		if connectionString == "" {
 			connectionString = "radarr.db"
 		}
-		
+
 		db, err = sqlx.Connect("sqlite3", connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to sqlite: %w", err)
 		}
-		
+
 		gormDB, err = gorm.Open(gormSqlite.Open(connectionString), &gorm.Config{
 			Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 		})
@@ -85,26 +86,26 @@ func (d *Database) Close() error {
 	return nil
 }
 
-func buildPostgresConnectionString(cfg config.DatabaseConfig) string {
+func buildPostgresConnectionString(cfg *config.DatabaseConfig) string {
 	if cfg.ConnectionURL != "" {
 		return cfg.ConnectionURL
 	}
-	
+
 	host := cfg.Host
 	if host == "" {
 		host = "localhost"
 	}
-	
+
 	port := cfg.Port
 	if port == 0 {
 		port = 5432
 	}
-	
+
 	database := cfg.Database
 	if database == "" {
 		database = "radarr"
 	}
-	
+
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, cfg.Username, cfg.Password, database)
 }

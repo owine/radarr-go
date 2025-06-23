@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,36 +13,46 @@ import (
 // System handlers
 func (s *Server) handleSystemStatus(c *gin.Context) {
 	status := gin.H{
-		"version":           "1.0.0-go",
-		"buildTime":         time.Now().Format(time.RFC3339),
-		"isDebug":           s.config.Log.Level == "debug",
-		"isProduction":      s.config.Log.Level != "debug",
-		"isAdmin":           true,
-		"isUserInteractive": false,
-		"startupPath":       s.config.Storage.DataDirectory,
-		"appData":           s.config.Storage.DataDirectory,
-		"osName":            "linux",
-		"osVersion":         "unknown",
-		"isMonoRuntime":     false,
-		"isMono":            false,
-		"isLinux":           true,
-		"isOsx":             false,
-		"isWindows":         false,
-		"mode":              "console",
-		"branch":            "develop",
-		"authentication":    s.config.Auth.Method,
-		"sqliteVersion":     "3.x",
-		"migrationVersion":  1,
-		"urlBase":           s.config.Server.URLBase,
-		"runtimeVersion":    "go1.21",
-		"databaseType":      s.config.Database.Type,
-		"databaseVersion":   "unknown",
-		"packageVersion":    "1.0.0-go",
-		"packageAuthor":     "Radarr Go Team",
+		"version":                "1.0.0-go",
+		"buildTime":              time.Now().Format(time.RFC3339),
+		"isDebug":                s.config.Log.Level == "debug",
+		"isProduction":           s.config.Log.Level != "debug",
+		"isAdmin":                true,
+		"isUserInteractive":      false,
+		"startupPath":            s.config.Storage.DataDirectory,
+		"appData":                s.config.Storage.DataDirectory,
+		"osName":                 "linux",
+		"osVersion":              "unknown",
+		"isMonoRuntime":          false,
+		"isMono":                 false,
+		"isLinux":                true,
+		"isOsx":                  false,
+		"isWindows":              false,
+		"mode":                   "console",
+		"branch":                 "develop",
+		"authentication":         s.config.Auth.Method,
+		"sqliteVersion":          "3.x",
+		"migrationVersion":       1,
+		"urlBase":                s.config.Server.URLBase,
+		"runtimeVersion":         "go1.21",
+		"databaseType":           s.config.Database.Type,
+		"databaseVersion":        "unknown",
+		"packageVersion":         "1.0.0-go",
+		"packageAuthor":          "Radarr Go Team",
 		"packageUpdateMechanism": "docker",
 	}
-	
+
 	c.JSON(http.StatusOK, status)
+}
+
+// Helper function to parse ID from URL parameter
+func (s *Server) parseIDParam(c *gin.Context, paramName string) (int, error) {
+	idStr := c.Param(paramName)
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s ID", paramName)
+	}
+	return id, nil
 }
 
 // Movie handlers
@@ -52,25 +63,24 @@ func (s *Server) handleGetMovies(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve movies"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movies)
 }
 
 func (s *Server) handleGetMovie(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := s.parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	movie, err := s.services.MovieService.GetByID(id)
 	if err != nil {
 		s.logger.Error("Failed to get movie", "id", id, "error", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movie)
 }
 
@@ -80,57 +90,55 @@ func (s *Server) handleCreateMovie(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie data"})
 		return
 	}
-	
+
 	movie.Added = time.Now()
-	
+
 	if err := s.services.MovieService.Create(&movie); err != nil {
 		s.logger.Error("Failed to create movie", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create movie"})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, movie)
 }
 
 func (s *Server) handleUpdateMovie(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := s.parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	var movie models.Movie
 	if err := c.ShouldBindJSON(&movie); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie data"})
 		return
 	}
-	
+
 	movie.ID = id
-	
+
 	if err := s.services.MovieService.Update(&movie); err != nil {
 		s.logger.Error("Failed to update movie", "id", id, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update movie"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movie)
 }
 
 func (s *Server) handleDeleteMovie(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := s.parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := s.services.MovieService.Delete(id); err != nil {
 		s.logger.Error("Failed to delete movie", "id", id, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete movie"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Movie deleted successfully"})
 }
 
@@ -142,42 +150,40 @@ func (s *Server) handleGetMovieFiles(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve movie files"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movieFiles)
 }
 
 func (s *Server) handleGetMovieFile(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := s.parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie file ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	movieFile, err := s.services.MovieFileService.GetByID(id)
 	if err != nil {
 		s.logger.Error("Failed to get movie file", "id", id, "error", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Movie file not found"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movieFile)
 }
 
 func (s *Server) handleDeleteMovieFile(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := s.parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie file ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	if err := s.services.MovieFileService.Delete(id); err != nil {
 		s.logger.Error("Failed to delete movie file", "id", id, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete movie file"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "Movie file deleted successfully"})
 }
 
@@ -237,13 +243,13 @@ func (s *Server) handleSearchMovies(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Search term is required"})
 		return
 	}
-	
+
 	movies, err := s.services.MovieService.Search(query)
 	if err != nil {
 		s.logger.Error("Failed to search movies", "query", query, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search movies"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, movies)
 }

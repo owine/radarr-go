@@ -10,13 +10,13 @@ type Container struct {
 	DB     *database.Database
 	Config *config.Config
 	Logger *logger.Logger
-	
+
 	// Services
-	MovieService      *MovieService
-	MovieFileService  *MovieFileService
-	QualityService    *QualityService
-	IndexerService    *IndexerService
-	DownloadService   *DownloadService
+	MovieService        *MovieService
+	MovieFileService    *MovieFileService
+	QualityService      *QualityService
+	IndexerService      *IndexerService
+	DownloadService     *DownloadService
 	NotificationService *NotificationService
 }
 
@@ -26,7 +26,7 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 		Config: cfg,
 		Logger: logger,
 	}
-	
+
 	// Initialize services
 	container.MovieService = NewMovieService(db, logger)
 	container.MovieFileService = NewMovieFileService(db, logger)
@@ -34,6 +34,6 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.IndexerService = NewIndexerService(db, logger)
 	container.DownloadService = NewDownloadService(db, logger)
 	container.NotificationService = NewNotificationService(db, logger)
-	
+
 	return container
 }

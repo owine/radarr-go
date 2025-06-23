@@ -1,6 +1,5 @@
 run:
   timeout: 5m
-  modules-download-mode: readonly
 
 linters-settings:
   dupl:
@@ -9,10 +8,13 @@ linters-settings:
     lines: 100
     statements: 50
   gci:
-    local-prefixes: github.com/radarr/radarr-go
+    sections:
+      - standard
+      - default
+      - prefix(github.com/radarr/radarr-go)
   goconst:
     min-len: 2
-    min-occurrences: 2
+    min-occurrences: 3
   gocritic:
     enabled-tags:
       - diagnostic
@@ -26,44 +28,21 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
+      - hugeParam
   gocyclo:
     min-complexity: 15
-  goimports:
-    local-prefixes: github.com/radarr/radarr-go
-  golint:
-    min-confidence: 0
-  gomnd:
-    settings:
-      mnd:
-        checks: argument,case,condition,return
   govet:
-    check-shadowing: true
-    settings:
-      printf:
-        funcs:
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    enable:
+      - shadow
   lll:
     line-length: 140
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
-  nolintlint:
-    allow-leading-space: true
-    allow-unused: false
-    require-explanation: false
-    require-specific: false
 
 linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
     - dupl
     - errcheck
     - exhaustive
@@ -74,56 +53,42 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
+    - mnd
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret
     - noctx
     - nolintlint
     - rowserrcheck
-    - scopelint
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
+    - revive
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
-        - gomnd
+        - mnd
         - funlen
         - gocyclo
+        - dupl
     - path: cmd/
       linters:
         - gochecknoinits
     - path: internal/models/
       linters:
         - lll
-        - maligned
     - linters:
         - lll
       source: "^//go:generate "
-
-  exclude:
-    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print(f|ln)?|os\\.(Un)?Setenv). is not checked"
-    - "func name will be used as test\\.Test.* by other packages, and that stutters; consider calling this"
-    - "G104: Errors unhandled"
-
   max-issues-per-linter: 0
   max-same-issues: 0
-
-severity:
-  default-severity: error
