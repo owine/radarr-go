@@ -1,4 +1,4 @@
-version: "2"
+version: 2
 
 run:
   timeout: 5m
@@ -10,11 +10,6 @@ linters-settings:
   funlen:
     lines: 100
     statements: 50
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/radarr/radarr-go)
   goconst:
     min-len: 2
     min-occurrences: 3
@@ -58,11 +53,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - mnd
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -72,17 +63,15 @@ linters:
     - nolintlint
     - rowserrcheck
     - staticcheck
-    - stylecheck
+    - revive
     - unconvert
     - unparam
     - unused
     - whitespace
-    - revive
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  new-from-rev: ""
   exclude-rules:
     - path: _test\.go
       linters:
@@ -99,7 +88,3 @@ issues:
     - linters:
         - lll
       source: "^//go:generate "
-  exclude-dirs:
-    - vendor/
-  exclude-files:
-    - ".*\\.pb\\.go$"
