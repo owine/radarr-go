@@ -40,7 +40,7 @@ jobs:
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
       with:
-        version: latest
+        version: v1.60.3
         args: --timeout=5m
 
     - name: Check Go formatting
