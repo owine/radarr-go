@@ -104,10 +104,10 @@ jobs:
       run: gosec ./...
       continue-on-error: true
 
-    - name: Install and run Nancy vulnerability scanner
+    - name: Install and run govulncheck vulnerability scanner
       run: |
-        go install github.com/sonatypecommunity/nancy@latest
-        go list -json -deps ./... | nancy sleuth
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
       continue-on-error: true
 
   # Phase 2: Tests (runs after lint and security pass)
