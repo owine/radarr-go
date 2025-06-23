@@ -25,10 +25,6 @@
   "platformAutomerge": true,
   "assigneesFromCodeOwners": true,
   "reviewersFromCodeOwners": true,
-  "grouping": {
-    "monorepo-packages": true,
-    "reuseLockFiles": true
-  },
   "vulnerabilityAlerts": {
     "labels": ["security"],
     "assignees": ["@radarr/security-team"]
@@ -68,15 +64,13 @@
     {
       "description": "Security updates - highest priority, no grouping",
       "matchPackagePatterns": ["*"],
-      "matchUpdateTypes": ["patch"],
       "isVulnerabilityAlert": true,
       "addLabels": ["security"],
       "automerge": true,
       "automergeType": "pr",
       "schedule": ["at any time"],
       "prPriority": 10,
-      "groupName": null,
-      "separateMinorPatch": true
+      "groupName": null
     },
     {
       "description": "Group Docker image updates together",
@@ -123,8 +117,7 @@
       "groupName": null,
       "automerge": false,
       "addLabels": ["critical-dependency"],
-      "reviewers": ["@radarr/maintainers"],
-      "separateMinorPatch": true
+      "reviewers": ["@radarr/maintainers"]
     },
     {
       "description": "Database drivers - exclude from grouping, manual review", 
@@ -138,8 +131,7 @@
       "groupName": null,
       "addLabels": ["database"],
       "automerge": false,
-      "reviewers": ["@radarr/maintainers"],
-      "separateMinorPatch": true
+      "reviewers": ["@radarr/maintainers"]
     },
     {
       "description": "Go version updates - exclude from grouping, manual review",
@@ -149,8 +141,7 @@
       "rangeStrategy": "replace",
       "automerge": false,
       "addLabels": ["golang-version", "major-update"],
-      "reviewers": ["@radarr/maintainers"],
-      "separateMinorPatch": true
+      "reviewers": ["@radarr/maintainers"]
     },
     {
       "description": "Group test and development dependencies together",
