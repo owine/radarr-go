@@ -1,0 +1,31 @@
+# Global owners
+* @radarr/maintainers
+
+# Go code
+*.go @radarr/go-team
+go.mod @radarr/go-team
+go.sum @radarr/go-team
+
+# Database migrations
+/migrations/ @radarr/database-team
+
+# Docker
+Dockerfile @radarr/devops-team
+docker-compose.yml @radarr/devops-team
+.dockerignore @radarr/devops-team
+
+# CI/CD
+/.github/ @radarr/devops-team
+/Makefile @radarr/devops-team
+
+# Configuration
+/config.yaml @radarr/config-team
+/internal/config/ @radarr/config-team
+
+# Security
+/internal/security/ @radarr/security-team
+renovate.json @radarr/security-team
+
+# Documentation
+*.md @radarr/docs-team
+CLAUDE.md @radarr/maintainers

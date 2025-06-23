@@ -1,0 +1,26 @@
+server:
+  port: 7878
+  host: "0.0.0.0"
+  url_base: ""
+  enable_ssl: false
+  ssl_cert_path: ""
+  ssl_key_path: ""
+
+database:
+  type: "sqlite"
+  connection_url: "./data/radarr.db"
+  max_connections: 10
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+auth:
+  method: "none"
+  api_key: ""
+
+storage:
+  data_directory: "./data"
+  movie_directory: "./data/movies"
+  backup_directory: "./data/backups"

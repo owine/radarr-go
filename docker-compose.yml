@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  radarr-go:
+    build: .
+    container_name: radarr-go
+    restart: unless-stopped
+    ports:
+      - "7878:7878"
+    volumes:
+      - radarr_data:/data
+      - ./movies:/movies
+    environment:
+      - RADARR_LOG_LEVEL=info
+      - RADARR_SERVER_PORT=7878
+      - RADARR_DATABASE_TYPE=sqlite
+      - RADARR_DATABASE_CONNECTION_URL=/data/radarr.db
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: radarr-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=radarr
+      - POSTGRES_USER=radarr_user
+      - POSTGRES_PASSWORD=change_me_in_production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles:
+      - postgres
+
+volumes:
+  radarr_data:
+  postgres_data:

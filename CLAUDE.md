@@ -1,0 +1,189 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is **Radarr Go**, a complete rewrite of the Radarr movie collection manager from C#/.NET to Go. It maintains 100% API compatibility with Radarr's v3 API while providing significant performance improvements and simplified deployment.
+
+## Development Commands
+
+### Core Development
+```bash
+# Install dependencies and setup
+make deps                    # Download Go modules
+make setup                   # Install dev tools (air, golangci-lint, migrate)
+
+# Building
+make build                   # Build binary for current platform
+make build-linux            # Build for Linux (production)
+
+# Running
+make run                     # Build and run locally
+make dev                     # Run with hot reload (requires air)
+./radarr --data ./data       # Run with custom data directory
+
+# Testing
+make test                    # Run all tests
+make test-coverage           # Run tests with HTML coverage report
+go test ./internal/api -v    # Run specific package tests
+go test -run TestPingHandler ./internal/api  # Run single test
+
+# Code Quality
+make fmt                     # Format code
+make lint                    # Run linter (requires golangci-lint)
+make all                     # Format, lint, test, and build
+```
+
+### Database Operations
+```bash
+# Migrations
+make migrate-up              # Apply database migrations
+make migrate-down            # Rollback migrations
+migrate create -ext sql -dir migrations migration_name  # Create new migration
+
+# Database switching
+RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL
+RADARR_DATABASE_TYPE=sqlite ./radarr      # Use SQLite (default)
+```
+
+### Docker Operations
+```bash
+make docker-build           # Build Docker image
+make docker-run             # Start with docker-compose
+make docker-stop            # Stop docker-compose
+make docker-logs            # View container logs
+```
+
+## Architecture Overview
+
+### Layered Architecture
+The application follows a clean layered architecture with dependency injection:
+
+1. **API Layer** (`internal/api/`): Gin-based HTTP server with middleware
+2. **Service Layer** (`internal/services/`): Business logic and domain operations
+3. **Data Layer** (`internal/database/`, `internal/models/`): Database access and models
+4. **Configuration** (`internal/config/`): YAML + environment variable management
+5. **Infrastructure** (`internal/logger/`): Logging, utilities
+
+### Dependency Flow
+```
+main() → config → logger → database → services → api server
+```
+
+### Service Container Pattern
+All services are managed through a `services.Container` that provides dependency injection:
+- `MovieService`: Movie CRUD operations and search
+- `MovieFileService`: File management and metadata
+- `QualityService`, `IndexerService`, etc.: Domain-specific operations
+
+### Database Architecture
+- **Dual ORM Strategy**: GORM for complex operations, sqlx for performance-critical queries
+- **Migration System**: golang-migrate for schema management
+- **Multi-Database**: SQLite (default) and PostgreSQL support
+- **Connection Management**: Configurable connection pooling
+
+## Key Patterns and Conventions
+
+### API Design
+- **Radarr v3 Compatibility**: All endpoints match original Radarr API structure
+- **RESTful Routes**: Standard HTTP verbs with resource-based URLs
+- **Middleware Stack**: Logging → CORS → API Key Authentication → Routes
+- **Error Handling**: Consistent JSON error responses with proper HTTP status codes
+
+### Configuration Management
+- **YAML Primary**: `config.yaml` with nested structure
+- **Environment Override**: `RADARR_` prefixed variables automatically override YAML
+- **Validation**: Configuration validation at startup with helpful error messages
+- **Defaults**: Sensible defaults for development and production
+
+### Database Models
+- **GORM Annotations**: Struct tags for database mapping and validation
+- **JSON Serialization**: Custom Value/Scan methods for complex types (arrays, JSON fields)
+- **Relationships**: Foreign key relationships with preloading support
+- **Timestamps**: Automatic created_at/updated_at fields
+
+### Testing Strategy
+- **Unit Tests**: Service layer and individual components
+- **API Tests**: HTTP endpoint testing with test server
+- **Test Mode**: Gin test mode for reduced noise in tests
+- **Mocking**: Interface-based dependency injection enables easy mocking
+
+## Configuration System
+
+The configuration system uses Viper for flexible config management:
+
+### Key Configuration Sections
+- **server**: HTTP server settings (port, SSL, URL base)
+- **database**: Database type, connection, pooling
+- **log**: Logging level, format, output
+- **auth**: Authentication method and API key
+- **storage**: Data directories and paths
+
+### Environment Variables
+All config keys can be overridden with `RADARR_` prefix:
+- `RADARR_SERVER_PORT=7878`
+- `RADARR_DATABASE_TYPE=postgres`
+- `RADARR_LOG_LEVEL=debug`
+
+## Adding New Features
+
+### New API Endpoint
+1. Add handler to `internal/api/handlers.go`
+2. Register route in `internal/api/server.go:setupRoutes()`
+3. Create service method in appropriate service
+4. Add tests in `internal/api/*_test.go`
+
+### New Database Model
+1. Define struct in `internal/models/`
+2. Add GORM annotations and JSON serialization
+3. Create migration in `migrations/`
+4. Add service methods for CRUD operations
+5. Add API endpoints if needed
+
+### New Service
+1. Create service struct in `internal/services/`
+2. Add to `services.Container`
+3. Initialize in `NewContainer()`
+4. Follow dependency injection pattern
+
+## Database Schema
+
+### Core Tables
+- **movies**: Main movie entities with metadata
+- **movie_files**: Physical file information and media info
+- Future: quality_profiles, indexers, download_clients, etc.
+
+### Migration Strategy
+- **Sequential Numbering**: `001_initial_schema.up.sql`
+- **Rollback Support**: Corresponding `.down.sql` files
+- **Auto-Migration**: Runs automatically on startup
+- **Schema Evolution**: Additive changes preferred
+
+## API Compatibility
+
+This implementation maintains strict compatibility with Radarr's v3 API:
+- **Same Endpoints**: Identical URL patterns and HTTP methods
+- **Same Responses**: JSON structure matches exactly
+- **Same Behavior**: Pagination, filtering, sorting work identically
+- **Authentication**: X-API-Key header and query parameter support
+
+## Production Considerations
+
+### Performance
+- **Go Runtime**: Significantly lower memory usage than .NET
+- **Gin Framework**: High-performance HTTP routing
+- **Connection Pooling**: Configurable database connections
+- **Structured Logging**: JSON logging with minimal overhead
+
+### Deployment
+- **Single Binary**: No runtime dependencies except database
+- **Docker Ready**: Multi-stage builds with minimal Alpine base
+- **Health Checks**: `/ping` endpoint for monitoring
+- **Graceful Shutdown**: Proper signal handling and cleanup
+
+### Security
+- **API Key Auth**: Optional API key authentication
+- **CORS**: Configurable cross-origin resource sharing
+- **Input Validation**: Request validation and sanitization
+- **No Root**: Docker container runs as non-root user
