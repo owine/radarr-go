@@ -36,32 +36,6 @@
   },
   "packageRules": [
     {
-      "description": "Group all Go module updates together",
-      "matchManagers": ["gomod"],
-      "groupName": "Go dependencies",
-      "groupSlug": "go-dependencies",
-      "rangeStrategy": "bump",
-      "semanticCommitType": "deps",
-      "automerge": true,
-      "automergeType": "pr",
-      "requiredStatusChecks": null,
-      "minimumReleaseAge": "3 days",
-      "internalChecksFilter": "strict",
-      "addLabels": ["go"],
-      "commitMessageTopic": "Go dependencies"
-    },
-    {
-      "description": "Go major updates - separate from grouped updates",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "Go major updates",
-      "groupSlug": "go-major",
-      "automerge": false,
-      "addLabels": ["major-update", "go"],
-      "reviewers": ["@radarr/maintainers"],
-      "commitMessageTopic": "Go major dependencies"
-    },
-    {
       "description": "Security updates - highest priority, no grouping",
       "matchPackagePatterns": ["*"],
       "isVulnerabilityAlert": true,
@@ -71,40 +45,6 @@
       "schedule": ["at any time"],
       "prPriority": 10,
       "groupName": null
-    },
-    {
-      "description": "Group Docker image updates together",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Docker images",
-      "groupSlug": "docker-images",
-      "automerge": true,
-      "automergeType": "pr",
-      "addLabels": ["docker"],
-      "minimumReleaseAge": "3 days",
-      "commitMessageTopic": "Docker images"
-    },
-    {
-      "description": "Docker major updates - separate from grouped updates",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "Docker major updates",
-      "groupSlug": "docker-major",
-      "automerge": false,
-      "addLabels": ["major-update", "docker"],
-      "commitMessageTopic": "Docker major images"
-    },
-    {
-      "description": "Group GitHub Actions updates together",
-      "matchManagers": ["github-actions"],
-      "groupName": "GitHub Actions",
-      "groupSlug": "github-actions",
-      "automerge": true,
-      "automergeType": "pr",
-      "addLabels": ["github-actions"],
-      "minimumReleaseAge": "3 days",
-      "rangeStrategy": "pin",
-      "commitMessageTopic": "GitHub Actions"
     },
     {
       "description": "Critical Go dependencies - exclude from grouping, manual review",
@@ -144,13 +84,74 @@
       "reviewers": ["@radarr/maintainers"]
     },
     {
+      "description": "Go major updates - separate from grouped updates",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "Go major updates",
+      "groupSlug": "go-major",
+      "automerge": false,
+      "addLabels": ["major-update", "go"],
+      "reviewers": ["@radarr/maintainers"],
+      "commitMessageTopic": "Go major dependencies"
+    },
+    {
+      "description": "Group non-critical Go module updates together",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Go dependencies",
+      "groupSlug": "go-dependencies",
+      "rangeStrategy": "bump",
+      "semanticCommitType": "deps",
+      "automerge": true,
+      "automergeType": "pr",
+      "requiredStatusChecks": null,
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "strict",
+      "addLabels": ["go"],
+      "commitMessageTopic": "Go dependencies"
+    },
+    {
+      "description": "Group Docker image updates together",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Docker images",
+      "groupSlug": "docker-images",
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": ["docker"],
+      "minimumReleaseAge": "3 days",
+      "commitMessageTopic": "Docker images"
+    },
+    {
+      "description": "Docker major updates - separate from grouped updates",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "Docker major updates",
+      "groupSlug": "docker-major",
+      "automerge": false,
+      "addLabels": ["major-update", "docker"],
+      "commitMessageTopic": "Docker major images"
+    },
+    {
+      "description": "Group GitHub Actions updates together",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "groupSlug": "github-actions",
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": ["github-actions"],
+      "minimumReleaseAge": "3 days",
+      "rangeStrategy": "pin",
+      "commitMessageTopic": "GitHub Actions"
+    },
+    {
       "description": "Group test and development dependencies together",
       "matchManagers": ["gomod"],
+      "matchPackageNames": [
+        "github.com/stretchr/testify"
+      ],
       "matchPackagePatterns": [
-        "github.com/stretchr/testify*",
-        "*test*",
-        "*mock*",
-        "*testing*"
+        "github.com/stretchr/testify/*"
       ],
       "groupName": "Test dependencies",
       "groupSlug": "test-deps",
@@ -161,15 +162,15 @@
     {
       "description": "Group logging and observability dependencies",
       "matchManagers": ["gomod"],
+      "matchPackageNames": [
+        "go.uber.org/zap",
+        "go.uber.org/multierr"
+      ],
       "matchPackagePatterns": [
-        "go.uber.org/zap*",
-        "*log*",
-        "*metrics*",
-        "*trace*",
-        "*otel*"
+        "go.uber.org/zap/*"
       ],
       "groupName": "Observability dependencies",
-      "groupSlug": "observability-deps",
+      "groupSlug": "observability-deps", 
       "addLabels": ["observability"],
       "automerge": true,
       "commitMessageTopic": "observability dependencies"
@@ -177,11 +178,13 @@
     {
       "description": "Group utility and helper dependencies",
       "matchManagers": ["gomod"],
+      "matchPackageNames": [
+        "github.com/spf13/viper",
+        "github.com/google/uuid"
+      ],
       "matchPackagePatterns": [
-        "github.com/spf13/viper*",
         "github.com/spf13/*",
-        "github.com/google/uuid*",
-        "golang.org/x/*/cmd/*"
+        "golang.org/x/tools/cmd/*"
       ],
       "groupName": "Utility dependencies", 
       "groupSlug": "utility-deps",
