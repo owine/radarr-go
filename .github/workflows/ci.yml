@@ -10,92 +10,7 @@ env:
   GO_VERSION: '1.21'
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_PASSWORD: test_password_123
-          POSTGRES_USER: test_user
-          POSTGRES_DB: radarr_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    strategy:
-      matrix:
-        database: [sqlite, postgres]
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go mod download
-
-    - name: Install golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
-        skip-cache: true
-        skip-pkg-cache: true
-        skip-build-cache: true
-
-    - name: Create test directories
-      run: |
-        mkdir -p data movies web/static web/templates
-        cp config.yaml data/
-
-    - name: Run tests (SQLite)
-      if: matrix.database == 'sqlite'
-      run: |
-        go test -v -race -coverprofile=coverage.out ./...
-      env:
-        RADARR_DATABASE_TYPE: sqlite
-        RADARR_DATABASE_CONNECTION_URL: ./data/radarr_test.db
-
-    - name: Run tests (PostgreSQL)
-      if: matrix.database == 'postgres'
-      run: |
-        go test -v -race -coverprofile=coverage-postgres.out ./...
-      env:
-        RADARR_DATABASE_TYPE: postgres
-        RADARR_DATABASE_HOST: localhost
-        RADARR_DATABASE_PORT: 5432
-        RADARR_DATABASE_DATABASE: radarr_test
-        RADARR_DATABASE_USERNAME: test_user
-        RADARR_DATABASE_PASSWORD: test_password_123
-
-    - name: Upload coverage to Codecov
-      if: matrix.database == 'sqlite'
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
-
+  # Phase 1: Quick checks (run concurrently)
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -144,101 +59,6 @@ jobs:
           git diff go.mod go.sum
           exit 1
         fi
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [test, lint]
-    
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
-        exclude:
-          - goos: windows
-            goarch: arm64
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go mod download
-
-    - name: Build binary
-      run: |
-        mkdir -p dist
-        BINARY_NAME="radarr-${{ matrix.goos }}-${{ matrix.goarch }}"
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          BINARY_NAME="${BINARY_NAME}.exe"
-        fi
-        
-        CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-        go build -ldflags="-w -s" -o "dist/${BINARY_NAME}" ./cmd/radarr
-      env:
-        CGO_ENABLED: 1
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: radarr-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: dist/
-
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [test, lint]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Docker Hub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: radarr/radarr-go
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
   security:
     name: Security Scan
@@ -290,6 +110,185 @@ jobs:
         go list -json -deps ./... | nancy sleuth
       continue-on-error: true
 
+  # Phase 2: Tests (runs after lint and security pass)
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: test_password_123
+          POSTGRES_USER: test_user
+          POSTGRES_DB: radarr_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    strategy:
+      matrix:
+        database: [sqlite, postgres]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Create test directories
+      run: |
+        mkdir -p data movies web/static web/templates
+        cp config.yaml data/
+
+    - name: Run tests (SQLite)
+      if: matrix.database == 'sqlite'
+      run: |
+        go test -v -race -coverprofile=coverage.out ./...
+      env:
+        RADARR_DATABASE_TYPE: sqlite
+        RADARR_DATABASE_CONNECTION_URL: ./data/radarr_test.db
+
+    - name: Run tests (PostgreSQL)
+      if: matrix.database == 'postgres'
+      run: |
+        go test -v -race -coverprofile=coverage-postgres.out ./...
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Upload coverage to Codecov
+      if: matrix.database == 'sqlite'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+
+  # Phase 3: Build (runs after tests pass)
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test]
+    
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Build binary
+      run: |
+        mkdir -p dist
+        BINARY_NAME="radarr-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        
+        CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+        go build -ldflags="-w -s" -o "dist/${BINARY_NAME}" ./cmd/radarr
+      env:
+        CGO_ENABLED: 1
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: radarr-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/
+        retention-days: 7
+
+  # Phase 3: Docker Build (runs concurrently with binary builds)
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: radarr/radarr-go
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Phase 4: Integration Tests (runs after builds complete)
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -314,11 +313,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ env.GO_VERSION }}
-
     - name: Download build artifacts
       uses: actions/download-artifact@v3
       with:
@@ -333,29 +327,9 @@ jobs:
         mkdir -p data movies web/static web/templates
         cp config.yaml data/
 
-    - name: Run integration tests with SQLite
+    - name: Test binary startup (SQLite)
       run: |
-        ./radarr-linux-amd64 --data ./data &
-        RADARR_PID=$!
-        sleep 5
-        
-        # Test API endpoints
-        curl -f http://localhost:7878/ping || exit 1
-        curl -f http://localhost:7878/api/v3/system/status || exit 1
-        curl -f http://localhost:7878/api/v3/movie || exit 1
-        
-        kill $RADARR_PID
-
-    - name: Run integration tests with PostgreSQL
-      run: |
-        export RADARR_DATABASE_TYPE=postgres
-        export RADARR_DATABASE_HOST=localhost
-        export RADARR_DATABASE_PORT=5432
-        export RADARR_DATABASE_DATABASE=radarr_integration
-        export RADARR_DATABASE_USERNAME=test_user
-        export RADARR_DATABASE_PASSWORD=test_password_123
-        
-        ./radarr-linux-amd64 --data ./data &
+        timeout 30s ./radarr-linux-amd64 --data ./data &
         RADARR_PID=$!
         sleep 10
         
@@ -364,43 +338,37 @@ jobs:
         curl -f http://localhost:7878/api/v3/system/status || exit 1
         curl -f http://localhost:7878/api/v3/movie || exit 1
         
-        kill $RADARR_PID
+        kill $RADARR_PID || true
+        wait $RADARR_PID || true
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [test, lint, build, docker, integration]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download all artifacts
-      uses: actions/download-artifact@v3
-
-    - name: Create release archives
+    - name: Test binary startup (PostgreSQL)
       run: |
-        for dir in radarr-*; do
-          if [ -d "$dir" ]; then
-            cd "$dir"
-            if [[ "$dir" == *"windows"* ]]; then
-              zip -r "../${dir}.zip" .
-            else
-              tar -czf "../${dir}.tar.gz" .
-            fi
-            cd ..
-          fi
-        done
+        export RADARR_DATABASE_TYPE=postgres
+        export RADARR_DATABASE_HOST=localhost
+        export RADARR_DATABASE_PORT=5432
+        export RADARR_DATABASE_DATABASE=radarr_integration
+        export RADARR_DATABASE_USERNAME=test_user
+        export RADARR_DATABASE_PASSWORD=test_password_123
+        
+        timeout 30s ./radarr-linux-amd64 --data ./data &
+        RADARR_PID=$!
+        sleep 15
+        
+        # Test API endpoints
+        curl -f http://localhost:7878/ping || exit 1
+        curl -f http://localhost:7878/api/v3/system/status || exit 1
+        curl -f http://localhost:7878/api/v3/movie || exit 1
+        
+        kill $RADARR_PID || true
+        wait $RADARR_PID || true
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+    - name: Upload integration test results
+      if: always()
+      uses: actions/upload-artifact@v3
       with:
-        files: |
-          *.tar.gz
-          *.zip
-        generate_release_notes: true
-        draft: false
-        prerelease: ${{ contains(github.ref, '-') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: integration-test-logs
+        path: |
+          data/*.log
+          *.log
+        retention-days: 3
+        if-no-files-found: ignore
