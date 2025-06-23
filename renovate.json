@@ -3,8 +3,12 @@
   "extends": [
     "config:recommended"
   ],
-  "schedule": ["before 6am on monday"],
-  "labels": ["dependencies"],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "branchConcurrentLimit": 10,
@@ -13,52 +17,92 @@
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
-      "matchPackagePatterns": ["*"],
       "isVulnerabilityAlert": true,
-      "addLabels": ["security"],
+      "addLabels": [
+        "security"
+      ],
       "automerge": true,
-      "schedule": ["at any time"],
-      "prPriority": 10
+      "schedule": [
+        "at any time"
+      ],
+      "prPriority": 10,
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
       "description": "Go dependencies - group minor and patch updates",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Go dependencies",
       "automerge": true,
-      "addLabels": ["go"],
+      "addLabels": [
+        "go"
+      ],
       "minimumReleaseAge": "3 days"
     },
     {
       "description": "Go major updates - separate PRs, manual review",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["major"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "automerge": false,
-      "addLabels": ["go", "major"],
+      "addLabels": [
+        "go",
+        "major"
+      ],
       "minimumReleaseAge": "7 days"
     },
     {
       "description": "GitHub Actions - group all updates",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "GitHub Actions",
       "automerge": true,
-      "addLabels": ["github-actions"],
+      "addLabels": [
+        "github-actions"
+      ],
       "minimumReleaseAge": "2 days"
     },
     {
       "description": "Docker images - group minor and patch",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Docker images",
       "automerge": true,
-      "addLabels": ["docker"]
+      "addLabels": [
+        "docker"
+      ]
     },
     {
       "description": "Docker major updates - separate PRs",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["major"],
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "automerge": false,
-      "addLabels": ["docker", "major"]
+      "addLabels": [
+        "docker",
+        "major"
+      ]
     }
   ]
 }
