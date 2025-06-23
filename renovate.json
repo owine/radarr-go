@@ -100,7 +100,6 @@
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Go dependencies",
       "groupSlug": "go-dependencies",
-      "rangeStrategy": "bump",
       "semanticCommitType": "deps",
       "automerge": true,
       "automergeType": "pr",
