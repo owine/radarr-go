@@ -38,7 +38,7 @@ jobs:
       run: go mod download
 
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@d6238b002a20823d52840fda27e2d4891c5952dc # v4
+      uses: golangci/golangci-lint-action@38e1018663fa5173f3968ea0777460d3de38f256 # v5
       with:
         version: latest
         args: --timeout=5m
@@ -184,7 +184,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.database == 'sqlite'
-      uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
+      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
         file: ./coverage.out
         flags: unittests
