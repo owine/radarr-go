@@ -5,9 +5,12 @@ on:
     types: [published]
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.23'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Build release binaries for all platforms
   build:
     name: Build Release Binaries
     runs-on: ubuntu-latest
@@ -50,7 +53,7 @@ jobs:
           BINARY_NAME="${BINARY_NAME}.exe"
         fi
         
-        # Build with release optimizations
+        # Build with release optimizations and version info
         CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
         go build -ldflags="-w -s -X 'main.version=${{ github.ref_name }}' -X 'main.commit=${{ github.sha }}' -X 'main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
         -o "dist/${BINARY_NAME}" ./cmd/radarr
@@ -88,9 +91,13 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Build and publish official release Docker images
   docker:
-    name: Build and Push Release Docker Image
+    name: Build Release Docker Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     
     steps:
     - name: Checkout code
@@ -99,14 +106,34 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
 
-    - name: Login to Docker Hub
+    - name: Log in to Container Registry
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Log in to Docker Hub (if configured)
+      if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata
-      id: meta
+    - name: Extract metadata for GitHub Container Registry
+      id: meta-ghcr
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=stable
+
+    - name: Extract metadata for Docker Hub
+      if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
+      id: meta-docker
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       with:
         images: radarr/radarr-go
@@ -116,21 +143,38 @@ jobs:
           type=semver,pattern={{major}}
           type=raw,value=latest
 
-    - name: Build and push Docker image
+    - name: Build and push to GitHub Container Registry
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta-ghcr.outputs.tags }}
+        labels: ${{ steps.meta-ghcr.outputs.labels }}
         build-args: |
           VERSION=${{ github.ref_name }}
           COMMIT=${{ github.sha }}
-          BUILD_DATE=${{ steps.meta.outputs.created }}
+          BUILD_DATE=${{ steps.meta-ghcr.outputs.created }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Build and push to Docker Hub
+      if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta-docker.outputs.tags }}
+        labels: ${{ steps.meta-docker.outputs.labels }}
+        build-args: |
+          VERSION=${{ github.ref_name }}
+          COMMIT=${{ github.sha }}
+          BUILD_DATE=${{ steps.meta-docker.outputs.created }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Test the released binary
   integration-test:
     name: Release Integration Test
     runs-on: ubuntu-latest
@@ -140,18 +184,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-    - name: Download release binary (Linux AMD64)
+    - name: Wait for release assets
+      run: sleep 30  # Give GitHub time to process the release assets
+
+    - name: Download and test release binary (Linux AMD64)
       run: |
         # Download the Linux binary from the release
-        wget -O radarr-linux-amd64 "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz"
-        tar -xzf radarr-linux-amd64
+        wget -O radarr-archive.tar.gz "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz"
+        tar -xzf radarr-archive.tar.gz
         chmod +x radarr-linux-amd64
-      continue-on-error: true
-
-    - name: Test release binary
-      run: |
+        
         # Test that the release binary works
-        timeout 30s ./radarr-linux-amd64 --help || echo "Help command test completed"
+        timeout 10s ./radarr-linux-amd64 --help || echo "Help command test completed"
         
         # Quick startup test
         mkdir -p data movies web/static web/templates
@@ -161,15 +205,17 @@ jobs:
         RADARR_PID=$!
         sleep 10
         
-        # Test basic endpoint
-        curl -f http://localhost:7878/ping || echo "Basic connectivity test completed"
+        # Test basic endpoints
+        curl -f http://localhost:7878/ping || echo "Ping test completed"
+        curl -f http://localhost:7878/api/v3/system/status || echo "Status test completed"
         
         kill $RADARR_PID || true
         wait $RADARR_PID || true
       continue-on-error: true
 
+  # Create release summary
   notify:
-    name: Release Notification
+    name: Release Summary
     runs-on: ubuntu-latest
     needs: [build, docker, integration-test]
     if: always()
@@ -181,15 +227,18 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
         echo "- **Binaries**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker Images**: \`radarr/radarr-go:${{ github.ref_name }}\`, \`radarr/radarr-go:latest\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Platforms**: Multi-platform Docker support (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
+        echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+          echo "- **Docker Hub**: \`radarr/radarr-go:${{ github.ref_name }}\`, \`radarr/radarr-go:latest\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "- **Platforms**: Multi-platform support (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "# Docker" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 7878:7878 radarr/radarr-go:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "# GitHub Container Registry" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "# Binary" >> $GITHUB_STEP_SUMMARY
+        echo "# Binary Download" >> $GITHUB_STEP_SUMMARY
         echo "wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
         echo "tar -xzf radarr-${{ github.ref_name }}-linux-amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
         echo "./radarr-linux-amd64" >> $GITHUB_STEP_SUMMARY
