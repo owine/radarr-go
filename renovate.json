@@ -25,6 +25,10 @@
   "platformAutomerge": true,
   "assigneesFromCodeOwners": true,
   "reviewersFromCodeOwners": true,
+  "grouping": {
+    "monorepo-packages": true,
+    "reuseLockFiles": true
+  },
   "vulnerabilityAlerts": {
     "labels": ["security"],
     "assignees": ["@radarr/security-team"]
@@ -36,8 +40,10 @@
   },
   "packageRules": [
     {
-      "description": "Go modules",
+      "description": "Group all Go module updates together",
       "matchManagers": ["gomod"],
+      "groupName": "Go dependencies",
+      "groupSlug": "go-dependencies",
       "rangeStrategy": "bump",
       "semanticCommitType": "deps",
       "automerge": true,
@@ -45,25 +51,22 @@
       "requiredStatusChecks": null,
       "minimumReleaseAge": "3 days",
       "internalChecksFilter": "strict",
-      "addLabels": ["go"]
+      "addLabels": ["go"],
+      "commitMessageTopic": "Go dependencies"
     },
     {
-      "description": "Go major updates",
+      "description": "Go major updates - separate from grouped updates",
       "matchManagers": ["gomod"],
       "matchUpdateTypes": ["major"],
+      "groupName": "Go major updates",
+      "groupSlug": "go-major",
       "automerge": false,
-      "addLabels": ["major-update"],
-      "reviewers": ["@radarr/maintainers"]
+      "addLabels": ["major-update", "go"],
+      "reviewers": ["@radarr/maintainers"],
+      "commitMessageTopic": "Go major dependencies"
     },
     {
-      "description": "Go patch and minor updates",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true,
-      "automergeType": "pr"
-    },
-    {
-      "description": "Security updates",
+      "description": "Security updates - highest priority, no grouping",
       "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["patch"],
       "isVulnerabilityAlert": true,
@@ -71,77 +74,129 @@
       "automerge": true,
       "automergeType": "pr",
       "schedule": ["at any time"],
-      "prPriority": 10
+      "prPriority": 10,
+      "groupName": null,
+      "separateMinorPatch": true
     },
     {
-      "description": "Docker images",
+      "description": "Group Docker image updates together",
       "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Docker images",
+      "groupSlug": "docker-images",
       "automerge": true,
       "automergeType": "pr",
       "addLabels": ["docker"],
-      "minimumReleaseAge": "3 days"
+      "minimumReleaseAge": "3 days",
+      "commitMessageTopic": "Docker images"
     },
     {
-      "description": "Docker major updates",
+      "description": "Docker major updates - separate from grouped updates",
       "matchManagers": ["dockerfile", "docker-compose"],
       "matchUpdateTypes": ["major"],
+      "groupName": "Docker major updates",
+      "groupSlug": "docker-major",
       "automerge": false,
-      "addLabels": ["major-update", "docker"]
+      "addLabels": ["major-update", "docker"],
+      "commitMessageTopic": "Docker major images"
     },
     {
-      "description": "GitHub Actions",
+      "description": "Group GitHub Actions updates together",
       "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "groupSlug": "github-actions",
       "automerge": true,
       "automergeType": "pr",
       "addLabels": ["github-actions"],
-      "minimumReleaseAge": "3 days"
+      "minimumReleaseAge": "3 days",
+      "rangeStrategy": "pin",
+      "commitMessageTopic": "GitHub Actions"
     },
     {
-      "description": "Pin GitHub Actions to exact versions",
-      "matchManagers": ["github-actions"],
-      "rangeStrategy": "pin"
-    },
-    {
-      "description": "Critical Go dependencies - manual review",
+      "description": "Critical Go dependencies - exclude from grouping, manual review",
       "matchManagers": ["gomod"],
       "matchPackageNames": [
         "github.com/gin-gonic/gin",
         "gorm.io/gorm",
         "github.com/golang-migrate/migrate/v4"
       ],
+      "groupName": null,
       "automerge": false,
       "addLabels": ["critical-dependency"],
-      "reviewers": ["@radarr/maintainers"]
+      "reviewers": ["@radarr/maintainers"],
+      "separateMinorPatch": true
     },
     {
-      "description": "Test dependencies",
-      "matchManagers": ["gomod"],
-      "matchPackageNames": [
-        "github.com/stretchr/testify"
-      ],
-      "addLabels": ["testing"],
-      "automerge": true
-    },
-    {
-      "description": "Database drivers",
+      "description": "Database drivers - exclude from grouping, manual review", 
       "matchManagers": ["gomod"],
       "matchPackagePatterns": [
         "github.com/lib/pq",
         "github.com/mattn/go-sqlite3",
-        "gorm.io/driver/*"
+        "gorm.io/driver/*",
+        "github.com/jackc/pgx/*"
       ],
+      "groupName": null,
       "addLabels": ["database"],
       "automerge": false,
-      "reviewers": ["@radarr/maintainers"]
+      "reviewers": ["@radarr/maintainers"],
+      "separateMinorPatch": true
     },
     {
-      "description": "Go version updates",
+      "description": "Go version updates - exclude from grouping, manual review",
       "matchManagers": ["gomod"],
       "matchDepTypes": ["golang"],
+      "groupName": null,
       "rangeStrategy": "replace",
       "automerge": false,
       "addLabels": ["golang-version", "major-update"],
-      "reviewers": ["@radarr/maintainers"]
+      "reviewers": ["@radarr/maintainers"],
+      "separateMinorPatch": true
+    },
+    {
+      "description": "Group test and development dependencies together",
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": [
+        "github.com/stretchr/testify*",
+        "*test*",
+        "*mock*",
+        "*testing*"
+      ],
+      "groupName": "Test dependencies",
+      "groupSlug": "test-deps",
+      "addLabels": ["testing"],
+      "automerge": true,
+      "commitMessageTopic": "test dependencies"
+    },
+    {
+      "description": "Group logging and observability dependencies",
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": [
+        "go.uber.org/zap*",
+        "*log*",
+        "*metrics*",
+        "*trace*",
+        "*otel*"
+      ],
+      "groupName": "Observability dependencies",
+      "groupSlug": "observability-deps",
+      "addLabels": ["observability"],
+      "automerge": true,
+      "commitMessageTopic": "observability dependencies"
+    },
+    {
+      "description": "Group utility and helper dependencies",
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": [
+        "github.com/spf13/viper*",
+        "github.com/spf13/*",
+        "github.com/google/uuid*",
+        "golang.org/x/*/cmd/*"
+      ],
+      "groupName": "Utility dependencies", 
+      "groupSlug": "utility-deps",
+      "addLabels": ["utilities"],
+      "automerge": true,
+      "commitMessageTopic": "utility dependencies"
     }
   ],
   "regexManagers": [
