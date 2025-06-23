@@ -10,13 +10,19 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+const (
+	DebugLevel      = "debug"
+	DefaultPageSize = 20
+	DefaultPage     = 1
+)
+
 // System handlers
 func (s *Server) handleSystemStatus(c *gin.Context) {
 	status := gin.H{
 		"version":                "1.0.0-go",
 		"buildTime":              time.Now().Format(time.RFC3339),
-		"isDebug":                s.config.Log.Level == "debug",
-		"isProduction":           s.config.Log.Level != "debug",
+		"isDebug":                s.config.Log.Level == DebugLevel,
+		"isProduction":           s.config.Log.Level != DebugLevel,
 		"isAdmin":                true,
 		"isUserInteractive":      false,
 		"startupPath":            s.config.Storage.DataDirectory,
@@ -46,13 +52,48 @@ func (s *Server) handleSystemStatus(c *gin.Context) {
 }
 
 // Helper function to parse ID from URL parameter
-func (s *Server) parseIDParam(c *gin.Context, paramName string) (int, error) {
-	idStr := c.Param(paramName)
+func (s *Server) parseIDParam(c *gin.Context) (int, error) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return 0, fmt.Errorf("invalid %s ID", paramName)
+		return 0, fmt.Errorf("invalid ID: %w", err)
 	}
 	return id, nil
+}
+
+// Helper function to handle get-by-ID operations
+func (s *Server) handleGetByID(c *gin.Context, resourceName string, getFunc func(int) (any, error)) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resource, err := getFunc(id)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Failed to get %s", resourceName), "id", id, "error", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("%s not found", resourceName)})
+		return
+	}
+
+	c.JSON(http.StatusOK, resource)
+}
+
+// Helper function to handle delete operations
+func (s *Server) handleDeleteByID(c *gin.Context, resourceName string, deleteFunc func(int) error) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := deleteFunc(id); err != nil {
+		s.logger.Error(fmt.Sprintf("Failed to delete %s", resourceName), "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to delete %s", resourceName)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("%s deleted successfully", resourceName)})
 }
 
 // Movie handlers
@@ -68,20 +109,9 @@ func (s *Server) handleGetMovies(c *gin.Context) {
 }
 
 func (s *Server) handleGetMovie(c *gin.Context) {
-	id, err := s.parseIDParam(c, "id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	movie, err := s.services.MovieService.GetByID(id)
-	if err != nil {
-		s.logger.Error("Failed to get movie", "id", id, "error", err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, movie)
+	s.handleGetByID(c, "movie", func(id int) (any, error) {
+		return s.services.MovieService.GetByID(id)
+	})
 }
 
 func (s *Server) handleCreateMovie(c *gin.Context) {
@@ -103,7 +133,7 @@ func (s *Server) handleCreateMovie(c *gin.Context) {
 }
 
 func (s *Server) handleUpdateMovie(c *gin.Context) {
-	id, err := s.parseIDParam(c, "id")
+	id, err := s.parseIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -127,19 +157,7 @@ func (s *Server) handleUpdateMovie(c *gin.Context) {
 }
 
 func (s *Server) handleDeleteMovie(c *gin.Context) {
-	id, err := s.parseIDParam(c, "id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := s.services.MovieService.Delete(id); err != nil {
-		s.logger.Error("Failed to delete movie", "id", id, "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete movie"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Movie deleted successfully"})
+	s.handleDeleteByID(c, "movie", s.services.MovieService.Delete)
 }
 
 // MovieFile handlers
@@ -155,36 +173,13 @@ func (s *Server) handleGetMovieFiles(c *gin.Context) {
 }
 
 func (s *Server) handleGetMovieFile(c *gin.Context) {
-	id, err := s.parseIDParam(c, "id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	movieFile, err := s.services.MovieFileService.GetByID(id)
-	if err != nil {
-		s.logger.Error("Failed to get movie file", "id", id, "error", err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Movie file not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, movieFile)
+	s.handleGetByID(c, "movie file", func(id int) (any, error) {
+		return s.services.MovieFileService.GetByID(id)
+	})
 }
 
 func (s *Server) handleDeleteMovieFile(c *gin.Context) {
-	id, err := s.parseIDParam(c, "id")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := s.services.MovieFileService.Delete(id); err != nil {
-		s.logger.Error("Failed to delete movie file", "id", id, "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete movie file"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Movie file deleted successfully"})
+	s.handleDeleteByID(c, "movie file", s.services.MovieFileService.Delete)
 }
 
 // Placeholder handlers for other endpoints
@@ -217,23 +212,23 @@ func (s *Server) handleGetDownloadClients(c *gin.Context) {
 
 func (s *Server) handleGetQueue(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"page":          1,
-		"pageSize":      20,
+		"page":          DefaultPage,
+		"pageSize":      DefaultPageSize,
 		"sortKey":       "timeleft",
 		"sortDirection": "ascending",
 		"totalRecords":  0,
-		"records":       []interface{}{},
+		"records":       []any{},
 	})
 }
 
 func (s *Server) handleGetHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"page":          1,
-		"pageSize":      20,
+		"page":          DefaultPage,
+		"pageSize":      DefaultPageSize,
 		"sortKey":       "date",
 		"sortDirection": "descending",
 		"totalRecords":  0,
-		"records":       []interface{}{},
+		"records":       []any{},
 	})
 }
 

@@ -7,8 +7,12 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+
+	// Import for golang-migrate file source support
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
+
+	// Import for PostgreSQL driver support
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/radarr/radarr-go/internal/config"
@@ -24,7 +28,7 @@ type Database struct {
 	GORM *gorm.DB
 }
 
-func New(cfg *config.DatabaseConfig, logger *logger.Logger) (*Database, error) {
+func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 	var db *sqlx.DB
 	var gormDB *gorm.DB
 	var err error
@@ -70,7 +74,7 @@ func New(cfg *config.DatabaseConfig, logger *logger.Logger) (*Database, error) {
 	// Set connection pool settings
 	if cfg.MaxConnections > 0 {
 		db.SetMaxOpenConns(cfg.MaxConnections)
-		db.SetMaxIdleConns(cfg.MaxConnections / 2)
+		db.SetMaxIdleConns(cfg.MaxConnections / 2) //nolint:mnd // Use half of max connections for idle
 	}
 
 	return &Database{

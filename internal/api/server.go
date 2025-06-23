@@ -13,6 +13,12 @@ import (
 	"github.com/radarr/radarr-go/internal/services"
 )
 
+const (
+	HTTPReadTimeout  = 15 * time.Second
+	HTTPWriteTimeout = 15 * time.Second
+	HTTPIdleTimeout  = 60 * time.Second
+)
+
 type Server struct {
 	config   *config.Config
 	services *services.Container
@@ -61,21 +67,17 @@ func (s *Server) setupRoutes() {
 
 		// Movies
 		movieRoutes := v3.Group("/movie")
-		{
-			movieRoutes.GET("", s.handleGetMovies)
-			movieRoutes.GET("/:id", s.handleGetMovie)
-			movieRoutes.POST("", s.handleCreateMovie)
-			movieRoutes.PUT("/:id", s.handleUpdateMovie)
-			movieRoutes.DELETE("/:id", s.handleDeleteMovie)
-		}
+		movieRoutes.GET("", s.handleGetMovies)
+		movieRoutes.GET("/:id", s.handleGetMovie)
+		movieRoutes.POST("", s.handleCreateMovie)
+		movieRoutes.PUT("/:id", s.handleUpdateMovie)
+		movieRoutes.DELETE("/:id", s.handleDeleteMovie)
 
 		// Movie files
 		movieFileRoutes := v3.Group("/moviefile")
-		{
-			movieFileRoutes.GET("", s.handleGetMovieFiles)
-			movieFileRoutes.GET("/:id", s.handleGetMovieFile)
-			movieFileRoutes.DELETE("/:id", s.handleDeleteMovieFile)
-		}
+		movieFileRoutes.GET("", s.handleGetMovieFiles)
+		movieFileRoutes.GET("/:id", s.handleGetMovieFile)
+		movieFileRoutes.DELETE("/:id", s.handleDeleteMovieFile)
 
 		// Quality profiles
 		v3.GET("/qualityprofile", s.handleGetQualityProfiles)
@@ -94,9 +96,7 @@ func (s *Server) setupRoutes() {
 
 		// Search
 		searchRoutes := v3.Group("/search")
-		{
-			searchRoutes.GET("/movie", s.handleSearchMovies)
-		}
+		searchRoutes.GET("/movie", s.handleSearchMovies)
 	}
 
 	// Serve static files (if any)
@@ -128,9 +128,9 @@ func (s *Server) Start() error {
 	s.server = &http.Server{
 		Addr:         addr,
 		Handler:      s.engine,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  HTTPReadTimeout,
+		WriteTimeout: HTTPWriteTimeout,
+		IdleTimeout:  HTTPIdleTimeout,
 	}
 
 	s.logger.Info("Starting HTTP server", "address", addr)

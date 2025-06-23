@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,7 +33,7 @@ func TestPingHandler(t *testing.T) {
 	server := NewServer(cfg, services, logger)
 
 	// Create test request
-	req, _ := http.NewRequest("GET", "/ping", http.NoBody)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "/ping", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// Execute request
@@ -75,7 +76,7 @@ func TestSystemStatusHandler(t *testing.T) {
 	server := NewServer(cfg, services, logger)
 
 	// Create test request
-	req, _ := http.NewRequest("GET", "/api/v3/system/status", http.NoBody)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "/api/v3/system/status", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// Execute request

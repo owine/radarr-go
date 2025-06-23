@@ -8,6 +8,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	DefaultRadarrPort     = 7878
+	DefaultMaxConnections = 10
+	DefaultDirectoryPerm  = 0755
+)
+
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
@@ -93,14 +99,14 @@ func Load(configPath, dataDir string) (*Config, error) {
 }
 
 func setDefaults(dataDir string) {
-	viper.SetDefault("server.port", 7878)
+	viper.SetDefault("server.port", DefaultRadarrPort)
 	viper.SetDefault("server.host", "0.0.0.0")
 	viper.SetDefault("server.url_base", "")
 	viper.SetDefault("server.enable_ssl", false)
 
 	viper.SetDefault("database.type", "sqlite")
 	viper.SetDefault("database.connection_url", filepath.Join(dataDir, "radarr.db"))
-	viper.SetDefault("database.max_connections", 10)
+	viper.SetDefault("database.max_connections", DefaultMaxConnections)
 
 	viper.SetDefault("log.level", "info")
 	viper.SetDefault("log.format", "json")
@@ -122,7 +128,7 @@ func ensureDirectories(config *Config) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, DefaultDirectoryPerm); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
