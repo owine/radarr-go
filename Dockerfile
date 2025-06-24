@@ -6,7 +6,7 @@ ARG VERSION="dev"
 ARG COMMIT="unknown"
 ARG BUILD_DATE="unknown"
 
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata gcc musl-dev
 
 WORKDIR /app
 
