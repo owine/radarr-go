@@ -263,7 +263,16 @@ jobs:
         fi
         
         chmod +x "$BINARY"
-        timeout 30s "$BINARY" --data ./data &
+        
+        # Use gtimeout on macOS, timeout on Linux
+        if [ "$(uname)" = "Darwin" ]; then
+          # Install gtimeout if not available
+          command -v gtimeout >/dev/null 2>&1 || brew install coreutils
+          gtimeout 30s "$BINARY" --data ./data &
+        else
+          timeout 30s "$BINARY" --data ./data &
+        fi
+        
         RADARR_PID=$!
         sleep 10
         
@@ -414,6 +423,8 @@ jobs:
         brew install postgresql@17
         brew services start postgresql@17
         sleep 5
+        # Add PostgreSQL to PATH since it's keg-only
+        export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
         # Create test database and user
         createuser -s test_user
         createdb -O test_user radarr_test
@@ -437,6 +448,10 @@ jobs:
 
     - name: Run tests (PostgreSQL)
       run: |
+        # Add PostgreSQL to PATH on macOS
+        if [ "${{ matrix.os }}" = "darwin" ]; then
+          export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+        fi
         go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres.out ./...
       env:
         RADARR_DATABASE_TYPE: postgres
