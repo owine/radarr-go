@@ -104,6 +104,11 @@ Environment variables use the `RADARR_` prefix:
 ### Building
 
 ```bash
+# Clone with submodules (if not already done)
+git clone --recursive https://github.com/radarr/radarr-go.git
+# OR initialize submodules in existing clone
+git submodule update --init --recursive
+
 # Install dependencies
 make deps
 
