@@ -66,57 +66,92 @@ func (s *Server) setupRoutes() {
 
 	// API v3 routes (matching Radarr's API structure)
 	v3 := s.engine.Group("/api/v3")
-	{
-		// System info
-		v3.GET("/system/status", s.handleSystemStatus)
-
-		// Movies
-		movieRoutes := v3.Group("/movie")
-		movieRoutes.GET("", s.handleGetMovies)
-		movieRoutes.GET("/:id", s.handleGetMovie)
-		movieRoutes.POST("", s.handleCreateMovie)
-		movieRoutes.PUT("/:id", s.handleUpdateMovie)
-		movieRoutes.DELETE("/:id", s.handleDeleteMovie)
-
-		// Movie files
-		movieFileRoutes := v3.Group("/moviefile")
-		movieFileRoutes.GET("", s.handleGetMovieFiles)
-		movieFileRoutes.GET("/:id", s.handleGetMovieFile)
-		movieFileRoutes.DELETE("/:id", s.handleDeleteMovieFile)
-
-		// Quality profiles
-		v3.GET("/qualityprofile", s.handleGetQualityProfiles)
-
-		// Indexers
-		v3.GET("/indexer", s.handleGetIndexers)
-
-		// Download clients
-		v3.GET("/downloadclient", s.handleGetDownloadClients)
-
-		// Queue
-		v3.GET("/queue", s.handleGetQueue)
-
-		// History
-		v3.GET("/history", s.handleGetHistory)
-
-		// Search
-		searchRoutes := v3.Group("/search")
-		searchRoutes.GET("/movie", s.handleSearchMovies)
-	}
+	s.setupAPIRoutes(v3)
 
 	// Serve static files (if any)
 	s.engine.Static("/static", "./web/static")
+	s.setupTemplateRoutes()
+}
 
-	// Try to load HTML templates, but don't fail if they don't exist
+func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
+	// System info
+	v3.GET("/system/status", s.handleSystemStatus)
+
+	// Movies
+	s.setupMovieRoutes(v3)
+
+	// Quality management
+	s.setupQualityRoutes(v3)
+
+	// Indexers
+	s.setupIndexerRoutes(v3)
+
+	// Download clients
+	v3.GET("/downloadclient", s.handleGetDownloadClients)
+
+	// Queue
+	v3.GET("/queue", s.handleGetQueue)
+
+	// History
+	v3.GET("/history", s.handleGetHistory)
+
+	// Search
+	searchRoutes := v3.Group("/search")
+	searchRoutes.GET("/movie", s.handleSearchMovies)
+}
+
+func (s *Server) setupMovieRoutes(v3 *gin.RouterGroup) {
+	movieRoutes := v3.Group("/movie")
+	movieRoutes.GET("", s.handleGetMovies)
+	movieRoutes.GET("/:id", s.handleGetMovie)
+	movieRoutes.POST("", s.handleCreateMovie)
+	movieRoutes.PUT("/:id", s.handleUpdateMovie)
+	movieRoutes.DELETE("/:id", s.handleDeleteMovie)
+
+	movieFileRoutes := v3.Group("/moviefile")
+	movieFileRoutes.GET("", s.handleGetMovieFiles)
+	movieFileRoutes.GET("/:id", s.handleGetMovieFile)
+	movieFileRoutes.DELETE("/:id", s.handleDeleteMovieFile)
+}
+
+func (s *Server) setupQualityRoutes(v3 *gin.RouterGroup) {
+	qualityProfileRoutes := v3.Group("/qualityprofile")
+	qualityProfileRoutes.GET("", s.handleGetQualityProfiles)
+	qualityProfileRoutes.GET("/:id", s.handleGetQualityProfile)
+	qualityProfileRoutes.POST("", s.handleCreateQualityProfile)
+	qualityProfileRoutes.PUT("/:id", s.handleUpdateQualityProfile)
+	qualityProfileRoutes.DELETE("/:id", s.handleDeleteQualityProfile)
+
+	qualityDefinitionRoutes := v3.Group("/qualitydefinition")
+	qualityDefinitionRoutes.GET("", s.handleGetQualityDefinitions)
+	qualityDefinitionRoutes.GET("/:id", s.handleGetQualityDefinition)
+	qualityDefinitionRoutes.PUT("/:id", s.handleUpdateQualityDefinition)
+
+	customFormatRoutes := v3.Group("/customformat")
+	customFormatRoutes.GET("", s.handleGetCustomFormats)
+	customFormatRoutes.GET("/:id", s.handleGetCustomFormat)
+	customFormatRoutes.POST("", s.handleCreateCustomFormat)
+	customFormatRoutes.PUT("/:id", s.handleUpdateCustomFormat)
+	customFormatRoutes.DELETE("/:id", s.handleDeleteCustomFormat)
+}
+
+func (s *Server) setupIndexerRoutes(v3 *gin.RouterGroup) {
+	indexerRoutes := v3.Group("/indexer")
+	indexerRoutes.GET("", s.handleGetIndexers)
+	indexerRoutes.GET("/:id", s.handleGetIndexer)
+	indexerRoutes.POST("", s.handleCreateIndexer)
+	indexerRoutes.PUT("/:id", s.handleUpdateIndexer)
+	indexerRoutes.DELETE("/:id", s.handleDeleteIndexer)
+	indexerRoutes.POST("/:id/test", s.handleTestIndexer)
+}
+
+func (s *Server) setupTemplateRoutes() {
 	if _, err := os.Stat("web/templates"); err == nil {
 		s.engine.LoadHTMLGlob("web/templates/*")
-
-		// Default route for SPA
 		s.engine.NoRoute(func(c *gin.Context) {
 			c.HTML(http.StatusOK, "index.html", nil)
 		})
 	} else {
-		// Default route without templates
 		s.engine.NoRoute(func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"message":       "Radarr Go API Server",
