@@ -8,7 +8,7 @@ A high-performance Go implementation of Radarr movie collection manager with 100
 - 🔄 **100% API Compatible**: Drop-in replacement for Radarr v3 API
 - 🐳 **Docker Ready**: Multi-platform Docker support (linux/amd64, linux/arm64)
 - 📦 **Single Binary**: No runtime dependencies except database
-- 🗄️ **Multi-Database**: SQLite (default) and PostgreSQL support
+- 🗄️ **Multi-Database**: MariaDB (default) and PostgreSQL support
 - 🔧 **Easy Configuration**: YAML configuration with environment variable overrides
 - 📊 **Comprehensive Logging**: Structured JSON logging with configurable levels
 - 🛡️ **Security**: Built-in security scanning and vulnerability checks
@@ -39,7 +39,7 @@ Download the latest release for your platform from the [releases page](https://g
 - Linux: amd64, arm64
 - macOS (Darwin): amd64, arm64  
 - FreeBSD: amd64, arm64
-- Windows: amd64
+- Windows: amd64, arm64
 
 ```bash
 # Download and extract (example for Linux amd64)
@@ -64,8 +64,12 @@ server:
   url_base: ""
 
 database:
-  type: "sqlite"  # or "postgres"
-  connection_url: "./data/radarr.db"
+  type: "mariadb"  # or "postgres"
+  host: "localhost"
+  port: 3306
+  database: "radarr"
+  username: "radarr"
+  password: "password"
 
 log:
   level: "info"
@@ -79,19 +83,27 @@ storage:
 Environment variables use the `RADARR_` prefix:
 - `RADARR_SERVER_PORT=7878`
 - `RADARR_DATABASE_TYPE=postgres`
+- `RADARR_DATABASE_HOST=localhost`
+- `RADARR_DATABASE_PORT=5432`
 - `RADARR_LOG_LEVEL=debug`
 
 ### Database Support
 
-**SQLite (Default)**
-- Perfect for single-user setups
-- No additional setup required
-- CGO-enabled builds provide better performance
+**MariaDB/MySQL (Default)**
+- High-performance relational database
+- Excellent for both single-user and multi-user setups
+- Requires MariaDB 10.5+ or MySQL 8.0+ server
+- Uses native Go driver (no CGO required)
+- InnoDB engine with UTF8MB4 support
 
 **PostgreSQL**
-- Recommended for multi-user or high-load environments
+- Recommended for high-load or enterprise environments  
 - Requires PostgreSQL 12+ server
+- Advanced features like JSON columns and complex queries
 - Uses native Go driver (no CGO required)
+- Automatic timestamp triggers and proper constraint handling
+
+Both databases use optimized, database-specific migration files located in `migrations/mysql/` and `migrations/postgres/` respectively, ensuring optimal performance and compatibility for each database system.
 
 ## Development
 
@@ -119,7 +131,7 @@ make deps
 make build
 
 # Build for multiple platforms (matches CI)
-GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
 GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-amd64 ./cmd/radarr
 
 # Run with hot reload
@@ -138,7 +150,7 @@ make test
 make test-coverage
 
 # Test specific database
-RADARR_DATABASE_TYPE=sqlite go test -v ./...
+RADARR_DATABASE_TYPE=mariadb go test -v ./...
 RADARR_DATABASE_TYPE=postgres go test -v ./...
 
 # Run linting
@@ -153,7 +165,7 @@ The project uses a structured CI pipeline:
 2. **Multi-Platform Build**: Binaries built for all supported platforms
 3. **Matrix Testing**: Tests run concurrently across:
    - Platforms: Linux (amd64/arm64), macOS (amd64/arm64), FreeBSD (amd64/arm64)
-   - Databases: SQLite, PostgreSQL
+   - Databases: MariaDB, PostgreSQL
 4. **Publish**: Docker images and release artifacts
 
 ## API Compatibility
@@ -179,7 +191,7 @@ Benchmarks show significant improvements over the original .NET implementation:
 
 - **Language**: Go 1.24
 - **HTTP Framework**: Gin
-- **Database**: GORM + sqlx hybrid approach
+- **Database**: GORM + sqlx hybrid approach with database-specific migrations
 - **Configuration**: Viper (YAML + environment variables)
 - **Logging**: Structured JSON with configurable levels
 - **Containerization**: Multi-stage Docker builds
