@@ -210,3 +210,12 @@ This implementation maintains strict compatibility with Radarr's v3 API:
 - **CORS**: Configurable cross-origin resource sharing
 - **Input Validation**: Request validation and sanitization
 - **No Root**: Docker container runs as non-root user
+
+## Documentation Maintenance
+
+**CRITICAL**: When making changes to the codebase, ALWAYS update documentation to reflect those changes:
+- Update CLAUDE.md with new development commands, architecture changes, or workflow modifications
+- Update README.md with new features, installation steps, or usage instructions
+- Update inline code comments for significant logic changes
+- Ensure all documentation remains accurate and current
+- Documentation updates should be included in the same commit as the related code changes
