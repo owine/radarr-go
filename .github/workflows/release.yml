@@ -54,11 +54,16 @@ jobs:
         fi
         
         # Build with release optimizations and version info
-        CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+        # Enable CGO only for Linux amd64, disable for cross-compilation
+        if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
+          export CGO_ENABLED=1
+        else
+          export CGO_ENABLED=0
+        fi
+        
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
         go build -ldflags="-w -s -X 'main.version=${{ github.ref_name }}' -X 'main.commit=${{ github.sha }}' -X 'main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
         -o "dist/${BINARY_NAME}" ./cmd/radarr
-      env:
-        CGO_ENABLED: 1
 
     - name: Create release archive
       run: |
