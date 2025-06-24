@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// MovieFile represents a physical movie file on disk with its metadata
 type MovieFile struct {
 	ID                int        `json:"id" db:"id" gorm:"primaryKey"`
 	MovieID           int        `json:"movieId" db:"movie_id" gorm:"index"`
@@ -29,15 +30,18 @@ type MovieFile struct {
 	UpdatedAt time.Time `json:"updatedAt" db:"updated_at" gorm:"autoUpdateTime"`
 }
 
+// Quality represents the quality information of a movie file
 type Quality struct {
 	Quality  QualityDefinition `json:"quality"`
 	Revision Revision          `json:"revision"`
 }
 
+// Value implements the driver.Valuer interface for database storage
 func (q *Quality) Value() (driver.Value, error) {
 	return json.Marshal(q)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (q *Quality) Scan(value interface{}) error {
 	if value == nil {
 		*q = Quality{}
@@ -52,6 +56,7 @@ func (q *Quality) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, q)
 }
 
+// QualityDefinition defines the quality parameters and specifications
 type QualityDefinition struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
@@ -60,12 +65,14 @@ type QualityDefinition struct {
 	Modifier   string `json:"modifier"`
 }
 
+// Revision represents version information for a quality definition
 type Revision struct {
 	Version  int  `json:"version"`
 	Real     int  `json:"real"`
 	IsRepack bool `json:"isRepack"`
 }
 
+// MediaInfo contains detailed technical information about a media file
 type MediaInfo struct {
 	AudioBitrate                 int     `json:"audioBitrate"`
 	AudioChannels                float64 `json:"audioChannels"`
@@ -86,10 +93,12 @@ type MediaInfo struct {
 	SchemaRevision               int     `json:"schemaRevision"`
 }
 
+// Value implements the driver.Valuer interface for database storage
 func (m *MediaInfo) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (m *MediaInfo) Scan(value interface{}) error {
 	if value == nil {
 		*m = MediaInfo{}

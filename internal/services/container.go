@@ -7,6 +7,7 @@ import (
 	"github.com/radarr/radarr-go/internal/logger"
 )
 
+// Container holds all services and their dependencies for dependency injection
 type Container struct {
 	DB     *database.Database
 	Config *config.Config
@@ -21,6 +22,7 @@ type Container struct {
 	NotificationService *NotificationService
 }
 
+// NewContainer creates a new service container with all dependencies initialized
 func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logger) *Container {
 	container := &Container{
 		DB:     db,

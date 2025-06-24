@@ -8,11 +8,13 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+// MovieFileService provides operations for managing movie files in the database.
 type MovieFileService struct {
 	db     *database.Database
 	logger *logger.Logger
 }
 
+// NewMovieFileService creates a new instance of MovieFileService with the provided database and logger.
 func NewMovieFileService(db *database.Database, logger *logger.Logger) *MovieFileService {
 	return &MovieFileService{
 		db:     db,
@@ -20,6 +22,7 @@ func NewMovieFileService(db *database.Database, logger *logger.Logger) *MovieFil
 	}
 }
 
+// GetAll retrieves all movie files from the database.
 func (s *MovieFileService) GetAll() ([]models.MovieFile, error) {
 	var movieFiles []models.MovieFile
 
@@ -32,6 +35,7 @@ func (s *MovieFileService) GetAll() ([]models.MovieFile, error) {
 	return movieFiles, nil
 }
 
+// GetByID retrieves a single movie file by its ID.
 func (s *MovieFileService) GetByID(id int) (*models.MovieFile, error) {
 	var movieFile models.MovieFile
 
@@ -44,6 +48,7 @@ func (s *MovieFileService) GetByID(id int) (*models.MovieFile, error) {
 	return &movieFile, nil
 }
 
+// GetByMovieID retrieves all movie files associated with a specific movie ID.
 func (s *MovieFileService) GetByMovieID(movieID int) ([]models.MovieFile, error) {
 	var movieFiles []models.MovieFile
 
@@ -56,6 +61,7 @@ func (s *MovieFileService) GetByMovieID(movieID int) ([]models.MovieFile, error)
 	return movieFiles, nil
 }
 
+// Create creates a new movie file record in the database.
 func (s *MovieFileService) Create(movieFile *models.MovieFile) error {
 	err := s.db.GORM.Create(movieFile).Error
 	if err != nil {
@@ -67,6 +73,7 @@ func (s *MovieFileService) Create(movieFile *models.MovieFile) error {
 	return nil
 }
 
+// Update saves changes to an existing movie file in the database.
 func (s *MovieFileService) Update(movieFile *models.MovieFile) error {
 	err := s.db.GORM.Save(movieFile).Error
 	if err != nil {
@@ -78,6 +85,7 @@ func (s *MovieFileService) Update(movieFile *models.MovieFile) error {
 	return nil
 }
 
+// Delete removes a movie file from the database by its ID.
 func (s *MovieFileService) Delete(id int) error {
 	err := s.db.GORM.Delete(&models.MovieFile{}, id).Error
 	if err != nil {
@@ -89,6 +97,7 @@ func (s *MovieFileService) Delete(id int) error {
 	return nil
 }
 
+// GetByPath retrieves a movie file by its file path.
 func (s *MovieFileService) GetByPath(path string) (*models.MovieFile, error) {
 	var movieFile models.MovieFile
 

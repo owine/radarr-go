@@ -8,11 +8,13 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+// MovieService provides operations for managing movies in the database.
 type MovieService struct {
 	db     *database.Database
 	logger *logger.Logger
 }
 
+// NewMovieService creates a new instance of MovieService with the provided database and logger.
 func NewMovieService(db *database.Database, logger *logger.Logger) *MovieService {
 	return &MovieService{
 		db:     db,
@@ -20,6 +22,7 @@ func NewMovieService(db *database.Database, logger *logger.Logger) *MovieService
 	}
 }
 
+// GetAll retrieves all movies from the database with their movie files preloaded.
 func (s *MovieService) GetAll() ([]models.Movie, error) {
 	var movies []models.Movie
 
@@ -32,6 +35,7 @@ func (s *MovieService) GetAll() ([]models.Movie, error) {
 	return movies, nil
 }
 
+// GetByID retrieves a single movie by its ID with movie file preloaded.
 func (s *MovieService) GetByID(id int) (*models.Movie, error) {
 	var movie models.Movie
 
@@ -44,6 +48,7 @@ func (s *MovieService) GetByID(id int) (*models.Movie, error) {
 	return &movie, nil
 }
 
+// GetByTmdbID retrieves a movie by its TMDB ID with movie file preloaded.
 func (s *MovieService) GetByTmdbID(tmdbID int) (*models.Movie, error) {
 	var movie models.Movie
 
@@ -55,6 +60,7 @@ func (s *MovieService) GetByTmdbID(tmdbID int) (*models.Movie, error) {
 	return &movie, nil
 }
 
+// Create creates a new movie in the database.
 func (s *MovieService) Create(movie *models.Movie) error {
 	err := s.db.GORM.Create(movie).Error
 	if err != nil {
@@ -66,6 +72,7 @@ func (s *MovieService) Create(movie *models.Movie) error {
 	return nil
 }
 
+// Update saves changes to an existing movie in the database.
 func (s *MovieService) Update(movie *models.Movie) error {
 	err := s.db.GORM.Save(movie).Error
 	if err != nil {
@@ -77,6 +84,7 @@ func (s *MovieService) Update(movie *models.Movie) error {
 	return nil
 }
 
+// Delete removes a movie from the database by its ID.
 func (s *MovieService) Delete(id int) error {
 	err := s.db.GORM.Delete(&models.Movie{}, id).Error
 	if err != nil {
@@ -88,6 +96,7 @@ func (s *MovieService) Delete(id int) error {
 	return nil
 }
 
+// Search finds movies by searching title, original title, and clean title fields.
 func (s *MovieService) Search(query string) ([]models.Movie, error) {
 	var movies []models.Movie
 
@@ -105,6 +114,7 @@ func (s *MovieService) Search(query string) ([]models.Movie, error) {
 	return movies, nil
 }
 
+// GetMonitored retrieves all movies that are currently being monitored.
 func (s *MovieService) GetMonitored() ([]models.Movie, error) {
 	var movies []models.Movie
 
@@ -117,6 +127,7 @@ func (s *MovieService) GetMonitored() ([]models.Movie, error) {
 	return movies, nil
 }
 
+// GetUnmonitored retrieves all movies that are not being monitored.
 func (s *MovieService) GetUnmonitored() ([]models.Movie, error) {
 	var movies []models.Movie
 
@@ -129,6 +140,7 @@ func (s *MovieService) GetUnmonitored() ([]models.Movie, error) {
 	return movies, nil
 }
 
+// GetMoviesWithoutFiles retrieves all monitored movies that don't have associated files.
 func (s *MovieService) GetMoviesWithoutFiles() ([]models.Movie, error) {
 	var movies []models.Movie
 
@@ -141,6 +153,7 @@ func (s *MovieService) GetMoviesWithoutFiles() ([]models.Movie, error) {
 	return movies, nil
 }
 
+// GetMoviesWithFiles retrieves all movies that have associated files with movie files preloaded.
 func (s *MovieService) GetMoviesWithFiles() ([]models.Movie, error) {
 	var movies []models.Movie
 

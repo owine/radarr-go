@@ -14,11 +14,15 @@ import (
 )
 
 const (
+	// HTTPReadTimeout defines the maximum duration for reading the entire request
 	HTTPReadTimeout  = 15 * time.Second
+	// HTTPWriteTimeout defines the maximum duration before timing out writes
 	HTTPWriteTimeout = 15 * time.Second
+	// HTTPIdleTimeout defines the maximum amount of time to wait for the next request
 	HTTPIdleTimeout  = 60 * time.Second
 )
 
+// Server represents the HTTP server for the Radarr API
 type Server struct {
 	config   *config.Config
 	services *services.Container
@@ -27,6 +31,7 @@ type Server struct {
 	server   *http.Server
 }
 
+// NewServer creates a new HTTP server instance with the provided configuration and services
 func NewServer(cfg *config.Config, services *services.Container, logger *logger.Logger) *Server {
 	if cfg.Log.Level != "debug" {
 		gin.SetMode(gin.ReleaseMode)
@@ -122,6 +127,7 @@ func (s *Server) setupRoutes() {
 	}
 }
 
+// Start begins listening for HTTP requests on the configured address
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
 
@@ -142,6 +148,7 @@ func (s *Server) Start() error {
 	return s.server.ListenAndServe()
 }
 
+// Stop gracefully shuts down the HTTP server
 func (s *Server) Stop(ctx context.Context) error {
 	s.logger.Info("Shutting down HTTP server")
 	return s.server.Shutdown(ctx)

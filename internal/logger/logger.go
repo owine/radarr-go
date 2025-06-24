@@ -57,11 +57,13 @@ func New(cfg config.LogConfig) *Logger {
 	}
 }
 
+// Fatal logs a fatal message and exits the application
 func (l *Logger) Fatal(msg string, keysAndValues ...interface{}) {
 	l.Fatalw(msg, keysAndValues...)
 	os.Exit(1)
 }
 
+// Close flushes any buffered log entries
 func (l *Logger) Close() {
 	_ = l.Sync()
 }

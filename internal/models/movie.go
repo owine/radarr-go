@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Movie represents a movie in the Radarr database
 type Movie struct {
 	ID                    int          `json:"id" db:"id" gorm:"primaryKey"`
 	Title                 string       `json:"title" db:"title" gorm:"not null"`
@@ -57,37 +58,53 @@ type Movie struct {
 	UpdatedAt time.Time `json:"updatedAt" db:"updated_at" gorm:"autoUpdateTime"`
 }
 
+// MovieStatus represents the current status of a movie
 type MovieStatus string
 
 const (
+	// MovieStatusTBA indicates the movie has no release date announced
 	MovieStatusTBA       MovieStatus = "tba"
+	// MovieStatusAnnounced indicates the movie has been announced but not yet in cinemas
 	MovieStatusAnnounced MovieStatus = "announced"
+	// MovieStatusInCinemas indicates the movie is currently in theaters
 	MovieStatusInCinemas MovieStatus = "inCinemas"
+	// MovieStatusReleased indicates the movie has been released for home viewing
 	MovieStatusReleased  MovieStatus = "released"
+	// MovieStatusDeleted indicates the movie has been removed from the collection
 	MovieStatusDeleted   MovieStatus = "deleted"
 )
 
+// Availability represents when a movie becomes available for download
 type Availability string
 
 const (
+	// AvailabilityTBA indicates the movie availability is to be announced
 	AvailabilityTBA       Availability = "tba"
+	// AvailabilityAnnounced indicates the movie is announced but not yet available
 	AvailabilityAnnounced Availability = "announced"
+	// AvailabilityInCinemas indicates the movie becomes available when in cinemas
 	AvailabilityInCinemas Availability = "inCinemas"
+	// AvailabilityReleased indicates the movie becomes available when officially released
 	AvailabilityReleased  Availability = "released"
+	// AvailabilityPreDB indicates the movie becomes available before official database listing
 	AvailabilityPreDB     Availability = "preDB"
 )
 
+// Language represents a movie's language information
 type Language struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
+// StringArray is a custom type for handling JSON arrays of strings in the database
 type StringArray []string
 
+// Value implements the driver.Valuer interface for database storage
 func (s StringArray) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (s *StringArray) Scan(value interface{}) error {
 	if value == nil {
 		*s = StringArray{}
@@ -102,12 +119,15 @@ func (s *StringArray) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, s)
 }
 
+// IntArray is a custom type for handling JSON arrays of integers in the database
 type IntArray []int
 
+// Value implements the driver.Valuer interface for database storage
 func (i IntArray) Value() (driver.Value, error) {
 	return json.Marshal(i)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (i *IntArray) Scan(value interface{}) error {
 	if value == nil {
 		*i = IntArray{}
@@ -122,12 +142,15 @@ func (i *IntArray) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, i)
 }
 
+// MediaCover represents a collection of cover images for a movie
 type MediaCover []MediaCoverImage
 
+// Value implements the driver.Valuer interface for database storage
 func (m MediaCover) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (m *MediaCover) Scan(value interface{}) error {
 	if value == nil {
 		*m = MediaCover{}
@@ -142,12 +165,14 @@ func (m *MediaCover) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, m)
 }
 
+// MediaCoverImage represents a single cover image with its metadata
 type MediaCoverImage struct {
 	CoverType string `json:"coverType"`
 	URL       string `json:"url"`
 	RemoteURL string `json:"remoteUrl"`
 }
 
+// AddOptions contains options for adding a new movie to the collection
 type AddOptions struct {
 	IgnoreEpisodesWithFiles    bool   `json:"ignoreEpisodesWithFiles"`
 	IgnoreEpisodesWithoutFiles bool   `json:"ignoreEpisodesWithoutFiles"`
@@ -156,10 +181,12 @@ type AddOptions struct {
 	AddMethod                  string `json:"addMethod"`
 }
 
+// Value implements the driver.Valuer interface for database storage
 func (a AddOptions) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (a *AddOptions) Scan(value interface{}) error {
 	if value == nil {
 		*a = AddOptions{}
@@ -174,6 +201,7 @@ func (a *AddOptions) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, a)
 }
 
+// Ratings contains rating information from various sources
 type Ratings struct {
 	Imdb           Rating `json:"imdb"`
 	Tmdb           Rating `json:"tmdb"`
@@ -181,10 +209,12 @@ type Ratings struct {
 	RottenTomatoes Rating `json:"rottenTomatoes"`
 }
 
+// Value implements the driver.Valuer interface for database storage
 func (r *Ratings) Value() (driver.Value, error) {
 	return json.Marshal(r)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (r *Ratings) Scan(value interface{}) error {
 	if value == nil {
 		*r = Ratings{}
@@ -199,22 +229,26 @@ func (r *Ratings) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, r)
 }
 
+// Rating represents a single rating from a specific source
 type Rating struct {
 	Votes int     `json:"votes"`
 	Value float64 `json:"value"`
 	Type  string  `json:"type"`
 }
 
+// Collection represents a movie collection or series
 type Collection struct {
 	Name   string            `json:"name"`
 	TmdbID int               `json:"tmdbId"`
 	Images []MediaCoverImage `json:"images"`
 }
 
+// Value implements the driver.Valuer interface for database storage
 func (c Collection) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 
+// Scan implements the sql.Scanner interface for database retrieval
 func (c *Collection) Scan(value interface{}) error {
 	if value == nil {
 		*c = Collection{}

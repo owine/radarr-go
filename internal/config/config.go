@@ -11,8 +11,11 @@ import (
 
 const (
 	// DefaultRadarrPort is the default port for Radarr server
+	// DefaultRadarrPort is the default port for Radarr server
 	DefaultRadarrPort     = 7878
+	// DefaultMaxConnections is the default maximum number of database connections
 	DefaultMaxConnections = 10
+	// DefaultDirectoryPerm is the default permission for created directories
 	DefaultDirectoryPerm  = 0755
 )
 
@@ -25,6 +28,7 @@ type Config struct {
 	Storage  StorageConfig  `mapstructure:"storage"`
 }
 
+// ServerConfig contains HTTP server configuration settings
 type ServerConfig struct {
 	Port        int    `mapstructure:"port"`
 	Host        string `mapstructure:"host"`
@@ -34,6 +38,7 @@ type ServerConfig struct {
 	SSLKeyPath  string `mapstructure:"ssl_key_path"`
 }
 
+// DatabaseConfig contains database connection and configuration settings
 type DatabaseConfig struct {
 	Type           string `mapstructure:"type"`
 	ConnectionURL  string `mapstructure:"connection_url"`
@@ -45,12 +50,14 @@ type DatabaseConfig struct {
 	MaxConnections int    `mapstructure:"max_connections"`
 }
 
+// LogConfig contains logging configuration settings
 type LogConfig struct {
 	Level  string `mapstructure:"level"`
 	Format string `mapstructure:"format"`
 	Output string `mapstructure:"output"`
 }
 
+// AuthConfig contains authentication and authorization settings
 type AuthConfig struct {
 	Method   string `mapstructure:"method"`
 	Username string `mapstructure:"username"`
@@ -58,6 +65,7 @@ type AuthConfig struct {
 	APIKey   string `mapstructure:"api_key"`
 }
 
+// StorageConfig contains file and directory path settings
 type StorageConfig struct {
 	DataDirectory  string `mapstructure:"data_directory"`
 	MovieDirectory string `mapstructure:"movie_directory"`

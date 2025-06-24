@@ -86,6 +86,7 @@ func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 	}, nil
 }
 
+// Close closes the database connection
 func (d *Database) Close() error {
 	if d.DB != nil {
 		return d.DB.Close()
@@ -117,6 +118,7 @@ func buildPostgresConnectionString(cfg *config.DatabaseConfig) string {
 		host, port, cfg.Username, cfg.Password, database)
 }
 
+// Migrate runs database migrations to update the schema
 func Migrate(db *Database, logger *logger.Logger) error {
 	var driver database.Driver
 	var sourceURL string
