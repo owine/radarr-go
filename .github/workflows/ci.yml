@@ -248,17 +248,13 @@ jobs:
     - name: Integration test
       run: |
         # Select the appropriate binary for testing
+        # Note: Darwin binaries are cross-compiled with CGO_ENABLED=0, so they can't use SQLite
+        # Use the test binary (built with CGO) for all non-Linux platforms
         if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
           # Use native Linux amd64 binary (built with CGO)
           BINARY="artifacts/radarr-linux-amd64"
-        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "amd64" ] && [ "$(uname)" = "Darwin" ]; then
-          # Use native Darwin amd64 binary on macOS runners
-          BINARY="artifacts/radarr-darwin-amd64"
-        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "arm64" ] && [ "$(uname)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
-          # Use native Darwin arm64 binary on Apple Silicon runners
-          BINARY="artifacts/radarr-darwin-arm64"
         else
-          # For cross-platform testing (FreeBSD, ARM64 on AMD64), use the test binary
+          # For macOS, FreeBSD, and ARM64: use test binary (has CGO support for SQLite)
           BINARY="artifacts/radarr-test"
         fi
         
