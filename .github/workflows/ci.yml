@@ -148,19 +148,19 @@ jobs:
       run: |
         mkdir -p artifacts
         
-        # Build for current platform with CGO (test artifact) 
-        CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
+        # Build for current platform (test artifact) - no CGO needed with pure-Go SQLite
+        CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
         
-        # Build for all supported platforms
-        # Linux (native platform - use CGO for SQLite)
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
+        # Build for all supported platforms - no CGO needed with modernc.org/sqlite
+        # Linux
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
         GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-arm64 ./cmd/radarr
         
-        # Darwin (macOS) - disable CGO for cross-compilation
+        # Darwin (macOS) - now works with pure-Go SQLite
         GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
         GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
         
-        # FreeBSD - disable CGO for cross-compilation
+        # FreeBSD
         GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-amd64 ./cmd/radarr
         GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-arm64 ./cmd/radarr
 
@@ -247,27 +247,32 @@ jobs:
 
     - name: Integration test
       run: |
-        # Skip integration tests on macOS due to cross-compilation CGO constraints
-        # Darwin binaries are built with CGO_ENABLED=0 (can't use SQLite)
-        # Test binary is Linux-only (can't run on macOS)
-        # Unit tests provide adequate coverage for macOS compatibility
-        if [ "${{ matrix.os }}" = "darwin" ]; then
-          echo "Skipping integration test on macOS due to CGO/SQLite cross-compilation constraints"
-          echo "Unit tests provide coverage for macOS compatibility"
-          exit 0
-        fi
-        
         # Select the appropriate binary for testing
+        # All binaries now work cross-platform with pure-Go SQLite (modernc.org/sqlite)
         if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
-          # Use native Linux amd64 binary (built with CGO)
           BINARY="artifacts/radarr-linux-amd64"
+        elif [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
+          BINARY="artifacts/radarr-test"  # Use test binary for ARM64 on AMD64 runners
+        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "amd64" ] && [ "$(uname)" = "Darwin" ]; then
+          BINARY="artifacts/radarr-darwin-amd64"
+        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "arm64" ] && [ "$(uname)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+          BINARY="artifacts/radarr-darwin-arm64"
         else
-          # For FreeBSD and ARM64: use test binary (has CGO support for SQLite)
+          # For FreeBSD and other cross-platform scenarios: use test binary
           BINARY="artifacts/radarr-test"
         fi
         
         chmod +x "$BINARY"
-        timeout 30s "$BINARY" --data ./data &
+        
+        # Use gtimeout on macOS, timeout on Linux
+        if [ "$(uname)" = "Darwin" ]; then
+          # Install gtimeout if not available
+          command -v gtimeout >/dev/null 2>&1 || brew install coreutils
+          gtimeout 30s "$BINARY" --data ./data &
+        else
+          timeout 30s "$BINARY" --data ./data &
+        fi
+        
         RADARR_PID=$!
         sleep 10
         

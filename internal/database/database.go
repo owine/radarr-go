@@ -7,7 +7,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 
 	// Import for golang-migrate file source support
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -15,11 +15,12 @@ import (
 
 	// Import for PostgreSQL driver support
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	// Import for pure-Go SQLite driver support (no CGO required)
+	_ "github.com/glebarez/go-sqlite"
 	"github.com/radarr/radarr-go/internal/config"
 	"github.com/radarr/radarr-go/internal/logger"
+	"github.com/glebarez/sqlite"
 	gormPostgres "gorm.io/driver/postgres"
-	gormSqlite "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
 )
@@ -58,12 +59,12 @@ func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 			connectionString = "radarr.db"
 		}
 
-		db, err = sqlx.Connect("sqlite3", connectionString)
+		db, err = sqlx.Connect("sqlite", connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to sqlite: %w", err)
 		}
 
-		gormDB, err = gorm.Open(gormSqlite.Open(connectionString), &gorm.Config{
+		gormDB, err = gorm.Open(sqlite.Open(connectionString), &gorm.Config{
 			Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 		})
 		if err != nil {
@@ -133,10 +134,10 @@ func Migrate(db *Database, logger *logger.Logger) error {
 		if err != nil {
 			return fmt.Errorf("failed to create postgres driver: %w", err)
 		}
-	case "sqlite3":
-		driver, err = sqlite3.WithInstance(db.DB.DB, &sqlite3.Config{})
+	case "sqlite":
+		driver, err = migrateSqlite.WithInstance(db.DB.DB, &migrateSqlite.Config{})
 		if err != nil {
-			return fmt.Errorf("failed to create sqlite3 driver: %w", err)
+			return fmt.Errorf("failed to create sqlite driver: %w", err)
 		}
 	default:
 		return fmt.Errorf("unsupported database driver: %s", db.DB.DriverName())
