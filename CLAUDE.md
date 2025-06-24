@@ -38,7 +38,7 @@ go test ./internal/api -v    # Run specific package tests
 go test -run TestPingHandler ./internal/api  # Run single test
 
 # Database-specific testing (matches CI matrix)
-RADARR_DATABASE_TYPE=sqlite RADARR_DATABASE_CONNECTION_URL=./data/test.db go test -v ./...
+RADARR_DATABASE_TYPE=mariadb go test -v ./...   # Requires MariaDB server
 RADARR_DATABASE_TYPE=postgres go test -v ./...  # Requires PostgreSQL server
 
 # Code Quality
@@ -56,7 +56,7 @@ migrate create -ext sql -dir migrations migration_name  # Create new migration
 
 # Database switching
 RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL
-RADARR_DATABASE_TYPE=sqlite ./radarr      # Use SQLite (default)
+RADARR_DATABASE_TYPE=mariadb ./radarr     # Use MariaDB (default)
 ```
 
 ### Docker Operations
@@ -92,16 +92,16 @@ All services are managed through a `services.Container` that provides dependency
 ### Database Architecture
 - **Dual ORM Strategy**: GORM for complex operations, sqlx for performance-critical queries
 - **Migration System**: golang-migrate for schema management
-- **Multi-Database**: SQLite (default) and PostgreSQL support
+- **Multi-Database**: MariaDB (default) and PostgreSQL support
 - **Connection Management**: Configurable connection pooling
-- **CGO Strategy**: SQLite with CGO (Linux amd64 only), PostgreSQL native Go driver
+- **Pure Go**: No CGO dependencies, fully cross-platform builds
 
 ### CI/CD Architecture
 The project uses a structured CI pipeline with concurrent execution:
 
 **Stage 1**: Concurrent quality checks (lint + security)
 **Stage 2**: Multi-platform build (after quality checks pass)
-**Stage 3**: Matrix testing (SQLite + PostgreSQL on amd64/arm64)
+**Stage 3**: Matrix testing (MariaDB + PostgreSQL on amd64/arm64)
 **Stage 4**: Publish (Docker images + artifacts after all tests pass)
 
 Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
@@ -130,7 +130,7 @@ Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
 - **Unit Tests**: Service layer and individual components
 - **API Tests**: HTTP endpoint testing with test server
 - **Matrix Testing**: Comprehensive testing across multiple platforms (Linux, macOS, FreeBSD) and architectures (amd64, arm64)
-- **Database Testing**: Both SQLite and PostgreSQL testing on all supported platforms
+- **Database Testing**: Both MariaDB and PostgreSQL testing on all supported platforms
 - **Test Mode**: Gin test mode for reduced noise in tests
 - **Mocking**: Interface-based dependency injection enables easy mocking
 
@@ -148,7 +148,11 @@ The configuration system uses Viper for flexible config management:
 ### Environment Variables
 All config keys can be overridden with `RADARR_` prefix:
 - `RADARR_SERVER_PORT=7878`
-- `RADARR_DATABASE_TYPE=postgres`
+- `RADARR_DATABASE_TYPE=mariadb` (or postgres)
+- `RADARR_DATABASE_HOST=localhost`
+- `RADARR_DATABASE_PORT=3306` (or 5432 for postgres)
+- `RADARR_DATABASE_USERNAME=radarr`
+- `RADARR_DATABASE_PASSWORD=password`
 - `RADARR_LOG_LEVEL=debug`
 
 ## Adding New Features
@@ -177,7 +181,10 @@ All config keys can be overridden with `RADARR_` prefix:
 ### Core Tables
 - **movies**: Main movie entities with metadata
 - **movie_files**: Physical file information and media info
-- Future: quality_profiles, indexers, download_clients, etc.
+- **quality_profiles**: Quality settings and cutoff definitions
+- **indexers**: Search provider configurations
+- **download_clients**: Download automation settings
+- **notifications**: Alert and notification configurations
 
 ### Migration Strategy
 - **Sequential Numbering**: `001_initial_schema.up.sql`

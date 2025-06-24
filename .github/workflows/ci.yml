@@ -151,15 +151,15 @@ jobs:
       run: |
         mkdir -p artifacts
         
-        # Build for current platform (test artifact) - no CGO needed with pure-Go SQLite
+        # Build for current platform (test artifact) - pure Go, no CGO
         CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
         
-        # Build for all supported platforms - no CGO needed with modernc.org/sqlite
+        # Build for all supported platforms - pure Go builds
         # Linux
         GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
         GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-arm64 ./cmd/radarr
         
-        # Darwin (macOS) - now works with pure-Go SQLite
+        # Darwin (macOS)
         GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
         GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
         
@@ -174,31 +174,47 @@ jobs:
         path: artifacts/
         retention-days: 7
 
-  # Stage 3a: Test SQLite (runs after build completes successfully)
-  test-sqlite:
-    name: Test SQLite (${{ matrix.os }}, ${{ matrix.arch }})
+  # Stage 3a: Test MariaDB (runs after build completes successfully)  
+  test-mariadb:
+    name: Test MariaDB (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ${{ matrix.os == 'linux' && 'ubuntu-latest' || matrix.os == 'darwin' && 'macos-latest' || matrix.os == 'freebsd' && 'ubuntu-latest' }}
     needs: [build]
     
     strategy:
       matrix:
         include:
-          # Linux (native platform with CGO support)
+          # Linux (native platform)
           - os: linux
             arch: amd64
           - os: linux
             arch: arm64
-          # macOS (native platform with CGO support)
+          # macOS (native platform)
           - os: darwin
             arch: amd64
           - os: darwin
             arch: arm64
-          # FreeBSD (cross-platform, no CGO)
+          # FreeBSD (cross-platform)
           - os: freebsd
             arch: amd64
           - os: freebsd
             arch: arm64
       fail-fast: false
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MYSQL_ROOT_PASSWORD: test_root_password_123
+          MYSQL_DATABASE: radarr_test
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password_123
+        options: >-
+          --health-cmd="mariadb-admin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 3306:3306
 
     steps:
     - name: Checkout code
@@ -234,24 +250,28 @@ jobs:
         mkdir -p data movies web/static web/templates
         cp config.yaml data/
 
-    - name: Run tests (SQLite)
+    - name: Run tests (MariaDB)
       run: |
-        go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-sqlite.out ./...
+        go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb.out ./...
       env:
-        RADARR_DATABASE_TYPE: sqlite
-        RADARR_DATABASE_CONNECTION_URL: ./data/radarr_test.db
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
-        files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-sqlite.out
-        flags: unittests,sqlite,${{ matrix.os }}-${{ matrix.arch }}
-        name: coverage-${{ matrix.os }}-${{ matrix.arch }}-sqlite
+        files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb.out
+        flags: unittests,mariadb,${{ matrix.os }}-${{ matrix.arch }}
+        name: coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb
 
     - name: Integration test
       run: |
         # Select the appropriate binary for testing
-        # All binaries now work cross-platform with pure-Go SQLite (modernc.org/sqlite)
+        # All binaries work cross-platform as pure Go builds
         if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
           BINARY="artifacts/radarr-linux-amd64"
         elif [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
@@ -286,6 +306,13 @@ jobs:
         
         kill $RADARR_PID || true
         wait $RADARR_PID || true
+      env:
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
 
   # Stage 3b: Test PostgreSQL Linux (runs after build completes successfully)
   test-postgres-linux:
@@ -475,7 +502,7 @@ jobs:
   publish:
     name: Publish Test Images and Artifacts
     runs-on: ubuntu-latest
-    needs: [test-sqlite, test-postgres-linux, test-postgres-native]
+    needs: [test-mariadb, test-postgres-linux, test-postgres-native]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     
     permissions:

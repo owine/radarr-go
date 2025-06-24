@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 
 	// Import for golang-migrate file source support
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -15,14 +15,14 @@ import (
 
 	// Import for PostgreSQL driver support
 	_ "github.com/lib/pq"
+	// Import for MariaDB/MySQL driver support
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/radarr/radarr-go/internal/config"
 	"github.com/radarr/radarr-go/internal/logger"
+	gormMariaDB "gorm.io/driver/mysql"
 	gormPostgres "gorm.io/driver/postgres"
-	gormSqlite "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-	// Import for pure-Go SQLite driver support (no CGO required)
-	_ "modernc.org/sqlite"
 )
 
 // Database provides access to the Radarr database
@@ -37,11 +37,10 @@ func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 	var gormDB *gorm.DB
 	var err error
 
-	const postgresType = "postgres"
 	switch cfg.Type {
-	case postgresType, "postgresql":
+	case "postgres", "postgresql":
 		connectionString := buildPostgresConnectionString(cfg)
-		db, err = sqlx.Connect(postgresType, connectionString)
+		db, err = sqlx.Connect("postgres", connectionString)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 		}
@@ -53,26 +52,22 @@ func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 			return nil, fmt.Errorf("failed to open gorm postgres connection: %w", err)
 		}
 
-	case "sqlite", "":
-		connectionString := cfg.ConnectionURL
-		if connectionString == "" {
-			connectionString = "radarr.db"
-		}
-
-		db, err = sqlx.Connect("sqlite", connectionString)
+	case "mariadb", "mysql", "":
+		connectionString := buildMariaDBConnectionString(cfg)
+		db, err = sqlx.Connect("mysql", connectionString)
 		if err != nil {
-			return nil, fmt.Errorf("failed to connect to sqlite: %w", err)
+			return nil, fmt.Errorf("failed to connect to mariadb: %w", err)
 		}
 
-		gormDB, err = gorm.Open(gormSqlite.Open(connectionString), &gorm.Config{
+		gormDB, err = gorm.Open(gormMariaDB.Open(connectionString), &gorm.Config{
 			Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to open gorm sqlite connection: %w", err)
+			return nil, fmt.Errorf("failed to open gorm mariadb connection: %w", err)
 		}
 
 	default:
-		return nil, fmt.Errorf("unsupported database type: %s", cfg.Type)
+		return nil, fmt.Errorf("unsupported database type: %s (supported: postgres, mariadb)", cfg.Type)
 	}
 
 	// Set connection pool settings
@@ -95,6 +90,11 @@ func (d *Database) Close() error {
 	return nil
 }
 
+const (
+	defaultDatabaseName = "radarr"
+	defaultUsername     = "radarr"
+)
+
 func buildPostgresConnectionString(cfg *config.DatabaseConfig) string {
 	if cfg.ConnectionURL != "" {
 		return cfg.ConnectionURL
@@ -112,11 +112,40 @@ func buildPostgresConnectionString(cfg *config.DatabaseConfig) string {
 
 	database := cfg.Database
 	if database == "" {
-		database = "radarr"
+		database = defaultDatabaseName
 	}
 
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, cfg.Username, cfg.Password, database)
+}
+
+func buildMariaDBConnectionString(cfg *config.DatabaseConfig) string {
+	if cfg.ConnectionURL != "" {
+		return cfg.ConnectionURL
+	}
+
+	host := cfg.Host
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := cfg.Port
+	if port == 0 {
+		port = 3306
+	}
+
+	database := cfg.Database
+	if database == "" {
+		database = defaultDatabaseName
+	}
+
+	username := cfg.Username
+	if username == "" {
+		username = defaultUsername
+	}
+
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		username, cfg.Password, host, port, database)
 }
 
 // Migrate runs database migrations to update the schema
@@ -134,13 +163,13 @@ func Migrate(db *Database, logger *logger.Logger) error {
 		if err != nil {
 			return fmt.Errorf("failed to create postgres driver: %w", err)
 		}
-	case "sqlite":
-		driver, err = migrateSqlite.WithInstance(db.DB.DB, &migrateSqlite.Config{})
+	case "mysql":
+		driver, err = mysql.WithInstance(db.DB.DB, &mysql.Config{})
 		if err != nil {
-			return fmt.Errorf("failed to create sqlite driver: %w", err)
+			return fmt.Errorf("failed to create mariadb driver: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported database driver: %s", db.DB.DriverName())
+		return fmt.Errorf("unsupported database driver: %s (supported: postgres, mysql)", db.DB.DriverName())
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(sourceURL, db.DB.DriverName(), driver)

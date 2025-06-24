@@ -17,7 +17,7 @@ build:
 
 # Build for Linux
 build-linux:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_NAME)-linux -v $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_NAME)-linux -v $(MAIN_PATH)
 
 # Run the application
 run: build
@@ -73,10 +73,10 @@ docker-logs:
 
 # Database migrations
 migrate-up:
-	migrate -path migrations -database "sqlite3://./data/radarr.db" up
+	migrate -path migrations -database "mysql://radarr:password@tcp(localhost:3306)/radarr" up
 
 migrate-down:
-	migrate -path migrations -database "sqlite3://./data/radarr.db" down
+	migrate -path migrations -database "mysql://radarr:password@tcp(localhost:3306)/radarr" down
 
 # Initialize project
 init: deps
