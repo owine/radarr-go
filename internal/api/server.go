@@ -15,11 +15,11 @@ import (
 
 const (
 	// HTTPReadTimeout defines the maximum duration for reading the entire request
-	HTTPReadTimeout  = 15 * time.Second
+	HTTPReadTimeout = 15 * time.Second
 	// HTTPWriteTimeout defines the maximum duration before timing out writes
 	HTTPWriteTimeout = 15 * time.Second
 	// HTTPIdleTimeout defines the maximum amount of time to wait for the next request
-	HTTPIdleTimeout  = 60 * time.Second
+	HTTPIdleTimeout = 60 * time.Second
 )
 
 // Server represents the HTTP server for the Radarr API

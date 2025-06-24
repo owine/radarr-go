@@ -63,15 +63,15 @@ type MovieStatus string
 
 const (
 	// MovieStatusTBA indicates the movie has no release date announced
-	MovieStatusTBA       MovieStatus = "tba"
+	MovieStatusTBA MovieStatus = "tba"
 	// MovieStatusAnnounced indicates the movie has been announced but not yet in cinemas
 	MovieStatusAnnounced MovieStatus = "announced"
 	// MovieStatusInCinemas indicates the movie is currently in theaters
 	MovieStatusInCinemas MovieStatus = "inCinemas"
 	// MovieStatusReleased indicates the movie has been released for home viewing
-	MovieStatusReleased  MovieStatus = "released"
+	MovieStatusReleased MovieStatus = "released"
 	// MovieStatusDeleted indicates the movie has been removed from the collection
-	MovieStatusDeleted   MovieStatus = "deleted"
+	MovieStatusDeleted MovieStatus = "deleted"
 )
 
 // Availability represents when a movie becomes available for download
@@ -79,15 +79,15 @@ type Availability string
 
 const (
 	// AvailabilityTBA indicates the movie availability is to be announced
-	AvailabilityTBA       Availability = "tba"
+	AvailabilityTBA Availability = "tba"
 	// AvailabilityAnnounced indicates the movie is announced but not yet available
 	AvailabilityAnnounced Availability = "announced"
 	// AvailabilityInCinemas indicates the movie becomes available when in cinemas
 	AvailabilityInCinemas Availability = "inCinemas"
 	// AvailabilityReleased indicates the movie becomes available when officially released
-	AvailabilityReleased  Availability = "released"
+	AvailabilityReleased Availability = "released"
 	// AvailabilityPreDB indicates the movie becomes available before official database listing
-	AvailabilityPreDB     Availability = "preDB"
+	AvailabilityPreDB Availability = "preDB"
 )
 
 // Language represents a movie's language information

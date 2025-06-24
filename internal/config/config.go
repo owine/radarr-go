@@ -11,12 +11,11 @@ import (
 
 const (
 	// DefaultRadarrPort is the default port for Radarr server
-	// DefaultRadarrPort is the default port for Radarr server
-	DefaultRadarrPort     = 7878
+	DefaultRadarrPort = 7878
 	// DefaultMaxConnections is the default maximum number of database connections
 	DefaultMaxConnections = 10
 	// DefaultDirectoryPerm is the default permission for created directories
-	DefaultDirectoryPerm  = 0755
+	DefaultDirectoryPerm = 0755
 )
 
 // Config represents the main configuration structure for Radarr

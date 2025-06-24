@@ -13,11 +13,11 @@ import (
 
 const (
 	// DebugLevel represents the debug log level
-	DebugLevel      = "debug"
+	DebugLevel = "debug"
 	// DefaultPageSize is the default number of items per page for paginated responses
 	DefaultPageSize = 20
 	// DefaultPage is the default page number for paginated responses
-	DefaultPage     = 1
+	DefaultPage = 1
 )
 
 // System handlers
