@@ -109,6 +109,9 @@ git clone --recursive https://github.com/radarr/radarr-go.git
 # OR initialize submodules in existing clone
 git submodule update --init --recursive
 
+# Update submodule to latest upstream develop branch
+git submodule update --remote
+
 # Install dependencies
 make deps
 

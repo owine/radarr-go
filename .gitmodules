@@ -1,3 +1,4 @@
 [submodule "radarr-source"]
 	path = radarr-source
 	url = https://github.com/Radarr/Radarr.git
+	branch = develop
