@@ -213,9 +213,125 @@ This implementation maintains strict compatibility with Radarr's v3 API:
 - **Input Validation**: Request validation and sanitization
 - **No Root**: Docker container runs as non-root user
 
+## Code Quality and Formatting Standards
+
+### Required Quality Checks
+**CRITICAL**: Before committing any code changes, ALWAYS run the linting tests to ensure code quality:
+
+- Run `make lint` to verify all code passes golangci-lint checks
+- Fix any linting errors before committing
+- Ensure code follows Go conventions and project standards
+- All commits must pass CI pipeline quality checks
+
+### Code Formatting Standards
+
+#### Go Code Formatting
+- **Use `gofmt`**: All Go code must be formatted with `gofmt -s` (run `make fmt`)
+- **Import Organization**: Group imports in this order:
+  1. Standard library packages
+  2. Third-party packages
+  3. Local project packages
+- **Line Length**: Maximum 120 characters per line (enforced by `lll` linter)
+- **Function Length**: Maximum 40 statements per function (enforced by `funlen` linter)
+
+#### Naming Conventions
+- **Variables**: Use camelCase (`userID`, `movieFile`)
+- **Constants**: Use UPPER_SNAKE_CASE (`MAX_RETRIES`, `DEFAULT_PORT`)
+- **Functions/Methods**: Use camelCase (`GetMovie`, `CreateIndexer`)
+- **Types**: Use PascalCase (`MovieService`, `QualityProfile`)
+- **Interfaces**: Use PascalCase with descriptive names (`MovieRepository`, `Logger`)
+- **Packages**: Use lowercase, single words when possible (`api`, `models`, `services`)
+
+#### Documentation Standards
+- **Public Functions**: All exported functions must have documentation comments
+- **Public Types**: All exported types must have documentation comments
+- **Package Documentation**: Each package must have a package-level comment
+- **Comment Format**: Use complete sentences, start with the function/type name
+```go
+// GetMovie retrieves a movie by its ID from the database.
+func GetMovie(id int) (*Movie, error) {
+    // Implementation
+}
+```
+
+#### Error Handling
+- **Error Wrapping**: Use `fmt.Errorf` with `%w` verb for error context
+- **Error Messages**: Use lowercase, no punctuation at end
+- **Error Variables**: Use `Err` prefix for error variables (`ErrNotFound`)
+```go
+if err != nil {
+    return fmt.Errorf("failed to fetch movie with id %d: %w", id, err)
+}
+```
+
+#### Code Structure
+- **Single Responsibility**: Each function should do one thing
+- **Small Functions**: Keep functions focused and testable
+- **Clear Variable Names**: Use descriptive names over comments
+- **Early Returns**: Use guard clauses to reduce nesting
+```go
+func ProcessMovie(movie *Movie) error {
+    if movie == nil {
+        return ErrInvalidMovie
+    }
+    
+    if movie.ID == 0 {
+        return ErrMissingID
+    }
+    
+    // Process movie
+    return nil
+}
+```
+
+### Enabled Linters
+The project uses golangci-lint with these enabled linters:
+- **bodyclose**: Checks HTTP response body is closed
+- **errcheck**: Checks unchecked errors
+- **gosec**: Security analysis
+- **govet**: Examines Go source code and reports suspicious constructs
+- **ineffassign**: Detects ineffectual assignments
+- **misspell**: Finds commonly misspelled English words
+- **revive**: Replacement for golint with more rules
+- **staticcheck**: Advanced Go linter
+- **unused**: Checks for unused constants, variables, functions, and types
+- **whitespace**: Checks for unnecessary whitespace
+
+### SQL and Migration Standards
+- **File Naming**: Use sequential numbering (`001_initial_schema.up.sql`)
+- **Reversible Changes**: Always provide corresponding `.down.sql` files
+- **Column Naming**: Use snake_case (`created_at`, `movie_id`)
+- **Table Naming**: Use snake_case plural (`movies`, `quality_profiles`)
+- **Foreign Keys**: Use `_id` suffix (`movie_id`, `quality_profile_id`)
+
+### JSON and API Standards
+- **JSON Tags**: Use camelCase for JSON field names
+- **Struct Tags**: Include both `json` and `gorm` tags
+```go
+type Movie struct {
+    ID          int       `json:"id" gorm:"primaryKey;autoIncrement"`
+    Title       string    `json:"title" gorm:"not null;size:255"`
+    ReleaseDate time.Time `json:"releaseDate" gorm:"not null"`
+}
+```
+
+### Testing Standards
+- **Test File Naming**: Use `_test.go` suffix
+- **Test Function Naming**: Use `TestFunctionName` format
+- **Test Coverage**: Aim for >80% test coverage
+- **Test Organization**: Group related tests in subtests using `t.Run()`
+- **Mock Usage**: Use interfaces for dependency injection and mocking
+
+### Git Commit Standards
+- **Commit Message Format**: Use conventional commits (`feat:`, `fix:`, `docs:`)
+- **Scope**: Include scope when relevant (`feat(api):`, `fix(database):`)
+- **Line Length**: Keep first line under 72 characters
+- **Body**: Include detailed explanation for complex changes
+
 ## Documentation Maintenance
 
 **CRITICAL**: When making changes to the codebase, ALWAYS update documentation to reflect those changes:
+
 - Update CLAUDE.md with new development commands, architecture changes, or workflow modifications
 - Update README.md with new features, installation steps, or usage instructions
 - Update inline code comments for significant logic changes
