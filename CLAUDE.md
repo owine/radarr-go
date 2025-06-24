@@ -18,6 +18,14 @@ make setup                   # Install dev tools (air, golangci-lint, migrate)
 make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
 
+# Multi-platform building (matches CI)
+GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-arm64 ./cmd/radarr
+GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-amd64 ./cmd/radarr
+GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-arm64 ./cmd/radarr
+GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-freebsd-amd64 ./cmd/radarr
+GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-freebsd-arm64 ./cmd/radarr
+
 # Running
 make run                     # Build and run locally
 make dev                     # Run with hot reload (requires air)
@@ -28,6 +36,10 @@ make test                    # Run all tests
 make test-coverage           # Run tests with HTML coverage report
 go test ./internal/api -v    # Run specific package tests
 go test -run TestPingHandler ./internal/api  # Run single test
+
+# Database-specific testing (matches CI matrix)
+RADARR_DATABASE_TYPE=sqlite RADARR_DATABASE_CONNECTION_URL=./data/test.db go test -v ./...
+RADARR_DATABASE_TYPE=postgres go test -v ./...  # Requires PostgreSQL server
 
 # Code Quality
 make fmt                     # Format code
@@ -82,6 +94,17 @@ All services are managed through a `services.Container` that provides dependency
 - **Migration System**: golang-migrate for schema management
 - **Multi-Database**: SQLite (default) and PostgreSQL support
 - **Connection Management**: Configurable connection pooling
+- **CGO Strategy**: SQLite with CGO (Linux amd64 only), PostgreSQL native Go driver
+
+### CI/CD Architecture
+The project uses a structured CI pipeline with concurrent execution:
+
+**Stage 1**: Concurrent quality checks (lint + security)
+**Stage 2**: Multi-platform build (after quality checks pass)
+**Stage 3**: Matrix testing (SQLite + PostgreSQL on amd64/arm64)
+**Stage 4**: Publish (Docker images + artifacts after all tests pass)
+
+Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
 
 ## Key Patterns and Conventions
 
