@@ -19,7 +19,7 @@ make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
 
 # Multi-platform building (matches CI)
-GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-arm64 ./cmd/radarr
 GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-amd64 ./cmd/radarr
 GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-arm64 ./cmd/radarr
@@ -38,8 +38,8 @@ go test ./internal/api -v    # Run specific package tests
 go test -run TestPingHandler ./internal/api  # Run single test
 
 # Database-specific testing (matches CI matrix)
-RADARR_DATABASE_TYPE=mariadb go test -v ./...   # Requires MariaDB server
-RADARR_DATABASE_TYPE=postgres go test -v ./...  # Requires PostgreSQL server
+RADARR_DATABASE_TYPE=mariadb go test -v ./...    # Requires MariaDB server
+RADARR_DATABASE_TYPE=postgres go test -v ./...   # Requires PostgreSQL server
 
 # Code Quality
 make fmt                     # Format code
@@ -94,7 +94,7 @@ All services are managed through a `services.Container` that provides dependency
 - **Migration System**: golang-migrate for schema management
 - **Multi-Database**: MariaDB (default) and PostgreSQL support
 - **Connection Management**: Configurable connection pooling
-- **Pure Go**: No CGO dependencies, fully cross-platform builds
+- **Pure Go Strategy**: MariaDB and PostgreSQL with native Go drivers (CGO_ENABLED=0)
 
 ### CI/CD Architecture
 The project uses a structured CI pipeline with concurrent execution:
@@ -102,6 +102,8 @@ The project uses a structured CI pipeline with concurrent execution:
 **Stage 1**: Concurrent quality checks (lint + security)
 **Stage 2**: Multi-platform build (after quality checks pass)
 **Stage 3**: Matrix testing (MariaDB + PostgreSQL on amd64/arm64)
+  - **Linux**: Service containers for both databases
+  - **macOS/FreeBSD**: Native installation testing
 **Stage 4**: Publish (Docker images + artifacts after all tests pass)
 
 Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
@@ -344,3 +346,29 @@ type Movie struct {
 - Update inline code comments for significant logic changes
 - Ensure all documentation remains accurate and current
 - Documentation updates should be included in the same commit as the related code changes
+
+## Development Best Practices
+
+### Variable and Function Naming
+- Use descriptive, self-documenting names for all variables and functions
+- Prefer longer, clear names over abbreviations (e.g., `connectionString` vs `connStr`)
+- Follow Go naming conventions: camelCase for unexported, PascalCase for exported
+- Use constants for repeated string values to improve maintainability
+
+### Test Management
+- Always clean up test files and artifacts after test completion
+- Use temporary directories for test data that get removed automatically
+- Ensure tests don't leave persistent state that affects other tests
+- Remove test databases and connections properly in teardown
+
+### Repository Organization
+- Keep the repository clean, organized, and human-readable
+- Remove unused files, deprecated code, and temporary artifacts
+- Maintain consistent file structure and naming conventions
+- Update documentation immediately when making code changes
+
+### Development Workflow
+- Run `make lint` before committing to ensure code quality
+- Use `make all` for comprehensive quality checks (format, lint, test, build)
+- Test both database backends (MariaDB and PostgreSQL) during development
+- Maintain backwards compatibility with Radarr v3 API at all times

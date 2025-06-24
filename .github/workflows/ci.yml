@@ -254,6 +254,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb.out
         flags: unittests,mariadb,${{ matrix.os }}-${{ matrix.arch }}
         name: coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb
@@ -398,6 +399,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb.out
         flags: unittests,mariadb,${{ matrix.os }}-${{ matrix.arch }}
         name: coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb
@@ -481,6 +483,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres.out
         flags: unittests,postgres,${{ matrix.os }}-${{ matrix.arch }}
         name: coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres
@@ -582,6 +585,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres.out
         flags: unittests,postgres,${{ matrix.os }}-${{ matrix.arch }}
         name: coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres
