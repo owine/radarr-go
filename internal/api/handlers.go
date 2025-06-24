@@ -44,7 +44,7 @@ func (s *Server) handleSystemStatus(c *gin.Context) {
 		"sqliteVersion":          "3.x",
 		"migrationVersion":       1,
 		"urlBase":                s.config.Server.URLBase,
-		"runtimeVersion":         "go1.21",
+		"runtimeVersion":         "go1.24",
 		"databaseType":           s.config.Database.Type,
 		"databaseVersion":        "unknown",
 		"packageVersion":         "1.0.0-go",
