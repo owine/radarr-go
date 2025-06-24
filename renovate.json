@@ -4,13 +4,13 @@
     "config:best-practices"
   ],
   "schedule": [
-    "before 6am on monday"
+    "at any time"
   ],
   "labels": [
     "dependencies"
   ],
-  "prHourlyLimit": 2,
-  "prConcurrentLimit": 5,
+  "prHourlyLimit": 10,
+  "prConcurrentLimit": 10,
   "branchConcurrentLimit": 10,
   "platformAutomerge": true,
   "dependencyDashboard": true,
@@ -31,6 +31,21 @@
       ]
     },
     {
+      "description": "Go major updates - separate PRs, manual review",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "go",
+        "major"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
       "description": "Go dependencies - group minor and patch updates",
       "matchManagers": [
         "gomod"
@@ -45,21 +60,6 @@
         "go"
       ],
       "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Go major updates - separate PRs, manual review",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "automerge": false,
-      "addLabels": [
-        "go",
-        "major"
-      ],
-      "minimumReleaseAge": "7 days"
     },
     {
       "description": "GitHub Actions - group all updates",
