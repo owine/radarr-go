@@ -14,6 +14,10 @@
   "branchConcurrentLimit": 10,
   "platformAutomerge": true,
   "dependencyDashboard": true,
+  "postUpdateOptions": [
+      "gomodTidy",
+      "gomodUpdateImportPaths"
+    ],
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
