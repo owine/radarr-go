@@ -12,6 +12,13 @@ import (
 	"github.com/radarr/radarr-go/internal/services"
 )
 
+// Build information - set by ldflags during build
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 func main() {
 	var configPath = flag.String("config", "config.yaml", "path to configuration file")
 	var dataDir = flag.String("data", "./data", "path to data directory")
@@ -48,7 +55,12 @@ func main() {
 	// Initialize and start API server
 	server := api.NewServer(cfg, serviceContainer, logger)
 
-	logger.Info("Starting Radarr server", "port", cfg.Server.Port)
+	// Log build information
+	logger.Info("Starting Radarr Go", 
+		"version", version, 
+		"commit", commit, 
+		"built", date,
+		"port", cfg.Server.Port)
 
 	if err := server.Start(); err != nil {
 		logger.Fatal("Failed to start server", "error", err)
