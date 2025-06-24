@@ -175,15 +175,11 @@ jobs:
       run: |
         mkdir -p artifacts
         
-        # Build for current platform (test artifact)
+        # Build for current platform with CGO (test artifact) 
         CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
         
-        # Build for multiple platforms (full artifacts)
+        # Build for Linux amd64 with CGO (matches CI environment)
         GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
-        GOOS=linux GOARCH=arm64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-linux-arm64 ./cmd/radarr
-        GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
-        GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
-        GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o artifacts/radarr-windows-amd64.exe ./cmd/radarr
 
     - name: Store test artifacts
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
