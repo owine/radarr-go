@@ -129,6 +129,8 @@ Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
 ### Testing Strategy
 - **Unit Tests**: Service layer and individual components
 - **API Tests**: HTTP endpoint testing with test server
+- **Matrix Testing**: Comprehensive testing across multiple platforms (Linux, macOS, FreeBSD) and architectures (amd64, arm64)
+- **Database Testing**: Both SQLite and PostgreSQL testing on all supported platforms
 - **Test Mode**: Gin test mode for reduced noise in tests
 - **Mocking**: Interface-based dependency injection enables easy mocking
 

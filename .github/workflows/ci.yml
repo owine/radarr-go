@@ -174,13 +174,27 @@ jobs:
   # Stage 3a: Test SQLite (runs after build completes successfully)
   test-sqlite:
     name: Test SQLite (${{ matrix.os }}, ${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os == 'linux' && 'ubuntu-latest' || matrix.os == 'darwin' && 'macos-latest' || matrix.os == 'freebsd' && 'ubuntu-latest' }}
     needs: [build]
     
     strategy:
       matrix:
-        os: [linux]
-        arch: [amd64, arm64]
+        include:
+          # Linux (native platform with CGO support)
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          # macOS (native platform with CGO support)
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          # FreeBSD (cross-platform, no CGO)
+          - os: freebsd
+            arch: amd64
+          - os: freebsd
+            arch: arm64
       fail-fast: false
 
     steps:
@@ -233,11 +247,18 @@ jobs:
 
     - name: Integration test
       run: |
-        # Use the appropriate binary for the current architecture
-        if [ "${{ matrix.arch }}" = "amd64" ]; then
-          BINARY="artifacts/radarr-${{ matrix.os }}-amd64"
+        # Select the appropriate binary for testing
+        if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
+          # Use native Linux amd64 binary (built with CGO)
+          BINARY="artifacts/radarr-linux-amd64"
+        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "amd64" ] && [ "$(uname)" = "Darwin" ]; then
+          # Use native Darwin amd64 binary on macOS runners
+          BINARY="artifacts/radarr-darwin-amd64"
+        elif [ "${{ matrix.os }}" = "darwin" ] && [ "${{ matrix.arch }}" = "arm64" ] && [ "$(uname)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+          # Use native Darwin arm64 binary on Apple Silicon runners
+          BINARY="artifacts/radarr-darwin-arm64"
         else
-          # For ARM64, we'll use the test binary since we can't run ARM64 on AMD64 runners
+          # For cross-platform testing (FreeBSD, ARM64 on AMD64), use the test binary
           BINARY="artifacts/radarr-test"
         fi
         
@@ -257,18 +278,33 @@ jobs:
   # Stage 3b: Test PostgreSQL (runs after build completes successfully)
   test-postgres:
     name: Test PostgreSQL (${{ matrix.os }}, ${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os == 'linux' && 'ubuntu-latest' || matrix.os == 'darwin' && 'macos-latest' || matrix.os == 'freebsd' && 'ubuntu-latest' }}
     needs: [build]
     
     strategy:
       matrix:
-        os: [linux]
-        arch: [amd64, arm64]
+        include:
+          # Linux (native platform with CGO support)
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          # macOS (native platform with CGO support)
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+          # FreeBSD (cross-platform, no CGO)
+          - os: freebsd
+            arch: amd64
+          - os: freebsd
+            arch: arm64
       fail-fast: false
     
     services:
       postgres:
-        image: postgres:17-alpine
+        # Only use PostgreSQL service on Linux runners (service containers not supported on macOS/FreeBSD)
+        image: ${{ matrix.os == 'linux' && 'postgres:17-alpine' || '' }}
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
@@ -309,6 +345,28 @@ jobs:
       with:
         name: build-artifacts
         path: ./artifacts
+
+    - name: Install PostgreSQL (macOS)
+      if: matrix.os == 'darwin'
+      run: |
+        brew install postgresql@17
+        brew services start postgresql@17
+        sleep 5
+        # Create test database and user
+        createuser -s test_user
+        createdb -O test_user radarr_test
+        psql -d radarr_test -c "ALTER USER test_user PASSWORD 'test_password_123';"
+
+    - name: Install PostgreSQL (FreeBSD via Linux)
+      if: matrix.os == 'freebsd'
+      run: |
+        # For FreeBSD testing on Linux runners, use local PostgreSQL
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib
+        sudo systemctl start postgresql
+        sudo -u postgres createuser -s test_user
+        sudo -u postgres createdb -O test_user radarr_test
+        sudo -u postgres psql -c "ALTER USER test_user PASSWORD 'test_password_123';"
 
     - name: Create test directories
       run: |

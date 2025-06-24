@@ -152,7 +152,7 @@ The project uses a structured CI pipeline:
 1. **Concurrent Quality Checks**: Linting and security scanning run in parallel
 2. **Multi-Platform Build**: Binaries built for all supported platforms
 3. **Matrix Testing**: Tests run concurrently across:
-   - Platforms: Linux amd64/arm64
+   - Platforms: Linux (amd64/arm64), macOS (amd64/arm64), FreeBSD (amd64/arm64)
    - Databases: SQLite, PostgreSQL
 4. **Publish**: Docker images and release artifacts
 
