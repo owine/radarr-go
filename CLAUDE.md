@@ -38,8 +38,8 @@ go test ./internal/api -v    # Run specific package tests
 go test -run TestPingHandler ./internal/api  # Run single test
 
 # Database-specific testing (matches CI matrix)
-RADARR_DATABASE_TYPE=mariadb go test -v ./...    # Requires MariaDB server
 RADARR_DATABASE_TYPE=postgres go test -v ./...   # Requires PostgreSQL server
+RADARR_DATABASE_TYPE=mariadb go test -v ./...    # Requires MariaDB server
 
 # Code Quality
 make fmt                     # Format code
@@ -55,8 +55,8 @@ make migrate-down            # Rollback migrations
 migrate create -ext sql -dir migrations migration_name  # Create new migration
 
 # Database switching
-RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL
-RADARR_DATABASE_TYPE=mariadb ./radarr     # Use MariaDB (default)
+RADARR_DATABASE_TYPE=mariadb ./radarr     # Use MariaDB
+RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL (default)
 ```
 
 ### Docker Operations
@@ -92,16 +92,16 @@ All services are managed through a `services.Container` that provides dependency
 ### Database Architecture
 - **Dual ORM Strategy**: GORM for complex operations, sqlx for performance-critical queries
 - **Migration System**: golang-migrate for schema management
-- **Multi-Database**: MariaDB (default) and PostgreSQL support
+- **Multi-Database**: PostgreSQL (default) and MariaDB support
 - **Connection Management**: Configurable connection pooling
-- **Pure Go Strategy**: MariaDB and PostgreSQL with native Go drivers (CGO_ENABLED=0)
+- **Pure Go Strategy**: PostgreSQL and MariaDB with native Go drivers (CGO_ENABLED=0)
 
 ### CI/CD Architecture
 The project uses a structured CI pipeline with concurrent execution:
 
 **Stage 1**: Concurrent quality checks (lint + security)
 **Stage 2**: Multi-platform build (after quality checks pass)
-**Stage 3**: Matrix testing (MariaDB + PostgreSQL on amd64/arm64)
+**Stage 3**: Matrix testing (PostgreSQL + MariaDB on amd64/arm64)
   - **Linux**: Service containers for both databases
   - **macOS/FreeBSD**: Native installation testing
 **Stage 4**: Publish (Docker images + artifacts after all tests pass)
@@ -132,7 +132,7 @@ Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
 - **Unit Tests**: Service layer and individual components
 - **API Tests**: HTTP endpoint testing with test server
 - **Matrix Testing**: Comprehensive testing across multiple platforms (Linux, macOS, FreeBSD) and architectures (amd64, arm64)
-- **Database Testing**: Both MariaDB and PostgreSQL testing on all supported platforms
+- **Database Testing**: Both PostgreSQL and MariaDB testing on all supported platforms
 - **Test Mode**: Gin test mode for reduced noise in tests
 - **Mocking**: Interface-based dependency injection enables easy mocking
 
@@ -150,9 +150,9 @@ The configuration system uses Viper for flexible config management:
 ### Environment Variables
 All config keys can be overridden with `RADARR_` prefix:
 - `RADARR_SERVER_PORT=7878`
-- `RADARR_DATABASE_TYPE=mariadb` (or postgres)
+- `RADARR_DATABASE_TYPE=postgres` (or mariadb)
 - `RADARR_DATABASE_HOST=localhost`
-- `RADARR_DATABASE_PORT=3306` (or 5432 for postgres)
+- `RADARR_DATABASE_PORT=5432` (or 3306 for mariadb)
 - `RADARR_DATABASE_USERNAME=radarr`
 - `RADARR_DATABASE_PASSWORD=password`
 - `RADARR_LOG_LEVEL=debug`
@@ -370,5 +370,5 @@ type Movie struct {
 ### Development Workflow
 - Run `make lint` before committing to ensure code quality
 - Use `make all` for comprehensive quality checks (format, lint, test, build)
-- Test both database backends (MariaDB and PostgreSQL) during development
+- Test both database backends (PostgreSQL and MariaDB) during development
 - Maintain backwards compatibility with Radarr v3 API at all times

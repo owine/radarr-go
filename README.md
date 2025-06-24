@@ -8,7 +8,7 @@ A high-performance Go implementation of Radarr movie collection manager with 100
 - 🔄 **100% API Compatible**: Drop-in replacement for Radarr v3 API
 - 🐳 **Docker Ready**: Multi-platform Docker support (linux/amd64, linux/arm64)
 - 📦 **Single Binary**: No runtime dependencies except database
-- 🗄️ **Multi-Database**: MariaDB (default) and PostgreSQL support
+- 🗄️ **Multi-Database**: PostgreSQL (default) and MariaDB support
 - 🔧 **Easy Configuration**: YAML configuration with environment variable overrides
 - 📊 **Comprehensive Logging**: Structured JSON logging with configurable levels
 - 🛡️ **Security**: Built-in security scanning and vulnerability checks
@@ -64,9 +64,9 @@ server:
   url_base: ""
 
 database:
-  type: "mariadb"  # or "postgres"
+  type: "postgres"  # or "mariadb"
   host: "localhost"
-  port: 3306
+  port: 5432
   database: "radarr"
   username: "radarr"
   password: "password"
@@ -82,26 +82,27 @@ storage:
 
 Environment variables use the `RADARR_` prefix:
 - `RADARR_SERVER_PORT=7878`
-- `RADARR_DATABASE_TYPE=postgres`
+- `RADARR_DATABASE_TYPE=mariadb`
 - `RADARR_DATABASE_HOST=localhost`
-- `RADARR_DATABASE_PORT=5432`
+- `RADARR_DATABASE_PORT=3306`
 - `RADARR_LOG_LEVEL=debug`
 
 ### Database Support
 
-**MariaDB/MySQL (Default)**
-- High-performance relational database
-- Excellent for both single-user and multi-user setups
+**PostgreSQL (Default)**
+- Enterprise-grade relational database
+- Recommended for all environments from single-user to high-load
+- Requires PostgreSQL 12+ server
+- Advanced features like JSON columns, complex queries, and excellent concurrency
+- Uses native Go driver (no CGO required)
+- Automatic timestamp triggers and proper constraint handling
+
+**MariaDB/MySQL**
+- High-performance alternative database option
+- Excellent compatibility and wide deployment support
 - Requires MariaDB 10.5+ or MySQL 8.0+ server
 - Uses native Go driver (no CGO required)
 - InnoDB engine with UTF8MB4 support
-
-**PostgreSQL**
-- Recommended for high-load or enterprise environments  
-- Requires PostgreSQL 12+ server
-- Advanced features like JSON columns and complex queries
-- Uses native Go driver (no CGO required)
-- Automatic timestamp triggers and proper constraint handling
 
 Both databases use optimized, database-specific migration files located in `migrations/mysql/` and `migrations/postgres/` respectively, ensuring optimal performance and compatibility for each database system.
 
@@ -150,8 +151,8 @@ make test
 make test-coverage
 
 # Test specific database
-RADARR_DATABASE_TYPE=mariadb go test -v ./...
 RADARR_DATABASE_TYPE=postgres go test -v ./...
+RADARR_DATABASE_TYPE=mariadb go test -v ./...
 
 # Run linting
 make lint
@@ -165,7 +166,7 @@ The project uses a structured CI pipeline:
 2. **Multi-Platform Build**: Binaries built for all supported platforms
 3. **Matrix Testing**: Tests run concurrently across:
    - Platforms: Linux (amd64/arm64), macOS (amd64/arm64), FreeBSD (amd64/arm64)
-   - Databases: MariaDB, PostgreSQL
+   - Databases: PostgreSQL, MariaDB
 4. **Publish**: Docker images and release artifacts
 
 ## API Compatibility
