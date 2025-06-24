@@ -56,9 +56,9 @@ func main() {
 	server := api.NewServer(cfg, serviceContainer, logger)
 
 	// Log build information
-	logger.Info("Starting Radarr Go", 
-		"version", version, 
-		"commit", commit, 
+	logger.Info("Starting Radarr Go",
+		"version", version,
+		"commit", commit,
 		"built", date,
 		"port", cfg.Server.Port)
 
