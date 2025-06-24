@@ -17,7 +17,7 @@ jobs:
     
     strategy:
       matrix:
-        goos: [linux, darwin, windows]
+        goos: [linux, darwin, windows, freebsd]
         goarch: [amd64, arm64]
         exclude:
           - goos: windows
@@ -226,7 +226,7 @@ jobs:
         echo "## 🎉 Radarr Go Release ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
-        echo "- **Binaries**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Binaries**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64), FreeBSD (amd64, arm64)" >> $GITHUB_STEP_SUMMARY
         echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
         if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
           echo "- **Docker Hub**: \`radarr/radarr-go:${{ github.ref_name }}\`, \`radarr/radarr-go:latest\`" >> $GITHUB_STEP_SUMMARY
