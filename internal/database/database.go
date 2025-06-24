@@ -15,14 +15,14 @@ import (
 
 	// Import for PostgreSQL driver support
 	_ "github.com/lib/pq"
-	// Import for pure-Go SQLite driver support (no CGO required)
-	_ "github.com/glebarez/go-sqlite"
 	"github.com/radarr/radarr-go/internal/config"
 	"github.com/radarr/radarr-go/internal/logger"
-	"github.com/glebarez/sqlite"
 	gormPostgres "gorm.io/driver/postgres"
+	gormSqlite "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
+	// Import for pure-Go SQLite driver support (no CGO required)
+	_ "modernc.org/sqlite"
 )
 
 // Database provides access to the Radarr database
@@ -64,7 +64,7 @@ func New(cfg *config.DatabaseConfig, _ *logger.Logger) (*Database, error) {
 			return nil, fmt.Errorf("failed to connect to sqlite: %w", err)
 		}
 
-		gormDB, err = gorm.Open(sqlite.Open(connectionString), &gorm.Config{
+		gormDB, err = gorm.Open(gormSqlite.Open(connectionString), &gorm.Config{
 			Logger: gormLogger.Default.LogMode(gormLogger.Silent),
 		})
 		if err != nil {

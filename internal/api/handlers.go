@@ -190,6 +190,7 @@ func (s *Server) handleDeleteMovieFile(c *gin.Context) {
 func (s *Server) handleGetQualityProfiles(c *gin.Context) {
 	profiles, err := s.services.QualityService.GetQualityProfiles()
 	if err != nil {
+		s.logger.Error("Failed to get quality profiles", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve quality profiles"})
 		return
 	}
@@ -199,6 +200,7 @@ func (s *Server) handleGetQualityProfiles(c *gin.Context) {
 func (s *Server) handleGetIndexers(c *gin.Context) {
 	indexers, err := s.services.IndexerService.GetIndexers()
 	if err != nil {
+		s.logger.Error("Failed to get indexers", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve indexers"})
 		return
 	}
@@ -251,4 +253,221 @@ func (s *Server) handleSearchMovies(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, movies)
+}
+
+// Quality Profile handlers
+func (s *Server) handleGetQualityProfile(c *gin.Context) {
+	s.handleGetByID(c, "quality profile", func(id int) (any, error) {
+		return s.services.QualityService.GetQualityProfileByID(id)
+	})
+}
+
+func (s *Server) handleCreateQualityProfile(c *gin.Context) {
+	var profile models.QualityProfile
+	if err := c.ShouldBindJSON(&profile); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quality profile data"})
+		return
+	}
+
+	if err := s.services.QualityService.CreateQualityProfile(&profile); err != nil {
+		s.logger.Error("Failed to create quality profile", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create quality profile"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, profile)
+}
+
+func (s *Server) handleUpdateQualityProfile(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var profile models.QualityProfile
+	if err := c.ShouldBindJSON(&profile); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quality profile data"})
+		return
+	}
+
+	profile.ID = id
+	if err := s.services.QualityService.UpdateQualityProfile(&profile); err != nil {
+		s.logger.Error("Failed to update quality profile", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update quality profile"})
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+func (s *Server) handleDeleteQualityProfile(c *gin.Context) {
+	s.handleDeleteByID(c, "quality profile", s.services.QualityService.DeleteQualityProfile)
+}
+
+// Quality Definition handlers
+func (s *Server) handleGetQualityDefinitions(c *gin.Context) {
+	definitions, err := s.services.QualityService.GetQualityDefinitions()
+	if err != nil {
+		s.logger.Error("Failed to get quality definitions", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve quality definitions"})
+		return
+	}
+	c.JSON(http.StatusOK, definitions)
+}
+
+func (s *Server) handleGetQualityDefinition(c *gin.Context) {
+	s.handleGetByID(c, "quality definition", func(id int) (any, error) {
+		return s.services.QualityService.GetQualityDefinitionByID(id)
+	})
+}
+
+func (s *Server) handleUpdateQualityDefinition(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var definition models.QualityLevel
+	if err := c.ShouldBindJSON(&definition); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid quality definition data"})
+		return
+	}
+
+	definition.ID = id
+	if err := s.services.QualityService.UpdateQualityDefinition(&definition); err != nil {
+		s.logger.Error("Failed to update quality definition", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update quality definition"})
+		return
+	}
+
+	c.JSON(http.StatusOK, definition)
+}
+
+// Custom Format handlers
+func (s *Server) handleGetCustomFormats(c *gin.Context) {
+	formats, err := s.services.QualityService.GetCustomFormats()
+	if err != nil {
+		s.logger.Error("Failed to get custom formats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve custom formats"})
+		return
+	}
+	c.JSON(http.StatusOK, formats)
+}
+
+func (s *Server) handleGetCustomFormat(c *gin.Context) {
+	s.handleGetByID(c, "custom format", func(id int) (any, error) {
+		return s.services.QualityService.GetCustomFormatByID(id)
+	})
+}
+
+func (s *Server) handleCreateCustomFormat(c *gin.Context) {
+	var format models.CustomFormat
+	if err := c.ShouldBindJSON(&format); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid custom format data"})
+		return
+	}
+
+	if err := s.services.QualityService.CreateCustomFormat(&format); err != nil {
+		s.logger.Error("Failed to create custom format", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create custom format"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, format)
+}
+
+func (s *Server) handleUpdateCustomFormat(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var format models.CustomFormat
+	if err := c.ShouldBindJSON(&format); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid custom format data"})
+		return
+	}
+
+	format.ID = id
+	if err := s.services.QualityService.UpdateCustomFormat(&format); err != nil {
+		s.logger.Error("Failed to update custom format", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update custom format"})
+		return
+	}
+
+	c.JSON(http.StatusOK, format)
+}
+
+func (s *Server) handleDeleteCustomFormat(c *gin.Context) {
+	s.handleDeleteByID(c, "custom format", s.services.QualityService.DeleteCustomFormat)
+}
+
+// Indexer handlers
+func (s *Server) handleGetIndexer(c *gin.Context) {
+	s.handleGetByID(c, "indexer", func(id int) (any, error) {
+		return s.services.IndexerService.GetIndexerByID(id)
+	})
+}
+
+func (s *Server) handleCreateIndexer(c *gin.Context) {
+	var indexer models.Indexer
+	if err := c.ShouldBindJSON(&indexer); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid indexer data"})
+		return
+	}
+
+	if err := s.services.IndexerService.CreateIndexer(&indexer); err != nil {
+		s.logger.Error("Failed to create indexer", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create indexer"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, indexer)
+}
+
+func (s *Server) handleUpdateIndexer(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var indexer models.Indexer
+	if err := c.ShouldBindJSON(&indexer); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid indexer data"})
+		return
+	}
+
+	indexer.ID = id
+	if err := s.services.IndexerService.UpdateIndexer(&indexer); err != nil {
+		s.logger.Error("Failed to update indexer", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update indexer"})
+		return
+	}
+
+	c.JSON(http.StatusOK, indexer)
+}
+
+func (s *Server) handleDeleteIndexer(c *gin.Context) {
+	s.handleDeleteByID(c, "indexer", s.services.IndexerService.DeleteIndexer)
+}
+
+func (s *Server) handleTestIndexer(c *gin.Context) {
+	var indexer models.Indexer
+	if err := c.ShouldBindJSON(&indexer); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid indexer data"})
+		return
+	}
+
+	result, err := s.services.IndexerService.TestIndexer(&indexer)
+	if err != nil {
+		s.logger.Error("Failed to test indexer", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to test indexer"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

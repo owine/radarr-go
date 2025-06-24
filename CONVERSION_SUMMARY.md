@@ -53,8 +53,12 @@ radarr-go/
 ## API Compatibility
 
 ### Implemented Endpoints
+
+#### Core Endpoints
 - ✅ `GET /ping` - Health check
 - ✅ `GET /api/v3/system/status` - System information
+
+#### Movie Management
 - ✅ `GET /api/v3/movie` - List all movies
 - ✅ `GET /api/v3/movie/:id` - Get specific movie
 - ✅ `POST /api/v3/movie` - Add new movie
@@ -64,6 +68,50 @@ radarr-go/
 - ✅ `GET /api/v3/moviefile/:id` - Get specific movie file
 - ✅ `DELETE /api/v3/moviefile/:id` - Delete movie file
 - ✅ `GET /api/v3/search/movie` - Search movies
+
+#### Quality Management (Phase 1)
+- ✅ `GET /api/v3/qualityprofile` - List quality profiles
+- ✅ `GET /api/v3/qualityprofile/:id` - Get specific quality profile
+- ✅ `POST /api/v3/qualityprofile` - Create quality profile
+- ✅ `PUT /api/v3/qualityprofile/:id` - Update quality profile
+- ✅ `DELETE /api/v3/qualityprofile/:id` - Delete quality profile
+- ✅ `GET /api/v3/qualitydefinition` - List quality definitions
+- ✅ `GET /api/v3/qualitydefinition/:id` - Get quality definition
+- ✅ `PUT /api/v3/qualitydefinition/:id` - Update quality definition
+- ✅ `GET /api/v3/customformat` - List custom formats
+- ✅ `GET /api/v3/customformat/:id` - Get custom format
+- ✅ `POST /api/v3/customformat` - Create custom format
+- ✅ `PUT /api/v3/customformat/:id` - Update custom format
+- ✅ `DELETE /api/v3/customformat/:id` - Delete custom format
+
+#### Indexer Management (Phase 1)
+- ✅ `GET /api/v3/indexer` - List indexers
+- ✅ `GET /api/v3/indexer/:id` - Get specific indexer
+- ✅ `POST /api/v3/indexer` - Create indexer
+- ✅ `PUT /api/v3/indexer/:id` - Update indexer
+- ✅ `DELETE /api/v3/indexer/:id` - Delete indexer
+- ✅ `POST /api/v3/indexer/test` - Test indexer connection
+
+#### Download Client Management (Phase 1)
+- ✅ `GET /api/v3/downloadclient` - List download clients
+- ✅ `GET /api/v3/downloadclient/:id` - Get specific download client
+- ✅ `POST /api/v3/downloadclient` - Create download client
+- ✅ `PUT /api/v3/downloadclient/:id` - Update download client
+- ✅ `DELETE /api/v3/downloadclient/:id` - Delete download client
+- ✅ `POST /api/v3/downloadclient/test` - Test download client connection
+- ✅ `GET /api/v3/queue` - Get download queue
+- ✅ `GET /api/v3/queue/:id` - Get queue item
+- ✅ `DELETE /api/v3/queue/:id` - Remove from queue
+- ✅ `GET /api/v3/history` - Get download history
+
+#### Notification Management (Phase 1)
+- ✅ `GET /api/v3/notification` - List notifications
+- ✅ `GET /api/v3/notification/:id` - Get specific notification
+- ✅ `POST /api/v3/notification` - Create notification
+- ✅ `PUT /api/v3/notification/:id` - Update notification
+- ✅ `DELETE /api/v3/notification/:id` - Delete notification
+- ✅ `POST /api/v3/notification/test` - Test notification
+- ✅ `GET /api/v3/health` - Get health checks
 
 ### Response Format
 Maintains 100% compatibility with Radarr's v3 API structure, including:
@@ -144,12 +192,12 @@ Maintains 100% compatibility with Radarr's v3 API structure, including:
 
 ## Future Enhancements
 
-### Phase 1 (Core Features)
-- [ ] Complete indexer integration
-- [ ] Download client management
-- [ ] Quality profile system
-- [ ] Custom format support
-- [ ] Notification system
+### Phase 1 (Core Features) - ✅ COMPLETED
+- [x] **Complete indexer integration**: Full CRUD operations for Torznab/Newznab/RSS indexers with testing and capabilities detection
+- [x] **Download client management**: Support for major torrent/usenet clients (qBittorrent, Transmission, Deluge, SABnzbd, etc.) with connection testing
+- [x] **Quality profile system**: Configurable quality profiles with 28 default quality definitions (CAM to Remux-2160p) and upgrade rules
+- [x] **Custom format support**: Flexible custom format specifications with scoring and profile integration
+- [x] **Notification system**: Multi-provider notifications (Discord, Slack, Email, Webhooks, etc.) with event triggers and history tracking
 
 ### Phase 2 (Advanced Features)
 - [ ] Web UI (Go templates or separate React app)
