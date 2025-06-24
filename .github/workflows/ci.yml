@@ -192,7 +192,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:11
+        image: mariadb:11@sha256:1e669024fc94f626b9dc48bf47b29b5339cec203c28e61a3dc372991a345daf5
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
@@ -422,7 +422,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:17-alpine@sha256:fbe21607052bb5c298674f2fd8cf044a63aa3ddf50b81627f894f91f40f50bcb
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
