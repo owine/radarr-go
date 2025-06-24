@@ -4,8 +4,13 @@
 *.dll
 *.so
 *.dylib
-radarr
-radarr-*
+
+# Built binaries (but not source directories)
+/radarr
+radarr-linux-*
+radarr-darwin-*
+radarr-freebsd-*
+radarr-windows-*
 
 # Test binary, built with `go test -c`
 *.test
