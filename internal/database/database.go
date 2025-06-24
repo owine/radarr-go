@@ -154,16 +154,16 @@ func Migrate(db *Database, logger *logger.Logger) error {
 	var sourceURL string
 	var err error
 
-	// Determine the migration source path
-	sourceURL = "file://./migrations"
-
+	// Use database-specific migration paths
 	switch db.DB.DriverName() {
 	case "postgres":
+		sourceURL = "file://./migrations/postgres"
 		driver, err = postgres.WithInstance(db.DB.DB, &postgres.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create postgres driver: %w", err)
 		}
 	case "mysql":
+		sourceURL = "file://./migrations/mysql"
 		driver, err = mysql.WithInstance(db.DB.DB, &mysql.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create mariadb driver: %w", err)
