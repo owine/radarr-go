@@ -95,8 +95,9 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	// Queue management
 	s.setupQueueRoutes(v3)
 
-	// History
-	v3.GET("/history", s.handleGetHistory)
+	// History and Activity
+	s.setupHistoryRoutes(v3)
+	s.setupActivityRoutes(v3)
 
 	// Search
 	searchRoutes := v3.Group("/search")
@@ -291,4 +292,20 @@ func apiKeyMiddleware(apiKey string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func (s *Server) setupHistoryRoutes(v3 *gin.RouterGroup) {
+	historyRoutes := v3.Group("/history")
+	historyRoutes.GET("", s.handleGetHistory)
+	historyRoutes.GET("/:id", s.handleGetHistoryByID)
+	historyRoutes.DELETE("/:id", s.handleDeleteHistoryRecord)
+	historyRoutes.GET("/stats", s.handleGetHistoryStats)
+}
+
+func (s *Server) setupActivityRoutes(v3 *gin.RouterGroup) {
+	activityRoutes := v3.Group("/activity")
+	activityRoutes.GET("", s.handleGetActivity)
+	activityRoutes.GET("/:id", s.handleGetActivityByID)
+	activityRoutes.DELETE("/:id", s.handleDeleteActivity)
+	activityRoutes.GET("/running", s.handleGetRunningActivities)
 }

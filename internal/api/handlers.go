@@ -453,16 +453,6 @@ func (s *Server) handleGetImportListMovies(c *gin.Context) {
 }
 
 
-func (s *Server) handleGetHistory(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"page":          DefaultPage,
-		"pageSize":      DefaultPageSize,
-		"sortKey":       "date",
-		"sortDirection": "descending",
-		"totalRecords":  0,
-		"records":       []any{},
-	})
-}
 
 func (s *Server) handleSearchMovies(c *gin.Context) {
 	query := c.Query("term")
@@ -949,4 +939,228 @@ func (s *Server) handleGetQueueStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+// History handlers
+
+func (s *Server) handleGetHistory(c *gin.Context) {
+	var req models.HistoryRequest
+
+	// Parse query parameters
+	if page := c.Query("page"); page != "" {
+		if p, err := strconv.Atoi(page); err == nil && p > 0 {
+			req.Page = p
+		}
+	}
+
+	if pageSize := c.Query("pageSize"); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 {
+			req.PageSize = ps
+		}
+	}
+
+	req.SortKey = c.DefaultQuery("sortKey", "date")
+	req.SortDir = c.DefaultQuery("sortDir", "desc")
+
+	if movieID := c.Query("movieId"); movieID != "" {
+		if mid, err := strconv.Atoi(movieID); err == nil {
+			req.MovieID = &mid
+		}
+	}
+
+	if eventType := c.Query("eventType"); eventType != "" {
+		et := models.HistoryEventType(eventType)
+		req.EventType = &et
+	}
+
+	if successful := c.Query("successful"); successful != "" {
+		if s := successful == "true"; successful == "true" || successful == "false" {
+			req.Successful = &s
+		}
+	}
+
+	req.DownloadID = c.Query("downloadId")
+
+	if since := c.Query("since"); since != "" {
+		if t, err := time.Parse(time.RFC3339, since); err == nil {
+			req.Since = &t
+		}
+	}
+
+	if until := c.Query("until"); until != "" {
+		if t, err := time.Parse(time.RFC3339, until); err == nil {
+			req.Until = &t
+		}
+	}
+
+	response, err := s.services.HistoryService.GetHistory(req)
+	if err != nil {
+		s.logger.Error("Failed to get history", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve history"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleGetHistoryByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid history ID"})
+		return
+	}
+
+	history, err := s.services.HistoryService.GetHistoryByID(id)
+	if err != nil {
+		if err.Error() == "history record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "History record not found"})
+			return
+		}
+		s.logger.Error("Failed to get history record", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve history record"})
+		return
+	}
+
+	c.JSON(http.StatusOK, history)
+}
+
+func (s *Server) handleDeleteHistoryRecord(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid history ID"})
+		return
+	}
+
+	err = s.services.HistoryService.DeleteHistoryRecord(id)
+	if err != nil {
+		if err.Error() == "history record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "History record not found"})
+			return
+		}
+		s.logger.Error("Failed to delete history record", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete history record"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "History record deleted successfully"})
+}
+
+func (s *Server) handleGetHistoryStats(c *gin.Context) {
+	stats, err := s.services.HistoryService.GetHistoryStats()
+	if err != nil {
+		s.logger.Error("Failed to get history stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get history statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// Activity handlers
+
+func (s *Server) handleGetActivity(c *gin.Context) {
+	var req models.ActivityRequest
+
+	// Parse query parameters
+	if page := c.Query("page"); page != "" {
+		if p, err := strconv.Atoi(page); err == nil && p > 0 {
+			req.Page = p
+		}
+	}
+
+	if pageSize := c.Query("pageSize"); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 {
+			req.PageSize = ps
+		}
+	}
+
+	if activityType := c.Query("type"); activityType != "" {
+		at := models.ActivityType(activityType)
+		req.Type = &at
+	}
+
+	if status := c.Query("status"); status != "" {
+		as := models.ActivityStatus(status)
+		req.Status = &as
+	}
+
+	if movieID := c.Query("movieId"); movieID != "" {
+		if mid, err := strconv.Atoi(movieID); err == nil {
+			req.MovieID = &mid
+		}
+	}
+
+	if since := c.Query("since"); since != "" {
+		if t, err := time.Parse(time.RFC3339, since); err == nil {
+			req.Since = &t
+		}
+	}
+
+	if until := c.Query("until"); until != "" {
+		if t, err := time.Parse(time.RFC3339, until); err == nil {
+			req.Until = &t
+		}
+	}
+
+	response, err := s.services.HistoryService.GetActivities(req)
+	if err != nil {
+		s.logger.Error("Failed to get activities", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve activities"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleGetActivityByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity ID"})
+		return
+	}
+
+	activity, err := s.services.HistoryService.GetActivityByID(id)
+	if err != nil {
+		if err.Error() == "activity not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
+			return
+		}
+		s.logger.Error("Failed to get activity", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve activity"})
+		return
+	}
+
+	c.JSON(http.StatusOK, activity)
+}
+
+func (s *Server) handleDeleteActivity(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity ID"})
+		return
+	}
+
+	err = s.services.HistoryService.DeleteActivity(id)
+	if err != nil {
+		if err.Error() == "activity not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
+			return
+		}
+		s.logger.Error("Failed to delete activity", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete activity"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Activity deleted successfully"})
+}
+
+func (s *Server) handleGetRunningActivities(c *gin.Context) {
+	activities, err := s.services.HistoryService.GetRunningActivities()
+	if err != nil {
+		s.logger.Error("Failed to get running activities", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve running activities"})
+		return
+	}
+
+	c.JSON(http.StatusOK, activities)
 }
