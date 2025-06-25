@@ -87,10 +87,10 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	s.setupIndexerRoutes(v3)
 
 	// Download clients
-	v3.GET("/downloadclient", s.handleGetDownloadClients)
+	s.setupDownloadClientRoutes(v3)
 
-	// Queue
-	v3.GET("/queue", s.handleGetQueue)
+	// Queue management
+	s.setupQueueRoutes(v3)
 
 	// History
 	v3.GET("/history", s.handleGetHistory)
@@ -107,6 +107,13 @@ func (s *Server) setupMovieRoutes(v3 *gin.RouterGroup) {
 	movieRoutes.POST("", s.handleCreateMovie)
 	movieRoutes.PUT("/:id", s.handleUpdateMovie)
 	movieRoutes.DELETE("/:id", s.handleDeleteMovie)
+	
+	// Movie discovery and metadata endpoints
+	movieRoutes.GET("/lookup", s.handleMovieLookup)
+	movieRoutes.GET("/lookup/tmdb", s.handleMovieByTMDBID)
+	movieRoutes.GET("/popular", s.handleMovieDiscoverPopular)
+	movieRoutes.GET("/trending", s.handleMovieDiscoverTrending)
+	movieRoutes.PUT("/:id/refresh", s.handleRefreshMovieMetadata)
 
 	movieFileRoutes := v3.Group("/moviefile")
 	movieFileRoutes.GET("", s.handleGetMovieFiles)
@@ -143,6 +150,29 @@ func (s *Server) setupIndexerRoutes(v3 *gin.RouterGroup) {
 	indexerRoutes.PUT("/:id", s.handleUpdateIndexer)
 	indexerRoutes.DELETE("/:id", s.handleDeleteIndexer)
 	indexerRoutes.POST("/:id/test", s.handleTestIndexer)
+}
+
+func (s *Server) setupDownloadClientRoutes(v3 *gin.RouterGroup) {
+	downloadClientRoutes := v3.Group("/downloadclient")
+	downloadClientRoutes.GET("", s.handleGetDownloadClients)
+	downloadClientRoutes.GET("/:id", s.handleGetDownloadClient)
+	downloadClientRoutes.POST("", s.handleCreateDownloadClient)
+	downloadClientRoutes.PUT("/:id", s.handleUpdateDownloadClient)
+	downloadClientRoutes.DELETE("/:id", s.handleDeleteDownloadClient)
+	downloadClientRoutes.POST("/test", s.handleTestDownloadClient)
+	downloadClientRoutes.GET("/stats", s.handleGetDownloadClientStats)
+	
+	// Download history
+	v3.GET("/downloadhistory", s.handleGetDownloadHistory)
+}
+
+func (s *Server) setupQueueRoutes(v3 *gin.RouterGroup) {
+	queueRoutes := v3.Group("/queue")
+	queueRoutes.GET("", s.handleGetQueue)
+	queueRoutes.GET("/:id", s.handleGetQueueItem)
+	queueRoutes.DELETE("/:id", s.handleRemoveQueueItem)
+	queueRoutes.DELETE("/bulk", s.handleRemoveQueueItemsBulk)
+	queueRoutes.GET("/stats", s.handleGetQueueStats)
 }
 
 func (s *Server) setupTemplateRoutes() {

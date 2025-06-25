@@ -208,24 +208,109 @@ func (s *Server) handleGetIndexers(c *gin.Context) {
 }
 
 func (s *Server) handleGetDownloadClients(c *gin.Context) {
-	downloads, err := s.services.DownloadService.GetDownloads()
+	clients, err := s.services.DownloadService.GetDownloadClients()
 	if err != nil {
+		s.logger.Error("Failed to get download clients", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve download clients"})
 		return
 	}
-	c.JSON(http.StatusOK, downloads)
+	c.JSON(http.StatusOK, clients)
 }
 
-func (s *Server) handleGetQueue(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"page":          DefaultPage,
-		"pageSize":      DefaultPageSize,
-		"sortKey":       "timeleft",
-		"sortDirection": "ascending",
-		"totalRecords":  0,
-		"records":       []any{},
+func (s *Server) handleGetDownloadClient(c *gin.Context) {
+	s.handleGetByID(c, "download client", func(id int) (any, error) {
+		return s.services.DownloadService.GetDownloadClientByID(id)
 	})
 }
+
+func (s *Server) handleCreateDownloadClient(c *gin.Context) {
+	var client models.DownloadClient
+	if err := c.ShouldBindJSON(&client); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid download client data"})
+		return
+	}
+
+	if err := s.services.DownloadService.CreateDownloadClient(&client); err != nil {
+		s.logger.Error("Failed to create download client", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create download client"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, client)
+}
+
+func (s *Server) handleUpdateDownloadClient(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var client models.DownloadClient
+	if err := c.ShouldBindJSON(&client); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid download client data"})
+		return
+	}
+
+	client.ID = id
+	if err := s.services.DownloadService.UpdateDownloadClient(&client); err != nil {
+		s.logger.Error("Failed to update download client", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update download client"})
+		return
+	}
+
+	c.JSON(http.StatusOK, client)
+}
+
+func (s *Server) handleDeleteDownloadClient(c *gin.Context) {
+	s.handleDeleteByID(c, "download client", s.services.DownloadService.DeleteDownloadClient)
+}
+
+func (s *Server) handleTestDownloadClient(c *gin.Context) {
+	var client models.DownloadClient
+	if err := c.ShouldBindJSON(&client); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid download client data"})
+		return
+	}
+
+	result, err := s.services.DownloadService.TestDownloadClient(&client)
+	if err != nil {
+		s.logger.Error("Failed to test download client", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to test download client"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Server) handleGetDownloadClientStats(c *gin.Context) {
+	stats, err := s.services.DownloadService.GetDownloadClientStats()
+	if err != nil {
+		s.logger.Error("Failed to get download client stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get download client statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+func (s *Server) handleGetDownloadHistory(c *gin.Context) {
+	limitStr := c.DefaultQuery("limit", "100")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 100
+	}
+
+	history, err := s.services.DownloadService.GetDownloadHistory(limit)
+	if err != nil {
+		s.logger.Error("Failed to get download history", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve download history"})
+		return
+	}
+
+	c.JSON(http.StatusOK, history)
+}
+
 
 func (s *Server) handleGetHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
@@ -470,4 +555,257 @@ func (s *Server) handleTestIndexer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// Movie discovery and metadata handlers
+func (s *Server) handleMovieLookup(c *gin.Context) {
+	term := c.Query("term")
+	if term == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Search term is required"})
+		return
+	}
+
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if parsed, err := strconv.Atoi(pageStr); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	response, err := s.services.MetadataService.SearchMovies(term, page)
+	if err != nil {
+		s.logger.Error("Failed to lookup movies", "term", term, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to lookup movies"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.Results)
+}
+
+func (s *Server) handleMovieDiscoverPopular(c *gin.Context) {
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if parsed, err := strconv.Atoi(pageStr); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	response, err := s.services.MetadataService.GetPopularMovies(page)
+	if err != nil {
+		s.logger.Error("Failed to get popular movies", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get popular movies"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.Results)
+}
+
+func (s *Server) handleMovieDiscoverTrending(c *gin.Context) {
+	timeWindow := c.DefaultQuery("timeWindow", "week")
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if parsed, err := strconv.Atoi(pageStr); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	response, err := s.services.MetadataService.GetTrendingMovies(timeWindow, page)
+	if err != nil {
+		s.logger.Error("Failed to get trending movies", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get trending movies"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.Results)
+}
+
+func (s *Server) handleMovieByTMDBID(c *gin.Context) {
+	tmdbIDStr := c.Param("tmdbId")
+	tmdbID, err := strconv.Atoi(tmdbIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TMDB ID"})
+		return
+	}
+
+	movie, err := s.services.MetadataService.LookupMovieByTMDBID(tmdbID)
+	if err != nil {
+		s.logger.Error("Failed to get movie by TMDB ID", "tmdbId", tmdbID, "error", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, movie)
+}
+
+func (s *Server) handleRefreshMovieMetadata(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.services.MetadataService.RefreshMovieMetadata(id); err != nil {
+		s.logger.Error("Failed to refresh movie metadata", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh movie metadata"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Movie metadata refreshed successfully"})
+}
+
+// Queue handlers
+func (s *Server) handleGetQueue(c *gin.Context) {
+	params := s.parseQueueQueryParams(c)
+	
+	queue, err := s.services.QueueService.GetQueue(
+		params.MovieIDs, params.Protocol, params.Languages, 
+		params.Quality, params.Status, params.IncludeUnknownMovieItems)
+	if err != nil {
+		s.logger.Error("Failed to get queue", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve queue"})
+		return
+	}
+
+	paginatedQueue := s.applyQueuePagination(queue, params)
+	if !params.IncludeMovie {
+		s.removeMovieDetails(paginatedQueue)
+	}
+
+	response := s.buildQueueResponse(paginatedQueue, params, len(queue))
+	c.JSON(http.StatusOK, response)
+}
+
+// queueQueryParams holds parsed query parameters for queue endpoints
+type queueQueryParams struct {
+	MovieIDs                 []int
+	Protocol                 *models.DownloadProtocol
+	Languages                []int
+	Quality                  []int
+	Status                   []models.QueueStatus
+	IncludeUnknownMovieItems bool
+	IncludeMovie             bool
+	Page                     int
+	PageSize                 int
+	SortKey                  string
+	SortDirection            string
+}
+
+const (
+	trueBoolString = "true"
+)
+
+func (s *Server) parseQueueQueryParams(c *gin.Context) queueQueryParams {
+	var params queueQueryParams
+	
+	// Parse protocol
+	if protocolStr := c.Query("protocol"); protocolStr != "" {
+		p := models.DownloadProtocol(protocolStr)
+		params.Protocol = &p
+	}
+
+	// Parse status
+	if statusStr := c.Query("status"); statusStr != "" {
+		st := models.QueueStatus(statusStr)
+		params.Status = []models.QueueStatus{st}
+	}
+
+	params.IncludeUnknownMovieItems = c.DefaultQuery("includeUnknownMovieItems", "false") == trueBoolString
+	params.IncludeMovie = c.DefaultQuery("includeMovie", "false") == trueBoolString
+	params.Page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	params.PageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	params.SortKey = c.DefaultQuery("sortKey", "timeleft")
+	params.SortDirection = c.DefaultQuery("sortDirection", "ascending")
+
+	return params
+}
+
+func (s *Server) applyQueuePagination(queue []models.QueueItem, params queueQueryParams) []models.QueueItem {
+	startIndex := (params.Page - 1) * params.PageSize
+	endIndex := startIndex + params.PageSize
+	if endIndex > len(queue) {
+		endIndex = len(queue)
+	}
+	if startIndex < len(queue) {
+		return queue[startIndex:endIndex]
+	}
+	return []models.QueueItem{}
+}
+
+func (s *Server) removeMovieDetails(queue []models.QueueItem) {
+	for i := range queue {
+		queue[i].Movie = nil
+	}
+}
+
+func (s *Server) buildQueueResponse(queue []models.QueueItem, params queueQueryParams, totalRecords int) gin.H {
+	return gin.H{
+		"page":          params.Page,
+		"pageSize":      params.PageSize,
+		"sortKey":       params.SortKey,
+		"sortDirection": params.SortDirection,
+		"totalRecords":  totalRecords,
+		"records":       queue,
+	}
+}
+
+func (s *Server) handleGetQueueItem(c *gin.Context) {
+	s.handleGetByID(c, "queue item", func(id int) (any, error) {
+		return s.services.QueueService.GetQueueByID(id)
+	})
+}
+
+func (s *Server) handleRemoveQueueItem(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	removeFromClient := c.DefaultQuery("removeFromClient", trueBoolString) == trueBoolString
+	blocklist := c.DefaultQuery("blocklist", "false") == trueBoolString
+	skipRedownload := c.DefaultQuery("skipRedownload", "false") == trueBoolString
+	changeCategory := c.DefaultQuery("changeCategory", "false") == trueBoolString
+
+	err = s.services.QueueService.RemoveQueueItem(id, removeFromClient, blocklist, skipRedownload, changeCategory)
+	if err != nil {
+		s.logger.Error("Failed to remove queue item", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove queue item"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Queue item removed successfully"})
+}
+
+func (s *Server) handleRemoveQueueItemsBulk(c *gin.Context) {
+	var bulkRequest models.QueueBulkResource
+	if err := c.ShouldBindJSON(&bulkRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bulk request data"})
+		return
+	}
+
+	removeFromClient := c.DefaultQuery("removeFromClient", trueBoolString) == trueBoolString
+	blocklist := c.DefaultQuery("blocklist", "false") == trueBoolString
+	skipRedownload := c.DefaultQuery("skipRedownload", "false") == trueBoolString
+	changeCategory := c.DefaultQuery("changeCategory", "false") == trueBoolString
+
+	err := s.services.QueueService.RemoveQueueItems(
+		bulkRequest.IDs, removeFromClient, blocklist, skipRedownload, changeCategory)
+	if err != nil {
+		s.logger.Error("Failed to remove queue items", "count", len(bulkRequest.IDs), "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove queue items"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Queue items removed successfully"})
+}
+
+func (s *Server) handleGetQueueStats(c *gin.Context) {
+	stats, err := s.services.QueueService.GetQueueStats()
+	if err != nil {
+		s.logger.Error("Failed to get queue stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get queue statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
 }

@@ -25,6 +25,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	Auth     AuthConfig     `mapstructure:"auth"`
 	Storage  StorageConfig  `mapstructure:"storage"`
+	TMDB     TMDBConfig     `mapstructure:"tmdb"`
 }
 
 // ServerConfig contains HTTP server configuration settings
@@ -71,6 +72,11 @@ type StorageConfig struct {
 	BackupDir      string `mapstructure:"backup_directory"`
 }
 
+// TMDBConfig contains TheMovieDB API configuration
+type TMDBConfig struct {
+	APIKey string `mapstructure:"api_key"`
+}
+
 // Load reads and parses the configuration from file and environment variables
 func Load(configPath, dataDir string) (*Config, error) {
 	viper.SetConfigName("config")
@@ -115,8 +121,12 @@ func setDefaults(dataDir string) {
 	viper.SetDefault("server.url_base", "")
 	viper.SetDefault("server.enable_ssl", false)
 
-	viper.SetDefault("database.type", "sqlite")
-	viper.SetDefault("database.connection_url", filepath.Join(dataDir, "radarr.db"))
+	viper.SetDefault("database.type", "postgres")
+	viper.SetDefault("database.host", "localhost")
+	viper.SetDefault("database.port", 5432)
+	viper.SetDefault("database.database", "radarr")
+	viper.SetDefault("database.username", "radarr")
+	viper.SetDefault("database.password", "password")
 	viper.SetDefault("database.max_connections", DefaultMaxConnections)
 
 	viper.SetDefault("log.level", "info")

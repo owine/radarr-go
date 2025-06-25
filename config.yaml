@@ -29,3 +29,6 @@ storage:
   data_directory: "./data"
   movie_directory: "./data/movies"
   backup_directory: "./data/backups"
+
+tmdb:
+  api_key: ""  # Get from https://www.themoviedb.org/settings/api
