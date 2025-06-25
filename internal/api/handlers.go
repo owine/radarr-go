@@ -1164,3 +1164,204 @@ func (s *Server) handleGetRunningActivities(c *gin.Context) {
 
 	c.JSON(http.StatusOK, activities)
 }
+
+// Configuration handlers
+
+// Host Configuration handlers
+func (s *Server) handleGetHostConfig(c *gin.Context) {
+	config, err := s.services.ConfigService.GetHostConfig()
+	if err != nil {
+		s.logger.Error("Failed to get host config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve host configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func (s *Server) handleUpdateHostConfig(c *gin.Context) {
+	var config models.HostConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid host configuration data"})
+		return
+	}
+
+	err := s.services.ConfigService.UpdateHostConfig(&config)
+	if err != nil {
+		s.logger.Error("Failed to update host config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update host configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+// Naming Configuration handlers
+func (s *Server) handleGetNamingConfig(c *gin.Context) {
+	config, err := s.services.ConfigService.GetNamingConfig()
+	if err != nil {
+		s.logger.Error("Failed to get naming config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve naming configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func (s *Server) handleUpdateNamingConfig(c *gin.Context) {
+	var config models.NamingConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid naming configuration data"})
+		return
+	}
+
+	err := s.services.ConfigService.UpdateNamingConfig(&config)
+	if err != nil {
+		s.logger.Error("Failed to update naming config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update naming configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func (s *Server) handleGetNamingTokens(c *gin.Context) {
+	tokens := s.services.ConfigService.GetNamingTokens()
+	c.JSON(http.StatusOK, tokens)
+}
+
+// Media Management Configuration handlers
+func (s *Server) handleGetMediaManagementConfig(c *gin.Context) {
+	config, err := s.services.ConfigService.GetMediaManagementConfig()
+	if err != nil {
+		s.logger.Error("Failed to get media management config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve media management configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+func (s *Server) handleUpdateMediaManagementConfig(c *gin.Context) {
+	var config models.MediaManagementConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid media management configuration data"})
+		return
+	}
+
+	err := s.services.ConfigService.UpdateMediaManagementConfig(&config)
+	if err != nil {
+		s.logger.Error("Failed to update media management config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update media management configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+// Root Folder handlers
+func (s *Server) handleGetRootFolders(c *gin.Context) {
+	rootFolders, err := s.services.ConfigService.GetRootFolders()
+	if err != nil {
+		s.logger.Error("Failed to get root folders", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve root folders"})
+		return
+	}
+
+	c.JSON(http.StatusOK, rootFolders)
+}
+
+func (s *Server) handleGetRootFolder(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder ID"})
+		return
+	}
+
+	rootFolder, err := s.services.ConfigService.GetRootFolderByID(id)
+	if err != nil {
+		if err.Error() == "root folder not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Root folder not found"})
+			return
+		}
+		s.logger.Error("Failed to get root folder", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve root folder"})
+		return
+	}
+
+	c.JSON(http.StatusOK, rootFolder)
+}
+
+func (s *Server) handleCreateRootFolder(c *gin.Context) {
+	var rootFolder models.RootFolder
+	if err := c.ShouldBindJSON(&rootFolder); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder data"})
+		return
+	}
+
+	err := s.services.ConfigService.CreateRootFolder(&rootFolder)
+	if err != nil {
+		s.logger.Error("Failed to create root folder", "path", rootFolder.Path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create root folder"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, rootFolder)
+}
+
+func (s *Server) handleUpdateRootFolder(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder ID"})
+		return
+	}
+
+	var rootFolder models.RootFolder
+	if err := c.ShouldBindJSON(&rootFolder); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder data"})
+		return
+	}
+
+	rootFolder.ID = id
+	err = s.services.ConfigService.UpdateRootFolder(&rootFolder)
+	if err != nil {
+		s.logger.Error("Failed to update root folder", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update root folder"})
+		return
+	}
+
+	c.JSON(http.StatusOK, rootFolder)
+}
+
+func (s *Server) handleDeleteRootFolder(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder ID"})
+		return
+	}
+
+	err = s.services.ConfigService.DeleteRootFolder(id)
+	if err != nil {
+		if err.Error() == "root folder not found: root folder not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Root folder not found"})
+			return
+		}
+		s.logger.Error("Failed to delete root folder", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete root folder"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Root folder deleted successfully"})
+}
+
+// Configuration stats handler
+func (s *Server) handleGetConfigStats(c *gin.Context) {
+	stats, err := s.services.ConfigService.GetConfigurationStats()
+	if err != nil {
+		s.logger.Error("Failed to get configuration stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve configuration statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

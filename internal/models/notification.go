@@ -1,4 +1,3 @@
-// Package models provides data structures for the Radarr application.
 package models
 
 import (
@@ -12,26 +11,56 @@ import (
 type NotificationType string
 
 const (
-	// NotificationTypeDiscord represents Discord notifications
-	NotificationTypeDiscord NotificationType = "discord"
-	// NotificationTypeSlack represents Slack notifications
-	NotificationTypeSlack NotificationType = "slack"
 	// NotificationTypeEmail represents email notifications
-	NotificationTypeEmail NotificationType = "email"
-	// NotificationTypePushbullet represents Pushbullet notifications
-	NotificationTypePushbullet NotificationType = "pushbullet"
-	// NotificationTypePushover represents Pushover notifications
-	NotificationTypePushover NotificationType = "pushover"
+	NotificationTypeEmail          NotificationType = "Email"
+	// NotificationTypeDiscord represents Discord webhook notifications
+	NotificationTypeDiscord        NotificationType = "Discord"
+	// NotificationTypeSlack represents Slack webhook notifications
+	NotificationTypeSlack          NotificationType = "Slack"
+	// NotificationTypeTelegram represents Telegram bot notifications
+	NotificationTypeTelegram       NotificationType = "Telegram"
 	// NotificationTypeWebhook represents generic webhook notifications
-	NotificationTypeWebhook NotificationType = "webhook"
-	// NotificationTypeTelegram represents Telegram notifications
-	NotificationTypeTelegram NotificationType = "telegram"
-	// NotificationTypePlex represents Plex notifications
-	NotificationTypePlex NotificationType = "plex"
-	// NotificationTypeEmby represents Emby notifications
-	NotificationTypeEmby NotificationType = "emby"
-	// NotificationTypeJellyfin represents Jellyfin notifications
-	NotificationTypeJellyfin NotificationType = "jellyfin"
+	NotificationTypeWebhook        NotificationType = "Webhook"
+	
+	// NotificationTypePushover represents Pushover push notifications
+	NotificationTypePushover       NotificationType = "Pushover"
+	// NotificationTypePushbullet represents Pushbullet push notifications
+	NotificationTypePushbullet     NotificationType = "Pushbullet"
+	// NotificationTypeGotify represents Gotify push notifications
+	NotificationTypeGotify         NotificationType = "Gotify"
+	// NotificationTypeJoin represents Join push notifications
+	NotificationTypeJoin           NotificationType = "Join"
+	// NotificationTypeApprise represents Apprise multi-service notifications
+	NotificationTypeApprise        NotificationType = "Apprise"
+	// NotificationTypeNotifiarr represents Notifiarr service notifications
+	NotificationTypeNotifiarr      NotificationType = "Notifiarr"
+	
+	// NotificationTypeMailgun represents Mailgun email service
+	NotificationTypeMailgun        NotificationType = "Mailgun"
+	// NotificationTypeSendGrid represents SendGrid email service
+	NotificationTypeSendGrid       NotificationType = "SendGrid"
+	
+	// NotificationTypePlex represents Plex Media Server notifications
+	NotificationTypePlex           NotificationType = "Plex"
+	// NotificationTypeEmby represents Emby Media Server notifications
+	NotificationTypeEmby           NotificationType = "Emby"
+	// NotificationTypeJellyfin represents Jellyfin Media Server notifications
+	NotificationTypeJellyfin       NotificationType = "Jellyfin"
+	// NotificationTypeKodi represents Kodi media center notifications
+	NotificationTypeKodi           NotificationType = "Kodi"
+	
+	// NotificationTypeCustomScript represents custom script notifications
+	NotificationTypeCustomScript   NotificationType = "CustomScript"
+	// NotificationTypeSynologyIndexer represents Synology indexer notifications
+	NotificationTypeSynologyIndexer NotificationType = "SynologyIndexer"
+	// NotificationTypeTwitter represents Twitter notifications
+	NotificationTypeTwitter        NotificationType = "Twitter"
+	// NotificationTypeSignal represents Signal messenger notifications
+	NotificationTypeSignal         NotificationType = "Signal"
+	// NotificationTypeMatrix represents Matrix protocol notifications
+	NotificationTypeMatrix         NotificationType = "Matrix"
+	// NotificationTypeNtfy represents Ntfy push notifications
+	NotificationTypeNtfy           NotificationType = "Ntfy"
 )
 
 // NotificationTrigger represents when notifications should be sent
@@ -84,25 +113,88 @@ func (ns *NotificationSettings) Scan(value interface{}) error {
 	}
 }
 
+// NotificationField represents a configuration field for a notification
+type NotificationField struct {
+	Name         string      `json:"name"`
+	Label        string      `json:"label"`
+	Value        interface{} `json:"value"`
+	Type         string      `json:"type"`
+	Advanced     bool        `json:"advanced"`
+	Privacy      string      `json:"privacy"`
+	SelectOptions []SelectOption `json:"selectOptions,omitempty"`
+	HelpText     string      `json:"helpText,omitempty"`
+	HelpLink     string      `json:"helpLink,omitempty"`
+	Order        int         `json:"order"`
+	Hidden       bool        `json:"hidden"`
+}
+
+// NotificationFieldsArray is a custom type for handling JSON arrays of notification fields
+type NotificationFieldsArray []NotificationField
+
+// Value implements the driver.Valuer interface for database storage
+func (f NotificationFieldsArray) Value() (driver.Value, error) {
+	return json.Marshal(f)
+}
+
+// Scan implements the sql.Scanner interface for database retrieval
+func (f *NotificationFieldsArray) Scan(value interface{}) error {
+	if value == nil {
+		*f = NotificationFieldsArray{}
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+
+	return json.Unmarshal(bytes, f)
+}
+
+// NotificationTestResult represents the result of testing a notification configuration
+type NotificationTestResult struct {
+	IsValid bool     `json:"isValid"`
+	Errors  []string `json:"errors"`
+}
+
 // Notification represents a notification provider configuration
 type Notification struct {
 	ID                    int                  `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name                  string               `json:"name" gorm:"not null;size:255"`
-	Type                  NotificationType     `json:"implementation" gorm:"not null;size:50"`
-	Settings              NotificationSettings `json:"fields" gorm:"type:text"`
+	Name                  string               `json:"name" gorm:"not null;size:255;uniqueIndex"`
+	Implementation        NotificationType     `json:"implementation" gorm:"not null;size:50"`
+	ConfigContract        string               `json:"configContract" gorm:"size:100"`
+	Settings              NotificationSettings `json:"settings" gorm:"type:text"`
 	Tags                  IntArray             `json:"tags" gorm:"type:text"`
+	
+	// Event triggers
 	OnGrab                bool                 `json:"onGrab" gorm:"default:false"`
-	OnDownload            bool                 `json:"onDownload" gorm:"default:false"`
-	OnUpgrade             bool                 `json:"onUpgrade" gorm:"default:false"`
+	OnDownload            bool                 `json:"onDownload" gorm:"default:true"`
+	OnUpgrade             bool                 `json:"onUpgrade" gorm:"default:true"`
 	OnRename              bool                 `json:"onRename" gorm:"default:false"`
+	OnMovieAdded          bool                 `json:"onMovieAdded" gorm:"default:false"`
 	OnMovieDelete         bool                 `json:"onMovieDelete" gorm:"default:false"`
 	OnMovieFileDelete     bool                 `json:"onMovieFileDelete" gorm:"default:false"`
-	OnHealth              bool                 `json:"onHealth" gorm:"default:false"`
+	OnHealthIssue         bool                 `json:"onHealthIssue" gorm:"default:false"`
 	OnApplicationUpdate   bool                 `json:"onApplicationUpdate" gorm:"default:false"`
+	OnManualInteractionRequired bool          `json:"onManualInteractionRequired" gorm:"default:false"`
 	IncludeHealthWarnings bool                 `json:"includeHealthWarnings" gorm:"default:false"`
-	Enable                bool                 `json:"enable" gorm:"default:true"`
-	CreatedAt             time.Time            `json:"added" gorm:"autoCreateTime"`
-	UpdatedAt             time.Time            `json:"updated" gorm:"autoUpdateTime"`
+	
+	// Provider capabilities
+	SupportsOnGrab        bool                 `json:"supportsOnGrab" gorm:"default:true"`
+	SupportsOnDownload    bool                 `json:"supportsOnDownload" gorm:"default:true"`
+	SupportsOnUpgrade     bool                 `json:"supportsOnUpgrade" gorm:"default:true"`
+	SupportsOnRename      bool                 `json:"supportsOnRename" gorm:"default:true"`
+	SupportsOnMovieAdded  bool                 `json:"supportsOnMovieAdded" gorm:"default:true"`
+	SupportsOnMovieDelete bool                 `json:"supportsOnMovieDelete" gorm:"default:true"`
+	SupportsOnMovieFileDelete bool             `json:"supportsOnMovieFileDelete" gorm:"default:true"`
+	SupportsOnHealthIssue bool                 `json:"supportsOnHealthIssue" gorm:"default:true"`
+	SupportsOnApplicationUpdate bool           `json:"supportsOnApplicationUpdate" gorm:"default:true"`
+	SupportsOnManualInteractionRequired bool  `json:"supportsOnManualInteractionRequired" gorm:"default:true"`
+	
+	Enabled               bool                 `json:"enabled" gorm:"default:true"`
+	Fields                NotificationFieldsArray `json:"fields" gorm:"type:text"`
+	CreatedAt             time.Time            `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt             time.Time            `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // TableName returns the database table name for the Notification model
@@ -112,7 +204,7 @@ func (Notification) TableName() string {
 
 // IsEnabled returns true if the notification is enabled
 func (n *Notification) IsEnabled() bool {
-	return n.Enable
+	return n.Enabled
 }
 
 // ShouldNotifyFor returns true if this notification should be sent for the given trigger
@@ -123,40 +215,138 @@ func (n *Notification) ShouldNotifyFor(trigger NotificationTrigger) bool {
 
 	switch trigger {
 	case NotificationTriggerOnGrab:
-		return n.OnGrab
+		return n.SupportsOnGrab && n.OnGrab
 	case NotificationTriggerOnDownload:
-		return n.OnDownload
+		return n.SupportsOnDownload && n.OnDownload
 	case NotificationTriggerOnUpgrade:
-		return n.OnUpgrade
+		return n.SupportsOnUpgrade && n.OnUpgrade
 	case NotificationTriggerOnRename:
-		return n.OnRename
+		return n.SupportsOnRename && n.OnRename
 	case NotificationTriggerOnMovieDelete:
-		return n.OnMovieDelete
+		return n.SupportsOnMovieDelete && n.OnMovieDelete
 	case NotificationTriggerOnMovieFileDelete:
-		return n.OnMovieFileDelete
+		return n.SupportsOnMovieFileDelete && n.OnMovieFileDelete
 	case NotificationTriggerOnHealth:
-		return n.OnHealth
+		return n.SupportsOnHealthIssue && n.OnHealthIssue
 	case NotificationTriggerOnApplicationUpdate:
-		return n.OnApplicationUpdate
+		return n.SupportsOnApplicationUpdate && n.OnApplicationUpdate
 	default:
 		return false
 	}
 }
 
-// NotificationMessage represents a notification message to be sent
-type NotificationMessage struct {
-	Type    NotificationTrigger    `json:"type"`
-	Subject string                 `json:"subject"`
-	Body    string                 `json:"body"`
-	Movie   *Movie                 `json:"movie,omitempty"`
-	Data    map[string]interface{} `json:"data,omitempty"`
+// RequiresAuthentication checks if the notification type requires authentication
+func (n *Notification) RequiresAuthentication() bool {
+	switch n.Implementation {
+	case NotificationTypeEmail, NotificationTypeMailgun, NotificationTypeSendGrid:
+		return true
+	case NotificationTypeDiscord, NotificationTypeSlack, NotificationTypeWebhook:
+		return false // Uses webhook URLs
+	case NotificationTypeTelegram, NotificationTypePushover, NotificationTypePushbullet,
+		NotificationTypeGotify, NotificationTypeJoin, NotificationTypeApprise,
+		NotificationTypeNotifiarr, NotificationTypePlex, NotificationTypeEmby,
+		NotificationTypeJellyfin, NotificationTypeKodi, NotificationTypeTwitter,
+		NotificationTypeSignal, NotificationTypeMatrix, NotificationTypeNtfy:
+		return true
+	case NotificationTypeCustomScript, NotificationTypeSynologyIndexer:
+		return false
+	default:
+		return false
+	}
 }
 
-// NotificationTestResult represents the result of testing a notification
-type NotificationTestResult struct {
-	IsValid bool     `json:"isValid"`
-	Errors  []string `json:"validationFailures"`
+// notificationProviderNames maps notification types to display names
+var notificationProviderNames = map[NotificationType]string{
+	NotificationTypeEmail:          "Email",
+	NotificationTypeDiscord:        "Discord",
+	NotificationTypeSlack:          "Slack",
+	NotificationTypeTelegram:       "Telegram",
+	NotificationTypePushover:       "Pushover",
+	NotificationTypePushbullet:     "Pushbullet",
+	NotificationTypeGotify:         "Gotify",
+	NotificationTypeWebhook:        "Webhook",
+	NotificationTypeCustomScript:   "Custom Script",
+	NotificationTypePlex:           "Plex Media Server",
+	NotificationTypeEmby:           "Emby Media Server",
+	NotificationTypeJellyfin:       "Jellyfin Media Server",
+	NotificationTypeJoin:           "Join",
+	NotificationTypeApprise:        "Apprise",
+	NotificationTypeNotifiarr:      "Notifiarr",
+	NotificationTypeMailgun:        "Mailgun",
+	NotificationTypeSendGrid:       "SendGrid",
+	NotificationTypeKodi:           "Kodi",
+	NotificationTypeSynologyIndexer: "Synology Indexer",
+	NotificationTypeTwitter:        "Twitter",
+	NotificationTypeSignal:         "Signal",
+	NotificationTypeMatrix:         "Matrix",
+	NotificationTypeNtfy:           "Ntfy",
 }
+
+// GetProviderName returns the display name for the notification provider
+func (n *Notification) GetProviderName() string {
+	if name, exists := notificationProviderNames[n.Implementation]; exists {
+		return name
+	}
+	return string(n.Implementation)
+}
+
+// NotificationMessage represents a notification message to be sent
+type NotificationMessage struct {
+	Type           NotificationTrigger    `json:"type"`
+	Subject        string                 `json:"subject"`
+	Body           string                 `json:"body"`
+	Movie          *Movie                 `json:"movie,omitempty"`
+	MovieFile      *MovieFile             `json:"movieFile,omitempty"`
+	DeletedFiles   []MovieFile            `json:"deletedFiles,omitempty"`
+	OldMovieFile   *MovieFile             `json:"oldMovieFile,omitempty"`
+	SourceTitle    string                 `json:"sourceTitle,omitempty"`
+	Quality        *QualityDefinition     `json:"quality,omitempty"`
+	QualityUpgrade bool                   `json:"qualityUpgrade"`
+	DownloadClient string                 `json:"downloadClient,omitempty"`
+	DownloadID     string                 `json:"downloadId,omitempty"`
+	Message        string                 `json:"message,omitempty"`
+	HealthCheck    *HealthCheck           `json:"healthCheck,omitempty"`
+	Data           map[string]interface{} `json:"data,omitempty"`
+}
+
+// NotificationEvent represents an event that can trigger notifications
+type NotificationEvent struct {
+	Type           string                 `json:"type"`
+	EventType      string                 `json:"eventType"`
+	Movie          *Movie                 `json:"movie,omitempty"`
+	MovieFile      *MovieFile             `json:"movieFile,omitempty"`
+	DeletedFiles   []MovieFile            `json:"deletedFiles,omitempty"`
+	OldMovieFile   *MovieFile             `json:"oldMovieFile,omitempty"`
+	SourceTitle    string                 `json:"sourceTitle,omitempty"`
+	Quality        *QualityDefinition     `json:"quality,omitempty"`
+	QualityUpgrade bool                   `json:"qualityUpgrade"`
+	DownloadClient string                 `json:"downloadClient,omitempty"`
+	DownloadID     string                 `json:"downloadId,omitempty"`
+	Message        string                 `json:"message,omitempty"`
+	HealthCheck    *HealthCheck           `json:"healthCheck,omitempty"`
+	ApplicationUpdate *ApplicationUpdate  `json:"updateChanges,omitempty"`
+	ManualInteraction *ManualInteraction  `json:"manualInteraction,omitempty"`
+	Data           map[string]interface{} `json:"data,omitempty"`
+}
+
+// ApplicationUpdate represents an application update
+type ApplicationUpdate struct {
+	Version      string    `json:"version"`
+	Branch       string    `json:"branch"`
+	ReleaseDate  time.Time `json:"releaseDate"`
+	FileName     string    `json:"fileName"`
+	URL          string    `json:"url"`
+	Changes      []string  `json:"changes"`
+}
+
+// ManualInteraction represents a manual interaction requirement
+type ManualInteraction struct {
+	DownloadID string `json:"downloadId"`
+	Title      string `json:"title"`
+	Message    string `json:"message"`
+	Type       string `json:"type"`
+}
+
 
 // NotificationHistory represents a sent notification
 type NotificationHistory struct {
@@ -165,12 +355,13 @@ type NotificationHistory struct {
 	Notification   *Notification       `json:"notification,omitempty" gorm:"foreignKey:NotificationID"`
 	MovieID        *int                `json:"movieId,omitempty" gorm:"index"`
 	Movie          *Movie              `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
-	Trigger        NotificationTrigger `json:"eventType" gorm:"not null;size:50"`
+	EventType      string              `json:"eventType" gorm:"not null;size:50"`
 	Subject        string              `json:"subject" gorm:"size:500"`
 	Body           string              `json:"message" gorm:"type:text"`
 	Successful     bool                `json:"successful" gorm:"not null"`
 	ErrorMessage   string              `json:"errorMessage,omitempty" gorm:"type:text"`
 	SentAt         time.Time           `json:"date" gorm:"not null;index"`
+	CreatedAt      time.Time           `json:"createdAt" gorm:"autoCreateTime"`
 }
 
 // TableName returns the database table name for the NotificationHistory model

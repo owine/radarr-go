@@ -99,6 +99,9 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	s.setupHistoryRoutes(v3)
 	s.setupActivityRoutes(v3)
 
+	// Configuration
+	s.setupConfigRoutes(v3)
+
 	// Search
 	searchRoutes := v3.Group("/search")
 	searchRoutes.GET("/movie", s.handleSearchMovies)
@@ -308,4 +311,30 @@ func (s *Server) setupActivityRoutes(v3 *gin.RouterGroup) {
 	activityRoutes.GET("/:id", s.handleGetActivityByID)
 	activityRoutes.DELETE("/:id", s.handleDeleteActivity)
 	activityRoutes.GET("/running", s.handleGetRunningActivities)
+}
+
+func (s *Server) setupConfigRoutes(v3 *gin.RouterGroup) {
+	// Host configuration
+	v3.GET("/config/host", s.handleGetHostConfig)
+	v3.PUT("/config/host", s.handleUpdateHostConfig)
+	
+	// Naming configuration
+	v3.GET("/config/naming", s.handleGetNamingConfig)
+	v3.PUT("/config/naming", s.handleUpdateNamingConfig)
+	v3.GET("/config/naming/tokens", s.handleGetNamingTokens)
+	
+	// Media management configuration
+	v3.GET("/config/mediamanagement", s.handleGetMediaManagementConfig)
+	v3.PUT("/config/mediamanagement", s.handleUpdateMediaManagementConfig)
+	
+	// Root folders
+	rootFolderRoutes := v3.Group("/rootfolder")
+	rootFolderRoutes.GET("", s.handleGetRootFolders)
+	rootFolderRoutes.GET("/:id", s.handleGetRootFolder)
+	rootFolderRoutes.POST("", s.handleCreateRootFolder)
+	rootFolderRoutes.PUT("/:id", s.handleUpdateRootFolder)
+	rootFolderRoutes.DELETE("/:id", s.handleDeleteRootFolder)
+	
+	// Configuration stats
+	v3.GET("/config/stats", s.handleGetConfigStats)
 }
