@@ -1,0 +1,13 @@
+server:
+  port: 7878
+
+database:
+  type: "postgres"
+  host: "localhost"
+  port: 5432
+  database: "radarr_test"
+  username: "test_user"
+  password: "test_password_123"
+
+log:
+  level: "debug"

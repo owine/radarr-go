@@ -238,7 +238,7 @@ jobs:
     - name: Create test directories
       run: |
         mkdir -p data movies web/static web/templates
-        cp config.yaml data/
+        cp config.ci.mariadb.yml data/config.yml
 
     - name: Run tests (MariaDB)
       run: |
@@ -282,11 +282,9 @@ jobs:
         if [ "$(uname)" = "Darwin" ]; then
           # Install gtimeout if not available
           command -v gtimeout >/dev/null 2>&1 || brew install coreutils
-          export RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
-          gtimeout 30s "$BINARY" --data ./data &
+          gtimeout 30s "$BINARY" --data ./data --config ./data/config.yml &
         else
-          export RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
-          timeout 30s "$BINARY" --data ./data &
+          timeout 30s "$BINARY" --data ./data --config ./data/config.yml &
         fi
         
         RADARR_PID=$!
@@ -385,7 +383,7 @@ jobs:
     - name: Create test directories
       run: |
         mkdir -p data movies web/static web/templates
-        cp config.yaml data/
+        cp config.ci.mariadb.yml data/config.yml
 
     - name: Run tests (MariaDB)
       run: |
@@ -469,7 +467,7 @@ jobs:
     - name: Create test directories
       run: |
         mkdir -p data movies web/static web/templates
-        cp config.yaml data/
+        cp config.ci.postgres.yml data/config.yml
 
     - name: Run tests (PostgreSQL)
       run: |
@@ -506,8 +504,7 @@ jobs:
         chmod +x "$BINARY"
         
         # Use timeout on Linux
-        export RADARR_DATABASE_TYPE=postgres RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=5432 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
-        timeout 30s "$BINARY" --data ./data &
+        timeout 30s "$BINARY" --data ./data --config ./data/config.yml &
         
         RADARR_PID=$!
         sleep 10
@@ -604,7 +601,7 @@ jobs:
     - name: Create test directories
       run: |
         mkdir -p data movies web/static web/templates
-        cp config.yaml data/
+        cp config.ci.postgres.yml data/config.yml
 
     - name: Run tests (PostgreSQL)
       run: |

@@ -29,8 +29,8 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_DB=radarr
-      - POSTGRES_USER=radarr_user
-      - POSTGRES_PASSWORD=change_me_in_production
+      - POSTGRES_USER=radarr
+      - POSTGRES_PASSWORD=password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
