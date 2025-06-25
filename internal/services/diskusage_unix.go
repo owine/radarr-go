@@ -14,11 +14,11 @@ func getDiskUsageForPath(path string) (*DiskUsage, error) {
 	}
 
 	// Calculate sizes in bytes
-	blockSize := int64(stat.Bsize)
+	blockSize := stat.Bsize
 	//nolint:gosec // Safe conversion for disk space calculation
-	totalSize := int64(stat.Blocks) * blockSize
+	totalSize := int64(stat.Blocks) * int64(blockSize)
 	//nolint:gosec // Safe conversion for disk space calculation  
-	freeSize := int64(stat.Bavail) * blockSize
+	freeSize := int64(stat.Bavail) * int64(blockSize)
 
 	return &DiskUsage{
 		Free:  freeSize,
