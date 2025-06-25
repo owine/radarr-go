@@ -79,19 +79,15 @@ type TMDBConfig struct {
 
 // Load reads and parses the configuration from file and environment variables
 func Load(configPath, dataDir string) (*Config, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-
-	// Add config search paths
-	viper.AddConfigPath(".")
-	viper.AddConfigPath(dataDir)
-	viper.AddConfigPath(filepath.Dir(configPath))
+	vip := viper.New()
+	vip.SetConfigFile(configPath)
+	vip.SetConfigType("yaml")
 
 	// Set defaults
-	setDefaults(dataDir)
+	setDefaults(vip, dataDir)
 
 	// Read config file if it exists
-	if err := viper.ReadInConfig(); err != nil {
+	if err := vip.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, fmt.Errorf("error reading config file: %w", err)
 		}
@@ -99,11 +95,11 @@ func Load(configPath, dataDir string) (*Config, error) {
 	}
 
 	// Override with environment variables
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("RADARR")
+	vip.AutomaticEnv()
+	vip.SetEnvPrefix("RADARR")
 
 	var config Config
-	if err := viper.Unmarshal(&config); err != nil {
+	if err := vip.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
 
@@ -115,30 +111,30 @@ func Load(configPath, dataDir string) (*Config, error) {
 	return &config, nil
 }
 
-func setDefaults(dataDir string) {
-	viper.SetDefault("server.port", DefaultRadarrPort)
-	viper.SetDefault("server.host", "0.0.0.0")
-	viper.SetDefault("server.url_base", "")
-	viper.SetDefault("server.enable_ssl", false)
+func setDefaults(vip *viper.Viper, dataDir string) {
+	vip.SetDefault("server.port", DefaultRadarrPort)
+	vip.SetDefault("server.host", "0.0.0.0")
+	vip.SetDefault("server.url_base", "")
+	vip.SetDefault("server.enable_ssl", false)
 
-	viper.SetDefault("database.type", "postgres")
-	viper.SetDefault("database.host", "localhost")
-	viper.SetDefault("database.port", 5432)
-	viper.SetDefault("database.database", "radarr")
-	viper.SetDefault("database.username", "radarr")
-	viper.SetDefault("database.password", "password")
-	viper.SetDefault("database.max_connections", DefaultMaxConnections)
+	vip.SetDefault("database.type", "postgres")
+	vip.SetDefault("database.host", "localhost")
+	vip.SetDefault("database.port", 5432)
+	vip.SetDefault("database.database", "radarr")
+	vip.SetDefault("database.username", "radarr")
+	vip.SetDefault("database.password", "password")
+	vip.SetDefault("database.max_connections", DefaultMaxConnections)
 
-	viper.SetDefault("log.level", "info")
-	viper.SetDefault("log.format", "json")
-	viper.SetDefault("log.output", "stdout")
+	vip.SetDefault("log.level", "info")
+	vip.SetDefault("log.format", "json")
+	vip.SetDefault("log.output", "stdout")
 
-	viper.SetDefault("auth.method", "none")
-	viper.SetDefault("auth.api_key", "")
+	vip.SetDefault("auth.method", "none")
+	vip.SetDefault("auth.api_key", "")
 
-	viper.SetDefault("storage.data_directory", dataDir)
-	viper.SetDefault("storage.movie_directory", filepath.Join(dataDir, "movies"))
-	viper.SetDefault("storage.backup_directory", filepath.Join(dataDir, "backups"))
+	vip.SetDefault("storage.data_directory", dataDir)
+	vip.SetDefault("storage.movie_directory", filepath.Join(dataDir, "movies"))
+	vip.SetDefault("storage.backup_directory", filepath.Join(dataDir, "backups"))
 }
 
 func ensureDirectories(config *Config) error {
