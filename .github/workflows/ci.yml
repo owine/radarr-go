@@ -488,6 +488,42 @@ jobs:
         flags: unittests,postgres,${{ matrix.os }}-${{ matrix.arch }}
         name: coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres
 
+    - name: Integration test
+      run: |
+        # Select the appropriate binary for testing
+        # All binaries work cross-platform as pure Go builds
+        if [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "amd64" ]; then
+          BINARY="artifacts/radarr-linux-amd64"
+        elif [ "${{ matrix.os }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
+          BINARY="artifacts/radarr-test"  # Use test binary for ARM64 on AMD64 runners
+        else
+          # For other cross-platform scenarios: use test binary
+          BINARY="artifacts/radarr-test"
+        fi
+        
+        chmod +x "$BINARY"
+        
+        # Use timeout on Linux
+        timeout 30s env RADARR_DATABASE_TYPE=postgres RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=5432 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123 "$BINARY" --data ./data &
+        
+        RADARR_PID=$!
+        sleep 10
+        
+        # Test API endpoints
+        curl -f http://localhost:7878/ping || exit 1
+        curl -f http://localhost:7878/api/v3/system/status || exit 1
+        curl -f http://localhost:7878/api/v3/movie || exit 1
+        
+        kill $RADARR_PID || true
+        wait $RADARR_PID || true
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
   # Stage 3c: Test PostgreSQL macOS/FreeBSD (runs after build completes successfully)
   test-postgres-native:
     name: Test PostgreSQL (${{ matrix.os }}, ${{ matrix.arch }})
