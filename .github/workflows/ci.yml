@@ -282,9 +282,11 @@ jobs:
         if [ "$(uname)" = "Darwin" ]; then
           # Install gtimeout if not available
           command -v gtimeout >/dev/null 2>&1 || brew install coreutils
-          gtimeout 30s env RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123 "$BINARY" --data ./data &
+          export RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
+          gtimeout 30s "$BINARY" --data ./data &
         else
-          timeout 30s env RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123 "$BINARY" --data ./data &
+          export RADARR_DATABASE_TYPE=mariadb RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=3306 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
+          timeout 30s "$BINARY" --data ./data &
         fi
         
         RADARR_PID=$!
@@ -504,7 +506,8 @@ jobs:
         chmod +x "$BINARY"
         
         # Use timeout on Linux
-        timeout 30s env RADARR_DATABASE_TYPE=postgres RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=5432 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123 "$BINARY" --data ./data &
+        export RADARR_DATABASE_TYPE=postgres RADARR_DATABASE_HOST=localhost RADARR_DATABASE_PORT=5432 RADARR_DATABASE_DATABASE=radarr_test RADARR_DATABASE_USERNAME=test_user RADARR_DATABASE_PASSWORD=test_password_123
+        timeout 30s "$BINARY" --data ./data &
         
         RADARR_PID=$!
         sleep 10
