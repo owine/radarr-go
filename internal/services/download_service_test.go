@@ -209,14 +209,14 @@ func getValidationTestCases() []struct {
 			Protocol: models.DownloadProtocolTorrent, Port: 8080}, wantErr: true, errMsg: "host is required"},
 		{name: "Invalid port", client: &models.DownloadClient{
 			Name: "Test Client", Type: models.DownloadClientTypeQBittorrent,
-			Protocol: models.DownloadProtocolTorrent, Host: "localhost", Port: 0}, 
+			Protocol: models.DownloadProtocolTorrent, Host: "localhost", Port: 0},
 			wantErr: true, errMsg: "port must be between 1 and 65535"},
 		{name: "Missing type", client: &models.DownloadClient{
 			Name: "Test Client", Protocol: models.DownloadProtocolTorrent,
 			Host: "localhost", Port: 8080}, wantErr: true, errMsg: "client type is required"},
 		{name: "Invalid protocol", client: &models.DownloadClient{
 			Name: "Test Client", Type: models.DownloadClientTypeQBittorrent,
-			Protocol: models.DownloadProtocolUsenet, Host: "localhost", Port: 8080}, 
+			Protocol: models.DownloadProtocolUsenet, Host: "localhost", Port: 8080},
 			wantErr: true, errMsg: "protocol usenet is not supported"},
 	}
 }

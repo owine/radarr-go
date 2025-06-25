@@ -280,9 +280,9 @@ func (s *DownloadService) validateDownloadClient(client *models.DownloadClient) 
 func (s *DownloadService) isValidProtocolForClientType(
 	clientType models.DownloadClientType, protocol models.DownloadProtocol) bool {
 	switch clientType {
-	case models.DownloadClientTypeQBittorrent, models.DownloadClientTypeTransmission, 
-		 models.DownloadClientTypeDeluge, models.DownloadClientTypeRTorrent, 
-		 models.DownloadClientTypeUtorrent:
+	case models.DownloadClientTypeQBittorrent, models.DownloadClientTypeTransmission,
+		models.DownloadClientTypeDeluge, models.DownloadClientTypeRTorrent,
+		models.DownloadClientTypeUtorrent:
 		return protocol == models.DownloadProtocolTorrent
 	case models.DownloadClientTypeSABnzbd, models.DownloadClientTypeNZBGet:
 		return protocol == models.DownloadProtocolUsenet
@@ -309,8 +309,8 @@ func (s *DownloadService) testClientConnection(client *models.DownloadClient) er
 		testURL += "/api?mode=version"
 	case models.DownloadClientTypeNZBGet:
 		testURL += "/jsonrpc"
-	case models.DownloadClientTypeDeluge, models.DownloadClientTypeRTorrent, 
-		 models.DownloadClientTypeUtorrent:
+	case models.DownloadClientTypeDeluge, models.DownloadClientTypeRTorrent,
+		models.DownloadClientTypeUtorrent:
 		// Generic test for other torrent clients
 		testURL += "/"
 	default:
@@ -321,12 +321,12 @@ func (s *DownloadService) testClientConnection(client *models.DownloadClient) er
 	// Make test request with context
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", testURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("connection failed: %w", err)

@@ -34,13 +34,13 @@ type NewznabResponse struct {
 
 // NewznabItem represents a single item in a Newznab response
 type NewznabItem struct {
-	Title       string               `xml:"title"`
-	Link        string               `xml:"link"`
-	GUID        string               `xml:"guid"`
-	PubDate     string               `xml:"pubDate"`
-	Description string               `xml:"description"`
-	Enclosure   NewznabEnclosure     `xml:"enclosure"`
-	Attributes  []NewznabAttribute   `xml:"attr"`
+	Title       string             `xml:"title"`
+	Link        string             `xml:"link"`
+	GUID        string             `xml:"guid"`
+	PubDate     string             `xml:"pubDate"`
+	Description string             `xml:"description"`
+	Enclosure   NewznabEnclosure   `xml:"enclosure"`
+	Attributes  []NewznabAttribute `xml:"attr"`
 }
 
 // NewznabEnclosure represents the enclosure element
@@ -142,7 +142,7 @@ func (s *SearchService) SearchReleases(request *models.SearchRequest, forceSearc
 }
 
 // searchAllIndexers searches across all enabled indexers
-func (s *SearchService) searchAllIndexers(indexers []*models.Indexer, request *models.SearchRequest, 
+func (s *SearchService) searchAllIndexers(indexers []*models.Indexer, request *models.SearchRequest,
 	forceSearch bool) ([]models.Release, float64) {
 	allReleases := make([]models.Release, 0)
 	totalSearchTime := 0.0
@@ -179,7 +179,7 @@ func (s *SearchService) shouldSearchIndexer(indexer *models.Indexer, request *mo
 }
 
 // performIndexerSearch performs search on a single indexer
-func (s *SearchService) performIndexerSearch(indexer *models.Indexer, request *models.SearchRequest, 
+func (s *SearchService) performIndexerSearch(indexer *models.Indexer, request *models.SearchRequest,
 	forceSearch bool) ([]models.Release, float64) {
 	startTime := time.Now()
 	releases, err := s.searchIndexer(indexer, request)
@@ -207,7 +207,7 @@ func (s *SearchService) performIndexerSearch(indexer *models.Indexer, request *m
 }
 
 // processSearchResults processes and filters search results
-func (s *SearchService) processSearchResults(releases []models.Release, 
+func (s *SearchService) processSearchResults(releases []models.Release,
 	request *models.SearchRequest) []models.Release {
 	releases = s.dedupReleases(releases)
 	releases = s.applyFilters(releases, request)
@@ -751,7 +751,7 @@ func (s *SearchService) processAttributes(release *models.Release, attributes []
 }
 
 // parseRSSResponse parses an RSS response
-func (s *SearchService) parseRSSResponse(data []byte, _ *models.Indexer, 
+func (s *SearchService) parseRSSResponse(data []byte, _ *models.Indexer,
 	request *models.SearchRequest) ([]models.Release, error) {
 	type RSSResponse struct {
 		XMLName xml.Name `xml:"rss"`
@@ -1120,4 +1120,3 @@ func (s *SearchService) applyReleaseFilter(query *gorm.DB, filter *models.Releas
 
 	return query
 }
-

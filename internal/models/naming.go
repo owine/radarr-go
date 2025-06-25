@@ -8,22 +8,22 @@ import (
 
 // NamingConfig represents the file and folder naming configuration for Radarr
 type NamingConfig struct {
-	ID                     int                `json:"id" gorm:"primaryKey;autoIncrement"`
-	RenameMovies           bool               `json:"renameMovies" gorm:"default:false"`
-	ReplaceIllegalChars    bool               `json:"replaceIllegalCharacters" gorm:"default:true"`
-	ColonReplacementFormat ColonReplacement   `json:"colonReplacementFormat" gorm:"default:'delete'"`
-	StandardMovieFormat    string             `json:"standardMovieFormat"`
-	MovieFolderFormat      string             `json:"movieFolderFormat"`
-	CreateEmptyFolders     bool               `json:"createEmptyMovieFolders" gorm:"default:false"`
-	DeleteEmptyFolders     bool               `json:"deleteEmptyFolders" gorm:"default:false"`
-	SkipFreeSpaceCheck     bool               `json:"skipFreeSpaceCheckWhenImporting" gorm:"default:false"`
-	MinimumFreeSpace       int64              `json:"minimumFreeSpaceWhenImporting" gorm:"default:100"`
-	UseHardlinks           bool               `json:"copyUsingHardlinks" gorm:"default:true"`
-	ImportExtraFiles       bool               `json:"importExtraFiles" gorm:"default:false"`
-	ExtraFileExtensions    StringArray        `json:"extraFileExtensions" gorm:"type:text"`
-	EnableMediaInfo        bool               `json:"enableMediaInfo" gorm:"default:true"`
-	CreatedAt              time.Time          `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt              time.Time          `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID                     int              `json:"id" gorm:"primaryKey;autoIncrement"`
+	RenameMovies           bool             `json:"renameMovies" gorm:"default:false"`
+	ReplaceIllegalChars    bool             `json:"replaceIllegalCharacters" gorm:"default:true"`
+	ColonReplacementFormat ColonReplacement `json:"colonReplacementFormat" gorm:"default:'delete'"`
+	StandardMovieFormat    string           `json:"standardMovieFormat"`
+	MovieFolderFormat      string           `json:"movieFolderFormat"`
+	CreateEmptyFolders     bool             `json:"createEmptyMovieFolders" gorm:"default:false"`
+	DeleteEmptyFolders     bool             `json:"deleteEmptyFolders" gorm:"default:false"`
+	SkipFreeSpaceCheck     bool             `json:"skipFreeSpaceCheckWhenImporting" gorm:"default:false"`
+	MinimumFreeSpace       int64            `json:"minimumFreeSpaceWhenImporting" gorm:"default:100"`
+	UseHardlinks           bool             `json:"copyUsingHardlinks" gorm:"default:true"`
+	ImportExtraFiles       bool             `json:"importExtraFiles" gorm:"default:false"`
+	ExtraFileExtensions    StringArray      `json:"extraFileExtensions" gorm:"type:text"`
+	EnableMediaInfo        bool             `json:"enableMediaInfo" gorm:"default:true"`
+	CreatedAt              time.Time        `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt              time.Time        `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // TableName returns the database table name for the NamingConfig model
@@ -44,7 +44,6 @@ const (
 	// ColonReplacementSpaceDashSpace replaces colons with space-dash-space
 	ColonReplacementSpaceDashSpace ColonReplacement = "spaceDashSpace"
 )
-
 
 // NamingToken represents a token that can be used in naming patterns
 type NamingToken struct {
@@ -86,18 +85,18 @@ func GetAvailableTokens() []NamingToken {
 		{Token: "{Movie TitleFirstCharacter}", Example: "D", Description: "First character of movie title", Optional: false},
 		{Token: "{Movie Collection}", Example: "The Dark Knight Collection",
 			Description: "Movie collection name", Optional: true},
-		
+
 		// Year Tokens
 		{Token: "{Release Year}", Example: "2008", Description: "Year the movie was released", Optional: false},
 		{Token: "{Release YearFirst}", Example: "2008", Description: "Year from first release date", Optional: false},
-		
+
 		// Quality Tokens
 		{Token: "{Quality Full}", Example: "HDTV-720p Proper",
 			Description: "Full quality name including proper/repack", Optional: false},
 		{Token: "{Quality Title}", Example: "HDTV-720p", Description: "Quality name", Optional: false},
 		{Token: "{Quality Proper}", Example: "Proper", Description: "Quality Proper", Optional: true},
 		{Token: "{Quality Real}", Example: "REAL", Description: "Quality Real", Optional: true},
-		
+
 		// Media Info Tokens
 		{Token: "{MediaInfo Simple}", Example: "x264 DTS", Description: "Simple media info", Optional: true},
 		{Token: "{MediaInfo Full}", Example: "x264 DTS [EN+DE+ES]", Description: "Full media info", Optional: true},
@@ -108,14 +107,14 @@ func GetAvailableTokens() []NamingToken {
 		{Token: "{MediaInfo AudioChannels}", Example: "5.1", Description: "Audio channels", Optional: true},
 		{Token: "{MediaInfo AudioLanguages}", Example: "[EN+DE+ES]", Description: "Audio languages", Optional: true},
 		{Token: "{MediaInfo SubtitleLanguages}", Example: "[EN+DE+ES]", Description: "Subtitle languages", Optional: true},
-		
+
 		// Source Tokens
 		{Token: "{Edition Tags}", Example: "Director's Cut", Description: "Edition information", Optional: true},
 		{Token: "{Custom Formats}", Example: "iNTERNAL", Description: "Custom format tags", Optional: true},
-		
+
 		// Release Group Tokens
 		{Token: "{Release Group}", Example: "EVOLVE", Description: "Release group name", Optional: true},
-		
+
 		// IMDB Tokens
 		{Token: "{ImdbId}", Example: "tt0468569", Description: "IMDB ID", Optional: true},
 		{Token: "{Tmdb Id}", Example: "155", Description: "TMDB ID", Optional: false},
@@ -125,27 +124,27 @@ func GetAvailableTokens() []NamingToken {
 // ValidateNamingFormat validates a naming format string
 func ValidateNamingFormat(format string) []string {
 	var errors []string
-	
+
 	if format == "" {
 		errors = append(errors, "Naming format cannot be empty")
 		return errors
 	}
-	
+
 	// Check for required tokens
 	requiredTokens := []string{"{Movie Title}", "{Movie CleanTitle}"}
 	hasRequiredToken := false
-	
+
 	for _, token := range requiredTokens {
 		if strings.Contains(format, token) {
 			hasRequiredToken = true
 			break
 		}
 	}
-	
+
 	if !hasRequiredToken {
 		errors = append(errors, "Naming format must contain at least one movie title token")
 	}
-	
+
 	// Check for invalid characters
 	invalidChars := []string{"<", ">", ":", "\"", "|", "?", "*"}
 	for _, char := range invalidChars {
@@ -153,7 +152,7 @@ func ValidateNamingFormat(format string) []string {
 			errors = append(errors, fmt.Sprintf("Naming format contains invalid character: %s", char))
 		}
 	}
-	
+
 	return errors
 }
 
@@ -162,7 +161,7 @@ func (nc *NamingConfig) ApplyColonReplacement(input string) string {
 	if !strings.Contains(input, ":") {
 		return input
 	}
-	
+
 	switch nc.ColonReplacementFormat {
 	case ColonReplacementDelete:
 		return strings.ReplaceAll(input, ":", "")
@@ -182,7 +181,7 @@ func (nc *NamingConfig) ReplaceIllegalCharacters(input string) string {
 	if !nc.ReplaceIllegalChars {
 		return input
 	}
-	
+
 	// Windows illegal characters
 	illegalChars := map[string]string{
 		"<":  "",
@@ -195,41 +194,41 @@ func (nc *NamingConfig) ReplaceIllegalCharacters(input string) string {
 		"/":  "",
 		"\\": "",
 	}
-	
+
 	result := input
 	for illegal, replacement := range illegalChars {
 		result = strings.ReplaceAll(result, illegal, replacement)
 	}
-	
+
 	// Apply colon replacement after other illegal characters
 	result = nc.ApplyColonReplacement(result)
-	
+
 	return result
 }
 
 // ValidateConfiguration validates the naming configuration
 func (nc *NamingConfig) ValidateConfiguration() []string {
 	var errors []string
-	
+
 	// Validate standard movie format
 	if formatErrors := ValidateNamingFormat(nc.StandardMovieFormat); len(formatErrors) > 0 {
 		for _, err := range formatErrors {
 			errors = append(errors, fmt.Sprintf("Standard Movie Format: %s", err))
 		}
 	}
-	
+
 	// Validate movie folder format
 	if formatErrors := ValidateNamingFormat(nc.MovieFolderFormat); len(formatErrors) > 0 {
 		for _, err := range formatErrors {
 			errors = append(errors, fmt.Sprintf("Movie Folder Format: %s", err))
 		}
 	}
-	
+
 	// Validate minimum free space
 	if nc.MinimumFreeSpace < 0 {
 		errors = append(errors, "Minimum free space cannot be negative")
 	}
-	
+
 	// Validate extra file extensions
 	for _, ext := range nc.ExtraFileExtensions {
 		if ext == "" {
@@ -239,6 +238,6 @@ func (nc *NamingConfig) ValidateConfiguration() []string {
 			errors = append(errors, fmt.Sprintf("Extra file extension '%s' should not contain dots unless it's a prefix", ext))
 		}
 	}
-	
+
 	return errors
 }

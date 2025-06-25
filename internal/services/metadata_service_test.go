@@ -17,11 +17,11 @@ func TestMetadataService_SearchMovies(t *testing.T) {
 			APIKey: "", // Empty for test
 		},
 	}
-	
+
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
-	
+
 	service := NewMetadataService(nil, cfg, logger)
-	
+
 	// Test with empty API key should return error
 	_, err := service.SearchMovies("test", 1)
 	assert.Error(t, err)
@@ -35,16 +35,16 @@ func TestMetadataService_LookupMovieByTMDBID(t *testing.T) {
 			APIKey: "", // Empty for test
 		},
 	}
-	
+
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
-	
+
 	service := NewMetadataService(nil, cfg, logger)
-	
+
 	// Test with invalid TMDB ID
 	_, err := service.LookupMovieByTMDBID(-1)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid TMDB ID")
-	
+
 	// Test with empty API key should return error
 	_, err = service.LookupMovieByTMDBID(550)
 	assert.Error(t, err)
@@ -54,7 +54,7 @@ func TestMetadataService_LookupMovieByTMDBID(t *testing.T) {
 func TestMetadataService_convertTMDBToMovie(t *testing.T) {
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := &MetadataService{logger: logger}
-	
+
 	// Create test TMDB movie data
 	tmdbMovie := &tmdb.Movie{
 		ID:               550,
@@ -75,9 +75,9 @@ func TestMetadataService_convertTMDBToMovie(t *testing.T) {
 			{ID: 508, Name: "Regency Enterprises"},
 		},
 	}
-	
+
 	movie := service.convertTMDBToMovie(tmdbMovie, nil)
-	
+
 	assert.Equal(t, 550, movie.TmdbID)
 	assert.Equal(t, "Fight Club", movie.Title)
 	assert.Equal(t, "Fight Club", movie.OriginalTitle)
@@ -88,7 +88,7 @@ func TestMetadataService_convertTMDBToMovie(t *testing.T) {
 	assert.Equal(t, "fight-club-1999", movie.TitleSlug)
 	assert.Equal(t, "Regency Enterprises", movie.Studio)
 	assert.True(t, movie.Monitored)
-	
+
 	// Test release date parsing
 	expectedDate := time.Date(1999, 10, 15, 0, 0, 0, 0, time.UTC)
 	assert.Equal(t, &expectedDate, movie.InCinemas)
@@ -97,7 +97,7 @@ func TestMetadataService_convertTMDBToMovie(t *testing.T) {
 func TestMetadataService_generateTitleSlug(t *testing.T) {
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := &MetadataService{logger: logger}
-	
+
 	tests := []struct {
 		title    string
 		year     int
@@ -112,7 +112,7 @@ func TestMetadataService_generateTitleSlug(t *testing.T) {
 		{"", 2020, "2020"},
 		{"Test Movie", 0, "test-movie"},
 	}
-	
+
 	for _, test := range tests {
 		result := service.generateTitleSlug(test.title, test.year)
 		assert.Equal(t, test.expected, result, "Failed for title: %s, year: %d", test.title, test.year)
@@ -126,9 +126,9 @@ func TestMetadataService_RefreshMovieMetadata(t *testing.T) {
 		},
 	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
-	
+
 	service := NewMetadataService(nil, cfg, logger)
-	
+
 	// Test with nil database should fail
 	err := service.RefreshMovieMetadata(1)
 	assert.Error(t, err)

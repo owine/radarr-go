@@ -81,7 +81,7 @@ func (s *NotificationService) CreateNotification(notification *models.Notificati
 		return fmt.Errorf("failed to create notification: %w", err)
 	}
 
-	s.logger.Info("Created notification", "id", notification.ID, "name", notification.Name, 
+	s.logger.Info("Created notification", "id", notification.ID, "name", notification.Name,
 		"type", notification.Implementation)
 	return nil
 }
@@ -209,7 +209,7 @@ func (s *NotificationService) SendNotification(event *models.NotificationEvent) 
 
 		message := s.buildNotificationMessage(&notification, event)
 		if err := s.sendAndRecordNotification(&notification, message, event); err != nil {
-			s.logger.Error("Failed to send notification", "id", notification.ID, 
+			s.logger.Error("Failed to send notification", "id", notification.ID,
 				"name", notification.Name, "error", err)
 		}
 	}

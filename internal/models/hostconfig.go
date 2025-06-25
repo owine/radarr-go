@@ -9,33 +9,33 @@ import (
 
 // HostConfig represents the host/system configuration for Radarr
 type HostConfig struct {
-	ID                    int               `json:"id" gorm:"primaryKey;autoIncrement"`
-	BindAddress           string            `json:"bindAddress" gorm:"not null;default:'*'"`
-	Port                  int               `json:"port" gorm:"not null;default:7878"`
-	URLBase               string            `json:"urlBase" gorm:"default:''"`
-	EnableSSL             bool              `json:"enableSsl" gorm:"default:false"`
-	SSLPort               int               `json:"sslPort" gorm:"default:6969"`
-	SSLCertPath           string            `json:"sslCertPath" gorm:"default:''"`
-	SSLKeyPath            string            `json:"sslKeyPath" gorm:"default:''"`
-	Username              string            `json:"username" gorm:"default:''"`
-	Password              string            `json:"password" gorm:"default:''"`
-	AuthenticationMethod  AuthMethod        `json:"authenticationMethod" gorm:"default:'none'"`
-	AuthenticationRequired AuthRequired     `json:"authenticationRequired" gorm:"default:'enabled'"`
-	LogLevel              LogLevel          `json:"logLevel" gorm:"default:'info'"`
-	LaunchBrowser         bool              `json:"launchBrowser" gorm:"default:true"`
-	EnableColorImpared    bool              `json:"enableColorImpairedMode" gorm:"default:false"`
-	ProxySettings         ProxySettings     `json:"proxySettings" gorm:"type:text"`
-	UpdateMechanism       UpdateMechanism   `json:"updateMechanism" gorm:"default:'builtin'"`
-	UpdateBranch          string            `json:"updateBranch" gorm:"default:'master'"`
-	UpdateAutomatically   bool              `json:"updateAutomatically" gorm:"default:false"`
-	UpdateScriptPath      string            `json:"updateScriptPath" gorm:"default:''"`
-	AnalyticsEnabled      bool              `json:"analyticsEnabled" gorm:"default:true"`
-	BackupFolder          string            `json:"backupFolder" gorm:"default:''"`
-	BackupInterval        int               `json:"backupInterval" gorm:"default:7"`
-	BackupRetention       int               `json:"backupRetention" gorm:"default:28"`
-	CertificateValidation CertValidation    `json:"certificateValidation" gorm:"default:'enabled'"`
-	CreatedAt             time.Time         `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt             time.Time         `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID                     int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	BindAddress            string          `json:"bindAddress" gorm:"not null;default:'*'"`
+	Port                   int             `json:"port" gorm:"not null;default:7878"`
+	URLBase                string          `json:"urlBase" gorm:"default:''"`
+	EnableSSL              bool            `json:"enableSsl" gorm:"default:false"`
+	SSLPort                int             `json:"sslPort" gorm:"default:6969"`
+	SSLCertPath            string          `json:"sslCertPath" gorm:"default:''"`
+	SSLKeyPath             string          `json:"sslKeyPath" gorm:"default:''"`
+	Username               string          `json:"username" gorm:"default:''"`
+	Password               string          `json:"password" gorm:"default:''"`
+	AuthenticationMethod   AuthMethod      `json:"authenticationMethod" gorm:"default:'none'"`
+	AuthenticationRequired AuthRequired    `json:"authenticationRequired" gorm:"default:'enabled'"`
+	LogLevel               LogLevel        `json:"logLevel" gorm:"default:'info'"`
+	LaunchBrowser          bool            `json:"launchBrowser" gorm:"default:true"`
+	EnableColorImpared     bool            `json:"enableColorImpairedMode" gorm:"default:false"`
+	ProxySettings          ProxySettings   `json:"proxySettings" gorm:"type:text"`
+	UpdateMechanism        UpdateMechanism `json:"updateMechanism" gorm:"default:'builtin'"`
+	UpdateBranch           string          `json:"updateBranch" gorm:"default:'master'"`
+	UpdateAutomatically    bool            `json:"updateAutomatically" gorm:"default:false"`
+	UpdateScriptPath       string          `json:"updateScriptPath" gorm:"default:''"`
+	AnalyticsEnabled       bool            `json:"analyticsEnabled" gorm:"default:true"`
+	BackupFolder           string          `json:"backupFolder" gorm:"default:''"`
+	BackupInterval         int             `json:"backupInterval" gorm:"default:7"`
+	BackupRetention        int             `json:"backupRetention" gorm:"default:28"`
+	CertificateValidation  CertValidation  `json:"certificateValidation" gorm:"default:'enabled'"`
+	CreatedAt              time.Time       `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt              time.Time       `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // TableName returns the database table name for the HostConfig model
@@ -159,24 +159,24 @@ func (ps *ProxySettings) Scan(value interface{}) error {
 // GetDefaultHostConfig returns the default host configuration
 func GetDefaultHostConfig() *HostConfig {
 	return &HostConfig{
-		BindAddress:           "*",
-		Port:                  7878,
-		URLBase:               "",
-		EnableSSL:             false,
-		SSLPort:               6969,
-		AuthenticationMethod:  AuthMethodNone,
+		BindAddress:            "*",
+		Port:                   7878,
+		URLBase:                "",
+		EnableSSL:              false,
+		SSLPort:                6969,
+		AuthenticationMethod:   AuthMethodNone,
 		AuthenticationRequired: AuthRequiredEnabled,
-		LogLevel:              LogLevelInfo,
-		LaunchBrowser:         true,
-		EnableColorImpared:    false,
-		ProxySettings:         ProxySettings{},
-		UpdateMechanism:       UpdateMechanismBuiltIn,
-		UpdateBranch:          "master",
-		UpdateAutomatically:   false,
-		AnalyticsEnabled:      true,
-		BackupInterval:        7,
-		BackupRetention:       28,
-		CertificateValidation: CertValidationEnabled,
+		LogLevel:               LogLevelInfo,
+		LaunchBrowser:          true,
+		EnableColorImpared:     false,
+		ProxySettings:          ProxySettings{},
+		UpdateMechanism:        UpdateMechanismBuiltIn,
+		UpdateBranch:           "master",
+		UpdateAutomatically:    false,
+		AnalyticsEnabled:       true,
+		BackupInterval:         7,
+		BackupRetention:        28,
+		CertificateValidation:  CertValidationEnabled,
 	}
 }
 

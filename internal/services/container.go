@@ -48,7 +48,7 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.ImportListService = NewImportListService(db, logger, container.MetadataService, container.MovieService)
 	container.HistoryService = NewHistoryService(db, logger)
 	container.ConfigService = NewConfigService(db, logger)
-	container.SearchService = NewSearchService(db, logger, container.IndexerService, container.QualityService, 
+	container.SearchService = NewSearchService(db, logger, container.IndexerService, container.QualityService,
 		container.MovieService, container.DownloadService, container.NotificationService)
 
 	return container

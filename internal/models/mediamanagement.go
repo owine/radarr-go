@@ -6,31 +6,31 @@ import (
 
 // MediaManagementConfig represents the media management configuration for Radarr
 type MediaManagementConfig struct {
-	ID                        int                     `json:"id" gorm:"primaryKey;autoIncrement"`
+	ID                         int                    `json:"id" gorm:"primaryKey;autoIncrement"`
 	AutoUnmonitorPreviousMovie bool                   `json:"autoUnmonitorPreviouslyDownloadedMovies" gorm:"default:false"`
-	RecycleBin                string                  `json:"recycleBin" gorm:"default:''"`
-	RecycleBinCleanup         int                     `json:"recycleBinCleanupDays" gorm:"default:7"`
-	DownloadPropersAndRepacks ProperRepackSetting     `json:"downloadPropersAndRepacks" gorm:"default:'preferAndUpgrade'"`
-	CreateEmptyFolders        bool                    `json:"createEmptyMovieFolders" gorm:"default:false"`
-	DeleteEmptyFolders        bool                    `json:"deleteEmptyFolders" gorm:"default:false"`
-	FileDate                  FileDateType            `json:"fileDate" gorm:"default:'none'"`
-	RescanAfterRefresh        RescanAfterRefreshType  `json:"rescanAfterRefresh" gorm:"default:'always'"`
-	AllowFingerprinting       FingerprintingType      `json:"allowFingerprinting" gorm:"default:'newFiles'"`
-	SetPermissions            bool                    `json:"setPermissionsLinux" gorm:"default:false"`
-	ChmodFolder               string                  `json:"chmodFolder" gorm:"default:'755'"`
-	ChownGroup                string                  `json:"chownGroup" gorm:"default:''"`
-	SkipFreeSpaceCheck        bool                    `json:"skipFreeSpaceCheckWhenImporting" gorm:"default:false"`
-	MinimumFreeSpace          int64                   `json:"minimumFreeSpaceWhenImporting" gorm:"default:100"`
-	CopyUsingHardlinks        bool                    `json:"copyUsingHardlinks" gorm:"default:true"`
-	UseScriptImport           bool                    `json:"useScriptImport" gorm:"default:false"`
-	ScriptImportPath          string                  `json:"scriptImportPath" gorm:"default:''"`
-	ImportExtraFiles          bool                    `json:"importExtraFiles" gorm:"default:false"`
-	ExtraFileExtensions       StringArray             `json:"extraFileExtensions" gorm:"type:text"`
-	EnableMediaInfo           bool                    `json:"enableMediaInfo" gorm:"default:true"`
-	ImportMechanism           ImportMechanism         `json:"importMechanism" gorm:"default:'move'"`
-	WatchLibraryForChanges    bool                    `json:"watchLibraryForChanges" gorm:"default:true"`
-	CreatedAt                 time.Time               `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt                 time.Time               `json:"updatedAt" gorm:"autoUpdateTime"`
+	RecycleBin                 string                 `json:"recycleBin" gorm:"default:''"`
+	RecycleBinCleanup          int                    `json:"recycleBinCleanupDays" gorm:"default:7"`
+	DownloadPropersAndRepacks  ProperRepackSetting    `json:"downloadPropersAndRepacks" gorm:"default:'preferAndUpgrade'"`
+	CreateEmptyFolders         bool                   `json:"createEmptyMovieFolders" gorm:"default:false"`
+	DeleteEmptyFolders         bool                   `json:"deleteEmptyFolders" gorm:"default:false"`
+	FileDate                   FileDateType           `json:"fileDate" gorm:"default:'none'"`
+	RescanAfterRefresh         RescanAfterRefreshType `json:"rescanAfterRefresh" gorm:"default:'always'"`
+	AllowFingerprinting        FingerprintingType     `json:"allowFingerprinting" gorm:"default:'newFiles'"`
+	SetPermissions             bool                   `json:"setPermissionsLinux" gorm:"default:false"`
+	ChmodFolder                string                 `json:"chmodFolder" gorm:"default:'755'"`
+	ChownGroup                 string                 `json:"chownGroup" gorm:"default:''"`
+	SkipFreeSpaceCheck         bool                   `json:"skipFreeSpaceCheckWhenImporting" gorm:"default:false"`
+	MinimumFreeSpace           int64                  `json:"minimumFreeSpaceWhenImporting" gorm:"default:100"`
+	CopyUsingHardlinks         bool                   `json:"copyUsingHardlinks" gorm:"default:true"`
+	UseScriptImport            bool                   `json:"useScriptImport" gorm:"default:false"`
+	ScriptImportPath           string                 `json:"scriptImportPath" gorm:"default:''"`
+	ImportExtraFiles           bool                   `json:"importExtraFiles" gorm:"default:false"`
+	ExtraFileExtensions        StringArray            `json:"extraFileExtensions" gorm:"type:text"`
+	EnableMediaInfo            bool                   `json:"enableMediaInfo" gorm:"default:true"`
+	ImportMechanism            ImportMechanism        `json:"importMechanism" gorm:"default:'move'"`
+	WatchLibraryForChanges     bool                   `json:"watchLibraryForChanges" gorm:"default:true"`
+	CreatedAt                  time.Time              `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt                  time.Time              `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // TableName returns the database table name for the MediaManagementConfig model
@@ -100,18 +100,18 @@ const (
 
 // RootFolder represents a root folder configuration
 type RootFolder struct {
-	ID                int       `json:"id" gorm:"primaryKey;autoIncrement"`
-	Path              string    `json:"path" gorm:"not null;uniqueIndex"`
-	Accessible        bool      `json:"accessible" gorm:"default:true"`
-	FreeSpace         int64     `json:"freeSpace" gorm:"default:0"`
-	TotalSpace        int64     `json:"totalSpace" gorm:"default:0"`
-	UnmappedFolders   IntArray  `json:"unmappedFolders" gorm:"type:text"`
-	DefaultTags       IntArray  `json:"defaultTags" gorm:"type:text"`
-	DefaultQualityProfileID int `json:"defaultQualityProfileId" gorm:"default:0"`
-	DefaultMonitorOption string `json:"defaultMonitorOption" gorm:"default:'movieOnly'"`
-	DefaultSearchForMissingMovie bool `json:"defaultSearchForMissingMovie" gorm:"default:false"`
-	CreatedAt         time.Time `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt         time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID                           int       `json:"id" gorm:"primaryKey;autoIncrement"`
+	Path                         string    `json:"path" gorm:"not null;uniqueIndex"`
+	Accessible                   bool      `json:"accessible" gorm:"default:true"`
+	FreeSpace                    int64     `json:"freeSpace" gorm:"default:0"`
+	TotalSpace                   int64     `json:"totalSpace" gorm:"default:0"`
+	UnmappedFolders              IntArray  `json:"unmappedFolders" gorm:"type:text"`
+	DefaultTags                  IntArray  `json:"defaultTags" gorm:"type:text"`
+	DefaultQualityProfileID      int       `json:"defaultQualityProfileId" gorm:"default:0"`
+	DefaultMonitorOption         string    `json:"defaultMonitorOption" gorm:"default:'movieOnly'"`
+	DefaultSearchForMissingMovie bool      `json:"defaultSearchForMissingMovie" gorm:"default:false"`
+	CreatedAt                    time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt                    time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // TableName returns the database table name for the RootFolder model
@@ -129,27 +129,27 @@ type UnmappedFolder struct {
 func GetDefaultMediaManagementConfig() *MediaManagementConfig {
 	return &MediaManagementConfig{
 		AutoUnmonitorPreviousMovie: false,
-		RecycleBin:                "",
-		RecycleBinCleanup:         7,
-		DownloadPropersAndRepacks: ProperRepackPreferAndUpgrade,
-		CreateEmptyFolders:        false,
-		DeleteEmptyFolders:        false,
-		FileDate:                  FileDateNone,
-		RescanAfterRefresh:        RescanAfterRefreshAlways,
-		AllowFingerprinting:       FingerprintingNewFiles,
-		SetPermissions:            false,
-		ChmodFolder:               "755",
-		ChownGroup:                "",
-		SkipFreeSpaceCheck:        false,
-		MinimumFreeSpace:          100,
-		CopyUsingHardlinks:        true,
-		UseScriptImport:           false,
-		ScriptImportPath:          "",
-		ImportExtraFiles:          false,
-		ExtraFileExtensions:       StringArray{"srt", "nfo"},
-		EnableMediaInfo:           true,
-		ImportMechanism:           ImportMechanismMove,
-		WatchLibraryForChanges:    true,
+		RecycleBin:                 "",
+		RecycleBinCleanup:          7,
+		DownloadPropersAndRepacks:  ProperRepackPreferAndUpgrade,
+		CreateEmptyFolders:         false,
+		DeleteEmptyFolders:         false,
+		FileDate:                   FileDateNone,
+		RescanAfterRefresh:         RescanAfterRefreshAlways,
+		AllowFingerprinting:        FingerprintingNewFiles,
+		SetPermissions:             false,
+		ChmodFolder:                "755",
+		ChownGroup:                 "",
+		SkipFreeSpaceCheck:         false,
+		MinimumFreeSpace:           100,
+		CopyUsingHardlinks:         true,
+		UseScriptImport:            false,
+		ScriptImportPath:           "",
+		ImportExtraFiles:           false,
+		ExtraFileExtensions:        StringArray{"srt", "nfo"},
+		EnableMediaInfo:            true,
+		ImportMechanism:            ImportMechanismMove,
+		WatchLibraryForChanges:     true,
 	}
 }
 
@@ -240,11 +240,11 @@ func ValidateRootFolder(rf *RootFolder) []string {
 
 // RootFolderStats represents statistics about a root folder
 type RootFolderStats struct {
-	FreeSpace       int64 `json:"freeSpace"`
-	TotalSpace      int64 `json:"totalSpace"`
-	MovieCount      int   `json:"movieCount"`
-	UnmappedCount   int   `json:"unmappedFolderCount"`
-	PercentageFree  float64 `json:"percentageFree"`
+	FreeSpace      int64   `json:"freeSpace"`
+	TotalSpace     int64   `json:"totalSpace"`
+	MovieCount     int     `json:"movieCount"`
+	UnmappedCount  int     `json:"unmappedFolderCount"`
+	PercentageFree float64 `json:"percentageFree"`
 }
 
 // CalculateStats calculates statistics for a root folder

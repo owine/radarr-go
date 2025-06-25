@@ -8,19 +8,19 @@ import (
 
 // History represents a historical event in the system
 type History struct {
-	ID           int                    `json:"id" gorm:"primaryKey;autoIncrement"`
-	MovieID      *int                   `json:"movieId,omitempty" gorm:"index"`
-	Movie        *Movie                 `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
-	EventType    HistoryEventType       `json:"eventType" gorm:"not null;size:50;index"`
-	Date         time.Time              `json:"date" gorm:"not null;index"`
-	Quality      QualityDefinition      `json:"quality" gorm:"type:text"`
-	SourceTitle  string                 `json:"sourceTitle" gorm:"size:500"`
-	Language     Language               `json:"language" gorm:"type:text"`
-	DownloadID   string                 `json:"downloadId,omitempty" gorm:"size:100;index"`
-	Data         HistoryEventData       `json:"data" gorm:"type:text"`
-	Message      string                 `json:"message,omitempty" gorm:"type:text"`
-	Successful   bool                   `json:"successful" gorm:"default:true;index"`
-	CreatedAt    time.Time              `json:"createdAt" gorm:"autoCreateTime"`
+	ID          int               `json:"id" gorm:"primaryKey;autoIncrement"`
+	MovieID     *int              `json:"movieId,omitempty" gorm:"index"`
+	Movie       *Movie            `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
+	EventType   HistoryEventType  `json:"eventType" gorm:"not null;size:50;index"`
+	Date        time.Time         `json:"date" gorm:"not null;index"`
+	Quality     QualityDefinition `json:"quality" gorm:"type:text"`
+	SourceTitle string            `json:"sourceTitle" gorm:"size:500"`
+	Language    Language          `json:"language" gorm:"type:text"`
+	DownloadID  string            `json:"downloadId,omitempty" gorm:"size:100;index"`
+	Data        HistoryEventData  `json:"data" gorm:"type:text"`
+	Message     string            `json:"message,omitempty" gorm:"type:text"`
+	Successful  bool              `json:"successful" gorm:"default:true;index"`
+	CreatedAt   time.Time         `json:"createdAt" gorm:"autoCreateTime"`
 }
 
 // HistoryEventType represents different types of historical events
@@ -28,50 +28,50 @@ type HistoryEventType string
 
 // History event types for tracking different system activities
 const (
-	HistoryEventTypeGrabbed              HistoryEventType = "grabbed"
+	HistoryEventTypeGrabbed                HistoryEventType = "grabbed"
 	HistoryEventTypeDownloadFolderImported HistoryEventType = "downloadFolderImported"
-	HistoryEventTypeDownloadFailed       HistoryEventType = "downloadFailed"
-	HistoryEventTypeMovieFileDeleted     HistoryEventType = "movieFileDeleted"
-	HistoryEventTypeMovieFileRenamed     HistoryEventType = "movieFileRenamed"
-	HistoryEventTypeMovieAdded           HistoryEventType = "movieAdded"
-	HistoryEventTypeMovieDeleted         HistoryEventType = "movieDeleted"
-	HistoryEventTypeMovieSearched        HistoryEventType = "movieSearched"
-	HistoryEventTypeMovieRefreshed       HistoryEventType = "movieRefreshed"
-	HistoryEventTypeQualityUpgraded      HistoryEventType = "qualityUpgraded"
-	HistoryEventTypeMovieImported        HistoryEventType = "movieImported"
-	HistoryEventTypeMovieUnmonitored     HistoryEventType = "movieUnmonitored"
-	HistoryEventTypeMovieMonitored       HistoryEventType = "movieMonitored"
-	HistoryEventTypeIgnoredDownload      HistoryEventType = "ignoredDownload"
+	HistoryEventTypeDownloadFailed         HistoryEventType = "downloadFailed"
+	HistoryEventTypeMovieFileDeleted       HistoryEventType = "movieFileDeleted"
+	HistoryEventTypeMovieFileRenamed       HistoryEventType = "movieFileRenamed"
+	HistoryEventTypeMovieAdded             HistoryEventType = "movieAdded"
+	HistoryEventTypeMovieDeleted           HistoryEventType = "movieDeleted"
+	HistoryEventTypeMovieSearched          HistoryEventType = "movieSearched"
+	HistoryEventTypeMovieRefreshed         HistoryEventType = "movieRefreshed"
+	HistoryEventTypeQualityUpgraded        HistoryEventType = "qualityUpgraded"
+	HistoryEventTypeMovieImported          HistoryEventType = "movieImported"
+	HistoryEventTypeMovieUnmonitored       HistoryEventType = "movieUnmonitored"
+	HistoryEventTypeMovieMonitored         HistoryEventType = "movieMonitored"
+	HistoryEventTypeIgnoredDownload        HistoryEventType = "ignoredDownload"
 )
 
 // HistoryEventData contains additional data specific to the event type
 type HistoryEventData struct {
-	Indexer           string                 `json:"indexer,omitempty"`
-	NzbInfoURL        string                 `json:"nzbInfoUrl,omitempty"`
-	ReleaseGroup      string                 `json:"releaseGroup,omitempty"`
-	Age               int                    `json:"age,omitempty"`
-	AgeHours          float64                `json:"ageHours,omitempty"`
-	AgeMinutes        float64                `json:"ageMinutes,omitempty"`
-	PublishedDate     *time.Time             `json:"publishedDate,omitempty"`
-	DownloadClient    string                 `json:"downloadClient,omitempty"`
-	Size              int64                  `json:"size,omitempty"`
-	DownloadURL       string                 `json:"downloadUrl,omitempty"`
-	GUID              string                 `json:"guid,omitempty"`
-	TvdbID            int                    `json:"tvdbId,omitempty"`
-	TvRageID          int                    `json:"tvRageId,omitempty"`
-	Protocol          string                 `json:"protocol,omitempty"`
-	TorrentInfoHash   string                 `json:"torrentInfoHash,omitempty"`
-	DroppedPath       string                 `json:"droppedPath,omitempty"`
-	ImportedPath      string                 `json:"importedPath,omitempty"`
-	DownloadedPath    string                 `json:"downloadedPath,omitempty"`
-	Reason            string                 `json:"reason,omitempty"`
-	StatusMessages    []HistoryStatusMessage `json:"statusMessages,omitempty"`
-	FileID            int                    `json:"fileId,omitempty"`
-	PreferredWordScore int                   `json:"preferredWordScore,omitempty"`
-	CustomFormatScore int                    `json:"customFormatScore,omitempty"`
-	CustomFormats     []string               `json:"customFormats,omitempty"`
-	IndexerFlags      []string               `json:"indexerFlags,omitempty"`
-	MovieMetadata     map[string]interface{} `json:"movieMetadata,omitempty"`
+	Indexer            string                 `json:"indexer,omitempty"`
+	NzbInfoURL         string                 `json:"nzbInfoUrl,omitempty"`
+	ReleaseGroup       string                 `json:"releaseGroup,omitempty"`
+	Age                int                    `json:"age,omitempty"`
+	AgeHours           float64                `json:"ageHours,omitempty"`
+	AgeMinutes         float64                `json:"ageMinutes,omitempty"`
+	PublishedDate      *time.Time             `json:"publishedDate,omitempty"`
+	DownloadClient     string                 `json:"downloadClient,omitempty"`
+	Size               int64                  `json:"size,omitempty"`
+	DownloadURL        string                 `json:"downloadUrl,omitempty"`
+	GUID               string                 `json:"guid,omitempty"`
+	TvdbID             int                    `json:"tvdbId,omitempty"`
+	TvRageID           int                    `json:"tvRageId,omitempty"`
+	Protocol           string                 `json:"protocol,omitempty"`
+	TorrentInfoHash    string                 `json:"torrentInfoHash,omitempty"`
+	DroppedPath        string                 `json:"droppedPath,omitempty"`
+	ImportedPath       string                 `json:"importedPath,omitempty"`
+	DownloadedPath     string                 `json:"downloadedPath,omitempty"`
+	Reason             string                 `json:"reason,omitempty"`
+	StatusMessages     []HistoryStatusMessage `json:"statusMessages,omitempty"`
+	FileID             int                    `json:"fileId,omitempty"`
+	PreferredWordScore int                    `json:"preferredWordScore,omitempty"`
+	CustomFormatScore  int                    `json:"customFormatScore,omitempty"`
+	CustomFormats      []string               `json:"customFormats,omitempty"`
+	IndexerFlags       []string               `json:"indexerFlags,omitempty"`
+	MovieMetadata      map[string]interface{} `json:"movieMetadata,omitempty"`
 }
 
 // Value implements the driver.Valuer interface for database storage
@@ -96,8 +96,8 @@ func (h *HistoryEventData) Scan(value interface{}) error {
 
 // HistoryStatusMessage represents a status message in history data
 type HistoryStatusMessage struct {
-	Title    string             `json:"title"`
-	Messages []HistoryMessage   `json:"messages"`
+	Title    string           `json:"title"`
+	Messages []HistoryMessage `json:"messages"`
 }
 
 // HistoryMessage represents an individual message
@@ -108,19 +108,19 @@ type HistoryMessage struct {
 
 // Activity represents current system activity
 type Activity struct {
-	ID           int                    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Type         ActivityType           `json:"type" gorm:"not null;size:50;index"`
-	Title        string                 `json:"title" gorm:"not null;size:255"`
-	Message      string                 `json:"message,omitempty" gorm:"type:text"`
-	MovieID      *int                   `json:"movieId,omitempty" gorm:"index"`
-	Movie        *Movie                 `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
-	Progress     float64                `json:"progress" gorm:"default:0"`
-	Status       ActivityStatus         `json:"status" gorm:"not null;size:20;index"`
-	StartTime    time.Time              `json:"startTime" gorm:"not null;index"`
-	EndTime      *time.Time             `json:"endTime,omitempty"`
-	Data         ActivityData           `json:"data" gorm:"type:text"`
-	CreatedAt    time.Time              `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt    time.Time              `json:"updatedAt" gorm:"autoUpdateTime"`
+	ID        int            `json:"id" gorm:"primaryKey;autoIncrement"`
+	Type      ActivityType   `json:"type" gorm:"not null;size:50;index"`
+	Title     string         `json:"title" gorm:"not null;size:255"`
+	Message   string         `json:"message,omitempty" gorm:"type:text"`
+	MovieID   *int           `json:"movieId,omitempty" gorm:"index"`
+	Movie     *Movie         `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
+	Progress  float64        `json:"progress" gorm:"default:0"`
+	Status    ActivityStatus `json:"status" gorm:"not null;size:20;index"`
+	StartTime time.Time      `json:"startTime" gorm:"not null;index"`
+	EndTime   *time.Time     `json:"endTime,omitempty"`
+	Data      ActivityData   `json:"data" gorm:"type:text"`
+	CreatedAt time.Time      `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // ActivityType represents different types of system activities
@@ -156,21 +156,21 @@ const (
 
 // ActivityData contains additional data specific to the activity type
 type ActivityData struct {
-	Command           string                 `json:"command,omitempty"`
-	CommandID         int                    `json:"commandId,omitempty"`
-	TotalItems        int                    `json:"totalItems,omitempty"`
-	ProcessedItems    int                    `json:"processedItems,omitempty"`
-	FailedItems       int                    `json:"failedItems,omitempty"`
-	SuccessfulItems   int                    `json:"successfulItems,omitempty"`
-	Errors            []string               `json:"errors,omitempty"`
-	Warnings          []string               `json:"warnings,omitempty"`
-	DownloadClient    string                 `json:"downloadClient,omitempty"`
-	IndexerName       string                 `json:"indexerName,omitempty"`
-	SearchQuery       string                 `json:"searchQuery,omitempty"`
-	ResultCount       int                    `json:"resultCount,omitempty"`
-	Duration          time.Duration          `json:"duration,omitempty"`
-	EstimatedTime     time.Duration          `json:"estimatedTime,omitempty"`
-	AdditionalData    map[string]interface{} `json:"additionalData,omitempty"`
+	Command         string                 `json:"command,omitempty"`
+	CommandID       int                    `json:"commandId,omitempty"`
+	TotalItems      int                    `json:"totalItems,omitempty"`
+	ProcessedItems  int                    `json:"processedItems,omitempty"`
+	FailedItems     int                    `json:"failedItems,omitempty"`
+	SuccessfulItems int                    `json:"successfulItems,omitempty"`
+	Errors          []string               `json:"errors,omitempty"`
+	Warnings        []string               `json:"warnings,omitempty"`
+	DownloadClient  string                 `json:"downloadClient,omitempty"`
+	IndexerName     string                 `json:"indexerName,omitempty"`
+	SearchQuery     string                 `json:"searchQuery,omitempty"`
+	ResultCount     int                    `json:"resultCount,omitempty"`
+	Duration        time.Duration          `json:"duration,omitempty"`
+	EstimatedTime   time.Duration          `json:"estimatedTime,omitempty"`
+	AdditionalData  map[string]interface{} `json:"additionalData,omitempty"`
 }
 
 // Value implements the driver.Valuer interface for database storage
@@ -195,16 +195,16 @@ func (a *ActivityData) Scan(value interface{}) error {
 
 // HistoryRequest represents a request for history data with filtering options
 type HistoryRequest struct {
-	Page         int                `json:"page" form:"page"`
-	PageSize     int                `json:"pageSize" form:"pageSize"`
-	SortKey      string             `json:"sortKey" form:"sortKey"`
-	SortDir      string             `json:"sortDir" form:"sortDir"`
-	MovieID      *int               `json:"movieId" form:"movieId"`
-	EventType    *HistoryEventType  `json:"eventType" form:"eventType"`
-	Successful   *bool              `json:"successful" form:"successful"`
-	DownloadID   string             `json:"downloadId" form:"downloadId"`
-	Since        *time.Time         `json:"since" form:"since"`
-	Until        *time.Time         `json:"until" form:"until"`
+	Page       int               `json:"page" form:"page"`
+	PageSize   int               `json:"pageSize" form:"pageSize"`
+	SortKey    string            `json:"sortKey" form:"sortKey"`
+	SortDir    string            `json:"sortDir" form:"sortDir"`
+	MovieID    *int              `json:"movieId" form:"movieId"`
+	EventType  *HistoryEventType `json:"eventType" form:"eventType"`
+	Successful *bool             `json:"successful" form:"successful"`
+	DownloadID string            `json:"downloadId" form:"downloadId"`
+	Since      *time.Time        `json:"since" form:"since"`
+	Until      *time.Time        `json:"until" form:"until"`
 }
 
 // HistoryResponse represents a paginated response of history records
@@ -219,13 +219,13 @@ type HistoryResponse struct {
 
 // ActivityRequest represents a request for activity data with filtering options
 type ActivityRequest struct {
-	Page     int            `json:"page" form:"page"`
-	PageSize int            `json:"pageSize" form:"pageSize"`
-	Type     *ActivityType  `json:"type" form:"type"`
+	Page     int             `json:"page" form:"page"`
+	PageSize int             `json:"pageSize" form:"pageSize"`
+	Type     *ActivityType   `json:"type" form:"type"`
 	Status   *ActivityStatus `json:"status" form:"status"`
-	MovieID  *int           `json:"movieId" form:"movieId"`
-	Since    *time.Time     `json:"since" form:"since"`
-	Until    *time.Time     `json:"until" form:"until"`
+	MovieID  *int            `json:"movieId" form:"movieId"`
+	Since    *time.Time      `json:"since" form:"since"`
+	Until    *time.Time      `json:"until" form:"until"`
 }
 
 // ActivityResponse represents a paginated response of activity records
@@ -261,11 +261,11 @@ func (a *Activity) GetDuration() time.Duration {
 func (a *Activity) UpdateProgress(processed, total int) {
 	if total > 0 {
 		a.Progress = float64(processed) / float64(total) * 100
-		
+
 		// Update data
 		a.Data.ProcessedItems = processed
 		a.Data.TotalItems = total
-		
+
 		// Estimate remaining time if we have progress
 		if a.Progress > 0 && a.Progress < 100 {
 			elapsed := time.Since(a.StartTime)
@@ -281,7 +281,7 @@ func (a *Activity) Complete(successful bool) {
 	a.EndTime = &now
 	a.Progress = 100
 	a.Data.Duration = a.GetDuration()
-	
+
 	if successful {
 		a.Status = ActivityStatusCompleted
 	} else {
@@ -303,7 +303,7 @@ func (a *Activity) Fail(errorMsg string) {
 	a.EndTime = &now
 	a.Status = ActivityStatusFailed
 	a.Data.Duration = a.GetDuration()
-	
+
 	if errorMsg != "" {
 		a.Data.Errors = append(a.Data.Errors, errorMsg)
 		a.Message = errorMsg

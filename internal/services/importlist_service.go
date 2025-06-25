@@ -13,15 +13,15 @@ import (
 
 // ImportListService provides operations for managing import lists and movie discovery
 type ImportListService struct {
-	db                *database.Database
-	logger            *logger.Logger
-	metadataService   *MetadataService
-	movieService      *MovieService
-	httpClient        *http.Client
+	db              *database.Database
+	logger          *logger.Logger
+	metadataService *MetadataService
+	movieService    *MovieService
+	httpClient      *http.Client
 }
 
 // NewImportListService creates a new instance of ImportListService
-func NewImportListService(db *database.Database, logger *logger.Logger, 
+func NewImportListService(db *database.Database, logger *logger.Logger,
 	metadataService *MetadataService, movieService *MovieService) *ImportListService {
 	return &ImportListService{
 		db:              db,
@@ -267,7 +267,7 @@ func (s *ImportListService) processSingleMovie(
 	movie models.ImportListMovie, list *models.ImportList, result *models.ImportListSyncResult) {
 	processed, err := s.processImportListMovie(movie, list)
 	if err != nil {
-		result.Errors = append(result.Errors, 
+		result.Errors = append(result.Errors,
 			fmt.Sprintf("Failed to process movie %s: %s", movie.Title, err.Error()))
 		return
 	}
@@ -286,8 +286,8 @@ func (s *ImportListService) processSingleMovie(
 
 // logSyncCompletion logs the completion of import list sync
 func (s *ImportListService) logSyncCompletion(listID int, result *models.ImportListSyncResult) {
-	s.logger.Info("Completed import list sync", "listId", listID, 
-		"total", result.MoviesTotal, "added", result.MoviesAdded, 
+	s.logger.Info("Completed import list sync", "listId", listID,
+		"total", result.MoviesTotal, "added", result.MoviesAdded,
 		"updated", result.MoviesUpdated, "errors", len(result.Errors))
 }
 
@@ -385,9 +385,9 @@ func (s *ImportListService) validateImplementationRequirements(list *models.Impo
 			return fmt.Errorf("list ID is required for IMDb lists")
 		}
 	case models.ImportListTypeTMDBCollection, models.ImportListTypeTMDBCompany, models.ImportListTypeTMDBKeyword,
-		 models.ImportListTypeTMDBPerson, models.ImportListTypeTMDBPopular, models.ImportListTypeTraktPopular,
-		 models.ImportListTypePlexWatchlist, models.ImportListTypeRadarrList, models.ImportListTypeStevenLu,
-		 models.ImportListTypeCouchPotato:
+		models.ImportListTypeTMDBPerson, models.ImportListTypeTMDBPopular, models.ImportListTypeTraktPopular,
+		models.ImportListTypePlexWatchlist, models.ImportListTypeRadarrList, models.ImportListTypeStevenLu,
+		models.ImportListTypeCouchPotato:
 		// No additional validation required for these implementations
 	}
 
@@ -433,11 +433,11 @@ func (s *ImportListService) fetchSampleMovies(list *models.ImportList, _ int) ([
 	// This is a simplified version for testing
 	// In a real implementation, this would connect to the actual import list service
 	// and fetch sample movies based on the list type
-	
+
 	if list.Implementation == "" {
 		return nil, fmt.Errorf("no implementation specified")
 	}
-	
+
 	movies := []models.ImportListMovie{
 		{
 			TmdbID:        550,
@@ -457,13 +457,13 @@ func (s *ImportListService) fetchMoviesFromImportList(list *models.ImportList) (
 	// This is a placeholder implementation
 	// In a real implementation, this would connect to the actual import list service
 	// (TMDB, Trakt, Plex, etc.) and fetch the actual movie list
-	
+
 	s.logger.Debug("Fetching movies from import list", "listId", list.ID, "type", list.Implementation)
-	
+
 	if !list.IsEnabled() {
 		return nil, fmt.Errorf("import list is not enabled")
 	}
-	
+
 	// Return empty slice for now - this would be implemented with actual API calls
 	return []models.ImportListMovie{}, nil
 }

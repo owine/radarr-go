@@ -23,7 +23,7 @@ type MetadataService struct {
 // NewMetadataService creates a new metadata service
 func NewMetadataService(db *database.Database, cfg *config.Config, logger *logger.Logger) *MetadataService {
 	tmdbClient := tmdb.NewClient(cfg, logger)
-	
+
 	return &MetadataService{
 		db:     db,
 		tmdb:   tmdbClient,
@@ -42,7 +42,7 @@ func (s *MetadataService) SearchMovies(query string, page int) (*tmdb.SearchResp
 	}
 
 	s.logger.Debug("Searching for movies", "query", query, "page", page)
-	
+
 	response, err := s.tmdb.SearchMovies(query, page)
 	if err != nil {
 		s.logger.Error("Failed to search movies", "query", query, "error", err)
@@ -87,7 +87,7 @@ func (s *MetadataService) RefreshMovieMetadata(movieID int) error {
 	if s.db == nil {
 		return fmt.Errorf("database not available")
 	}
-	
+
 	// Get existing movie from database
 	var existingMovie models.Movie
 	if err := s.db.GORM.First(&existingMovie, movieID).Error; err != nil {
@@ -132,7 +132,7 @@ func (s *MetadataService) GetPopularMovies(page int) (*tmdb.SearchResponse, erro
 	}
 
 	s.logger.Debug("Getting popular movies", "page", page)
-	
+
 	response, err := s.tmdb.GetPopular(page)
 	if err != nil {
 		s.logger.Error("Failed to get popular movies", "error", err)
@@ -153,7 +153,7 @@ func (s *MetadataService) GetTrendingMovies(timeWindow string, page int) (*tmdb.
 	}
 
 	s.logger.Debug("Getting trending movies", "timeWindow", timeWindow, "page", page)
-	
+
 	response, err := s.tmdb.GetTrending(timeWindow, page)
 	if err != nil {
 		s.logger.Error("Failed to get trending movies", "error", err)
@@ -169,32 +169,32 @@ func (s *MetadataService) convertTMDBToMovie(tmdbMovie *tmdb.Movie, _ *tmdb.Cred
 	releaseDate := s.parseReleaseDate(tmdbMovie.ReleaseDate)
 	ratings := s.buildRatings(tmdbMovie)
 	collection := s.buildCollection(tmdbMovie.BelongsToCollection)
-	
+
 	year := s.extractYear(releaseDate)
 	cleanTitle := s.buildCleanTitle(tmdbMovie.Title)
 	genresArray := s.buildGenresArray(tmdbMovie.Genres)
-	
+
 	movie := &models.Movie{
-		TmdbID:           tmdbMovie.ID,
-		ImdbID:           tmdbMovie.IMDbID,
-		Title:            tmdbMovie.Title,
-		OriginalTitle:    tmdbMovie.OriginalTitle,
-		OriginalLanguage: models.Language{Name: tmdbMovie.OriginalLanguage},
-		Overview:         tmdbMovie.Overview,
-		Website:          tmdbMovie.Homepage,
-		Year:             year,
-		Runtime:          tmdbMovie.Runtime,
-		CleanTitle:       cleanTitle,
-		Status:           models.MovieStatus(tmdbMovie.Status),
-		Genres:           genresArray,
-		Ratings:          ratings,
-		Collection:       collection,
-		Popularity:       tmdbMovie.Popularity,
-		Studio:           s.extractStudio(tmdbMovie.ProductionCompanies),
-		Certification:    "",
-		Monitored:        true,
+		TmdbID:              tmdbMovie.ID,
+		ImdbID:              tmdbMovie.IMDbID,
+		Title:               tmdbMovie.Title,
+		OriginalTitle:       tmdbMovie.OriginalTitle,
+		OriginalLanguage:    models.Language{Name: tmdbMovie.OriginalLanguage},
+		Overview:            tmdbMovie.Overview,
+		Website:             tmdbMovie.Homepage,
+		Year:                year,
+		Runtime:             tmdbMovie.Runtime,
+		CleanTitle:          cleanTitle,
+		Status:              models.MovieStatus(tmdbMovie.Status),
+		Genres:              genresArray,
+		Ratings:             ratings,
+		Collection:          collection,
+		Popularity:          tmdbMovie.Popularity,
+		Studio:              s.extractStudio(tmdbMovie.ProductionCompanies),
+		Certification:       "",
+		Monitored:           true,
 		MinimumAvailability: models.AvailabilityTBA,
-		IsAvailable:      false,
+		IsAvailable:         false,
 	}
 
 	s.setReleaseDates(movie, releaseDate)
@@ -302,7 +302,7 @@ func (s *MetadataService) generateTitleSlug(title string, year int) string {
 	// Convert to lowercase and replace spaces with hyphens
 	slug := strings.ToLower(title)
 	slug = strings.ReplaceAll(slug, " ", "-")
-	
+
 	// Remove special characters except hyphens
 	slug = strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
@@ -310,15 +310,15 @@ func (s *MetadataService) generateTitleSlug(title string, year int) string {
 		}
 		return -1
 	}, slug)
-	
+
 	// Remove multiple consecutive hyphens
 	for strings.Contains(slug, "--") {
 		slug = strings.ReplaceAll(slug, "--", "-")
 	}
-	
+
 	// Trim hyphens from ends
 	slug = strings.Trim(slug, "-")
-	
+
 	// Add year if available
 	if year > 0 {
 		if slug == "" {
@@ -327,6 +327,6 @@ func (s *MetadataService) generateTitleSlug(title string, year int) string {
 			slug += "-" + strconv.Itoa(year)
 		}
 	}
-	
+
 	return slug
 }

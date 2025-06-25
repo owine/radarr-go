@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	baseURL           = "https://api.themoviedb.org/3"
-	defaultTimeout    = 30 * time.Second
-	defaultUserAgent  = "Radarr-Go/1.0"
+	baseURL          = "https://api.themoviedb.org/3"
+	defaultTimeout   = 30 * time.Second
+	defaultUserAgent = "Radarr-Go/1.0"
 	maxRetries       = 3
 	retryDelay       = 1 * time.Second
 )
@@ -46,31 +46,31 @@ func NewClient(cfg *config.Config, logger *logger.Logger) *Client {
 
 // Movie represents a TMDB movie
 type Movie struct {
-	ID                 int                `json:"id"`
-	IMDbID             string             `json:"imdb_id"`
-	Title              string             `json:"title"`
-	OriginalTitle      string             `json:"original_title"`
-	OriginalLanguage   string             `json:"original_language"`
-	Overview           string             `json:"overview"`
-	ReleaseDate        string             `json:"release_date"`
-	PosterPath         string             `json:"poster_path"`
-	BackdropPath       string             `json:"backdrop_path"`
-	Homepage           string             `json:"homepage"`
-	Runtime            int                `json:"runtime"`
-	Status             string             `json:"status"`
-	Tagline            string             `json:"tagline"`
-	VoteAverage        float64            `json:"vote_average"`
-	VoteCount          int                `json:"vote_count"`
-	Popularity         float64            `json:"popularity"`
-	Adult              bool               `json:"adult"`
-	Video              bool               `json:"video"`
-	Genres             []Genre            `json:"genres"`
+	ID                  int                 `json:"id"`
+	IMDbID              string              `json:"imdb_id"`
+	Title               string              `json:"title"`
+	OriginalTitle       string              `json:"original_title"`
+	OriginalLanguage    string              `json:"original_language"`
+	Overview            string              `json:"overview"`
+	ReleaseDate         string              `json:"release_date"`
+	PosterPath          string              `json:"poster_path"`
+	BackdropPath        string              `json:"backdrop_path"`
+	Homepage            string              `json:"homepage"`
+	Runtime             int                 `json:"runtime"`
+	Status              string              `json:"status"`
+	Tagline             string              `json:"tagline"`
+	VoteAverage         float64             `json:"vote_average"`
+	VoteCount           int                 `json:"vote_count"`
+	Popularity          float64             `json:"popularity"`
+	Adult               bool                `json:"adult"`
+	Video               bool                `json:"video"`
+	Genres              []Genre             `json:"genres"`
 	ProductionCompanies []ProductionCompany `json:"production_companies"`
 	ProductionCountries []ProductionCountry `json:"production_countries"`
-	SpokenLanguages    []SpokenLanguage   `json:"spoken_languages"`
-	BelongsToCollection *Collection       `json:"belongs_to_collection"`
-	Budget             int64              `json:"budget"`
-	Revenue            int64              `json:"revenue"`
+	SpokenLanguages     []SpokenLanguage    `json:"spoken_languages"`
+	BelongsToCollection *Collection         `json:"belongs_to_collection"`
+	Budget              int64               `json:"budget"`
+	Revenue             int64               `json:"revenue"`
 }
 
 // Genre represents a movie genre

@@ -163,7 +163,7 @@ func (s *HistoryService) CreateHistoryRecord(history *models.History) error {
 		return fmt.Errorf("failed to create history record: %w", err)
 	}
 
-	s.logger.Info("Created history record", "id", history.ID, "eventType", history.EventType, 
+	s.logger.Info("Created history record", "id", history.ID, "eventType", history.EventType,
 		"movieId", history.MovieID, "successful", history.Successful)
 	return nil
 }
@@ -202,7 +202,7 @@ func (s *HistoryService) CleanupOldHistory(olderThan time.Duration) (int64, erro
 		return 0, fmt.Errorf("failed to cleanup old history records: %w", result.Error)
 	}
 
-	s.logger.Info("Cleaned up old history records", "deleted", result.RowsAffected, 
+	s.logger.Info("Cleaned up old history records", "deleted", result.RowsAffected,
 		"cutoffDate", cutoffDate)
 	return result.RowsAffected, nil
 }
@@ -313,7 +313,7 @@ func (s *HistoryService) CreateActivity(activity *models.Activity) error {
 		return fmt.Errorf("failed to create activity: %w", err)
 	}
 
-	s.logger.Info("Created activity", "id", activity.ID, "type", activity.Type, 
+	s.logger.Info("Created activity", "id", activity.ID, "type", activity.Type,
 		"title", activity.Title, "status", activity.Status)
 	return nil
 }
@@ -329,7 +329,7 @@ func (s *HistoryService) UpdateActivity(activity *models.Activity) error {
 		return fmt.Errorf("failed to update activity: %w", err)
 	}
 
-	s.logger.Debug("Updated activity", "id", activity.ID, "status", activity.Status, 
+	s.logger.Debug("Updated activity", "id", activity.ID, "status", activity.Status,
 		"progress", activity.Progress)
 	return nil
 }
@@ -384,10 +384,10 @@ func (s *HistoryService) CleanupCompletedActivities(olderThan time.Duration) (in
 
 	cutoffDate := time.Now().Add(-olderThan)
 
-	result := s.db.GORM.Where("end_time < ? AND status IN ?", cutoffDate, 
+	result := s.db.GORM.Where("end_time < ? AND status IN ?", cutoffDate,
 		[]models.ActivityStatus{
-			models.ActivityStatusCompleted, 
-			models.ActivityStatusFailed, 
+			models.ActivityStatusCompleted,
+			models.ActivityStatusFailed,
 			models.ActivityStatusCancelled,
 		}).Delete(&models.Activity{})
 
@@ -396,7 +396,7 @@ func (s *HistoryService) CleanupCompletedActivities(olderThan time.Duration) (in
 		return 0, fmt.Errorf("failed to cleanup completed activities: %w", result.Error)
 	}
 
-	s.logger.Info("Cleaned up completed activities", "deleted", result.RowsAffected, 
+	s.logger.Info("Cleaned up completed activities", "deleted", result.RowsAffected,
 		"cutoffDate", cutoffDate)
 	return result.RowsAffected, nil
 }

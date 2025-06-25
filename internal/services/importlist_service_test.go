@@ -114,13 +114,13 @@ func getImportListTestCases() []importListTestCase {
 	}
 	return []importListTestCase{
 		{name: "Valid TMDB Popular list", list: validList, expected: true, errors: 0},
-		{name: "Missing name", list: createImportListWithoutField("name", validList), 
+		{name: "Missing name", list: createImportListWithoutField("name", validList),
 			expected: false, errors: 1},
-		{name: "Missing implementation", list: createImportListWithoutField("implementation", validList), 
+		{name: "Missing implementation", list: createImportListWithoutField("implementation", validList),
 			expected: false, errors: 1},
-		{name: "Missing quality profile", list: createImportListWithoutField("qualityProfile", validList), 
+		{name: "Missing quality profile", list: createImportListWithoutField("qualityProfile", validList),
 			expected: false, errors: 1},
-		{name: "Missing root folder", list: createImportListWithoutField("rootFolder", validList), 
+		{name: "Missing root folder", list: createImportListWithoutField("rootFolder", validList),
 			expected: false, errors: 1},
 	}
 }
@@ -232,22 +232,22 @@ func getImplementationTestCases() []struct {
 	}{
 		{name: "TMDB list with list ID", list: &models.ImportList{
 			Implementation: models.ImportListTypeTMDBList,
-			Settings: models.ImportListSettings{ListID: "123"}}, wantErr: false},
+			Settings:       models.ImportListSettings{ListID: "123"}}, wantErr: false},
 		{name: "TMDB list without list ID", list: &models.ImportList{
 			Implementation: models.ImportListTypeTMDBList,
-			Settings: models.ImportListSettings{}}, wantErr: true, errMsg: "list ID is required for TMDB lists"},
+			Settings:       models.ImportListSettings{}}, wantErr: true, errMsg: "list ID is required for TMDB lists"},
 		{name: "Trakt list with username", list: &models.ImportList{
 			Implementation: models.ImportListTypeTrakt,
-			Settings: models.ImportListSettings{Username: "testuser"}}, wantErr: false},
+			Settings:       models.ImportListSettings{Username: "testuser"}}, wantErr: false},
 		{name: "Trakt list without username", list: &models.ImportList{
 			Implementation: models.ImportListTypeTrakt,
-			Settings: models.ImportListSettings{}}, wantErr: true, errMsg: "username is required for Trakt lists"},
+			Settings:       models.ImportListSettings{}}, wantErr: true, errMsg: "username is required for Trakt lists"},
 		{name: "RSS import with URL", list: &models.ImportList{
 			Implementation: models.ImportListTypeRSSImport,
-			Settings: models.ImportListSettings{URL: "https://example.com/feed.rss"}}, wantErr: false},
+			Settings:       models.ImportListSettings{URL: "https://example.com/feed.rss"}}, wantErr: false},
 		{name: "RSS import without URL", list: &models.ImportList{
 			Implementation: models.ImportListTypeRSSImport,
-			Settings: models.ImportListSettings{}}, wantErr: true, errMsg: "URL is required for RSS import"},
+			Settings:       models.ImportListSettings{}}, wantErr: true, errMsg: "URL is required for RSS import"},
 	}
 }
 

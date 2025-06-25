@@ -25,7 +25,7 @@ func NewQueueService(db *database.Database, logger *logger.Logger) *QueueService
 
 // GetQueue retrieves all queue items with optional filtering
 func (s *QueueService) GetQueue(
-	movieIDs []int, protocol *models.DownloadProtocol, _ []int, _ []int, 
+	movieIDs []int, protocol *models.DownloadProtocol, _ []int, _ []int,
 	status []models.QueueStatus, includeUnknownMovieItems bool) ([]models.QueueItem, error) {
 	if s.db == nil {
 		return nil, fmt.Errorf("database not available")
@@ -123,7 +123,7 @@ func (s *QueueService) RemoveQueueItem(
 
 	// TODO: Implement download client removal logic
 	if removeFromClient {
-		s.logger.Info("Would remove from download client", "downloadId", queueItem.DownloadID, 
+		s.logger.Info("Would remove from download client", "downloadId", queueItem.DownloadID,
 			"client", queueItem.DownloadClient)
 	}
 
@@ -147,7 +147,7 @@ func (s *QueueService) RemoveQueueItem(
 }
 
 // RemoveQueueItems removes multiple queue items
-func (s *QueueService) RemoveQueueItems(ids []int, removeFromClient bool, blocklist bool, 
+func (s *QueueService) RemoveQueueItems(ids []int, removeFromClient bool, blocklist bool,
 	skipRedownload bool, changeCategory bool) error {
 	if s.db == nil {
 		return fmt.Errorf("database not available")
@@ -217,7 +217,7 @@ func (s *QueueService) GetQueueItemsByStatus(status models.QueueStatus) ([]model
 }
 
 // UpdateProgress updates download progress for a queue item
-func (s *QueueService) UpdateProgress(downloadID string, size int64, sizeLeft int64, 
+func (s *QueueService) UpdateProgress(downloadID string, size int64, sizeLeft int64,
 	timeLeft *time.Duration, estimatedCompletion *time.Time) error {
 	if s.db == nil {
 		return fmt.Errorf("database not available")

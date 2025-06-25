@@ -169,10 +169,10 @@ func TestHistoryService_RecordGrab(t *testing.T) {
 	}
 
 	data := models.HistoryEventData{
-		Indexer:      "Test Indexer",
-		DownloadURL:  "https://example.com/download",
-		Size:         1024 * 1024 * 1024, // 1GB
-		Protocol:     "torrent",
+		Indexer:     "Test Indexer",
+		DownloadURL: "https://example.com/download",
+		Size:        1024 * 1024 * 1024, // 1GB
+		Protocol:    "torrent",
 	}
 
 	// Test with nil database
@@ -186,13 +186,13 @@ func TestHistoryService_RecordDownloadFailed(t *testing.T) {
 	service := NewHistoryService(nil, logger)
 
 	data := models.HistoryEventData{
-		Indexer:     "Test Indexer",
-		Reason:      "Connection timeout",
-		Protocol:    "torrent",
+		Indexer:  "Test Indexer",
+		Reason:   "Connection timeout",
+		Protocol: "torrent",
 	}
 
 	// Test with nil database
-	err := service.RecordDownloadFailed(1, "Test Movie 2023", "download123", 
+	err := service.RecordDownloadFailed(1, "Test Movie 2023", "download123",
 		"Download failed: Connection timeout", data)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "database not available")
@@ -353,7 +353,7 @@ func TestActivityStatus_Constants(t *testing.T) {
 
 func TestHistoryRequest_Defaults(t *testing.T) {
 	req := models.HistoryRequest{}
-	
+
 	// Test that empty request has sensible defaults when processed
 	assert.Equal(t, 0, req.Page)
 	assert.Equal(t, 0, req.PageSize)
@@ -367,7 +367,7 @@ func TestHistoryRequest_Defaults(t *testing.T) {
 
 func TestActivityRequest_Defaults(t *testing.T) {
 	req := models.ActivityRequest{}
-	
+
 	// Test that empty request has sensible defaults when processed
 	assert.Equal(t, 0, req.Page)
 	assert.Equal(t, 0, req.PageSize)

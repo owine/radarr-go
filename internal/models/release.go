@@ -46,23 +46,23 @@ const (
 
 // ReleaseInfo contains detailed information about a release
 type ReleaseInfo struct {
-	Title            string    `json:"title"`
-	Description      string    `json:"description,omitempty"`
-	Year             int       `json:"year,omitempty"`
-	Edition          string    `json:"edition,omitempty"`
-	Languages        []string  `json:"languages,omitempty"`
-	Subtitles        []string  `json:"subtitles,omitempty"`
-	Resolution       string    `json:"resolution,omitempty"`
-	Source           string    `json:"source,omitempty"`
-	Codec            string    `json:"codec,omitempty"`
-	Container        string    `json:"container,omitempty"`
-	ReleaseGroup     string    `json:"releaseGroup,omitempty"`
-	Scene            bool      `json:"scene"`
-	Freeleech        bool      `json:"freeleech"`
-	DownloadVolumeFactor float64 `json:"downloadVolumeFactor"`
-	UploadVolumeFactor   float64 `json:"uploadVolumeFactor"`
-	MinimumRatio     *float64  `json:"minimumRatio,omitempty"`
-	MinimumSeedTime  *int      `json:"minimumSeedTime,omitempty"`
+	Title                string   `json:"title"`
+	Description          string   `json:"description,omitempty"`
+	Year                 int      `json:"year,omitempty"`
+	Edition              string   `json:"edition,omitempty"`
+	Languages            []string `json:"languages,omitempty"`
+	Subtitles            []string `json:"subtitles,omitempty"`
+	Resolution           string   `json:"resolution,omitempty"`
+	Source               string   `json:"source,omitempty"`
+	Codec                string   `json:"codec,omitempty"`
+	Container            string   `json:"container,omitempty"`
+	ReleaseGroup         string   `json:"releaseGroup,omitempty"`
+	Scene                bool     `json:"scene"`
+	Freeleech            bool     `json:"freeleech"`
+	DownloadVolumeFactor float64  `json:"downloadVolumeFactor"`
+	UploadVolumeFactor   float64  `json:"uploadVolumeFactor"`
+	MinimumRatio         *float64 `json:"minimumRatio,omitempty"`
+	MinimumSeedTime      *int     `json:"minimumSeedTime,omitempty"`
 }
 
 // Value implements the driver.Valuer interface for database storage
@@ -88,45 +88,45 @@ func (ri *ReleaseInfo) Scan(value interface{}) error {
 
 // Release represents a movie release found by indexers
 type Release struct {
-	ID              int           `json:"id" gorm:"primaryKey;autoIncrement"`
-	GUID            string        `json:"guid" gorm:"not null;size:500;uniqueIndex"`
-	Title           string        `json:"title" gorm:"not null;size:500"`
-	SortTitle       string        `json:"sortTitle" gorm:"size:500;index"`
-	Overview        string        `json:"overview" gorm:"type:text"`
-	Quality         Quality       `json:"quality" gorm:"type:text"`
-	QualityWeight   int           `json:"qualityWeight" gorm:"index"`
-	Age             int           `json:"age"`
-	AgeHours        float64       `json:"ageHours"`
-	AgeMinutes      float64       `json:"ageMinutes"`
-	Size            int64         `json:"size"`
-	IndexerID       int           `json:"indexerId" gorm:"not null;index"`
-	Indexer         *Indexer      `json:"indexer,omitempty" gorm:"foreignKey:IndexerID"`
-	MovieID         *int          `json:"movieId,omitempty" gorm:"index"`
-	Movie           *Movie        `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
-	ImdbID          string        `json:"imdbId" gorm:"size:20;index"`
-	TmdbID          *int          `json:"tmdbId,omitempty" gorm:"index"`
-	Protocol        Protocol      `json:"protocol" gorm:"not null;size:20"`
-	DownloadURL     string        `json:"downloadUrl" gorm:"not null;size:2000"`
-	InfoURL         string        `json:"infoUrl" gorm:"size:2000"`
-	CommentURL      string        `json:"commentUrl" gorm:"size:2000"`
-	Seeders         *int          `json:"seeders,omitempty"`
-	Leechers        *int          `json:"leechers,omitempty"`
-	PeerCount       int           `json:"peers"`
-	PublishDate     time.Time     `json:"publishDate" gorm:"not null;index"`
-	Status          ReleaseStatus `json:"status" gorm:"default:'available';index"`
-	Source          ReleaseSource `json:"source" gorm:"not null;size:20"`
-	ReleaseInfo     ReleaseInfo   `json:"releaseInfo" gorm:"type:text"`
-	Categories      IntArray      `json:"categories" gorm:"type:text"`
-	DownloadClientID *int         `json:"downloadClientId,omitempty"`
-	DownloadClient  *DownloadClient `json:"downloadClient,omitempty" gorm:"foreignKey:DownloadClientID"`
-	RejectionReasons StringArray   `json:"rejectionReasons" gorm:"type:text"`
-	IndexerFlags    int           `json:"indexerFlags" gorm:"default:0"`
-	SceneMapping    bool          `json:"sceneMapping" gorm:"default:false"`
-	MagnetURL       string        `json:"magnetUrl" gorm:"size:2000"`
-	CreatedAt       time.Time     `json:"added" gorm:"autoCreateTime;index"`
-	UpdatedAt       time.Time     `json:"updated" gorm:"autoUpdateTime"`
-	GrabbedAt       *time.Time    `json:"grabbedAt,omitempty"`
-	FailedAt        *time.Time    `json:"failedAt,omitempty"`
+	ID               int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	GUID             string          `json:"guid" gorm:"not null;size:500;uniqueIndex"`
+	Title            string          `json:"title" gorm:"not null;size:500"`
+	SortTitle        string          `json:"sortTitle" gorm:"size:500;index"`
+	Overview         string          `json:"overview" gorm:"type:text"`
+	Quality          Quality         `json:"quality" gorm:"type:text"`
+	QualityWeight    int             `json:"qualityWeight" gorm:"index"`
+	Age              int             `json:"age"`
+	AgeHours         float64         `json:"ageHours"`
+	AgeMinutes       float64         `json:"ageMinutes"`
+	Size             int64           `json:"size"`
+	IndexerID        int             `json:"indexerId" gorm:"not null;index"`
+	Indexer          *Indexer        `json:"indexer,omitempty" gorm:"foreignKey:IndexerID"`
+	MovieID          *int            `json:"movieId,omitempty" gorm:"index"`
+	Movie            *Movie          `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
+	ImdbID           string          `json:"imdbId" gorm:"size:20;index"`
+	TmdbID           *int            `json:"tmdbId,omitempty" gorm:"index"`
+	Protocol         Protocol        `json:"protocol" gorm:"not null;size:20"`
+	DownloadURL      string          `json:"downloadUrl" gorm:"not null;size:2000"`
+	InfoURL          string          `json:"infoUrl" gorm:"size:2000"`
+	CommentURL       string          `json:"commentUrl" gorm:"size:2000"`
+	Seeders          *int            `json:"seeders,omitempty"`
+	Leechers         *int            `json:"leechers,omitempty"`
+	PeerCount        int             `json:"peers"`
+	PublishDate      time.Time       `json:"publishDate" gorm:"not null;index"`
+	Status           ReleaseStatus   `json:"status" gorm:"default:'available';index"`
+	Source           ReleaseSource   `json:"source" gorm:"not null;size:20"`
+	ReleaseInfo      ReleaseInfo     `json:"releaseInfo" gorm:"type:text"`
+	Categories       IntArray        `json:"categories" gorm:"type:text"`
+	DownloadClientID *int            `json:"downloadClientId,omitempty"`
+	DownloadClient   *DownloadClient `json:"downloadClient,omitempty" gorm:"foreignKey:DownloadClientID"`
+	RejectionReasons StringArray     `json:"rejectionReasons" gorm:"type:text"`
+	IndexerFlags     int             `json:"indexerFlags" gorm:"default:0"`
+	SceneMapping     bool            `json:"sceneMapping" gorm:"default:false"`
+	MagnetURL        string          `json:"magnetUrl" gorm:"size:2000"`
+	CreatedAt        time.Time       `json:"added" gorm:"autoCreateTime;index"`
+	UpdatedAt        time.Time       `json:"updated" gorm:"autoUpdateTime"`
+	GrabbedAt        *time.Time      `json:"grabbedAt,omitempty"`
+	FailedAt         *time.Time      `json:"failedAt,omitempty"`
 }
 
 // TableName returns the database table name for the Release model
@@ -203,18 +203,18 @@ func (r *Release) GetRejectionString() string {
 
 // SearchRequest represents a search request for releases
 type SearchRequest struct {
-	MovieID    *int      `json:"movieId,omitempty"`
-	ImdbID     string    `json:"imdbId,omitempty"`
-	TmdbID     *int      `json:"tmdbId,omitempty"`
-	Title      string    `json:"title,omitempty"`
-	Year       *int      `json:"year,omitempty"`
-	Categories []int     `json:"categories,omitempty"`
-	IndexerIDs []int     `json:"indexerIds,omitempty"`
-	Limit      int       `json:"limit,omitempty"`
-	Offset     int       `json:"offset,omitempty"`
-	SortBy     string    `json:"sortBy,omitempty"`
-	SortOrder  string    `json:"sortOrder,omitempty"`
-	Protocol   *Protocol `json:"protocol,omitempty"`
+	MovieID    *int          `json:"movieId,omitempty"`
+	ImdbID     string        `json:"imdbId,omitempty"`
+	TmdbID     *int          `json:"tmdbId,omitempty"`
+	Title      string        `json:"title,omitempty"`
+	Year       *int          `json:"year,omitempty"`
+	Categories []int         `json:"categories,omitempty"`
+	IndexerIDs []int         `json:"indexerIds,omitempty"`
+	Limit      int           `json:"limit,omitempty"`
+	Offset     int           `json:"offset,omitempty"`
+	SortBy     string        `json:"sortBy,omitempty"`
+	SortOrder  string        `json:"sortOrder,omitempty"`
+	Protocol   *Protocol     `json:"protocol,omitempty"`
 	Source     ReleaseSource `json:"source"`
 }
 
@@ -248,40 +248,40 @@ type GrabResponse struct {
 
 // ReleaseFilter represents filters for release queries
 type ReleaseFilter struct {
-	Status       []ReleaseStatus `json:"status,omitempty"`
-	Source       []ReleaseSource `json:"source,omitempty"`
-	Protocol     []Protocol      `json:"protocol,omitempty"`
-	IndexerIDs   []int           `json:"indexerIds,omitempty"`
-	MovieIDs     []int           `json:"movieIds,omitempty"`
-	MinSize      *int64          `json:"minSize,omitempty"`
-	MaxSize      *int64          `json:"maxSize,omitempty"`
-	MinAge       *int            `json:"minAge,omitempty"`
-	MaxAge       *int            `json:"maxAge,omitempty"`
-	HasSeeders   *bool           `json:"hasSeeders,omitempty"`
-	MinSeeders   *int            `json:"minSeeders,omitempty"`
-	Categories   []int           `json:"categories,omitempty"`
-	Languages    []string        `json:"languages,omitempty"`
-	Resolutions  []string        `json:"resolutions,omitempty"`
-	Sources      []string        `json:"sources,omitempty"`
-	Codecs       []string        `json:"codecs,omitempty"`
-	Freeleech    *bool           `json:"freeleech,omitempty"`
-	Scene        *bool           `json:"scene,omitempty"`
-	CreatedAfter *time.Time      `json:"createdAfter,omitempty"`
-	CreatedBefore *time.Time     `json:"createdBefore,omitempty"`
+	Status        []ReleaseStatus `json:"status,omitempty"`
+	Source        []ReleaseSource `json:"source,omitempty"`
+	Protocol      []Protocol      `json:"protocol,omitempty"`
+	IndexerIDs    []int           `json:"indexerIds,omitempty"`
+	MovieIDs      []int           `json:"movieIds,omitempty"`
+	MinSize       *int64          `json:"minSize,omitempty"`
+	MaxSize       *int64          `json:"maxSize,omitempty"`
+	MinAge        *int            `json:"minAge,omitempty"`
+	MaxAge        *int            `json:"maxAge,omitempty"`
+	HasSeeders    *bool           `json:"hasSeeders,omitempty"`
+	MinSeeders    *int            `json:"minSeeders,omitempty"`
+	Categories    []int           `json:"categories,omitempty"`
+	Languages     []string        `json:"languages,omitempty"`
+	Resolutions   []string        `json:"resolutions,omitempty"`
+	Sources       []string        `json:"sources,omitempty"`
+	Codecs        []string        `json:"codecs,omitempty"`
+	Freeleech     *bool           `json:"freeleech,omitempty"`
+	Scene         *bool           `json:"scene,omitempty"`
+	CreatedAfter  *time.Time      `json:"createdAfter,omitempty"`
+	CreatedBefore *time.Time      `json:"createdBefore,omitempty"`
 }
 
 // ReleaseStats represents statistics about releases
 type ReleaseStats struct {
-	TotalReleases     int            `json:"totalReleases"`
-	AvailableReleases int            `json:"availableReleases"`
-	GrabbedReleases   int            `json:"grabbedReleases"`
-	RejectedReleases  int            `json:"rejectedReleases"`
-	FailedReleases    int            `json:"failedReleases"`
-	ProtocolBreakdown map[Protocol]int `json:"protocolBreakdown"`
+	TotalReleases     int                   `json:"totalReleases"`
+	AvailableReleases int                   `json:"availableReleases"`
+	GrabbedReleases   int                   `json:"grabbedReleases"`
+	RejectedReleases  int                   `json:"rejectedReleases"`
+	FailedReleases    int                   `json:"failedReleases"`
+	ProtocolBreakdown map[Protocol]int      `json:"protocolBreakdown"`
 	SourceBreakdown   map[ReleaseSource]int `json:"sourceBreakdown"`
-	IndexerBreakdown  map[int]int    `json:"indexerBreakdown"`
-	AverageSize       float64        `json:"averageSize"`
-	TotalSize         int64          `json:"totalSize"`
-	AverageAge        float64        `json:"averageAge"`
-	LastUpdated       time.Time      `json:"lastUpdated"`
+	IndexerBreakdown  map[int]int           `json:"indexerBreakdown"`
+	AverageSize       float64               `json:"averageSize"`
+	TotalSize         int64                 `json:"totalSize"`
+	AverageAge        float64               `json:"averageAge"`
+	LastUpdated       time.Time             `json:"lastUpdated"`
 }

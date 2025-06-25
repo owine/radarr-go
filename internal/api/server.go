@@ -117,7 +117,7 @@ func (s *Server) setupMovieRoutes(v3 *gin.RouterGroup) {
 	movieRoutes.POST("", s.handleCreateMovie)
 	movieRoutes.PUT("/:id", s.handleUpdateMovie)
 	movieRoutes.DELETE("/:id", s.handleDeleteMovie)
-	
+
 	// Movie discovery and metadata endpoints
 	movieRoutes.GET("/lookup", s.handleMovieLookup)
 	movieRoutes.GET("/lookup/tmdb", s.handleMovieByTMDBID)
@@ -171,7 +171,7 @@ func (s *Server) setupDownloadClientRoutes(v3 *gin.RouterGroup) {
 	downloadClientRoutes.DELETE("/:id", s.handleDeleteDownloadClient)
 	downloadClientRoutes.POST("/test", s.handleTestDownloadClient)
 	downloadClientRoutes.GET("/stats", s.handleGetDownloadClientStats)
-	
+
 	// Download history
 	v3.GET("/downloadhistory", s.handleGetDownloadHistory)
 }
@@ -187,7 +187,7 @@ func (s *Server) setupImportListRoutes(v3 *gin.RouterGroup) {
 	importListRoutes.POST("/:id/sync", s.handleSyncImportList)
 	importListRoutes.POST("/sync", s.handleSyncAllImportLists)
 	importListRoutes.GET("/stats", s.handleGetImportListStats)
-	
+
 	// Import list movies
 	v3.GET("/importlistmovies", s.handleGetImportListMovies)
 }
@@ -320,16 +320,16 @@ func (s *Server) setupConfigRoutes(v3 *gin.RouterGroup) {
 	// Host configuration
 	v3.GET("/config/host", s.handleGetHostConfig)
 	v3.PUT("/config/host", s.handleUpdateHostConfig)
-	
+
 	// Naming configuration
 	v3.GET("/config/naming", s.handleGetNamingConfig)
 	v3.PUT("/config/naming", s.handleUpdateNamingConfig)
 	v3.GET("/config/naming/tokens", s.handleGetNamingTokens)
-	
+
 	// Media management configuration
 	v3.GET("/config/mediamanagement", s.handleGetMediaManagementConfig)
 	v3.PUT("/config/mediamanagement", s.handleUpdateMediaManagementConfig)
-	
+
 	// Root folders
 	rootFolderRoutes := v3.Group("/rootfolder")
 	rootFolderRoutes.GET("", s.handleGetRootFolders)
@@ -337,7 +337,7 @@ func (s *Server) setupConfigRoutes(v3 *gin.RouterGroup) {
 	rootFolderRoutes.POST("", s.handleCreateRootFolder)
 	rootFolderRoutes.PUT("/:id", s.handleUpdateRootFolder)
 	rootFolderRoutes.DELETE("/:id", s.handleDeleteRootFolder)
-	
+
 	// Configuration stats
 	v3.GET("/config/stats", s.handleGetConfigStats)
 }

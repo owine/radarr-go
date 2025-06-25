@@ -452,8 +452,6 @@ func (s *Server) handleGetImportListMovies(c *gin.Context) {
 	c.JSON(http.StatusOK, movies)
 }
 
-
-
 func (s *Server) handleSearchMovies(c *gin.Context) {
 	query := c.Query("term")
 	if query == "" {
@@ -787,9 +785,9 @@ func (s *Server) handleRefreshMovieMetadata(c *gin.Context) {
 // Queue handlers
 func (s *Server) handleGetQueue(c *gin.Context) {
 	params := s.parseQueueQueryParams(c)
-	
+
 	queue, err := s.services.QueueService.GetQueue(
-		params.MovieIDs, params.Protocol, params.Languages, 
+		params.MovieIDs, params.Protocol, params.Languages,
 		params.Quality, params.Status, params.IncludeUnknownMovieItems)
 	if err != nil {
 		s.logger.Error("Failed to get queue", "error", err)
@@ -827,7 +825,7 @@ const (
 
 func (s *Server) parseQueueQueryParams(c *gin.Context) queueQueryParams {
 	var params queueQueryParams
-	
+
 	// Parse protocol
 	if protocolStr := c.Query("protocol"); protocolStr != "" {
 		p := models.DownloadProtocol(protocolStr)

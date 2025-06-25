@@ -158,26 +158,26 @@ const (
 
 // QueueItem represents an item in the download queue
 type QueueItem struct {
-	ID                      int              `json:"id" gorm:"primaryKey;autoIncrement"`
-	MovieID                 int              `json:"movieId" gorm:"index"`
-	Movie                   *Movie           `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
-	DownloadClientID        int              `json:"downloadClientId" gorm:"index"`
-	DownloadClient          *DownloadClient  `json:"downloadClient,omitempty" gorm:"foreignKey:DownloadClientID"`
-	DownloadID              string           `json:"downloadId" gorm:"size:255;index"`
-	Title                   string           `json:"title" gorm:"not null;size:500"`
-	Size                    int64            `json:"size"`
-	SizeLeft                int64            `json:"sizeleft"`
-	Status                  QueueStatus      `json:"status" gorm:"not null;size:20"`
-	TrackedDownloadStatus   string           `json:"trackedDownloadStatus" gorm:"size:50"`
+	ID                      int                `json:"id" gorm:"primaryKey;autoIncrement"`
+	MovieID                 int                `json:"movieId" gorm:"index"`
+	Movie                   *Movie             `json:"movie,omitempty" gorm:"foreignKey:MovieID"`
+	DownloadClientID        int                `json:"downloadClientId" gorm:"index"`
+	DownloadClient          *DownloadClient    `json:"downloadClient,omitempty" gorm:"foreignKey:DownloadClientID"`
+	DownloadID              string             `json:"downloadId" gorm:"size:255;index"`
+	Title                   string             `json:"title" gorm:"not null;size:500"`
+	Size                    int64              `json:"size"`
+	SizeLeft                int64              `json:"sizeleft"`
+	Status                  QueueStatus        `json:"status" gorm:"not null;size:20"`
+	TrackedDownloadStatus   string             `json:"trackedDownloadStatus" gorm:"size:50"`
 	StatusMessages          StatusMessageArray `json:"statusMessages" gorm:"type:text"`
-	DownloadedInfo          DownloadedInfo   `json:"downloadedInfo" gorm:"type:text"`
-	ErrorMessage            string           `json:"errorMessage" gorm:"type:text"`
-	Added                   time.Time        `json:"added" gorm:"autoCreateTime"`
-	Updated                 time.Time        `json:"updated" gorm:"autoUpdateTime"`
-	TimeLeft                *time.Duration   `json:"timeleft,omitempty"`
-	EstimatedCompletionTime *time.Time       `json:"estimatedCompletionTime,omitempty"`
-	Protocol                DownloadProtocol `json:"protocol" gorm:"size:20"`
-	OutputPath              string           `json:"outputPath" gorm:"size:500"`
+	DownloadedInfo          DownloadedInfo     `json:"downloadedInfo" gorm:"type:text"`
+	ErrorMessage            string             `json:"errorMessage" gorm:"type:text"`
+	Added                   time.Time          `json:"added" gorm:"autoCreateTime"`
+	Updated                 time.Time          `json:"updated" gorm:"autoUpdateTime"`
+	TimeLeft                *time.Duration     `json:"timeleft,omitempty"`
+	EstimatedCompletionTime *time.Time         `json:"estimatedCompletionTime,omitempty"`
+	Protocol                DownloadProtocol   `json:"protocol" gorm:"size:20"`
+	OutputPath              string             `json:"outputPath" gorm:"size:500"`
 }
 
 // TableName returns the database table name for the QueueItem model

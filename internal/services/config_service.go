@@ -251,7 +251,7 @@ func (s *ConfigService) updateRootFolderStats(rootFolder *models.RootFolder) {
 
 	// Get disk space information
 	if usage, err := s.getDiskUsage(rootFolder.Path); err == nil {
-		rootFolder.FreeSpace = usage.Free / (1024 * 1024) // Convert to MB
+		rootFolder.FreeSpace = usage.Free / (1024 * 1024)   // Convert to MB
 		rootFolder.TotalSpace = usage.Total / (1024 * 1024) // Convert to MB
 	} else {
 		s.logger.Debug("Failed to get disk usage", "path", rootFolder.Path, "error", err)
@@ -373,6 +373,6 @@ func (s *ConfigService) updateConfig(config interface{}, configType string, vali
 		}
 	}
 
-	s.logger.Info("Updated "+configType+" configuration")
+	s.logger.Info("Updated " + configType + " configuration")
 	return nil
 }
