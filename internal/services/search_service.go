@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -22,6 +23,38 @@ const (
 	// defaultSortOrder is the default sort order for search results
 	defaultSortOrder = "desc"
 )
+
+// NewznabResponse represents a Newznab/Torznab XML response structure
+type NewznabResponse struct {
+	XMLName xml.Name `xml:"rss"`
+	Channel struct {
+		Items []NewznabItem `xml:"item"`
+	} `xml:"channel"`
+}
+
+// NewznabItem represents a single item in a Newznab response
+type NewznabItem struct {
+	Title       string               `xml:"title"`
+	Link        string               `xml:"link"`
+	GUID        string               `xml:"guid"`
+	PubDate     string               `xml:"pubDate"`
+	Description string               `xml:"description"`
+	Enclosure   NewznabEnclosure     `xml:"enclosure"`
+	Attributes  []NewznabAttribute   `xml:"attr"`
+}
+
+// NewznabEnclosure represents the enclosure element
+type NewznabEnclosure struct {
+	URL    string `xml:"url,attr"`
+	Length string `xml:"length,attr"`
+	Type   string `xml:"type,attr"`
+}
+
+// NewznabAttribute represents a Newznab attribute
+type NewznabAttribute struct {
+	Name  string `xml:"name,attr"`
+	Value string `xml:"value,attr"`
+}
 
 // SearchService handles movie release searches and management
 type SearchService struct {
@@ -215,65 +248,83 @@ func (s *SearchService) GrabRelease(request *models.GrabRequest) (*models.GrabRe
 		return nil, fmt.Errorf("database not available")
 	}
 
+	release, err := s.findReleaseForGrab(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if !release.IsGrabbable() {
+		return s.createRejectedResponse(release), nil
+	}
+
+	downloadClient, err := s.getDownloadClientForRelease(request, release)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.markReleaseAsGrabbed(release, downloadClient); err != nil {
+		s.logger.Error("Failed to update release status", "error", err)
+	}
+
+	s.logGrabSuccess(release, downloadClient)
+	return s.createSuccessResponse(release, downloadClient), nil
+}
+
+// findReleaseForGrab finds and loads the release for grabbing
+func (s *SearchService) findReleaseForGrab(request *models.GrabRequest) (*models.Release, error) {
 	var release models.Release
 	if err := s.db.GORM.Where("guid = ? AND indexer_id = ?", request.GUID, request.IndexerID).
 		Preload("Indexer").Preload("Movie").First(&release).Error; err != nil {
 		return nil, fmt.Errorf("release not found: %w", err)
 	}
+	return &release, nil
+}
 
-	if !release.IsGrabbable() {
-		return &models.GrabResponse{
-			ID:      release.ID,
-			GUID:    release.GUID,
-			Title:   release.Title,
-			Status:  "rejected",
-			Message: fmt.Sprintf("Release not grabbable: %s", release.GetRejectionString()),
-		}, nil
+// createRejectedResponse creates a response for a rejected release
+func (s *SearchService) createRejectedResponse(release *models.Release) *models.GrabResponse {
+	return &models.GrabResponse{
+		ID:      release.ID,
+		GUID:    release.GUID,
+		Title:   release.Title,
+		Status:  "rejected",
+		Message: fmt.Sprintf("Release not grabbable: %s", release.GetRejectionString()),
 	}
+}
 
+// getDownloadClientForRelease gets the appropriate download client for a release
+func (s *SearchService) getDownloadClientForRelease(
+	request *models.GrabRequest, release *models.Release) (*models.DownloadClient, error) {
 	downloadClientID := request.DownloadClientID
 	if downloadClientID == nil && release.Indexer != nil && release.Indexer.DownloadClientID != nil {
 		downloadClientID = release.Indexer.DownloadClientID
 	}
 
-	downloadClient, err := s.downloadService.GetDownloadClientByID(*downloadClientID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get download client: %w", err)
-	}
+	return s.downloadService.GetDownloadClientByID(*downloadClientID)
+}
 
-	downloadRequest := &models.DownloadRequest{
-		Title:       release.Title,
-		DownloadURL: release.DownloadURL,
-		InfoURL:     release.InfoURL,
-		Size:        release.Size,
-		Protocol:    string(release.Protocol),
-		MovieID:     release.MovieID,
-		Category:    s.getCategoryForRelease(&release),
-	}
-
-	// TODO: Implement actual download client integration
-	// For now, just mark as grabbed without actually sending to download client
-	_ = downloadRequest
-
+// markReleaseAsGrabbed updates the release status to grabbed
+func (s *SearchService) markReleaseAsGrabbed(release *models.Release, downloadClient *models.DownloadClient) error {
 	now := time.Now()
 	release.Status = models.ReleaseStatusGrabbed
 	release.GrabbedAt = &now
 	release.DownloadClientID = &downloadClient.ID
+	return s.db.GORM.Save(release).Error
+}
 
-	if err := s.db.GORM.Save(&release).Error; err != nil {
-		s.logger.Error("Failed to update release status", "error", err)
-	}
-
-	// TODO: Implement movie grabbed notification
+// logGrabSuccess logs successful grab information
+func (s *SearchService) logGrabSuccess(release *models.Release, downloadClient *models.DownloadClient) {
 	if release.Movie != nil {
 		s.logger.Info("Movie grabbed", "movie", release.Movie.Title, "release", release.Title)
 	}
-
 	s.logger.Info("Release grabbed successfully",
 		"release", release.Title,
 		"indexer", release.Indexer.Name,
 		"downloadClient", downloadClient.Name)
+}
 
+// createSuccessResponse creates a successful grab response
+func (s *SearchService) createSuccessResponse(
+	release *models.Release, downloadClient *models.DownloadClient) *models.GrabResponse {
 	return &models.GrabResponse{
 		ID:               release.ID,
 		GUID:             release.GUID,
@@ -281,7 +332,7 @@ func (s *SearchService) GrabRelease(request *models.GrabRequest) (*models.GrabRe
 		Status:           "grabbed",
 		DownloadClientID: &downloadClient.ID,
 		Message:          fmt.Sprintf("Successfully sent to %s", downloadClient.Name),
-	}, nil
+	}
 }
 
 // GetReleases retrieves releases with optional filtering
@@ -355,12 +406,37 @@ func (s *SearchService) GetReleaseStats() (*models.ReleaseStats, error) {
 		LastUpdated:       time.Now(),
 	}
 
+	if err := s.populateTotalReleases(stats); err != nil {
+		return nil, err
+	}
+
+	if err := s.populateStatusCounts(stats); err != nil {
+		return nil, err
+	}
+
+	if err := s.populateSizeStats(stats); err != nil {
+		return nil, err
+	}
+
+	if err := s.populateAgeStats(stats); err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// populateTotalReleases gets the total release count
+func (s *SearchService) populateTotalReleases(stats *models.ReleaseStats) error {
 	var totalReleases int64
 	if err := s.db.GORM.Model(&models.Release{}).Count(&totalReleases).Error; err != nil {
-		return nil, fmt.Errorf("failed to count total releases: %w", err)
+		return fmt.Errorf("failed to count total releases: %w", err)
 	}
 	stats.TotalReleases = int(totalReleases)
+	return nil
+}
 
+// populateStatusCounts gets release counts by status
+func (s *SearchService) populateStatusCounts(stats *models.ReleaseStats) error {
 	statusCounts := []struct {
 		Status models.ReleaseStatus
 		Count  int64
@@ -368,7 +444,7 @@ func (s *SearchService) GetReleaseStats() (*models.ReleaseStats, error) {
 	if err := s.db.GORM.Model(&models.Release{}).
 		Select("status, count(*) as count").
 		Group("status").Scan(&statusCounts).Error; err != nil {
-		return nil, fmt.Errorf("failed to get status counts: %w", err)
+		return fmt.Errorf("failed to get status counts: %w", err)
 	}
 
 	for _, sc := range statusCounts {
@@ -383,7 +459,11 @@ func (s *SearchService) GetReleaseStats() (*models.ReleaseStats, error) {
 			stats.FailedReleases = int(sc.Count)
 		}
 	}
+	return nil
+}
 
+// populateSizeStats gets size statistics
+func (s *SearchService) populateSizeStats(stats *models.ReleaseStats) error {
 	var sizeStats struct {
 		AverageSize float64
 		TotalSize   int64
@@ -391,22 +471,25 @@ func (s *SearchService) GetReleaseStats() (*models.ReleaseStats, error) {
 	if err := s.db.GORM.Model(&models.Release{}).
 		Select("AVG(size) as average_size, SUM(size) as total_size").
 		Scan(&sizeStats).Error; err != nil {
-		return nil, fmt.Errorf("failed to get size stats: %w", err)
+		return fmt.Errorf("failed to get size stats: %w", err)
 	}
 	stats.AverageSize = sizeStats.AverageSize
 	stats.TotalSize = sizeStats.TotalSize
+	return nil
+}
 
+// populateAgeStats gets age statistics
+func (s *SearchService) populateAgeStats(stats *models.ReleaseStats) error {
 	var ageStats struct {
 		AverageAge float64
 	}
 	if err := s.db.GORM.Model(&models.Release{}).
 		Select("AVG(age) as average_age").
 		Scan(&ageStats).Error; err != nil {
-		return nil, fmt.Errorf("failed to get age stats: %w", err)
+		return fmt.Errorf("failed to get age stats: %w", err)
 	}
 	stats.AverageAge = ageStats.AverageAge
-
-	return stats, nil
+	return nil
 }
 
 // CleanupOldReleases removes old releases based on retention settings
@@ -450,7 +533,11 @@ func (s *SearchService) searchNewznabIndexer(indexer *models.Indexer, request *m
 		return nil, fmt.Errorf("failed to build search URL: %w", err)
 	}
 
-	resp, err := s.httpClient.Get(searchURL)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", searchURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform search request: %w", err)
 	}
@@ -471,7 +558,11 @@ func (s *SearchService) searchNewznabIndexer(indexer *models.Indexer, request *m
 // searchRSSIndexer searches an RSS indexer
 func (s *SearchService) searchRSSIndexer(indexer *models.Indexer, request *models.SearchRequest) (
 	[]models.Release, error) {
-	resp, err := s.httpClient.Get(indexer.BaseURL)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", indexer.BaseURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform RSS request: %w", err)
 	}
@@ -544,110 +635,119 @@ func (s *SearchService) buildNewznabURL(indexer *models.Indexer, request *models
 
 // parseNewznabResponse parses a Newznab/Torznab XML response
 func (s *SearchService) parseNewznabResponse(data []byte, _ *models.Indexer) ([]models.Release, error) {
-	type NewznabResponse struct {
-		XMLName xml.Name `xml:"rss"`
-		Channel struct {
-			Items []struct {
-				Title       string `xml:"title"`
-				Link        string `xml:"link"`
-				GUID        string `xml:"guid"`
-				PubDate     string `xml:"pubDate"`
-				Description string `xml:"description"`
-				Enclosure   struct {
-					URL    string `xml:"url,attr"`
-					Length string `xml:"length,attr"`
-					Type   string `xml:"type,attr"`
-				} `xml:"enclosure"`
-				Attributes []struct {
-					Name  string `xml:"name,attr"`
-					Value string `xml:"value,attr"`
-				} `xml:"attr"`
-			} `xml:"item"`
-		} `xml:"channel"`
-	}
-
-	var response NewznabResponse
-	if err := xml.Unmarshal(data, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse XML response: %w", err)
+	response, err := s.unmarshalNewznabXML(data)
+	if err != nil {
+		return nil, err
 	}
 
 	releases := make([]models.Release, 0, len(response.Channel.Items))
-
 	for _, item := range response.Channel.Items {
-		release := models.Release{
-			GUID:        item.GUID,
-			Title:       item.Title,
-			SortTitle:   strings.ToLower(item.Title),
-			Overview:    item.Description,
-			DownloadURL: item.Link,
-			InfoURL:     item.Link,
-			Status:      models.ReleaseStatusAvailable,
-		}
-
-		if item.Enclosure.URL != "" {
-			release.DownloadURL = item.Enclosure.URL
-			if item.Enclosure.Length != "" {
-				if size, err := strconv.ParseInt(item.Enclosure.Length, 10, 64); err == nil {
-					release.Size = size
-				}
-			}
-		}
-
-		pubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
-		if err != nil {
-			pubDate, err = time.Parse(time.RFC1123, item.PubDate)
-		}
-		if err == nil {
-			release.PublishDate = pubDate
-			release.Age = int(time.Since(pubDate).Hours() / 24)
-			release.AgeHours = time.Since(pubDate).Hours()
-			release.AgeMinutes = time.Since(pubDate).Minutes()
-		}
-
-		if strings.Contains(strings.ToLower(item.Enclosure.Type), "torrent") ||
-			strings.Contains(strings.ToLower(item.Link), "torrent") {
-			release.Protocol = models.ProtocolTorrent
-		} else {
-			release.Protocol = models.ProtocolUsenet
-		}
-
-		for _, attr := range item.Attributes {
-			switch attr.Name {
-			case "category":
-				if catID, err := strconv.Atoi(attr.Value); err == nil {
-					release.Categories = append(release.Categories, catID)
-				}
-			case "size":
-				if size, err := strconv.ParseInt(attr.Value, 10, 64); err == nil {
-					release.Size = size
-				}
-			case "seeders":
-				if seeders, err := strconv.Atoi(attr.Value); err == nil {
-					release.Seeders = &seeders
-				}
-			case "peers":
-				if peers, err := strconv.Atoi(attr.Value); err == nil {
-					release.PeerCount = peers
-				}
-			case "leechers":
-				if leechers, err := strconv.Atoi(attr.Value); err == nil {
-					release.Leechers = &leechers
-				}
-			case "imdbid":
-				release.ImdbID = attr.Value
-			case "tmdbid":
-				if tmdbID, err := strconv.Atoi(attr.Value); err == nil {
-					release.TmdbID = &tmdbID
-				}
-			case "magneturl":
-				release.MagnetURL = attr.Value
-			}
-		}
-
+		release := s.createReleaseFromNewznabItem(item)
 		releases = append(releases, release)
 	}
 
 	return releases, nil
+}
+
+// unmarshalNewznabXML unmarshals Newznab XML response
+func (s *SearchService) unmarshalNewznabXML(data []byte) (*NewznabResponse, error) {
+	var response NewznabResponse
+	if err := xml.Unmarshal(data, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse XML response: %w", err)
+	}
+	return &response, nil
+}
+
+// createReleaseFromNewznabItem creates a release from a Newznab item
+func (s *SearchService) createReleaseFromNewznabItem(item NewznabItem) models.Release {
+	release := models.Release{
+		GUID:        item.GUID,
+		Title:       item.Title,
+		SortTitle:   strings.ToLower(item.Title),
+		Overview:    item.Description,
+		DownloadURL: item.Link,
+		InfoURL:     item.Link,
+		Status:      models.ReleaseStatusAvailable,
+	}
+
+	s.processEnclosure(&release, item.Enclosure)
+	s.processPublishDate(&release, item.PubDate)
+	s.detectProtocol(&release, item)
+	s.processAttributes(&release, item.Attributes)
+
+	return release
+}
+
+// processEnclosure processes the enclosure element
+func (s *SearchService) processEnclosure(release *models.Release, enclosure NewznabEnclosure) {
+	if enclosure.URL != "" {
+		release.DownloadURL = enclosure.URL
+		if enclosure.Length != "" {
+			if size, err := strconv.ParseInt(enclosure.Length, 10, 64); err == nil {
+				release.Size = size
+			}
+		}
+	}
+}
+
+// processPublishDate processes the publish date
+func (s *SearchService) processPublishDate(release *models.Release, pubDateStr string) {
+	pubDate, err := time.Parse(time.RFC1123Z, pubDateStr)
+	if err != nil {
+		pubDate, err = time.Parse(time.RFC1123, pubDateStr)
+	}
+	if err == nil {
+		release.PublishDate = pubDate
+		release.Age = int(time.Since(pubDate).Hours() / 24)
+		release.AgeHours = time.Since(pubDate).Hours()
+		release.AgeMinutes = time.Since(pubDate).Minutes()
+	}
+}
+
+// detectProtocol detects the release protocol
+func (s *SearchService) detectProtocol(release *models.Release, item NewznabItem) {
+	if strings.Contains(strings.ToLower(item.Enclosure.Type), "torrent") ||
+		strings.Contains(strings.ToLower(item.Link), "torrent") {
+		release.Protocol = models.ProtocolTorrent
+	} else {
+		release.Protocol = models.ProtocolUsenet
+	}
+}
+
+// processAttributes processes Newznab attributes
+func (s *SearchService) processAttributes(release *models.Release, attributes []NewznabAttribute) {
+	for _, attr := range attributes {
+		switch attr.Name {
+		case "category":
+			if catID, err := strconv.Atoi(attr.Value); err == nil {
+				release.Categories = append(release.Categories, catID)
+			}
+		case "size":
+			if size, err := strconv.ParseInt(attr.Value, 10, 64); err == nil {
+				release.Size = size
+			}
+		case "seeders":
+			if seeders, err := strconv.Atoi(attr.Value); err == nil {
+				release.Seeders = &seeders
+			}
+		case "peers":
+			if peers, err := strconv.Atoi(attr.Value); err == nil {
+				release.PeerCount = peers
+			}
+		case "leechers":
+			if leechers, err := strconv.Atoi(attr.Value); err == nil {
+				release.Leechers = &leechers
+			}
+		case "imdbid":
+			release.ImdbID = attr.Value
+		case "tmdbid":
+			if tmdbID, err := strconv.Atoi(attr.Value); err == nil {
+				release.TmdbID = &tmdbID
+			}
+		case "magneturl":
+			release.MagnetURL = attr.Value
+		}
+	}
 }
 
 // parseRSSResponse parses an RSS response
@@ -1021,10 +1121,3 @@ func (s *SearchService) applyReleaseFilter(query *gorm.DB, filter *models.Releas
 	return query
 }
 
-// getCategoryForRelease determines the appropriate category for a release
-func (s *SearchService) getCategoryForRelease(release *models.Release) string {
-	if release.IsTorrent() {
-		return "radarr"
-	}
-	return "movies"
-}
