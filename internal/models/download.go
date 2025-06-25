@@ -427,3 +427,14 @@ func (q *QualityModel) Scan(value interface{}) error {
 
 	return json.Unmarshal(bytes, q)
 }
+
+// DownloadRequest represents a request to add a download to a download client
+type DownloadRequest struct {
+	Title       string `json:"title"`
+	DownloadURL string `json:"downloadUrl"`
+	InfoURL     string `json:"infoUrl,omitempty"`
+	Size        int64  `json:"size,omitempty"`
+	Protocol    string `json:"protocol"`
+	MovieID     *int   `json:"movieId,omitempty"`
+	Category    string `json:"category,omitempty"`
+}

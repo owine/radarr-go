@@ -974,7 +974,7 @@ func (s *Server) handleGetHistory(c *gin.Context) {
 	}
 
 	if successful := c.Query("successful"); successful != "" {
-		if s := successful == "true"; successful == "true" || successful == "false" {
+		if s := successful == trueBoolString; successful == trueBoolString || successful == "false" {
 			req.Successful = &s
 		}
 	}
@@ -1364,4 +1364,225 @@ func (s *Server) handleGetConfigStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+// Search & Release Management handlers
+
+// Release handlers
+func (s *Server) handleGetReleases(c *gin.Context) {
+	var filter models.ReleaseFilter
+
+	// Parse query parameters for filtering
+	if movieIDStr := c.Query("movieId"); movieIDStr != "" {
+		if movieID, err := strconv.Atoi(movieIDStr); err == nil {
+			filter.MovieIDs = []int{movieID}
+		}
+	}
+
+	if indexerIDStr := c.Query("indexerId"); indexerIDStr != "" {
+		if indexerID, err := strconv.Atoi(indexerIDStr); err == nil {
+			filter.IndexerIDs = []int{indexerID}
+		}
+	}
+
+	if protocol := c.Query("protocol"); protocol != "" {
+		p := models.Protocol(protocol)
+		filter.Protocol = []models.Protocol{p}
+	}
+
+	if status := c.Query("status"); status != "" {
+		s := models.ReleaseStatus(status)
+		filter.Status = []models.ReleaseStatus{s}
+	}
+
+	limit := 100
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	offset := 0
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
+			offset = o
+		}
+	}
+
+	releases, total, err := s.services.SearchService.GetReleases(&filter, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to get releases", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve releases"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"releases": releases,
+		"total":    total,
+		"limit":    limit,
+		"offset":   offset,
+	})
+}
+
+func (s *Server) handleGetRelease(c *gin.Context) {
+	s.handleGetByID(c, "release", func(id int) (any, error) {
+		return s.services.SearchService.GetReleaseByID(id)
+	})
+}
+
+func (s *Server) handleDeleteRelease(c *gin.Context) {
+	s.handleDeleteByID(c, "release", s.services.SearchService.DeleteRelease)
+}
+
+func (s *Server) handleGetReleaseStats(c *gin.Context) {
+	stats, err := s.services.SearchService.GetReleaseStats()
+	if err != nil {
+		s.logger.Error("Failed to get release stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get release statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// Search handlers
+func (s *Server) handleSearchReleases(c *gin.Context) {
+	var request models.SearchRequest
+
+	// Parse search parameters
+	if movieIDStr := c.Query("movieId"); movieIDStr != "" {
+		if movieID, err := strconv.Atoi(movieIDStr); err == nil {
+			request.MovieID = &movieID
+		}
+	}
+
+	if tmdbIDStr := c.Query("tmdbId"); tmdbIDStr != "" {
+		if tmdbID, err := strconv.Atoi(tmdbIDStr); err == nil {
+			request.TmdbID = &tmdbID
+		}
+	}
+
+	request.ImdbID = c.Query("imdbId")
+	request.Title = c.Query("title")
+
+	if yearStr := c.Query("year"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			request.Year = &year
+		}
+	}
+
+	if protocol := c.Query("protocol"); protocol != "" {
+		p := models.Protocol(protocol)
+		request.Protocol = &p
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 {
+			request.Limit = limit
+		}
+	} else {
+		request.Limit = 50
+	}
+
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
+			request.Offset = offset
+		}
+	}
+
+	request.SortBy = c.DefaultQuery("sortBy", "qualityWeight")
+	request.SortOrder = c.DefaultQuery("sortOrder", "desc")
+	request.Source = models.ReleaseSourceSearch
+
+	forceSearch := c.DefaultQuery("forceSearch", "false") == "true"
+
+	response, err := s.services.SearchService.SearchReleases(&request, forceSearch)
+	if err != nil {
+		s.logger.Error("Failed to search releases", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search releases"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleSearchMovieReleases(c *gin.Context) {
+	movieID, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	forceSearch := c.DefaultQuery("forceSearch", "false") == "true"
+
+	response, err := s.services.SearchService.SearchMovieReleases(movieID, forceSearch)
+	if err != nil {
+		s.logger.Error("Failed to search movie releases", "movieId", movieID, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search movie releases"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleInteractiveSearch(c *gin.Context) {
+	var request models.SearchRequest
+
+	// Parse search parameters
+	if movieIDStr := c.Query("movieId"); movieIDStr != "" {
+		if movieID, err := strconv.Atoi(movieIDStr); err == nil {
+			request.MovieID = &movieID
+		}
+	}
+
+	if tmdbIDStr := c.Query("tmdbId"); tmdbIDStr != "" {
+		if tmdbID, err := strconv.Atoi(tmdbIDStr); err == nil {
+			request.TmdbID = &tmdbID
+		}
+	}
+
+	request.ImdbID = c.Query("imdbId")
+	request.Title = c.Query("title")
+
+	if yearStr := c.Query("year"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			request.Year = &year
+		}
+	}
+
+	if protocol := c.Query("protocol"); protocol != "" {
+		p := models.Protocol(protocol)
+		request.Protocol = &p
+	}
+
+	request.Limit = 100
+	request.SortBy = c.DefaultQuery("sortBy", "qualityWeight")
+	request.SortOrder = c.DefaultQuery("sortOrder", "desc")
+
+	response, err := s.services.SearchService.InteractiveSearch(&request)
+	if err != nil {
+		s.logger.Error("Failed to perform interactive search", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to perform interactive search"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// Grab handler
+func (s *Server) handleGrabRelease(c *gin.Context) {
+	var request models.GrabRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid grab request data"})
+		return
+	}
+
+	response, err := s.services.SearchService.GrabRelease(&request)
+	if err != nil {
+		s.logger.Error("Failed to grab release", "guid", request.GUID, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to grab release"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

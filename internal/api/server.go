@@ -102,6 +102,9 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	// Configuration
 	s.setupConfigRoutes(v3)
 
+	// Search & Release Management
+	s.setupSearchRoutes(v3)
+
 	// Search
 	searchRoutes := v3.Group("/search")
 	searchRoutes.GET("/movie", s.handleSearchMovies)
@@ -337,4 +340,20 @@ func (s *Server) setupConfigRoutes(v3 *gin.RouterGroup) {
 	
 	// Configuration stats
 	v3.GET("/config/stats", s.handleGetConfigStats)
+}
+
+func (s *Server) setupSearchRoutes(v3 *gin.RouterGroup) {
+	// Release routes
+	releaseRoutes := v3.Group("/release")
+	releaseRoutes.GET("", s.handleGetReleases)
+	releaseRoutes.GET("/:id", s.handleGetRelease)
+	releaseRoutes.DELETE("/:id", s.handleDeleteRelease)
+	releaseRoutes.GET("/stats", s.handleGetReleaseStats)
+	releaseRoutes.POST("/grab", s.handleGrabRelease)
+
+	// Search routes
+	searchRoutes := v3.Group("/search")
+	searchRoutes.GET("", s.handleSearchReleases)
+	searchRoutes.GET("/movie/:id", s.handleSearchMovieReleases)
+	searchRoutes.GET("/interactive", s.handleInteractiveSearch)
 }
