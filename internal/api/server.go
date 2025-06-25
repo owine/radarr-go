@@ -89,6 +89,9 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	// Download clients
 	s.setupDownloadClientRoutes(v3)
 
+	// Import lists
+	s.setupImportListRoutes(v3)
+
 	// Queue management
 	s.setupQueueRoutes(v3)
 
@@ -164,6 +167,22 @@ func (s *Server) setupDownloadClientRoutes(v3 *gin.RouterGroup) {
 	
 	// Download history
 	v3.GET("/downloadhistory", s.handleGetDownloadHistory)
+}
+
+func (s *Server) setupImportListRoutes(v3 *gin.RouterGroup) {
+	importListRoutes := v3.Group("/importlist")
+	importListRoutes.GET("", s.handleGetImportLists)
+	importListRoutes.GET("/:id", s.handleGetImportList)
+	importListRoutes.POST("", s.handleCreateImportList)
+	importListRoutes.PUT("/:id", s.handleUpdateImportList)
+	importListRoutes.DELETE("/:id", s.handleDeleteImportList)
+	importListRoutes.POST("/test", s.handleTestImportList)
+	importListRoutes.POST("/:id/sync", s.handleSyncImportList)
+	importListRoutes.POST("/sync", s.handleSyncAllImportLists)
+	importListRoutes.GET("/stats", s.handleGetImportListStats)
+	
+	// Import list movies
+	v3.GET("/importlistmovies", s.handleGetImportListMovies)
 }
 
 func (s *Server) setupQueueRoutes(v3 *gin.RouterGroup) {

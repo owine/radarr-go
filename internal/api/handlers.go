@@ -311,6 +311,147 @@ func (s *Server) handleGetDownloadHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, history)
 }
 
+// Import List Handlers
+
+func (s *Server) handleGetImportLists(c *gin.Context) {
+	lists, err := s.services.ImportListService.GetImportLists()
+	if err != nil {
+		s.logger.Error("Failed to get import lists", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve import lists"})
+		return
+	}
+	c.JSON(http.StatusOK, lists)
+}
+
+func (s *Server) handleGetImportList(c *gin.Context) {
+	s.handleGetByID(c, "import list", func(id int) (any, error) {
+		return s.services.ImportListService.GetImportListByID(id)
+	})
+}
+
+func (s *Server) handleCreateImportList(c *gin.Context) {
+	var list models.ImportList
+	if err := c.ShouldBindJSON(&list); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid import list data"})
+		return
+	}
+
+	if err := s.services.ImportListService.CreateImportList(&list); err != nil {
+		s.logger.Error("Failed to create import list", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create import list"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, list)
+}
+
+func (s *Server) handleUpdateImportList(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var list models.ImportList
+	if err := c.ShouldBindJSON(&list); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid import list data"})
+		return
+	}
+
+	list.ID = id
+	if err := s.services.ImportListService.UpdateImportList(&list); err != nil {
+		s.logger.Error("Failed to update import list", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update import list"})
+		return
+	}
+
+	c.JSON(http.StatusOK, list)
+}
+
+func (s *Server) handleDeleteImportList(c *gin.Context) {
+	s.handleDeleteByID(c, "import list", s.services.ImportListService.DeleteImportList)
+}
+
+func (s *Server) handleTestImportList(c *gin.Context) {
+	var list models.ImportList
+	if err := c.ShouldBindJSON(&list); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid import list data"})
+		return
+	}
+
+	result, err := s.services.ImportListService.TestImportList(&list)
+	if err != nil {
+		s.logger.Error("Failed to test import list", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to test import list"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Server) handleSyncImportList(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result, err := s.services.ImportListService.SyncImportList(id)
+	if err != nil {
+		s.logger.Error("Failed to sync import list", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sync import list"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Server) handleSyncAllImportLists(c *gin.Context) {
+	results, err := s.services.ImportListService.SyncAllImportLists()
+	if err != nil {
+		s.logger.Error("Failed to sync all import lists", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sync import lists"})
+		return
+	}
+
+	c.JSON(http.StatusOK, results)
+}
+
+func (s *Server) handleGetImportListStats(c *gin.Context) {
+	stats, err := s.services.ImportListService.GetImportListStats()
+	if err != nil {
+		s.logger.Error("Failed to get import list stats", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get import list statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+func (s *Server) handleGetImportListMovies(c *gin.Context) {
+	var listID *int
+	if listIDStr := c.Query("importListId"); listIDStr != "" {
+		if id, err := strconv.Atoi(listIDStr); err == nil {
+			listID = &id
+		}
+	}
+
+	limitStr := c.DefaultQuery("limit", "100")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 100
+	}
+
+	movies, err := s.services.ImportListService.GetImportListMovies(listID, limit)
+	if err != nil {
+		s.logger.Error("Failed to get import list movies", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve import list movies"})
+		return
+	}
+
+	c.JSON(http.StatusOK, movies)
+}
+
 
 func (s *Server) handleGetHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

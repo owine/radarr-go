@@ -22,6 +22,7 @@ type Container struct {
 	NotificationService *NotificationService
 	MetadataService     *MetadataService
 	QueueService        *QueueService
+	ImportListService   *ImportListService
 }
 
 // NewContainer creates a new service container with all dependencies initialized
@@ -41,6 +42,7 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.NotificationService = NewNotificationService(db, logger)
 	container.MetadataService = NewMetadataService(db, cfg, logger)
 	container.QueueService = NewQueueService(db, logger)
+	container.ImportListService = NewImportListService(db, logger, container.MetadataService, container.MovieService)
 
 	return container
 }
