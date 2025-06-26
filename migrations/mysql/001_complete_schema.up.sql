@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS movies (
     secondary_year_source_id INT DEFAULT 0,
     sort_title VARCHAR(500),
     size_on_disk BIGINT DEFAULT 0,
-    popularity DOUBLE DEFAULT 0.0
+    popularity DOUBLE PRECISION DEFAULT 0.0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Movie files table
@@ -395,8 +395,8 @@ CREATE TABLE IF NOT EXISTS releases (
     quality JSON,
     quality_weight INT DEFAULT 0,
     age INT DEFAULT 0,
-    age_hours DOUBLE DEFAULT 0,
-    age_minutes DOUBLE DEFAULT 0,
+    age_hours DOUBLE PRECISION DEFAULT 0,
+    age_minutes DOUBLE PRECISION DEFAULT 0,
     size BIGINT DEFAULT 0,
     indexer_id INT NOT NULL,
     movie_id INT,
