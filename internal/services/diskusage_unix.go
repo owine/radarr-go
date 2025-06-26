@@ -15,10 +15,12 @@ func getDiskUsageForPath(path string) (*DiskUsage, error) {
 	}
 
 	// Calculate sizes in bytes
+	// Note: stat.Bsize is int64 on Linux, uint32 on Darwin, uint64 on FreeBSD
+	//nolint:gosec // Safe conversion: filesystem block sizes are always positive (G115 on Linux)
 	blockSize := uint64(stat.Bsize)
-	//nolint:gosec,unconvert // Safe conversion for disk space calculation, types vary by platform
+	//nolint:gosec,unconvert // Safe conversion: filesystem values are always positive, no overflow risk (G115)
 	totalSize := int64(uint64(stat.Blocks) * blockSize)
-	//nolint:gosec,unconvert // Safe conversion for disk space calculation, types vary by platform
+	//nolint:gosec,unconvert // Safe conversion: filesystem values are always positive, no overflow risk (G115)
 	freeSize := int64(uint64(stat.Bavail) * blockSize)
 
 	return &DiskUsage{
