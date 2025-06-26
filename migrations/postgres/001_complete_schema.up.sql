@@ -105,31 +105,6 @@ CREATE TABLE IF NOT EXISTS indexers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Queue items table - CONSOLIDATED VERSION
-CREATE TABLE IF NOT EXISTS queue_items (
-    id SERIAL PRIMARY KEY,
-    movie_id INTEGER REFERENCES movies(id) ON DELETE CASCADE,
-    title VARCHAR(500) NOT NULL,
-    size BIGINT DEFAULT 0,
-    sizeleft BIGINT DEFAULT 0,
-    timeleft INTERVAL,
-    estimated_completion_time TIMESTAMP,
-    added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT 'queued',
-    tracked_download_status VARCHAR(50) DEFAULT 'ok',
-    tracked_download_state VARCHAR(50) DEFAULT 'downloading',
-    status_messages TEXT DEFAULT '[]'::TEXT,
-    error_message TEXT,
-    download_id VARCHAR(255),
-    protocol VARCHAR(20) NOT NULL DEFAULT 'unknown',
-    indexer_name VARCHAR(255),
-    output_path VARCHAR(500),
-    download_client_id INTEGER REFERENCES download_clients(id) ON DELETE SET NULL,
-    downloaded_info TEXT DEFAULT '{}'::TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Download clients table
 CREATE TABLE IF NOT EXISTS download_clients (
     id SERIAL PRIMARY KEY,
@@ -154,6 +129,31 @@ CREATE TABLE IF NOT EXISTS download_clients (
     tags TEXT DEFAULT '[]'::TEXT,
     added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Queue items table - CONSOLIDATED VERSION
+CREATE TABLE IF NOT EXISTS queue_items (
+    id SERIAL PRIMARY KEY,
+    movie_id INTEGER REFERENCES movies(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    size BIGINT DEFAULT 0,
+    sizeleft BIGINT DEFAULT 0,
+    timeleft INTERVAL,
+    estimated_completion_time TIMESTAMP,
+    added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'queued',
+    tracked_download_status VARCHAR(50) DEFAULT 'ok',
+    tracked_download_state VARCHAR(50) DEFAULT 'downloading',
+    status_messages TEXT DEFAULT '[]'::TEXT,
+    error_message TEXT,
+    download_id VARCHAR(255),
+    protocol VARCHAR(20) NOT NULL DEFAULT 'unknown',
+    indexer_name VARCHAR(255),
+    output_path VARCHAR(500),
+    download_client_id INTEGER REFERENCES download_clients(id) ON DELETE SET NULL,
+    downloaded_info TEXT DEFAULT '{}'::TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

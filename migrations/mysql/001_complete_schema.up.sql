@@ -106,33 +106,6 @@ CREATE TABLE IF NOT EXISTS indexers (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Queue items table - CONSOLIDATED VERSION
-CREATE TABLE IF NOT EXISTS queue_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
-    title VARCHAR(500) NOT NULL,
-    size BIGINT DEFAULT 0,
-    sizeleft BIGINT DEFAULT 0,
-    timeleft TIME,
-    estimated_completion_time DATETIME,
-    added DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT 'queued',
-    tracked_download_status VARCHAR(50) DEFAULT 'ok',
-    tracked_download_state VARCHAR(50) DEFAULT 'downloading',
-    status_messages TEXT,
-    error_message TEXT,
-    download_id VARCHAR(255),
-    protocol VARCHAR(20) NOT NULL DEFAULT 'unknown',
-    indexer_name VARCHAR(255),
-    output_path VARCHAR(500),
-    download_client_id INT,
-    downloaded_info TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
-    FOREIGN KEY (download_client_id) REFERENCES download_clients(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Download clients table
 CREATE TABLE IF NOT EXISTS download_clients (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -159,6 +132,33 @@ CREATE TABLE IF NOT EXISTS download_clients (
     updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Queue items table - CONSOLIDATED VERSION
+CREATE TABLE IF NOT EXISTS queue_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    movie_id INT,
+    title VARCHAR(500) NOT NULL,
+    size BIGINT DEFAULT 0,
+    sizeleft BIGINT DEFAULT 0,
+    timeleft TIME,
+    estimated_completion_time DATETIME,
+    added DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'queued',
+    tracked_download_status VARCHAR(50) DEFAULT 'ok',
+    tracked_download_state VARCHAR(50) DEFAULT 'downloading',
+    status_messages TEXT,
+    error_message TEXT,
+    download_id VARCHAR(255),
+    protocol VARCHAR(20) NOT NULL DEFAULT 'unknown',
+    indexer_name VARCHAR(255),
+    output_path VARCHAR(500),
+    download_client_id INT,
+    downloaded_info TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    FOREIGN KEY (download_client_id) REFERENCES download_clients(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Download history table
