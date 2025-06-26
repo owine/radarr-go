@@ -87,9 +87,6 @@ jobs:
         sarif_file: gosec.sarif
       continue-on-error: true
 
-    - name: Run Gosec (console output)
-      run: gosec ./...
-
     - name: Install and run govulncheck
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
