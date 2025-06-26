@@ -97,7 +97,7 @@ func Load(configPath, dataDir string) (*Config, error) {
 	// Override with environment variables
 	vip.AutomaticEnv()
 	vip.SetEnvPrefix("RADARR")
-	
+
 	// Map nested config keys to environment variables
 	_ = vip.BindEnv("database.type", "RADARR_DATABASE_TYPE")
 	_ = vip.BindEnv("database.host", "RADARR_DATABASE_HOST")
