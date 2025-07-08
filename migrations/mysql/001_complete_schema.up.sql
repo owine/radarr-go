@@ -1,3 +1,4 @@
+-- NOTE: File re-saved as UTF-8 with LF line endings to resolve MariaDB migration issues
 -- Complete Radarr Go Database Schema for MySQL/MariaDB
 -- This migration contains the complete schema for all Phase 1 features
 
