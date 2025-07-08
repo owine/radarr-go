@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const ciEnvTrue = "true"
+
 func TestMetadataService_SearchMovies(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	// Skip if TMDB API key not provided
@@ -33,7 +35,7 @@ func TestMetadataService_SearchMovies(t *testing.T) {
 }
 
 func TestMetadataService_LookupMovieByTMDBID(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	// Skip if TMDB API key not provided
@@ -127,7 +129,7 @@ func TestMetadataService_generateTitleSlug(t *testing.T) {
 }
 
 func TestMetadataService_RefreshMovieMetadata(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	cfg := &config.Config{
