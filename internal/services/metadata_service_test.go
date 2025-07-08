@@ -8,12 +8,11 @@ import (
 	"github.com/radarr/radarr-go/internal/config"
 	"github.com/radarr/radarr-go/internal/logger"
 	"github.com/radarr/radarr-go/internal/tmdb"
-	"github.com/radarr/radarr-go/test_helpers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMetadataService_SearchMovies(t *testing.T) {
-	if os.Getenv("CI") == test_helpers.CiEnvTrue {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	// Skip if TMDB API key not provided
@@ -34,7 +33,7 @@ func TestMetadataService_SearchMovies(t *testing.T) {
 }
 
 func TestMetadataService_LookupMovieByTMDBID(t *testing.T) {
-	if os.Getenv("CI") == test_helpers.CiEnvTrue {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	// Skip if TMDB API key not provided
@@ -128,7 +127,7 @@ func TestMetadataService_generateTitleSlug(t *testing.T) {
 }
 
 func TestMetadataService_RefreshMovieMetadata(t *testing.T) {
-	if os.Getenv("CI") == test_helpers.CiEnvTrue {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	cfg := &config.Config{

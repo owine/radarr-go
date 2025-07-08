@@ -31,7 +31,7 @@ func TestImportListService_GetImportListByID(t *testing.T) {
 }
 
 func TestImportListService_CreateImportList(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
@@ -51,7 +51,7 @@ func TestImportListService_CreateImportList(t *testing.T) {
 }
 
 func TestImportListService_UpdateImportList(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
@@ -92,7 +92,7 @@ func TestImportListService_GetEnabledImportLists(t *testing.T) {
 }
 
 func TestImportListService_TestImportList(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
@@ -151,7 +151,7 @@ func createImportListWithoutField(field string, base *models.ImportList) *models
 }
 
 func TestImportListService_ValidateImportList(t *testing.T) {
-	if os.Getenv("CI") == "true" {
+	if os.Getenv("CI") == ciEnvTrue {
 		t.Skip("Skipping TMDB-dependent test in CI")
 	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
