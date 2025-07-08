@@ -1,6 +1,7 @@
 package services
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -11,6 +12,9 @@ import (
 )
 
 func TestMetadataService_SearchMovies(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	// Skip if TMDB API key not provided
 	cfg := &config.Config{
 		TMDB: config.TMDBConfig{
@@ -29,6 +33,9 @@ func TestMetadataService_SearchMovies(t *testing.T) {
 }
 
 func TestMetadataService_LookupMovieByTMDBID(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	// Skip if TMDB API key not provided
 	cfg := &config.Config{
 		TMDB: config.TMDBConfig{
@@ -120,6 +127,9 @@ func TestMetadataService_generateTitleSlug(t *testing.T) {
 }
 
 func TestMetadataService_RefreshMovieMetadata(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	cfg := &config.Config{
 		TMDB: config.TMDBConfig{
 			APIKey: "", // Empty for test

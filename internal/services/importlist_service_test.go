@@ -1,6 +1,7 @@
 package services
 
 import (
+	"os"
 	"testing"
 
 	"github.com/radarr/radarr-go/internal/config"
@@ -30,6 +31,9 @@ func TestImportListService_GetImportListByID(t *testing.T) {
 }
 
 func TestImportListService_CreateImportList(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := NewImportListService(nil, logger, nil, nil)
 
@@ -47,6 +51,9 @@ func TestImportListService_CreateImportList(t *testing.T) {
 }
 
 func TestImportListService_UpdateImportList(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := NewImportListService(nil, logger, nil, nil)
 
@@ -85,6 +92,9 @@ func TestImportListService_GetEnabledImportLists(t *testing.T) {
 }
 
 func TestImportListService_TestImportList(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := NewImportListService(nil, logger, nil, nil)
 
@@ -141,6 +151,9 @@ func createImportListWithoutField(field string, base *models.ImportList) *models
 }
 
 func TestImportListService_ValidateImportList(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping TMDB-dependent test in CI")
+	}
 	logger := logger.New(config.LogConfig{Level: "debug", Format: "text", Output: "stdout"})
 	service := NewImportListService(nil, logger, nil, nil)
 
