@@ -119,7 +119,13 @@ func configureConnectionPool(cfg *config.DatabaseConfig, sqlDB *sql.DB, pgxPool 
 			sqlDB.SetMaxIdleConns(cfg.MaxConnections / 2) //nolint:mnd // Use half of max connections for idle
 		}
 		if pgxPool != nil {
-			pgxPool.Config().MaxConns = int32(cfg.MaxConnections) //nolint:gosec // Safe conversion
+			// Safely convert int to int32 with bounds checking
+			maxConns := cfg.MaxConnections
+			if maxConns > 2147483647 { // int32 max value
+				maxConns = 2147483647
+			}
+			// #nosec G115 -- Safe conversion with bounds checking above
+			pgxPool.Config().MaxConns = int32(maxConns)
 		}
 	}
 }
