@@ -14,6 +14,11 @@ This is **Radarr Go**, a complete rewrite of the Radarr movie collection manager
 make deps                    # Download Go modules
 make setup                   # Install dev tools (air, golangci-lint, migrate)
 
+# Pre-commit hooks setup (recommended for development)
+pip install pre-commit       # Install pre-commit (requires Python)
+pre-commit install          # Install git hooks
+pre-commit run --all-files  # Run hooks on all files (initial setup)
+
 # Building
 make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
@@ -227,7 +232,10 @@ This implementation maintains strict compatibility with Radarr's v3 API:
 ### Required Quality Checks
 **CRITICAL**: Before committing any code changes, ALWAYS run the linting tests to ensure code quality:
 
-- Run `make lint` to verify all code passes golangci-lint checks
+- **Pre-commit hooks (Recommended)**: Install pre-commit hooks to automatically run quality checks before each commit
+  - Install: `pip install pre-commit && pre-commit install`
+  - Hooks will automatically run: `go fmt`, `go mod tidy`, `golangci-lint`, `go test`, and security checks
+- **Manual checks**: Run `make lint` to verify all code passes golangci-lint checks
 - Fix any linting errors before committing
 - Ensure code follows Go conventions and project standards
 - All commits must pass CI pipeline quality checks
@@ -368,7 +376,8 @@ type Movie struct {
 - Update documentation immediately when making code changes
 
 ### Development Workflow
-- Run `make lint` before committing to ensure code quality
+- **Use pre-commit hooks**: Install and use pre-commit hooks for automatic quality checks (`pre-commit install`)
+- **Alternative manual checks**: Run `make lint` before committing to ensure code quality
 - Use `make all` for comprehensive quality checks (format, lint, test, build)
 - Test both database backends (PostgreSQL and MariaDB) during development
 - Maintain backwards compatibility with Radarr v3 API at all times
