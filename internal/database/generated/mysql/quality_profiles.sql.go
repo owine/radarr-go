@@ -8,7 +8,6 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"time"
 )
 
 const countQualityProfiles = `-- name: CountQualityProfiles :one
@@ -52,24 +51,15 @@ FROM quality_profiles
 ORDER BY name
 `
 
-type GetAllQualityProfilesRow struct {
-	ID        int32     `db:"id" json:"id"`
-	Name      string    `db:"name" json:"name"`
-	Cutoff    int32     `db:"cutoff" json:"cutoff"`
-	Items     string    `db:"items" json:"items"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func (q *Queries) GetAllQualityProfiles(ctx context.Context) ([]GetAllQualityProfilesRow, error) {
+func (q *Queries) GetAllQualityProfiles(ctx context.Context) ([]QualityProfiles, error) {
 	rows, err := q.query(ctx, q.getAllQualityProfilesStmt, getAllQualityProfiles)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetAllQualityProfilesRow{}
+	items := []QualityProfiles{}
 	for rows.Next() {
-		var i GetAllQualityProfilesRow
+		var i QualityProfiles
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -97,18 +87,9 @@ FROM quality_profiles
 WHERE id = ?
 `
 
-type GetQualityProfileByIDRow struct {
-	ID        int32     `db:"id" json:"id"`
-	Name      string    `db:"name" json:"name"`
-	Cutoff    int32     `db:"cutoff" json:"cutoff"`
-	Items     string    `db:"items" json:"items"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
-}
-
-func (q *Queries) GetQualityProfileByID(ctx context.Context, id int32) (GetQualityProfileByIDRow, error) {
+func (q *Queries) GetQualityProfileByID(ctx context.Context, id int32) (QualityProfiles, error) {
 	row := q.queryRow(ctx, q.getQualityProfileByIDStmt, getQualityProfileByID, id)
-	var i GetQualityProfileByIDRow
+	var i QualityProfiles
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

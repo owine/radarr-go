@@ -18,12 +18,12 @@ type Querier interface {
 	DeleteMovie(ctx context.Context, id int32) error
 	DeleteQualityProfile(ctx context.Context, id int32) error
 	GetAllMovies(ctx context.Context) ([]GetAllMoviesRow, error)
-	GetAllQualityProfiles(ctx context.Context) ([]GetAllQualityProfilesRow, error)
+	GetAllQualityProfiles(ctx context.Context) ([]QualityProfiles, error)
 	GetMonitoredMovies(ctx context.Context) ([]GetMonitoredMoviesRow, error)
 	GetMovieByID(ctx context.Context, id int32) (GetMovieByIDRow, error)
 	GetMoviesByQualityProfile(ctx context.Context, qualityProfileID int32) ([]GetMoviesByQualityProfileRow, error)
 	GetMoviesWithFiles(ctx context.Context) ([]GetMoviesWithFilesRow, error)
-	GetQualityProfileByID(ctx context.Context, id int32) (GetQualityProfileByIDRow, error)
+	GetQualityProfileByID(ctx context.Context, id int32) (QualityProfiles, error)
 	UpdateMovie(ctx context.Context, arg UpdateMovieParams) error
 	UpdateQualityProfile(ctx context.Context, arg UpdateQualityProfileParams) error
 }

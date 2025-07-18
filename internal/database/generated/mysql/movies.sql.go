@@ -35,39 +35,28 @@ func (q *Queries) CountMovies(ctx context.Context) (int64, error) {
 
 const createMovie = `-- name: CreateMovie :execresult
 INSERT INTO movies (
-    tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
-    folder_name, created_at, updated_at
+    tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file, folder_name
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-    NOW(), NOW()
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 `
 
 type CreateMovieParams struct {
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
 }
 
 func (q *Queries) CreateMovie(ctx context.Context, arg CreateMovieParams) (sql.Result, error) {
@@ -75,20 +64,13 @@ func (q *Queries) CreateMovie(ctx context.Context, arg CreateMovieParams) (sql.R
 		arg.TmdbID,
 		arg.ImdbID,
 		arg.Title,
-		arg.OriginalTitle,
 		arg.SortTitle,
 		arg.Year,
-		arg.ReleaseDate,
 		arg.Runtime,
-		arg.Certification,
 		arg.Overview,
-		arg.Images,
-		arg.Genres,
-		arg.Studio,
 		arg.Path,
 		arg.QualityProfileID,
 		arg.Monitored,
-		arg.MinimumAvailability,
 		arg.Status,
 		arg.HasFile,
 		arg.FolderName,
@@ -106,40 +88,32 @@ func (q *Queries) DeleteMovie(ctx context.Context, id int32) error {
 
 const getAllMovies = `-- name: GetAllMovies :many
 SELECT
-    id, tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
+    id, tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file,
     added, folder_name, created_at, updated_at
 FROM movies
 ORDER BY sort_title
 `
 
 type GetAllMoviesRow struct {
-	ID                  int32          `db:"id" json:"id"`
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	CreatedAt           time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time      `db:"updated_at" json:"updated_at"`
+	ID               int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	Added            sql.NullTime   `db:"added" json:"added"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetAllMovies(ctx context.Context) ([]GetAllMoviesRow, error) {
@@ -156,20 +130,13 @@ func (q *Queries) GetAllMovies(ctx context.Context) ([]GetAllMoviesRow, error) {
 			&i.TmdbID,
 			&i.ImdbID,
 			&i.Title,
-			&i.OriginalTitle,
 			&i.SortTitle,
 			&i.Year,
-			&i.ReleaseDate,
 			&i.Runtime,
-			&i.Certification,
 			&i.Overview,
-			&i.Images,
-			&i.Genres,
-			&i.Studio,
 			&i.Path,
 			&i.QualityProfileID,
 			&i.Monitored,
-			&i.MinimumAvailability,
 			&i.Status,
 			&i.HasFile,
 			&i.Added,
@@ -192,10 +159,9 @@ func (q *Queries) GetAllMovies(ctx context.Context) ([]GetAllMoviesRow, error) {
 
 const getMonitoredMovies = `-- name: GetMonitoredMovies :many
 SELECT
-    id, tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
+    id, tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file,
     added, folder_name, created_at, updated_at
 FROM movies
 WHERE monitored = true
@@ -203,30 +169,23 @@ ORDER BY sort_title
 `
 
 type GetMonitoredMoviesRow struct {
-	ID                  int32          `db:"id" json:"id"`
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	CreatedAt           time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time      `db:"updated_at" json:"updated_at"`
+	ID               int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	Added            sql.NullTime   `db:"added" json:"added"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetMonitoredMovies(ctx context.Context) ([]GetMonitoredMoviesRow, error) {
@@ -243,20 +202,13 @@ func (q *Queries) GetMonitoredMovies(ctx context.Context) ([]GetMonitoredMoviesR
 			&i.TmdbID,
 			&i.ImdbID,
 			&i.Title,
-			&i.OriginalTitle,
 			&i.SortTitle,
 			&i.Year,
-			&i.ReleaseDate,
 			&i.Runtime,
-			&i.Certification,
 			&i.Overview,
-			&i.Images,
-			&i.Genres,
-			&i.Studio,
 			&i.Path,
 			&i.QualityProfileID,
 			&i.Monitored,
-			&i.MinimumAvailability,
 			&i.Status,
 			&i.HasFile,
 			&i.Added,
@@ -279,40 +231,32 @@ func (q *Queries) GetMonitoredMovies(ctx context.Context) ([]GetMonitoredMoviesR
 
 const getMovieByID = `-- name: GetMovieByID :one
 SELECT
-    id, tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
+    id, tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file,
     added, folder_name, created_at, updated_at
 FROM movies
 WHERE id = ?
 `
 
 type GetMovieByIDRow struct {
-	ID                  int32          `db:"id" json:"id"`
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	CreatedAt           time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time      `db:"updated_at" json:"updated_at"`
+	ID               int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	Added            sql.NullTime   `db:"added" json:"added"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetMovieByID(ctx context.Context, id int32) (GetMovieByIDRow, error) {
@@ -323,20 +267,13 @@ func (q *Queries) GetMovieByID(ctx context.Context, id int32) (GetMovieByIDRow, 
 		&i.TmdbID,
 		&i.ImdbID,
 		&i.Title,
-		&i.OriginalTitle,
 		&i.SortTitle,
 		&i.Year,
-		&i.ReleaseDate,
 		&i.Runtime,
-		&i.Certification,
 		&i.Overview,
-		&i.Images,
-		&i.Genres,
-		&i.Studio,
 		&i.Path,
 		&i.QualityProfileID,
 		&i.Monitored,
-		&i.MinimumAvailability,
 		&i.Status,
 		&i.HasFile,
 		&i.Added,
@@ -349,10 +286,9 @@ func (q *Queries) GetMovieByID(ctx context.Context, id int32) (GetMovieByIDRow, 
 
 const getMoviesByQualityProfile = `-- name: GetMoviesByQualityProfile :many
 SELECT
-    id, tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
+    id, tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file,
     added, folder_name, created_at, updated_at
 FROM movies
 WHERE quality_profile_id = ?
@@ -360,30 +296,23 @@ ORDER BY sort_title
 `
 
 type GetMoviesByQualityProfileRow struct {
-	ID                  int32          `db:"id" json:"id"`
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	CreatedAt           time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time      `db:"updated_at" json:"updated_at"`
+	ID               int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	Added            sql.NullTime   `db:"added" json:"added"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetMoviesByQualityProfile(ctx context.Context, qualityProfileID int32) ([]GetMoviesByQualityProfileRow, error) {
@@ -400,20 +329,13 @@ func (q *Queries) GetMoviesByQualityProfile(ctx context.Context, qualityProfileI
 			&i.TmdbID,
 			&i.ImdbID,
 			&i.Title,
-			&i.OriginalTitle,
 			&i.SortTitle,
 			&i.Year,
-			&i.ReleaseDate,
 			&i.Runtime,
-			&i.Certification,
 			&i.Overview,
-			&i.Images,
-			&i.Genres,
-			&i.Studio,
 			&i.Path,
 			&i.QualityProfileID,
 			&i.Monitored,
-			&i.MinimumAvailability,
 			&i.Status,
 			&i.HasFile,
 			&i.Added,
@@ -436,10 +358,9 @@ func (q *Queries) GetMoviesByQualityProfile(ctx context.Context, qualityProfileI
 
 const getMoviesWithFiles = `-- name: GetMoviesWithFiles :many
 SELECT
-    id, tmdb_id, imdb_id, title, original_title, sort_title,
-    year, release_date, runtime, certification, overview,
-    images, genres, studio, path, quality_profile_id,
-    monitored, minimum_availability, status, has_file,
+    id, tmdb_id, imdb_id, title, sort_title,
+    year, runtime, overview, path, quality_profile_id,
+    monitored, status, has_file,
     added, folder_name, created_at, updated_at
 FROM movies
 WHERE has_file = true
@@ -447,30 +368,23 @@ ORDER BY sort_title
 `
 
 type GetMoviesWithFilesRow struct {
-	ID                  int32          `db:"id" json:"id"`
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	CreatedAt           time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time      `db:"updated_at" json:"updated_at"`
+	ID               int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	Added            sql.NullTime   `db:"added" json:"added"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	CreatedAt        time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time      `db:"updated_at" json:"updated_at"`
 }
 
 func (q *Queries) GetMoviesWithFiles(ctx context.Context) ([]GetMoviesWithFilesRow, error) {
@@ -487,20 +401,13 @@ func (q *Queries) GetMoviesWithFiles(ctx context.Context) ([]GetMoviesWithFilesR
 			&i.TmdbID,
 			&i.ImdbID,
 			&i.Title,
-			&i.OriginalTitle,
 			&i.SortTitle,
 			&i.Year,
-			&i.ReleaseDate,
 			&i.Runtime,
-			&i.Certification,
 			&i.Overview,
-			&i.Images,
-			&i.Genres,
-			&i.Studio,
 			&i.Path,
 			&i.QualityProfileID,
 			&i.Monitored,
-			&i.MinimumAvailability,
 			&i.Status,
 			&i.HasFile,
 			&i.Added,
@@ -526,51 +433,35 @@ UPDATE movies SET
     tmdb_id = ?,
     imdb_id = ?,
     title = ?,
-    original_title = ?,
     sort_title = ?,
     year = ?,
-    release_date = ?,
     runtime = ?,
-    certification = ?,
     overview = ?,
-    images = ?,
-    genres = ?,
-    studio = ?,
     path = ?,
     quality_profile_id = ?,
     monitored = ?,
-    minimum_availability = ?,
     status = ?,
     has_file = ?,
-    added = ?,
     folder_name = ?,
     updated_at = NOW()
 WHERE id = ?
 `
 
 type UpdateMovieParams struct {
-	TmdbID              int32          `db:"tmdb_id" json:"tmdb_id"`
-	ImdbID              sql.NullString `db:"imdb_id" json:"imdb_id"`
-	Title               string         `db:"title" json:"title"`
-	OriginalTitle       sql.NullString `db:"original_title" json:"original_title"`
-	SortTitle           sql.NullString `db:"sort_title" json:"sort_title"`
-	Year                sql.NullInt32  `db:"year" json:"year"`
-	ReleaseDate         sql.NullTime   `db:"release_date" json:"release_date"`
-	Runtime             sql.NullInt32  `db:"runtime" json:"runtime"`
-	Certification       sql.NullString `db:"certification" json:"certification"`
-	Overview            sql.NullString `db:"overview" json:"overview"`
-	Images              sql.NullString `db:"images" json:"images"`
-	Genres              sql.NullString `db:"genres" json:"genres"`
-	Studio              sql.NullString `db:"studio" json:"studio"`
-	Path                sql.NullString `db:"path" json:"path"`
-	QualityProfileID    int32          `db:"quality_profile_id" json:"quality_profile_id"`
-	Monitored           sql.NullBool   `db:"monitored" json:"monitored"`
-	MinimumAvailability sql.NullString `db:"minimum_availability" json:"minimum_availability"`
-	Status              sql.NullString `db:"status" json:"status"`
-	HasFile             sql.NullBool   `db:"has_file" json:"has_file"`
-	Added               sql.NullTime   `db:"added" json:"added"`
-	FolderName          sql.NullString `db:"folder_name" json:"folder_name"`
-	ID                  int32          `db:"id" json:"id"`
+	TmdbID           int32          `db:"tmdb_id" json:"tmdb_id"`
+	ImdbID           sql.NullString `db:"imdb_id" json:"imdb_id"`
+	Title            string         `db:"title" json:"title"`
+	SortTitle        sql.NullString `db:"sort_title" json:"sort_title"`
+	Year             sql.NullInt32  `db:"year" json:"year"`
+	Runtime          sql.NullInt32  `db:"runtime" json:"runtime"`
+	Overview         sql.NullString `db:"overview" json:"overview"`
+	Path             sql.NullString `db:"path" json:"path"`
+	QualityProfileID int32          `db:"quality_profile_id" json:"quality_profile_id"`
+	Monitored        sql.NullBool   `db:"monitored" json:"monitored"`
+	Status           sql.NullString `db:"status" json:"status"`
+	HasFile          sql.NullBool   `db:"has_file" json:"has_file"`
+	FolderName       sql.NullString `db:"folder_name" json:"folder_name"`
+	ID               int32          `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateMovie(ctx context.Context, arg UpdateMovieParams) error {
@@ -578,23 +469,15 @@ func (q *Queries) UpdateMovie(ctx context.Context, arg UpdateMovieParams) error 
 		arg.TmdbID,
 		arg.ImdbID,
 		arg.Title,
-		arg.OriginalTitle,
 		arg.SortTitle,
 		arg.Year,
-		arg.ReleaseDate,
 		arg.Runtime,
-		arg.Certification,
 		arg.Overview,
-		arg.Images,
-		arg.Genres,
-		arg.Studio,
 		arg.Path,
 		arg.QualityProfileID,
 		arg.Monitored,
-		arg.MinimumAvailability,
 		arg.Status,
 		arg.HasFile,
-		arg.Added,
 		arg.FolderName,
 		arg.ID,
 	)
