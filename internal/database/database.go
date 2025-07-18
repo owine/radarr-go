@@ -197,7 +197,7 @@ func buildMariaDBConnectionString(cfg *config.DatabaseConfig) string {
 		username = defaultUsername
 	}
 
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true",
 		username, cfg.Password, host, port, database)
 }
 
