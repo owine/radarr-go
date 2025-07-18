@@ -18,6 +18,9 @@
       "gomodTidy",
       "gomodUpdateImportPaths"
     ],
+  "ignorePaths": [
+    "docker-compose.yml"
+  ],
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
