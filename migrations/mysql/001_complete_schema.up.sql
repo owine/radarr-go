@@ -563,7 +563,7 @@ CREATE INDEX idx_notifications_enabled ON notifications(enabled);
 -- Insert default data
 
 -- Insert default quality profile
-INSERT INTO quality_profiles (id, name, cutoff, items) VALUES 
+INSERT INTO quality_profiles (id, name, cutoff, items) VALUES
 (1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]')
 ON DUPLICATE KEY UPDATE id=id;
 

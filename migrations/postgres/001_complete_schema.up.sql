@@ -694,7 +694,7 @@ CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON notifications
 -- Insert default data
 
 -- Insert default quality profile
-INSERT INTO quality_profiles (id, name, cutoff, items) VALUES 
+INSERT INTO quality_profiles (id, name, cutoff, items) VALUES
 (1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]')
 ON CONFLICT (id) DO NOTHING;
 

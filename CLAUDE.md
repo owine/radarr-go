@@ -291,11 +291,11 @@ func ProcessMovie(movie *Movie) error {
     if movie == nil {
         return ErrInvalidMovie
     }
-    
+
     if movie.ID == 0 {
         return ErrMissingID
     }
-    
+
     // Process movie
     return nil
 }

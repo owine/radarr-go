@@ -14,7 +14,7 @@ jobs:
   build:
     name: Build Release Binaries
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         goos: [linux, darwin, windows, freebsd]
@@ -52,7 +52,7 @@ jobs:
         if [ "${{ matrix.goos }}" = "windows" ]; then
           BINARY_NAME="${BINARY_NAME}.exe"
         fi
-        
+
         # Build with release optimizations and version info
         # Enable CGO only for Linux amd64, disable for cross-compilation
         if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
@@ -60,7 +60,7 @@ jobs:
         else
           export CGO_ENABLED=0
         fi
-        
+
         GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
         go build -ldflags="-w -s -X 'main.version=${{ github.ref_name }}' -X 'main.commit=${{ github.sha }}' -X 'main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
         -o "dist/${BINARY_NAME}" ./cmd/radarr
@@ -78,7 +78,7 @@ jobs:
           tar -czf "../${ARCHIVE_NAME}" "${BINARY_NAME}"
         fi
         cd ..
-        
+
         # Create checksums
         if [ "${{ matrix.goos }}" = "windows" ]; then
           sha256sum "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" > "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip.sha256"
@@ -103,7 +103,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -184,7 +184,7 @@ jobs:
     name: Release Integration Test
     runs-on: ubuntu-latest
     needs: [build]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -198,22 +198,22 @@ jobs:
         wget -O radarr-archive.tar.gz "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz"
         tar -xzf radarr-archive.tar.gz
         chmod +x radarr-linux-amd64
-        
+
         # Test that the release binary works
         timeout 10s ./radarr-linux-amd64 --help || echo "Help command test completed"
-        
+
         # Quick startup test
         mkdir -p data movies web/static web/templates
         cp config.yaml data/
-        
+
         timeout 15s ./radarr-linux-amd64 --data ./data &
         RADARR_PID=$!
         sleep 10
-        
+
         # Test basic endpoints
         curl -f http://localhost:7878/ping || echo "Ping test completed"
         curl -f http://localhost:7878/api/v3/system/status || echo "Status test completed"
-        
+
         kill $RADARR_PID || true
         wait $RADARR_PID || true
       continue-on-error: true
@@ -224,7 +224,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, docker, integration-test]
     if: always()
-    
+
     steps:
     - name: Create release summary
       run: |

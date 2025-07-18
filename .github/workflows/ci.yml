@@ -16,7 +16,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -60,7 +60,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -114,19 +114,19 @@ jobs:
     - name: Build multi-platform artifacts
       run: |
         mkdir -p artifacts
-        
+
         # Build for current platform (test artifact) - pure Go, no CGO
         CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
-        
+
         # Build for all supported platforms - pure Go builds
         # Linux
         GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
         GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-arm64 ./cmd/radarr
-        
+
         # Darwin (macOS)
         GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
         GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
-        
+
         # FreeBSD
         GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-amd64 ./cmd/radarr
         GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-arm64 ./cmd/radarr
@@ -138,12 +138,12 @@ jobs:
         path: artifacts/
         retention-days: 7
 
-  # Stage 3a: Test MariaDB Linux (runs after build completes successfully)  
+  # Stage 3a: Test MariaDB Linux (runs after build completes successfully)
   test-mariadb-linux:
     name: Test MariaDB (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ubuntu-latest
     needs: [build]
-    
+
     strategy:
       matrix:
         include:
@@ -229,9 +229,9 @@ jobs:
           # For FreeBSD and other cross-platform scenarios: use test binary
           BINARY="artifacts/radarr-test"
         fi
-        
+
         chmod +x "$BINARY"
-        
+
         # Use gtimeout on macOS, timeout on Linux
         if [ "$(uname)" = "Darwin" ]; then
           # Install gtimeout if not available
@@ -240,15 +240,15 @@ jobs:
         else
           timeout 30s "$BINARY" --data ./data --config ./data/config.yml &
         fi
-        
+
         RADARR_PID=$!
         sleep 10
-        
+
         # Test API endpoints
         curl -f http://localhost:7878/ping || exit 1
         curl -f http://localhost:7878/api/v3/system/status || exit 1
         curl -f http://localhost:7878/api/v3/movie || exit 1
-        
+
         kill $RADARR_PID || true
         wait $RADARR_PID || true
       env:
@@ -264,7 +264,7 @@ jobs:
     name: Test MariaDB (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ${{ matrix.os == 'darwin' && 'macos-latest' || 'ubuntu-latest' }}
     needs: [build]
-    
+
     strategy:
       matrix:
         include:
@@ -353,7 +353,7 @@ jobs:
     name: Test PostgreSQL (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ubuntu-latest
     needs: [build]
-    
+
     strategy:
       matrix:
         include:
@@ -363,7 +363,7 @@ jobs:
           - os: linux
             arch: arm64
       fail-fast: false
-    
+
     services:
       postgres:
         image: postgres:17-alpine@sha256:fbe21607052bb5c298674f2fd8cf044a63aa3ddf50b81627f894f91f40f50bcb
@@ -434,20 +434,20 @@ jobs:
           # For other cross-platform scenarios: use test binary
           BINARY="artifacts/radarr-test"
         fi
-        
+
         chmod +x "$BINARY"
-        
+
         # Use timeout on Linux
         timeout 30s "$BINARY" --data ./data --config ./data/config.yml &
-        
+
         RADARR_PID=$!
         sleep 10
-        
+
         # Test API endpoints
         curl -f http://localhost:7878/ping || exit 1
         curl -f http://localhost:7878/api/v3/system/status || exit 1
         curl -f http://localhost:7878/api/v3/movie || exit 1
-        
+
         kill $RADARR_PID || true
         wait $RADARR_PID || true
       env:
@@ -463,7 +463,7 @@ jobs:
     name: Test PostgreSQL (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ${{ matrix.os == 'darwin' && 'macos-latest' || 'ubuntu-latest' }}
     needs: [build]
-    
+
     strategy:
       matrix:
         include:
@@ -556,7 +556,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-mariadb-linux, test-mariadb-native, test-postgres-linux, test-postgres-native]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    
+
     permissions:
       contents: read
       packages: write

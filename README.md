@@ -37,7 +37,7 @@ Download the latest release for your platform from the [releases page](https://g
 
 **Supported Platforms:**
 - Linux: amd64, arm64
-- macOS (Darwin): amd64, arm64  
+- macOS (Darwin): amd64, arm64
 - FreeBSD: amd64, arm64
 - Windows: amd64, arm64
 
