@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS movies (
     secondary_year_source_id INT DEFAULT 0,
     sort_title VARCHAR(500),
     size_on_disk BIGINT DEFAULT 0,
-    popularity DOUBLE PRECISION DEFAULT 0.0
+    popularity DOUBLE DEFAULT 0.0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Movie files table
@@ -393,11 +393,11 @@ CREATE TABLE IF NOT EXISTS releases (
     quality_revision_version INT DEFAULT 1,
     quality_revision_real INT DEFAULT 0,
     quality_revision_is_repack TINYINT(1) DEFAULT 0,
-    quality JSON,
+    quality TEXT,
     quality_weight INT DEFAULT 0,
     age INT DEFAULT 0,
-    age_hours DOUBLE PRECISION DEFAULT 0,
-    age_minutes DOUBLE PRECISION DEFAULT 0,
+    age_hours DOUBLE DEFAULT 0,
+    age_minutes DOUBLE DEFAULT 0,
     size BIGINT DEFAULT 0,
     indexer_id INT NOT NULL,
     movie_id INT,
@@ -413,10 +413,10 @@ CREATE TABLE IF NOT EXISTS releases (
     publish_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) DEFAULT 'available',
     source VARCHAR(20) NOT NULL DEFAULT 'search',
-    release_info JSON,
-    categories JSON,
+    release_info TEXT,
+    categories TEXT,
     download_client_id INT,
-    rejection_reasons JSON,
+    rejection_reasons TEXT,
     indexer_flags INT DEFAULT 0,
     scene_mapping TINYINT(1) DEFAULT 0,
     magnet_url VARCHAR(2000),
