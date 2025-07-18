@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o radarr ./cmd/radarr
 
 # Final stage
-FROM alpine:latest@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715
+FROM alpine:3.21
 
 RUN apk --no-cache add ca-certificates tzdata sqlite
 
