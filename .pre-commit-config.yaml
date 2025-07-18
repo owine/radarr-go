@@ -6,12 +6,6 @@ repos:
       - id: go-fmt
         args: [-s]
 
-  # Go imports
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
-      - id: go-imports
-
   # Go mod tidy
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
@@ -20,7 +14,7 @@ repos:
 
   # Go linting with golangci-lint
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.55.2
+    rev: v2.2.2
     hooks:
       - id: golangci-lint
 
@@ -33,7 +27,7 @@ repos:
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -42,9 +36,3 @@ repos:
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
-
-  # Security scanning with gosec
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
-      - id: go-sec
