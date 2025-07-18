@@ -24,12 +24,18 @@ make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
 
 # Multi-platform building (matches CI)
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-amd64 ./cmd/radarr
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-linux-arm64 ./cmd/radarr
-GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-amd64 ./cmd/radarr
-GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-darwin-arm64 ./cmd/radarr
-GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-freebsd-amd64 ./cmd/radarr
-GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o radarr-freebsd-arm64 ./cmd/radarr
+# Set version info (optional, will use git info automatically in Makefile)
+export VERSION=v1.0.0
+export COMMIT=$(git rev-parse --short HEAD)
+export BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+LDFLAGS="-w -s -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${BUILD_DATE}'"
+
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-linux-amd64 ./cmd/radarr
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-linux-arm64 ./cmd/radarr
+GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-darwin-amd64 ./cmd/radarr
+GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-darwin-arm64 ./cmd/radarr
+GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-freebsd-amd64 ./cmd/radarr
+GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-freebsd-arm64 ./cmd/radarr
 
 # Running
 make run                     # Build and run locally

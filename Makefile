@@ -11,13 +11,19 @@ GOFMT=$(GOCMD) fmt
 BINARY_NAME=radarr
 MAIN_PATH=./cmd/radarr
 
+# Build variables
+VERSION ?= dev
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE ?= $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+LDFLAGS = -w -s -X 'main.version=$(VERSION)' -X 'main.commit=$(COMMIT)' -X 'main.date=$(BUILD_DATE)'
+
 # Build the binary
 build:
-	$(GOBUILD) -o $(BINARY_NAME) -v $(MAIN_PATH)
+	$(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME) -v $(MAIN_PATH)
 
 # Build for Linux
 build-linux:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_NAME)-linux -v $(MAIN_PATH)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-linux -v $(MAIN_PATH)
 
 # Run the application
 run: build

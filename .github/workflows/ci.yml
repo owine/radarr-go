@@ -115,21 +115,27 @@ jobs:
       run: |
         mkdir -p artifacts
 
+        # Set build variables
+        VERSION=${GITHUB_REF_NAME:-dev}
+        COMMIT=${GITHUB_SHA::8}
+        BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+        LDFLAGS="-w -s -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${BUILD_DATE}'"
+
         # Build for current platform (test artifact) - pure Go, no CGO
-        CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-test ./cmd/radarr
+        CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-test ./cmd/radarr
 
         # Build for all supported platforms - pure Go builds
         # Linux
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-amd64 ./cmd/radarr
-        GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-linux-arm64 ./cmd/radarr
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-linux-amd64 ./cmd/radarr
+        GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-linux-arm64 ./cmd/radarr
 
         # Darwin (macOS)
-        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
-        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
+        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
+        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
 
         # FreeBSD
-        GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-amd64 ./cmd/radarr
-        GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-w -s" -o artifacts/radarr-freebsd-arm64 ./cmd/radarr
+        GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-freebsd-amd64 ./cmd/radarr
+        GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-freebsd-arm64 ./cmd/radarr
 
     - name: Store build artifacts
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
