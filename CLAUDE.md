@@ -95,11 +95,11 @@ All services are managed through a `services.Container` that provides dependency
 - `QualityService`, `IndexerService`, etc.: Domain-specific operations
 
 ### Database Architecture
-- **Dual ORM Strategy**: GORM for complex operations, sqlx for performance-critical queries
+- **Hybrid Strategy**: GORM for complex operations, sqlc for performance-critical queries
 - **Migration System**: golang-migrate for schema management
 - **Multi-Database**: PostgreSQL (default) and MariaDB support
-- **Connection Management**: Configurable connection pooling
-- **Pure Go Strategy**: PostgreSQL and MariaDB with native Go drivers (CGO_ENABLED=0)
+- **Connection Management**: Configurable connection pooling with pgx for PostgreSQL
+- **Pure Go Strategy**: PostgreSQL (pgx driver) and MariaDB with native Go drivers (CGO_ENABLED=0)
 
 ### CI/CD Architecture
 The project uses a structured CI pipeline with concurrent execution:
@@ -226,6 +226,34 @@ This implementation maintains strict compatibility with Radarr's v3 API:
 - **CORS**: Configurable cross-origin resource sharing
 - **Input Validation**: Request validation and sanitization
 - **No Root**: Docker container runs as non-root user
+
+# Code Generation with sqlc
+
+The project uses sqlc for generating type-safe Go code from SQL queries.
+
+```bash
+# Generate sqlc code (after modifying SQL queries)
+sqlc generate
+
+# Add new SQL queries
+mkdir -p internal/database/queries/postgres internal/database/queries/mysql
+# Add .sql files with query definitions
+# Run sqlc generate to create Go code
+```
+
+### Query Organization
+- **PostgreSQL queries**: `internal/database/queries/postgres/*.sql`
+- **MySQL queries**: `internal/database/queries/mysql/*.sql`
+- **Generated code**: `internal/database/generated/{postgres,mysql}/`
+
+### Usage in Services
+```go
+// PostgreSQL
+result, err := db.Postgres.GetMovieByID(ctx, movieID)
+
+// MySQL
+result, err := db.MySQL.GetMovieByID(ctx, movieID)
+```
 
 ## Code Quality and Formatting Standards
 

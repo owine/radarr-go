@@ -1,0 +1,40 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "internal/database/queries/postgres"
+    schema: "migrations/postgres"
+    gen:
+      go:
+        package: "postgres"
+        out: "internal/database/generated/postgres"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_db_tags: true
+        emit_prepared_queries: true
+        emit_interface: true
+        emit_exact_table_names: true
+        emit_empty_slices: true
+        overrides:
+          - column: "*.created_at"
+            go_type: "time.Time"
+          - column: "*.updated_at"
+            go_type: "time.Time"
+  - engine: "mysql"
+    queries: "internal/database/queries/mysql"
+    schema: "migrations/mysql"
+    gen:
+      go:
+        package: "mysql"
+        out: "internal/database/generated/mysql"
+        sql_package: "database/sql"
+        emit_json_tags: true
+        emit_db_tags: true
+        emit_prepared_queries: true
+        emit_interface: true
+        emit_exact_table_names: true
+        emit_empty_slices: true
+        overrides:
+          - column: "*.created_at"
+            go_type: "time.Time"
+          - column: "*.updated_at"
+            go_type: "time.Time"
