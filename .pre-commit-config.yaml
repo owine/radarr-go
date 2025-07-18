@@ -6,6 +6,12 @@ repos:
       - id: go-fmt
         args: [-s]
 
+  # Go imports
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-imports
+
   # Go mod tidy
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
