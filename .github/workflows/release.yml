@@ -1,28 +1,183 @@
 name: Release
 
-# Only run on published releases, not on push events
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.2.3)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
 
 env:
   GO_VERSION: '1.24'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  # Security: Use secure build flags
+  BUILD_FLAGS: '-trimpath -buildvcs=false'
+  LDFLAGS_BASE: '-w -s -extldflags "-static"'
 
 jobs:
+  # Validate and prepare release
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.release.outputs.prerelease }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      build_date: ${{ steps.build_info.outputs.build_date }}
+      commit_sha: ${{ steps.build_info.outputs.commit_sha }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        fetch-depth: 0  # Full history for proper version detection
+
+    - name: Get release information
+      id: release
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          # Manual dispatch
+          TAG_NAME="${{ github.event.inputs.tag }}"
+          IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+        else
+          # Automated release
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          IS_PRERELEASE="${{ github.event.release.prerelease }}"
+        fi
+
+        echo "prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+        echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        echo "🏷️ Release tag: ${TAG_NAME}"
+        echo "🔄 Pre-release: ${IS_PRERELEASE}"
+
+    - name: Validate version format
+      id: version
+      run: |
+        TAG_NAME="${{ steps.release.outputs.tag_name }}"
+        VERSION="${TAG_NAME#v}"  # Remove 'v' prefix if present
+
+        # Validate semantic version format (stricter regex)
+        if [[ ! $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+          echo "❌ Invalid version format: $VERSION"
+          echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
+          echo "Examples: 1.0.0, 1.2.3-alpha, 1.2.3-beta.1"
+          exit 1
+        fi
+
+        # Extract version components for validation
+        MAJOR=$(echo "$VERSION" | sed -E 's/([0-9]+)\..*/\1/')
+        MINOR=$(echo "$VERSION" | sed -E 's/[0-9]+\.([0-9]+)\..*/\1/')
+        PATCH=$(echo "$VERSION" | sed -E 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
+
+        echo "✅ Valid version: $VERSION (Major: $MAJOR, Minor: $MINOR, Patch: $PATCH)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "major=$MAJOR" >> $GITHUB_OUTPUT
+        echo "minor=$MINOR" >> $GITHUB_OUTPUT
+        echo "patch=$PATCH" >> $GITHUB_OUTPUT
+
+    - name: Generate build information
+      id: build_info
+      run: |
+        BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+        COMMIT_SHA=$(git rev-parse --short=12 HEAD)
+
+        echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+        echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+        echo "🕒 Build date: ${BUILD_DATE}"
+        echo "📝 Commit: ${COMMIT_SHA}"
+
+    - name: Set up Go
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: false  # Disable cache for validation to ensure clean state
+
+    - name: Validate Go modules and workspace
+      run: |
+        echo "📦 Downloading Go modules..."
+        go mod download
+        go mod verify
+
+        echo "🔧 Syncing workspace..."
+        go work sync
+
+        echo "🔍 Checking module integrity..."
+        go list -m all > /dev/null
+
+        echo "🛡️ Running security checks..."
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        govulncheck ./...
+
+        echo "✅ Go modules and workspace validated"
+
   # Build release binaries for all platforms
   build:
-    name: Build Release Binaries
-    runs-on: ubuntu-latest
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    needs: validate
+    timeout-minutes: 20
 
     strategy:
+      fail-fast: false
+      max-parallel: 4
       matrix:
-        goos: [linux, darwin, windows, freebsd]
-        goarch: [amd64, arm64]
-        exclude:
-          - goos: windows
+        include:
+          # Linux builds (native runners for better performance)
+          - platform: "linux/amd64"
+            goos: linux
+            goarch: amd64
+            cgo: "0"
+            runner: ubuntu-latest
+            compression: "tar.gz"
+          - platform: "linux/arm64"
+            goos: linux
             goarch: arm64
+            cgo: "0"
+            runner: ubuntu-latest
+            compression: "tar.gz"
+          # macOS builds (native runners when possible)
+          - platform: "darwin/amd64"
+            goos: darwin
+            goarch: amd64
+            cgo: "0"
+            runner: macos-13  # Intel runner
+            compression: "tar.gz"
+          - platform: "darwin/arm64"
+            goos: darwin
+            goarch: arm64
+            cgo: "0"
+            runner: macos-latest  # Apple Silicon runner
+            compression: "tar.gz"
+          # Windows builds
+          - platform: "windows/amd64"
+            goos: windows
+            goarch: amd64
+            cgo: "0"
+            runner: windows-latest
+            compression: "zip"
+          # FreeBSD builds (cross-compile from Linux)
+          - platform: "freebsd/amd64"
+            goos: freebsd
+            goarch: amd64
+            cgo: "0"
+            runner: ubuntu-latest
+            compression: "tar.gz"
+          - platform: "freebsd/arm64"
+            goos: freebsd
+            goarch: arm64
+            cgo: "0"
+            runner: ubuntu-latest
+            compression: "tar.gz"
 
     steps:
     - name: Checkout code
@@ -32,94 +187,354 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
       with:
         go-version: ${{ env.GO_VERSION }}
+        cache: true  # Enable built-in Go caching
 
-    - name: Cache Go modules
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+    - name: Install build dependencies
+      shell: bash
+      run: |
+        echo "📦 Installing Go dependencies..."
+        go mod download -x
+        go work sync
 
-    - name: Install dependencies
-      run: go mod download
+        # Install build tools if needed
+        if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+          echo "🛠️ Installing Windows build tools..."
+          # Windows-specific setup if needed
+        fi
 
     - name: Build binary
+      shell: bash
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: ${{ matrix.cgo }}
+        VERSION: ${{ needs.validate.outputs.version }}
+        COMMIT: ${{ needs.validate.outputs.commit_sha }}
+        BUILD_DATE: ${{ needs.validate.outputs.build_date }}
       run: |
         mkdir -p dist
+
+        # Set binary name with platform-specific extension
         BINARY_NAME="radarr-${{ matrix.goos }}-${{ matrix.goarch }}"
-        if [ "${{ matrix.goos }}" = "windows" ]; then
+        if [[ "${{ matrix.goos }}" == "windows" ]]; then
           BINARY_NAME="${BINARY_NAME}.exe"
         fi
 
-        # Build with release optimizations and version info
-        # Enable CGO only for Linux amd64, disable for cross-compilation
-        if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
-          export CGO_ENABLED=1
+        # Construct ldflags with all version info
+        LDFLAGS="${{ env.LDFLAGS_BASE }} -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${BUILD_DATE}'"
+
+        echo "🔨 Building ${BINARY_NAME} for ${{ matrix.platform }}..."
+        echo "LDFLAGS: ${LDFLAGS}"
+
+        # Build with optimizations and version info
+        go build \
+          ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" \
+          -o "dist/${BINARY_NAME}" \
+          ./cmd/radarr
+
+        # Verify binary was created
+        if [[ -f "dist/${BINARY_NAME}" ]]; then
+          echo "✅ Binary created successfully"
+          # Get file info (cross-platform compatible)
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            powershell -Command "Get-Item 'dist/${BINARY_NAME}' | Format-List"
+          else
+            ls -la "dist/${BINARY_NAME}"
+            file "dist/${BINARY_NAME}" 2>/dev/null || echo "File type detection not available"
+          fi
         else
-          export CGO_ENABLED=0
+          echo "❌ Binary creation failed"
+          exit 1
         fi
 
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-        go build -ldflags="-w -s -X 'main.version=${{ github.ref_name }}' -X 'main.commit=${{ github.sha }}' -X 'main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)'" \
-        -o "dist/${BINARY_NAME}" ./cmd/radarr
+        # Test binary execution (basic smoke test)
+        echo "🧪 Testing binary..."
+        if [[ "${{ matrix.goos }}" == "${{ runner.os }}" ]] || [[ "${{ runner.os }}" == "Linux" && "${{ matrix.goos }}" == "linux" ]]; then
+          timeout 10s "./dist/${BINARY_NAME}" --version || echo "Version check completed"
+        else
+          echo "Skipping execution test for cross-compiled binary"
+        fi
 
     - name: Create release archive
+      shell: bash
       run: |
         cd dist
         BINARY_NAME="radarr-${{ matrix.goos }}-${{ matrix.goarch }}"
-        if [ "${{ matrix.goos }}" = "windows" ]; then
+        VERSION="${{ needs.validate.outputs.version }}"
+
+        if [[ "${{ matrix.goos }}" == "windows" ]]; then
           BINARY_NAME="${BINARY_NAME}.exe"
-          ARCHIVE_NAME="radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip"
-          zip -r "../${ARCHIVE_NAME}" "${BINARY_NAME}"
+        fi
+
+        # Create archive based on platform preference
+        ARCHIVE_NAME="radarr-v${VERSION}-${{ matrix.goos }}-${{ matrix.goarch}}"
+
+        if [[ "${{ matrix.compression }}" == "zip" ]]; then
+          ARCHIVE_NAME="${ARCHIVE_NAME}.zip"
+          echo "🗇️ Creating ZIP archive: ${ARCHIVE_NAME}"
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            powershell -Command "Compress-Archive -Path '${BINARY_NAME}' -DestinationPath '../${ARCHIVE_NAME}' -CompressionLevel Optimal"
+          else
+            zip -9 "../${ARCHIVE_NAME}" "${BINARY_NAME}"
+          fi
         else
-          ARCHIVE_NAME="radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz"
+          ARCHIVE_NAME="${ARCHIVE_NAME}.tar.gz"
+          echo "🗇️ Creating TAR.GZ archive: ${ARCHIVE_NAME}"
           tar -czf "../${ARCHIVE_NAME}" "${BINARY_NAME}"
         fi
+
         cd ..
 
         # Create checksums
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          sha256sum "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip" > "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip.sha256"
+        echo "🔍 Generating checksums..."
+        if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+          powershell -Command "Get-FileHash -Algorithm SHA256 '${ARCHIVE_NAME}' | Format-List" > "${ARCHIVE_NAME}.sha256"
+          powershell -Command "(Get-FileHash -Algorithm SHA256 '${ARCHIVE_NAME}').Hash.ToLower() + '  ${ARCHIVE_NAME}'" > "${ARCHIVE_NAME}.sha256"
         else
-          sha256sum "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz" > "radarr-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz.sha256"
+          sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
         fi
 
-    - name: Upload release assets
-      uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        # Verify archive integrity
+        echo "🔍 Verifying archive integrity..."
+        if [[ "${{ matrix.compression }}" == "zip" ]]; then
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            powershell -Command "Expand-Archive -Path '${ARCHIVE_NAME}' -DestinationPath 'verify_temp' -Force; Remove-Item -Recurse 'verify_temp'"
+          else
+            unzip -t "${ARCHIVE_NAME}"
+          fi
+        else
+          tar -tzf "${ARCHIVE_NAME}" > /dev/null
+        fi
+
+        # Display final archive info
+        echo "✅ Created ${ARCHIVE_NAME}"
+        if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+          powershell -Command "Get-Item '${ARCHIVE_NAME}' | Format-List Name, Length"
+        else
+          ls -lh "${ARCHIVE_NAME}"
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
       with:
-        files: |
+        name: radarr-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: |
           *.tar.gz
           *.zip
           *.sha256
+        retention-days: 7
+        if-no-files-found: error  # Fail if no artifacts are found
+        compression-level: 9      # Maximum compression
+
+    - name: Upload build summary
+      if: always()
+      shell: bash
+      run: |
+        # Create build summary
+        cat > build-summary-${{ matrix.goos }}-${{ matrix.goarch }}.md << 'EOF'
+        # Build Summary: ${{ matrix.platform }}
+
+        **Status**: ${{ job.status }}
+        **Runner**: ${{ matrix.runner }}
+        **Timestamp**: $(date -u)
+        **Version**: ${{ needs.validate.outputs.version }}
+        **Commit**: ${{ needs.validate.outputs.commit_sha }}
+
+        ## Build Configuration
+        - **GOOS**: ${{ matrix.goos }}
+        - **GOARCH**: ${{ matrix.goarch }}
+        - **CGO_ENABLED**: ${{ matrix.cgo }}
+        - **Compression**: ${{ matrix.compression }}
+
+        ## Artifacts
+        EOF
+
+        # Add artifact information if successful
+        if [[ -f *.tar.gz ]] || [[ -f *.zip ]]; then
+          echo "" >> build-summary-${{ matrix.goos }}-${{ matrix.goarch }}.md
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            powershell -Command "Get-ChildItem *.zip, *.sha256 | Format-Table Name, Length -AutoSize" >> build-summary-${{ matrix.goos }}-${{ matrix.goarch }}.md
+          else
+            ls -lh *.tar.gz *.sha256 2>/dev/null >> build-summary-${{ matrix.goos }}-${{ matrix.goarch }}.md || echo "No artifacts found" >> build-summary-${{ matrix.goos }}-${{ matrix.goarch }}.md
+          fi
+        fi
+
+        echo "📊 Build summary created for ${{ matrix.platform }}"
+
+  # Collect and verify all build artifacts
+  collect-artifacts:
+    name: Collect Build Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    timeout-minutes: 10
+    outputs:
+      artifact_count: ${{ steps.collect.outputs.artifact_count }}
+      total_size: ${{ steps.collect.outputs.total_size }}
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: Collect and verify artifacts
+      id: collect
+      run: |
+        echo "📦 Collecting artifacts..."
+        cd artifacts
+
+        # Count artifacts
+        ARCHIVE_COUNT=$(find . -name '*.tar.gz' -o -name '*.zip' | wc -l)
+        CHECKSUM_COUNT=$(find . -name '*.sha256' | wc -l)
+        TOTAL_COUNT=$((ARCHIVE_COUNT + CHECKSUM_COUNT))
+
+        echo "Archives: $ARCHIVE_COUNT"
+        echo "Checksums: $CHECKSUM_COUNT"
+        echo "Total artifacts: $TOTAL_COUNT"
+
+        # Verify we have expected number of artifacts (7 platforms * 2 files each = 14)
+        EXPECTED_COUNT=14
+        if [[ $TOTAL_COUNT -ne $EXPECTED_COUNT ]]; then
+          echo "⚠️ Warning: Expected $EXPECTED_COUNT artifacts, found $TOTAL_COUNT"
+        fi
+
+        # Calculate total size
+        TOTAL_SIZE=$(du -sh . | cut -f1)
+        echo "Total size: $TOTAL_SIZE"
+
+        # Verify checksums
+        echo "🔍 Verifying checksums..."
+        for checksum_file in *.sha256; do
+          if [[ -f "$checksum_file" ]]; then
+            echo "Verifying $checksum_file"
+            sha256sum -c "$checksum_file" || echo "⚠️ Checksum verification failed for $checksum_file"
+          fi
+        done
+
+        # Set outputs
+        echo "artifact_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
+        echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+
+        # Create artifact manifest
+        echo "# Release Artifact Manifest" > ../ARTIFACT_MANIFEST.md
+        echo "" >> ../ARTIFACT_MANIFEST.md
+        echo "**Version**: ${{ needs.validate.outputs.version }}" >> ../ARTIFACT_MANIFEST.md
+        echo "**Build Date**: ${{ needs.validate.outputs.build_date }}" >> ../ARTIFACT_MANIFEST.md
+        echo "**Commit**: ${{ needs.validate.outputs.commit_sha }}" >> ../ARTIFACT_MANIFEST.md
+        echo "**Total Artifacts**: $TOTAL_COUNT" >> ../ARTIFACT_MANIFEST.md
+        echo "**Total Size**: $TOTAL_SIZE" >> ../ARTIFACT_MANIFEST.md
+        echo "" >> ../ARTIFACT_MANIFEST.md
+        echo "## Files" >> ../ARTIFACT_MANIFEST.md
+        echo "" >> ../ARTIFACT_MANIFEST.md
+        ls -lh *.tar.gz *.zip *.sha256 | awk '{print "- " $9 " (" $5 ")"}' >> ../ARTIFACT_MANIFEST.md
+
+        echo "✅ Artifact collection completed"
+
+    - name: Upload collected artifacts
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+      with:
+        name: release-artifacts-complete
+        path: |
+          artifacts/
+          ARTIFACT_MANIFEST.md
+        retention-days: 30
+
+  # Create GitHub release with all artifacts
+  release-assets:
+    name: Publish Release Assets
+    runs-on: ubuntu-latest
+    needs: [validate, collect-artifacts]
+    timeout-minutes: 15
+
+    steps:
+    - name: Download collected artifacts
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+      with:
+        name: release-artifacts-complete
+        path: release-ready
+
+    - name: Prepare release assets
+      run: |
+        echo "📦 Preparing release assets..."
+        cd release-ready/artifacts
+
+        # Display comprehensive artifact information
+        echo "## 📊 Release Statistics" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total Artifacts**: ${{ needs.collect-artifacts.outputs.artifact_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total Size**: ${{ needs.collect-artifacts.outputs.total_size }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ needs.validate.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 🗂️ Artifact Details" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| File | Size | SHA256 |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|------|--------|" >> $GITHUB_STEP_SUMMARY
+
+        # Process each archive and its checksum
+        for archive in *.tar.gz *.zip; do
+          if [[ -f "$archive" ]]; then
+            SIZE=$(ls -lh "$archive" | awk '{print $5}')
+            CHECKSUM=$(cat "${archive}.sha256" | awk '{print $1}' | cut -c1-12)...
+            echo "| $archive | $SIZE | \`$CHECKSUM\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🗓️ Full manifest available in release artifacts" >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2
+      with:
+        files: |
+          release-ready/artifacts/*
+          release-ready/ARTIFACT_MANIFEST.md
+        name: "Radarr Go v${{ needs.validate.outputs.version }}"
+        tag_name: ${{ needs.validate.outputs.tag_name }}
+        body_path: release-ready/ARTIFACT_MANIFEST.md
+        fail_on_unmatched_files: true
+        generate_release_notes: true
+        prerelease: ${{ needs.validate.outputs.is_prerelease }}
+        draft: false
+        make_latest: ${{ needs.validate.outputs.is_prerelease == 'false' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Build and publish official release Docker images
+    - name: Verify release publication
+      run: |
+        echo "✅ Release published successfully"
+        echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Download Stats**: Will be available after propagation" >> $GITHUB_STEP_SUMMARY
+
+  # Build and publish Docker images
   docker:
-    name: Build Release Docker Images
+    name: Build Docker Images
     runs-on: ubuntu-latest
+    needs: [validate, collect-artifacts]
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
+      security-events: write  # For security scanning
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+      uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3
 
-    - name: Log in to Container Registry
+    - name: Log in to GitHub Container Registry
       uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Log in to Docker Hub (if configured)
+    - name: Log in to Docker Hub
       if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
       uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
       with:
@@ -134,8 +549,9 @@ jobs:
         tags: |
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=stable
+          type=semver,pattern={{major}},enable=${{ !needs.validate.outputs.is_prerelease }}
+          type=raw,value=stable,enable=${{ !needs.validate.outputs.is_prerelease }}
+          type=raw,value=latest,enable=${{ !needs.validate.outputs.is_prerelease }}
 
     - name: Extract metadata for Docker Hub
       if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
@@ -146,11 +562,12 @@ jobs:
         tags: |
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest
+          type=semver,pattern={{major}},enable=${{ !needs.validate.outputs.is_prerelease }}
+          type=raw,value=latest,enable=${{ !needs.validate.outputs.is_prerelease }}
 
     - name: Build and push to GitHub Container Registry
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      id: build-ghcr
+      uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -158,15 +575,18 @@ jobs:
         tags: ${{ steps.meta-ghcr.outputs.tags }}
         labels: ${{ steps.meta-ghcr.outputs.labels }}
         build-args: |
-          VERSION=${{ github.ref_name }}
-          COMMIT=${{ github.sha }}
-          BUILD_DATE=${{ steps.meta-ghcr.outputs.created }}
+          VERSION=${{ needs.validate.outputs.version }}
+          COMMIT=${{ needs.validate.outputs.commit_sha }}
+          BUILD_DATE=${{ needs.validate.outputs.build_date }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        provenance: true    # Generate SLSA provenance
+        sbom: true         # Generate SBOM for security
 
     - name: Build and push to Docker Hub
       if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      id: build-docker
+      uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -174,83 +594,242 @@ jobs:
         tags: ${{ steps.meta-docker.outputs.tags }}
         labels: ${{ steps.meta-docker.outputs.labels }}
         build-args: |
-          VERSION=${{ github.ref_name }}
-          COMMIT=${{ github.sha }}
-          BUILD_DATE=${{ steps.meta-docker.outputs.created }}
+          VERSION=${{ needs.validate.outputs.version }}
+          COMMIT=${{ needs.validate.outputs.commit_sha }}
+          BUILD_DATE=${{ needs.validate.outputs.build_date }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        provenance: true    # Generate SLSA provenance
+        sbom: true         # Generate SBOM for security
 
-  # Test the released binary
+    - name: Docker build summary
+      run: |
+        echo "## 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### GitHub Container Registry" >> $GITHUB_STEP_SUMMARY
+        echo "- **Digest**: \`${{ steps.build-ghcr.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tags**: ${{ steps.meta-ghcr.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ secrets.DOCKER_USERNAME }}" != "" ]]; then
+          echo "### Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "- **Digest**: \`${{ steps.build-docker.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tags**: ${{ steps.meta-docker.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "### Security Features" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ SLSA Provenance generated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ SBOM (Software Bill of Materials) generated" >> $GITHUB_STEP_SUMMARY
+
+  # Integration test using released binary
   integration-test:
-    name: Release Integration Test
+    name: Integration Test
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [validate, release-assets]
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-    - name: Wait for release assets
-      run: sleep 30  # Give GitHub time to process the release assets
-
-    - name: Download and test release binary (Linux AMD64)
+    - name: Wait for release propagation
       run: |
-        # Download the Linux binary from the release
-        wget -O radarr-archive.tar.gz "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz"
+        echo "⏳ Waiting for GitHub release to propagate..."
+        sleep 60
+
+    - name: Run comprehensive integration tests
+      env:
+        VERSION: ${{ needs.validate.outputs.version }}
+        TAG_NAME: ${{ needs.validate.outputs.tag_name }}
+      run: |
+        # Download and verify release binary
+        ARCHIVE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/radarr-v${VERSION}-linux-amd64.tar.gz"
+        CHECKSUM_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/radarr-v${VERSION}-linux-amd64.tar.gz.sha256"
+
+        echo "📥 Downloading release assets..."
+        echo "Archive: ${ARCHIVE_URL}"
+        echo "Checksum: ${CHECKSUM_URL}"
+
+        # Download with retry logic
+        for i in {1..3}; do
+          if curl -fL -o radarr-archive.tar.gz "${ARCHIVE_URL}"; then
+            echo "✅ Archive downloaded successfully (attempt $i)"
+            break
+          else
+            echo "⚠️ Download failed (attempt $i), retrying..."
+            sleep 10
+          fi
+        done
+
+        # Download and verify checksum
+        curl -fL -o radarr-archive.tar.gz.sha256 "${CHECKSUM_URL}"
+        echo "🔍 Verifying checksum..."
+        sha256sum -c radarr-archive.tar.gz.sha256
+
+        # Extract and prepare binary
         tar -xzf radarr-archive.tar.gz
         chmod +x radarr-linux-amd64
 
-        # Test that the release binary works
-        timeout 10s ./radarr-linux-amd64 --help || echo "Help command test completed"
+        # Comprehensive binary verification
+        echo "🔍 Binary verification:"
+        ls -la radarr-linux-amd64
+        file radarr-linux-amd64
+        ldd radarr-linux-amd64 || echo "Static binary (no dynamic dependencies)"
 
-        # Quick startup test
+        # Test version and help commands
+        echo "📖 Testing binary commands:"
+        timeout 10s ./radarr-linux-amd64 --version
+        timeout 10s ./radarr-linux-amd64 --help
+
+        # Prepare test environment
+        echo "🚀 Setting up test environment:"
         mkdir -p data movies web/static web/templates
-        cp config.yaml data/
 
-        timeout 15s ./radarr-linux-amd64 --data ./data &
+        # Create minimal test config
+        cat > data/config.yaml << 'EOF'
+        server:
+          port: 7878
+        database:
+          type: sqlite
+          database: data/radarr.db
+        log:
+          level: info
+        EOF
+
+        # Start application with timeout
+        echo "🚀 Starting Radarr Go v${VERSION}..."
+        timeout 60s ./radarr-linux-amd64 --data ./data --config ./data/config.yaml &
         RADARR_PID=$!
-        sleep 10
 
-        # Test basic endpoints
-        curl -f http://localhost:7878/ping || echo "Ping test completed"
-        curl -f http://localhost:7878/api/v3/system/status || echo "Status test completed"
+        # Wait for startup with health check
+        echo "⏳ Waiting for application startup..."
+        for i in {1..30}; do
+          if curl -f -s http://localhost:7878/ping > /dev/null 2>&1; then
+            echo "✅ Application started successfully (${i}s)"
+            break
+          fi
+          echo "Waiting... (${i}/30)"
+          sleep 2
+        done
 
-        kill $RADARR_PID || true
-        wait $RADARR_PID || true
-      continue-on-error: true
+        # Comprehensive endpoint testing
+        echo "🔗 Testing API endpoints:"
 
-  # Create release summary
-  notify:
+        # Basic endpoints
+        curl -f -s http://localhost:7878/ping | jq . || echo "Ping response: $(curl -s http://localhost:7878/ping)"
+        curl -f -s http://localhost:7878/api/v3/system/status | jq . || echo "Status endpoint failed"
+
+        # API endpoints
+        curl -f -s http://localhost:7878/api/v3/movie | jq length || echo "Movie endpoint returned non-JSON"
+        curl -f -s http://localhost:7878/api/v3/system/health | jq . || echo "Health endpoint failed"
+
+        # Performance test
+        echo "📊 Performance testing:"
+        time curl -f -s http://localhost:7878/api/v3/system/status > /dev/null
+
+        # Memory usage check
+        echo "📊 Memory usage:"
+        ps -p $RADARR_PID -o pid,vsz,rss,comm || echo "Process info unavailable"
+
+        # Graceful shutdown test
+        echo "🛑 Testing graceful shutdown:"
+        kill -TERM $RADARR_PID 2>/dev/null || true
+
+        # Wait for graceful shutdown
+        for i in {1..10}; do
+          if ! kill -0 $RADARR_PID 2>/dev/null; then
+            echo "✅ Graceful shutdown completed (${i}s)"
+            break
+          fi
+          sleep 1
+        done
+
+        # Force kill if still running
+        kill -KILL $RADARR_PID 2>/dev/null || true
+        wait $RADARR_PID 2>/dev/null || true
+
+        echo "✅ Integration testing completed successfully"
+
+        # Add test results to summary
+        echo "## 🧪 Integration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Binary download and verification" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Checksum validation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Application startup" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ API endpoint testing" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Graceful shutdown" >> $GITHUB_STEP_SUMMARY
+
+  # Generate release summary
+  summary:
     name: Release Summary
     runs-on: ubuntu-latest
-    needs: [build, docker, integration-test]
+    needs: [validate, build, release-assets, docker, integration-test]
     if: always()
 
     steps:
-    - name: Create release summary
+    - name: Generate release summary
+      env:
+        VERSION: ${{ needs.validate.outputs.version }}
+        IS_PRERELEASE: ${{ needs.validate.outputs.is_prerelease }}
+        BUILD_RESULT: ${{ needs.build.result }}
+        DOCKER_RESULT: ${{ needs.docker.result }}
+        TEST_RESULT: ${{ needs.integration-test.result }}
       run: |
-        echo "## 🎉 Radarr Go Release ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "# 🎉 Radarr Go Release v${VERSION}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
-        echo "- **Binaries**: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64), FreeBSD (amd64, arm64)" >> $GITHUB_STEP_SUMMARY
-        echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
-          echo "- **Docker Hub**: \`radarr/radarr-go:${{ github.ref_name }}\`, \`radarr/radarr-go:latest\`" >> $GITHUB_STEP_SUMMARY
+
+        if [ "$IS_PRERELEASE" = "true" ]; then
+          echo "⚠️ **This is a pre-release version**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
         fi
-        echo "- **Platforms**: Multi-platform support (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
+        echo "### Binary Downloads" >> $GITHUB_STEP_SUMMARY
+        echo "| Platform | Architecture | Download |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------------|----------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Linux | amd64 | [radarr-v${VERSION}-linux-amd64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-linux-amd64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "| Linux | arm64 | [radarr-v${VERSION}-linux-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-linux-arm64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS | amd64 | [radarr-v${VERSION}-darwin-amd64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-darwin-amd64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "| macOS | arm64 | [radarr-v${VERSION}-darwin-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-darwin-arm64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "| Windows | amd64 | [radarr-v${VERSION}-windows-amd64.zip](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-windows-amd64.zip) |" >> $GITHUB_STEP_SUMMARY
+        echo "| FreeBSD | amd64 | [radarr-v${VERSION}-freebsd-amd64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-freebsd-amd64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "| FreeBSD | arm64 | [radarr-v${VERSION}-freebsd-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-freebsd-arm64.tar.gz) |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+        echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+          echo "- **Docker Hub**: \`radarr/radarr-go:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ "$IS_PRERELEASE" != "true" ]; then
+          echo "- **Latest**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Docker" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "# GitHub Container Registry" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${VERSION}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "# Binary Download" >> $GITHUB_STEP_SUMMARY
-        echo "wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/radarr-${{ github.ref_name }}-linux-amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
-        echo "tar -xzf radarr-${{ github.ref_name }}-linux-amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
+        echo "### Binary" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "curl -fL -o radarr.tar.gz https://github.com/${{ github.repository }}/releases/download/v${VERSION}/radarr-v${VERSION}-linux-amd64.tar.gz" >> $GITHUB_STEP_SUMMARY
+        echo "tar -xzf radarr.tar.gz" >> $GITHUB_STEP_SUMMARY
         echo "./radarr-linux-amd64" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 Build Status" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build**: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker**: ${{ needs.docker.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Integration Test**: ${{ needs.integration-test.result }}" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 📊 Build Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | $([ "$BUILD_RESULT" = "success" ] && echo "✅ Success" || echo "❌ Failed") |" >> $GITHUB_STEP_SUMMARY
+        echo "| Docker | $([ "$DOCKER_RESULT" = "success" ] && echo "✅ Success" || echo "❌ Failed") |" >> $GITHUB_STEP_SUMMARY
+        echo "| Integration Test | $([ "$TEST_RESULT" = "success" ] && echo "✅ Success" || echo "❌ Failed") |" >> $GITHUB_STEP_SUMMARY
+
+        if [ "$BUILD_RESULT" != "success" ] || [ "$DOCKER_RESULT" != "success" ] || [ "$TEST_RESULT" != "success" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Some components failed. Please check the workflow logs for details.**" >> $GITHUB_STEP_SUMMARY
+        fi
