@@ -316,7 +316,7 @@ jobs:
         fi
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: radarr-${{ matrix.goos }}-${{ matrix.goarch }}
         path: |
@@ -374,7 +374,7 @@ jobs:
 
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       with:
         path: artifacts
         merge-multiple: true
@@ -433,7 +433,7 @@ jobs:
         echo "✅ Artifact collection completed"
 
     - name: Upload collected artifacts
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: release-artifacts-complete
         path: |
@@ -450,7 +450,7 @@ jobs:
 
     steps:
     - name: Download collected artifacts
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
       with:
         name: release-artifacts-complete
         path: release-ready
@@ -487,7 +487,7 @@ jobs:
         echo "🗓️ Full manifest available in release artifacts" >> $GITHUB_STEP_SUMMARY
 
     - name: Upload to GitHub Release
-      uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2
+      uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
       with:
         files: |
           release-ready/artifacts/*
@@ -525,7 +525,7 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
@@ -567,7 +567,7 @@ jobs:
 
     - name: Build and push to GitHub Container Registry
       id: build-ghcr
-      uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -586,7 +586,7 @@ jobs:
     - name: Build and push to Docker Hub
       if: ${{ secrets.DOCKER_USERNAME && secrets.DOCKER_PASSWORD }}
       id: build-docker
-      uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64
