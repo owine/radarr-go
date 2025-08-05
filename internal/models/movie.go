@@ -4,7 +4,10 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Movie represents a movie in the Radarr database
@@ -261,4 +264,60 @@ func (c *Collection) Scan(value interface{}) error {
 	}
 
 	return json.Unmarshal(bytes, c)
+}
+
+// BeforeCreate hook validates movie data before creation
+func (m *Movie) BeforeCreate(_ *gorm.DB) error {
+	if m.TmdbID == 0 {
+		return errors.New("tmdb_id is required for movie creation")
+	}
+	if m.Title == "" {
+		return errors.New("title is required for movie creation")
+	}
+	if m.TitleSlug == "" {
+		return errors.New("title_slug is required for movie creation")
+	}
+	if m.QualityProfileID == 0 {
+		m.QualityProfileID = 1 // Set default quality profile
+	}
+	return nil
+}
+
+// BeforeUpdate hook validates movie data before updates
+func (m *Movie) BeforeUpdate(_ *gorm.DB) error {
+	if m.TmdbID == 0 {
+		return errors.New("tmdb_id cannot be empty")
+	}
+	if m.Title == "" {
+		return errors.New("title cannot be empty")
+	}
+	return nil
+}
+
+// AfterFind hook processes movie data after retrieval
+func (m *Movie) AfterFind(_ *gorm.DB) error {
+	// Set computed fields
+	m.IsAvailable = m.computeAvailability()
+	return nil
+}
+
+// computeAvailability determines if the movie is available based on its status and dates
+func (m *Movie) computeAvailability() bool {
+	now := time.Now()
+
+	switch m.MinimumAvailability {
+	case AvailabilityTBA:
+		return false
+	case AvailabilityAnnounced:
+		return m.Status != MovieStatusTBA
+	case AvailabilityInCinemas:
+		return m.InCinemas != nil && m.InCinemas.Before(now)
+	case AvailabilityReleased:
+		return (m.PhysicalRelease != nil && m.PhysicalRelease.Before(now)) ||
+			(m.DigitalRelease != nil && m.DigitalRelease.Before(now))
+	case AvailabilityPreDB:
+		return m.Status == MovieStatusReleased
+	default:
+		return false
+	}
 }

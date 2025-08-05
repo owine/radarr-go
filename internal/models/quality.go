@@ -4,8 +4,11 @@ package models
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // QualityLevel represents a quality level definition
@@ -226,4 +229,66 @@ func DefaultQualityDefinitions() []*QualityLevel {
 		{ID: 19, Title: "Bluray-2160p", Weight: 27, MinSize: 4.3, MaxSize: 258.1},
 		{ID: 31, Title: "Remux-2160p", Weight: 28, MinSize: 0, MaxSize: 0},
 	}
+}
+
+// BeforeCreate hook validates quality profile data before creation
+func (qp *QualityProfile) BeforeCreate(_ *gorm.DB) error {
+	if qp.Name == "" {
+		return errors.New("quality profile name is required")
+	}
+	if qp.Cutoff == 0 {
+		return errors.New("quality profile cutoff is required")
+	}
+	if len(qp.Items) == 0 {
+		return errors.New("quality profile must have at least one quality item")
+	}
+	return nil
+}
+
+// BeforeUpdate hook validates quality profile data before updates
+func (qp *QualityProfile) BeforeUpdate(_ *gorm.DB) error {
+	if qp.Name == "" {
+		return errors.New("quality profile name cannot be empty")
+	}
+	if qp.Cutoff == 0 {
+		return errors.New("quality profile cutoff cannot be zero")
+	}
+	return nil
+}
+
+// BeforeCreate hook validates quality level data before creation
+func (ql *QualityLevel) BeforeCreate(_ *gorm.DB) error {
+	if ql.Title == "" {
+		return errors.New("quality level title is required")
+	}
+	if ql.Weight <= 0 {
+		ql.Weight = 1 // Set default weight
+	}
+	if ql.MaxSize < 0 {
+		return errors.New("quality level max size cannot be negative")
+	}
+	if ql.MinSize < 0 {
+		return errors.New("quality level min size cannot be negative")
+	}
+	if ql.MinSize > ql.MaxSize && ql.MaxSize > 0 {
+		return errors.New("quality level min size cannot be greater than max size")
+	}
+	return nil
+}
+
+// BeforeUpdate hook validates quality level data before updates
+func (ql *QualityLevel) BeforeUpdate(_ *gorm.DB) error {
+	if ql.Title == "" {
+		return errors.New("quality level title cannot be empty")
+	}
+	if ql.MaxSize < 0 {
+		return errors.New("quality level max size cannot be negative")
+	}
+	if ql.MinSize < 0 {
+		return errors.New("quality level min size cannot be negative")
+	}
+	if ql.MinSize > ql.MaxSize && ql.MaxSize > 0 {
+		return errors.New("quality level min size cannot be greater than max size")
+	}
+	return nil
 }

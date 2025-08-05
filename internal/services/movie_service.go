@@ -1,11 +1,14 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/radarr/radarr-go/internal/database"
 	"github.com/radarr/radarr-go/internal/logger"
 	"github.com/radarr/radarr-go/internal/models"
+	"gorm.io/gorm"
+	"gorm.io/hints"
 )
 
 // MovieService provides operations for managing movies in the database.
@@ -101,10 +104,12 @@ func (s *MovieService) Search(query string) ([]models.Movie, error) {
 	var movies []models.Movie
 
 	searchQuery := "%" + query + "%"
-	err := s.db.GORM.Preload("MovieFile").Where(
-		"title LIKE ? OR original_title LIKE ? OR clean_title LIKE ?",
-		searchQuery, searchQuery, searchQuery,
-	).Find(&movies).Error
+	err := s.db.GORM.
+		Clauses(hints.UseIndex("idx_movie_search")).
+		Preload("MovieFile").
+		Where("title LIKE ? OR original_title LIKE ? OR clean_title LIKE ?",
+			searchQuery, searchQuery, searchQuery,
+		).Find(&movies).Error
 
 	if err != nil {
 		s.logger.Error("Failed to search movies", "query", query, "error", err)
@@ -164,4 +169,136 @@ func (s *MovieService) GetMoviesWithFiles() ([]models.Movie, error) {
 	}
 
 	return movies, nil
+}
+
+// CreateWithFile creates a new movie and its associated file in a transaction
+func (s *MovieService) CreateWithFile(movie *models.Movie, file *models.MovieFile) error {
+	return s.db.GORM.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(movie).Error; err != nil {
+			s.logger.Error("Failed to create movie in transaction", "title", movie.Title, "error", err)
+			return fmt.Errorf("failed to create movie: %w", err)
+		}
+
+		if err := s.handleMovieFileInTransaction(tx, movie, file, "create"); err != nil {
+			return err
+		}
+
+		s.logger.Info("Created movie with file in transaction", "id", movie.ID, "title", movie.Title)
+		return nil
+	})
+}
+
+// handleMovieFileInTransaction handles movie file operations within a transaction
+func (s *MovieService) handleMovieFileInTransaction(
+	tx *gorm.DB, movie *models.Movie, file *models.MovieFile, operation string,
+) error {
+	if file == nil {
+		return nil
+	}
+
+	file.MovieID = movie.ID
+	var err error
+
+	switch operation {
+	case "create":
+		err = tx.Create(file).Error
+		if err != nil {
+			s.logger.Error("Failed to create movie file in transaction", "movieId", movie.ID, "error", err)
+			return fmt.Errorf("failed to create movie file: %w", err)
+		}
+	case "save":
+		err = tx.Save(file).Error
+		if err != nil {
+			s.logger.Error("Failed to save movie file in transaction", "movieId", movie.ID, "error", err)
+			return fmt.Errorf("failed to save movie file: %w", err)
+		}
+	}
+
+	movie.MovieFileID = file.ID
+	movie.HasFile = true
+	if err := tx.Save(movie).Error; err != nil {
+		s.logger.Error("Failed to update movie with file ID", "movieId", movie.ID, "error", err)
+		return fmt.Errorf("failed to update movie with file: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateWithFile updates a movie and creates/updates its associated file in a transaction
+func (s *MovieService) UpdateWithFile(movie *models.Movie, file *models.MovieFile) error {
+	return s.db.GORM.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(movie).Error; err != nil {
+			s.logger.Error("Failed to update movie in transaction", "id", movie.ID, "error", err)
+			return fmt.Errorf("failed to update movie: %w", err)
+		}
+
+		if err := s.handleMovieFileInTransaction(tx, movie, file, "save"); err != nil {
+			return err
+		}
+
+		s.logger.Info("Updated movie with file in transaction", "id", movie.ID, "title", movie.Title)
+		return nil
+	})
+}
+
+// DeleteWithFile removes a movie and its associated file in a transaction
+func (s *MovieService) DeleteWithFile(id int) error {
+	return s.db.GORM.Transaction(func(tx *gorm.DB) error {
+		var movie models.Movie
+		if err := tx.First(&movie, id).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("movie not found: %w", err)
+			}
+			return fmt.Errorf("failed to find movie: %w", err)
+		}
+
+		// Delete associated movie file if exists
+		if movie.MovieFileID > 0 {
+			if err := tx.Delete(&models.MovieFile{}, movie.MovieFileID).Error; err != nil {
+				s.logger.Error("Failed to delete movie file in transaction", "fileId", movie.MovieFileID, "error", err)
+				return fmt.Errorf("failed to delete movie file: %w", err)
+			}
+		}
+
+		if err := tx.Delete(&movie).Error; err != nil {
+			s.logger.Error("Failed to delete movie in transaction", "id", id, "error", err)
+			return fmt.Errorf("failed to delete movie: %w", err)
+		}
+
+		s.logger.Info("Deleted movie with file in transaction", "id", id, "title", movie.Title)
+		return nil
+	})
+}
+
+// GetTotalCount returns the total number of movies in the database
+func (s *MovieService) GetTotalCount() (int64, error) {
+	var count int64
+	err := s.db.GORM.Model(&models.Movie{}).Count(&count).Error
+	if err != nil {
+		s.logger.Error("Failed to get movie count", "error", err)
+		return 0, fmt.Errorf("failed to get movie count: %w", err)
+	}
+	return count, nil
+}
+
+// GetMonitoredCount returns the count of monitored movies
+func (s *MovieService) GetMonitoredCount() (int64, error) {
+	var count int64
+	err := s.db.GORM.Model(&models.Movie{}).Where("monitored = ?", true).Count(&count).Error
+	if err != nil {
+		s.logger.Error("Failed to get monitored movie count", "error", err)
+		return 0, fmt.Errorf("failed to get monitored movie count: %w", err)
+	}
+	return count, nil
+}
+
+// GetMoviesWithFilesCount returns the count of movies with files
+func (s *MovieService) GetMoviesWithFilesCount() (int64, error) {
+	var count int64
+	err := s.db.GORM.Model(&models.Movie{}).Where("has_file = ?", true).Count(&count).Error
+	if err != nil {
+		s.logger.Error("Failed to get movies with files count", "error", err)
+		return 0, fmt.Errorf("failed to get movies with files count: %w", err)
+	}
+	return count, nil
 }

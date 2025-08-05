@@ -67,7 +67,8 @@ func newPostgresDatabase(cfg *config.DatabaseConfig) (*Database, error) {
 	}
 
 	gormDB, err := gorm.Open(gormPostgres.Open(connectionString), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+		Logger:      gormLogger.Default.LogMode(gormLogger.Warn),
+		PrepareStmt: true, // Enable prepared statement caching for better performance
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open gorm postgres connection: %w", err)
@@ -95,7 +96,8 @@ func newMySQLDatabase(cfg *config.DatabaseConfig) (*Database, error) {
 	}
 
 	gormDB, err := gorm.Open(gormMariaDB.Open(connectionString), &gorm.Config{
-		Logger: gormLogger.Default.LogMode(gormLogger.Silent),
+		Logger:      gormLogger.Default.LogMode(gormLogger.Warn),
+		PrepareStmt: true, // Enable prepared statement caching for better performance
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open gorm mariadb connection: %w", err)

@@ -25,6 +25,34 @@ build:
 build-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-linux -v $(MAIN_PATH)
 
+# Build for specific platforms
+build-linux-amd64:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-linux-amd64 -v $(MAIN_PATH)
+
+build-linux-arm64:
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-linux-arm64 -v $(MAIN_PATH)
+
+build-darwin-amd64:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-darwin-amd64 -v $(MAIN_PATH)
+
+build-darwin-arm64:
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-darwin-arm64 -v $(MAIN_PATH)
+
+build-windows-amd64:
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-windows-amd64.exe -v $(MAIN_PATH)
+
+build-windows-arm64:
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-windows-arm64.exe -v $(MAIN_PATH)
+
+build-freebsd-amd64:
+	CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-freebsd-amd64 -v $(MAIN_PATH)
+
+build-freebsd-arm64:
+	CGO_ENABLED=0 GOOS=freebsd GOARCH=arm64 $(GOBUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)-freebsd-arm64 -v $(MAIN_PATH)
+
+# Build all platforms (matches CI pipeline)
+build-all: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 build-windows-amd64 build-windows-arm64 build-freebsd-amd64 build-freebsd-arm64
+
 # Run the application
 run: build
 	./$(BINARY_NAME)
@@ -42,11 +70,20 @@ test-coverage:
 	$(GOTEST) -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out
 
+# Run benchmark tests
+test-bench:
+	$(GOTEST) -bench=. -benchmem ./...
+
+# Run example tests
+test-examples:
+	$(GOTEST) -run Example ./...
+
 # Clean build artifacts
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
-	rm -f $(BINARY_NAME)-linux
+	rm -f $(BINARY_NAME)-*
+	rm -f coverage.out
 
 # Download dependencies
 deps:
@@ -90,7 +127,10 @@ init: deps
 	cp config.yaml data/
 
 # All-in-one build and test
-all: deps fmt lint test build
+all: deps fmt lint test test-bench build
+
+# Development workflow
+dev-all: deps fmt lint test test-examples test-bench test-coverage build
 
 # Development setup
 setup:
