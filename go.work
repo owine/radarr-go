@@ -1,8 +1,6 @@
 go 1.24.0
 
-use (
-	.
-)
+use .
 
 // Go workspace file for multi-module development.
 // This enables easier development when working with multiple related modules
