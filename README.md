@@ -12,7 +12,10 @@ A high-performance Go implementation of Radarr movie collection manager with 100
 - 🔧 **Easy Configuration**: YAML configuration with environment variable overrides
 - 📊 **Comprehensive Logging**: Structured JSON logging with configurable levels
 - 🛡️ **Security**: Built-in security scanning and vulnerability checks
-- 🌐 **Multi-Platform**: Supports Linux, macOS, FreeBSD on amd64/arm64 architectures
+- 🌐 **Multi-Platform**: Supports Linux, macOS, Windows, FreeBSD on amd64/arm64 architectures
+- ⚡ **GORM Optimized**: Advanced database features with prepared statements, transactions, and hooks
+- 📈 **Performance Monitoring**: Comprehensive benchmark tests and example documentation
+- 🏗️ **Go Best Practices**: Modern Go workspace support and multi-module architecture
 
 ## Quick Start
 
@@ -150,12 +153,21 @@ make test
 # Run with coverage
 make test-coverage
 
+# Run benchmark tests
+make test-bench
+
+# Run example tests
+make test-examples
+
 # Test specific database
 RADARR_DATABASE_TYPE=postgres go test -v ./...
 RADARR_DATABASE_TYPE=mariadb go test -v ./...
 
 # Run linting
 make lint
+
+# Run comprehensive quality checks
+make all
 ```
 
 ### CI/CD Pipeline
@@ -163,11 +175,13 @@ make lint
 The project uses a structured CI pipeline:
 
 1. **Concurrent Quality Checks**: Linting and security scanning run in parallel
-2. **Multi-Platform Build**: Binaries built for all supported platforms
-3. **Matrix Testing**: Tests run concurrently across:
-   - Platforms: Linux (amd64/arm64), macOS (amd64/arm64), FreeBSD (amd64/arm64)
+2. **Multi-Platform Build**: Binaries built for all supported platforms including Windows
+3. **Comprehensive Testing Matrix**: Tests run concurrently across:
+   - Platforms: Linux (amd64/arm64), macOS (amd64/arm64), FreeBSD (amd64/arm64), Windows (amd64/arm64)
    - Databases: PostgreSQL, MariaDB
-4. **Publish**: Docker images and release artifacts
+   - Test Types: Unit tests, benchmark tests, example tests
+4. **Performance Monitoring**: Automated benchmark execution for performance regression detection
+5. **Publish**: Docker images and release artifacts
 
 ## API Compatibility
 
@@ -190,13 +204,14 @@ Benchmarks show significant improvements over the original .NET implementation:
 
 ## Architecture
 
-- **Language**: Go 1.24
-- **HTTP Framework**: Gin
-- **Database**: GORM + sqlx hybrid approach with database-specific migrations
+- **Language**: Go 1.24 with workspace support
+- **HTTP Framework**: Gin with optimized middleware
+- **Database**: GORM with prepared statements, transactions, and validation hooks
 - **Configuration**: Viper (YAML + environment variables)
 - **Logging**: Structured JSON with configurable levels
-- **Containerization**: Multi-stage Docker builds
-- **Testing**: Comprehensive matrix testing across platforms/databases
+- **Containerization**: Multi-stage Docker builds with security scanning
+- **Testing**: Comprehensive matrix testing with benchmarks and examples
+- **Development**: Pre-commit hooks, automated formatting, and security checks
 
 ## Contributing
 
@@ -211,11 +226,13 @@ Benchmarks show significant improvements over the original .NET implementation:
 ### Code Quality
 
 The project maintains high code quality standards:
-- golangci-lint with comprehensive rules
-- Security scanning with gosec and govulncheck
+- golangci-lint with comprehensive rules and strict formatting
+- Security scanning with gosec and govulncheck (vulnerability-free)
 - Race condition detection in tests
-- Comprehensive test coverage
-- Automated formatting checks
+- Comprehensive test coverage with benchmarks and examples
+- Automated formatting checks and pre-commit hooks
+- GORM validation hooks for data integrity
+- Performance regression monitoring
 
 ## License
 

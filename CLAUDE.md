@@ -23,8 +23,20 @@ pre-commit run --all-files  # Run hooks on all files (initial setup)
 make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
 
-# Multi-platform building (matches CI)
-# Set version info (optional, will use git info automatically in Makefile)
+# Multi-platform building (matches CI and Makefile)
+make build-all               # Build for all platforms (recommended)
+
+# Individual platform builds
+make build-linux-amd64       # Linux x86_64
+make build-linux-arm64       # Linux ARM64
+make build-darwin-amd64      # macOS Intel
+make build-darwin-arm64      # macOS Apple Silicon
+make build-windows-amd64     # Windows x86_64
+make build-windows-arm64     # Windows ARM64
+make build-freebsd-amd64     # FreeBSD x86_64
+make build-freebsd-arm64     # FreeBSD ARM64
+
+# Manual builds with version info (matches CI exactly)
 export VERSION=v1.0.0
 export COMMIT=$(git rev-parse --short HEAD)
 export BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
@@ -34,6 +46,8 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-lin
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-linux-arm64 ./cmd/radarr
 GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-darwin-amd64 ./cmd/radarr
 GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-darwin-arm64 ./cmd/radarr
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-windows-amd64.exe ./cmd/radarr
+GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-windows-arm64.exe ./cmd/radarr
 GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-freebsd-amd64 ./cmd/radarr
 GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$LDFLAGS" -o radarr-freebsd-arm64 ./cmd/radarr
 
@@ -45,6 +59,8 @@ make dev                     # Run with hot reload (requires air)
 # Testing
 make test                    # Run all tests
 make test-coverage           # Run tests with HTML coverage report
+make test-bench              # Run benchmark tests for performance monitoring
+make test-examples           # Run example tests for documentation validation
 go test ./internal/api -v    # Run specific package tests
 go test -run TestPingHandler ./internal/api  # Run single test
 
@@ -56,6 +72,7 @@ RADARR_DATABASE_TYPE=mariadb go test -v ./...    # Requires MariaDB server
 make fmt                     # Format code
 make lint                    # Run linter (requires golangci-lint)
 make all                     # Format, lint, test, and build
+make dev-all                 # Comprehensive development workflow
 ```
 
 ### Database Operations
@@ -101,23 +118,40 @@ All services are managed through a `services.Container` that provides dependency
 - `QualityService`, `IndexerService`, etc.: Domain-specific operations
 
 ### Database Architecture
+- **GORM Optimized**: Enhanced with prepared statements, transactions, and validation hooks
+- **Performance Features**: Index hints, connection pooling, and optimized query patterns
 - **Hybrid Strategy**: GORM for complex operations, sqlc for performance-critical queries
 - **Migration System**: golang-migrate for schema management
-- **Multi-Database**: PostgreSQL (default) and MariaDB support
+- **Multi-Database**: PostgreSQL (default) and MariaDB support with database-specific optimizations
 - **Connection Management**: Configurable connection pooling with pgx for PostgreSQL
 - **Pure Go Strategy**: PostgreSQL (pgx driver) and MariaDB with native Go drivers (CGO_ENABLED=0)
+- **Data Integrity**: GORM validation hooks with business logic enforcement
 
 ### CI/CD Architecture
 The project uses a structured CI pipeline with concurrent execution:
 
-**Stage 1**: Concurrent quality checks (lint + security)
-**Stage 2**: Multi-platform build (after quality checks pass)
-**Stage 3**: Matrix testing (PostgreSQL + MariaDB on amd64/arm64)
+**Stage 1**: Concurrent quality checks (lint + security + workspace validation)
+**Stage 2**: Multi-platform build (after quality checks pass) including Windows
+**Stage 3**: Comprehensive matrix testing (PostgreSQL + MariaDB on amd64/arm64)
+  - **Test Types**: Unit tests, benchmark tests, example tests
   - **Linux**: Service containers for both databases
   - **macOS/FreeBSD**: Native installation testing
+  - **Performance Monitoring**: Automated benchmark execution
 **Stage 4**: Publish (Docker images + artifacts after all tests pass)
 
-Supported platforms: Linux, Darwin, FreeBSD on amd64/arm64 architectures.
+Supported platforms: Linux, Darwin, Windows, FreeBSD on amd64/arm64 architectures.
+
+### Go Workspace and Modern Practices
+The project now includes Go 1.24+ workspace support and follows modern Go best practices:
+
+- **Go Workspace**: `go.work` file for multi-module development support
+- **Benchmark Testing**: Performance regression monitoring with `make test-bench`
+- **Example Testing**: Documentation validation with `make test-examples`
+- **Package Documentation**: Comprehensive `doc.go` files with usage examples
+- **Multi-Platform Builds**: Full cross-compilation support including Windows
+- **Pre-commit Hooks**: Automated quality checks with formatting, linting, and tests
+- **GORM Best Practices**: Prepared statements, transactions, validation hooks, and index hints
+- **Security Scanning**: Continuous vulnerability monitoring with govulncheck
 
 ## Key Patterns and Conventions
 

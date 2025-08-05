@@ -19,8 +19,8 @@ radarr-windows-*
 *.out
 coverage.out
 
-# Go workspace file
-go.work
+# Go workspace sum file (go.work should be committed)
+# go.work.sum is handled automatically
 
 # Dependency directories
 vendor/
