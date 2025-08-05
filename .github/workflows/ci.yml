@@ -47,9 +47,10 @@ jobs:
     - name: Check Go modules
       run: |
         go mod tidy
-        if ! git diff --quiet go.mod go.sum; then
-          echo "go.mod or go.sum needs to be updated"
-          git diff go.mod go.sum
+        go work sync
+        if ! git diff --quiet go.mod go.sum go.work.sum; then
+          echo "go.mod, go.sum, or go.work.sum needs to be updated"
+          git diff go.mod go.sum go.work.sum
           exit 1
         fi
 
@@ -133,6 +134,10 @@ jobs:
         GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-darwin-amd64 ./cmd/radarr
         GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-darwin-arm64 ./cmd/radarr
 
+        # Windows
+        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-windows-amd64.exe ./cmd/radarr
+        GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-windows-arm64.exe ./cmd/radarr
+
         # FreeBSD
         GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-freebsd-amd64 ./cmd/radarr
         GOOS=freebsd GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="${LDFLAGS}" -o artifacts/radarr-freebsd-arm64 ./cmd/radarr
@@ -203,6 +208,28 @@ jobs:
     - name: Run tests (MariaDB)
       run: |
         go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-mariadb.out ./...
+      env:
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run benchmark tests (MariaDB)
+      run: |
+        go test -bench=. -benchmem ./...
+      env:
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run example tests (MariaDB)
+      run: |
+        go test -run=Example ./...
       env:
         RADARR_DATABASE_TYPE: mariadb
         RADARR_DATABASE_HOST: localhost
@@ -346,6 +373,28 @@ jobs:
         RADARR_DATABASE_USERNAME: test_user
         RADARR_DATABASE_PASSWORD: test_password_123
 
+    - name: Run benchmark tests (MariaDB)
+      run: |
+        go test -bench=. -benchmem ./...
+      env:
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run example tests (MariaDB)
+      run: |
+        go test -run=Example ./...
+      env:
+        RADARR_DATABASE_TYPE: mariadb
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 3306
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
       with:
@@ -412,6 +461,28 @@ jobs:
     - name: Run tests (PostgreSQL)
       run: |
         go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres.out ./...
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run benchmark tests (PostgreSQL)
+      run: |
+        go test -bench=. -benchmem ./...
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run example tests (PostgreSQL)
+      run: |
+        go test -run=Example ./...
       env:
         RADARR_DATABASE_TYPE: postgres
         RADARR_DATABASE_HOST: localhost
@@ -540,6 +611,34 @@ jobs:
           export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
         fi
         go test -v -race -coverprofile=coverage-${{ matrix.os }}-${{ matrix.arch }}-postgres.out ./...
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run benchmark tests (PostgreSQL)
+      run: |
+        if [ "${{ matrix.os }}" = "darwin" ]; then
+          export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+        fi
+        go test -bench=. -benchmem ./...
+      env:
+        RADARR_DATABASE_TYPE: postgres
+        RADARR_DATABASE_HOST: localhost
+        RADARR_DATABASE_PORT: 5432
+        RADARR_DATABASE_DATABASE: radarr_test
+        RADARR_DATABASE_USERNAME: test_user
+        RADARR_DATABASE_PASSWORD: test_password_123
+
+    - name: Run example tests (PostgreSQL)
+      run: |
+        if [ "${{ matrix.os }}" = "darwin" ]; then
+          export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+        fi
+        go test -run=Example ./...
       env:
         RADARR_DATABASE_TYPE: postgres
         RADARR_DATABASE_HOST: localhost
