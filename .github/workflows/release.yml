@@ -1,5 +1,6 @@
 name: Release
 
+# Only run on published releases, not on push events
 on:
   release:
     types: [published]
