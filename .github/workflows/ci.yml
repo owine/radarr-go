@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -70,7 +70,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -89,7 +89,7 @@ jobs:
 
     - name: Upload SARIF file
       if: always()
-      uses: github/codeql-action/upload-sarif@51f77329afa6477de8c49fc9c7046c15b9a4e79d # v3
+      uses: github/codeql-action/upload-sarif@df559355d593797519d70b90fc8edd5db049e7a2 # v3
       with:
         sarif_file: gosec.sarif
       continue-on-error: true
@@ -107,7 +107,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -173,7 +173,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:11@sha256:2bcbaec92bd9d4f6591bc8103d3a8e6d0512ee2235506e47a2e129d190444405
+        image: mariadb:11@sha256:272084c2dec70619714df329c4ffcb336e3f8c723072c3f56f2e4015997bbf2c
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
@@ -189,7 +189,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -321,7 +321,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -427,7 +427,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine@sha256:6567bca8d7bc8c82c5922425a0baee57be8402df92bae5eacad5f01ae9544daa
+        image: postgres:17-alpine@sha256:fff4f6633986df3188f3322cf3bebf6da57e29fdaf35b402a64e7767e00092cc
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
@@ -442,7 +442,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -564,7 +564,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -674,7 +674,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
     - name: Download build artifacts
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
