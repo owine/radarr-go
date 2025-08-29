@@ -71,6 +71,12 @@ func setupTestDB(t *testing.T) (*database.Database, *logger.Logger) {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
 
+	// Run database migrations to create tables
+	err = database.Migrate(db, testLogger)
+	if err != nil {
+		t.Fatalf("Failed to run database migrations: %v", err)
+	}
+
 	return db, testLogger
 }
 

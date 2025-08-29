@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
@@ -203,6 +205,33 @@ func buildMariaDBConnectionString(cfg *config.DatabaseConfig) string {
 		username, cfg.Password, host, port, database)
 }
 
+// findProjectRoot finds the project root directory by looking for go.mod
+func findProjectRoot() (string, error) {
+	// Start from current working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	// Walk up the directory tree looking for go.mod
+	dir := wd
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached filesystem root
+			break
+		}
+		dir = parent
+	}
+
+	// Fallback to current directory
+	return wd, nil
+}
+
 // Migrate runs database migrations to update the schema
 func Migrate(db *Database, logger *logger.Logger) error {
 	var driver database.Driver
@@ -215,19 +244,26 @@ func Migrate(db *Database, logger *logger.Logger) error {
 		return fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
+	// Find project root for migration paths
+	projectRoot, err := findProjectRoot()
+	if err != nil {
+		logger.Warn("Could not find project root, using current directory", "error", err)
+		projectRoot = "."
+	}
+
 	// Determine database type from GORM dialector
 	var driverName string
 	dialectorName := db.GORM.Name()
 	switch dialectorName {
 	case postgresType:
-		sourceURL = "file://./migrations/postgres"
+		sourceURL = fmt.Sprintf("file://%s/migrations/postgres", projectRoot)
 		driverName = postgresType
 		driver, err = migratePostgres.WithInstance(sqlDB, &migratePostgres.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create postgres driver: %w", err)
 		}
 	case mysqlType:
-		sourceURL = "file://./migrations/mysql"
+		sourceURL = fmt.Sprintf("file://%s/migrations/mysql", projectRoot)
 		driverName = mysqlType
 		driver, err = migrateMySQL.WithInstance(sqlDB, &migrateMySQL.Config{})
 		if err != nil {
