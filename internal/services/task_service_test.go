@@ -5,10 +5,95 @@ import (
 	"testing"
 	"time"
 
+	"github.com/radarr/radarr-go/internal/database"
+	"github.com/radarr/radarr-go/internal/logger"
 	"github.com/radarr/radarr-go/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// setupTaskServiceForTesting sets up the task service with required migrations
+func setupTaskServiceForTesting(t *testing.T, db *database.Database, logger *logger.Logger) *TaskService {
+	// Auto-migrate task tables
+	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	require.NoError(t, err)
+
+	return NewTaskService(db, logger)
+}
+
+// createTestTasks creates standard test tasks for testing
+func createTestTasks(t *testing.T, db *database.Database) {
+	tasks := []*models.Task{
+		{
+			Name:        "Task 1",
+			CommandName: "Command1",
+			Status:      models.TaskStatusQueued,
+			Priority:    models.TaskPriorityHigh,
+			Trigger:     models.TaskTriggerApi,
+			QueuedAt:    time.Now(),
+			Body:        models.TaskBody{},
+			Progress:    models.TaskProgress{},
+		},
+		{
+			Name:        "Task 2",
+			CommandName: "Command2",
+			Status:      models.TaskStatusCompleted,
+			Priority:    models.TaskPriorityNormal,
+			Trigger:     models.TaskTriggerScheduled,
+			QueuedAt:    time.Now(),
+			Body:        models.TaskBody{},
+			Progress:    models.TaskProgress{},
+		},
+		{
+			Name:        "Task 3",
+			CommandName: "Command1",
+			Status:      models.TaskStatusFailed,
+			Priority:    models.TaskPriorityLow,
+			Trigger:     models.TaskTriggerManual,
+			QueuedAt:    time.Now(),
+			Body:        models.TaskBody{},
+			Progress:    models.TaskProgress{},
+		},
+	}
+
+	for _, task := range tasks {
+		err := db.GORM.Create(task).Error
+		require.NoError(t, err)
+	}
+}
+
+// testListAllTasks tests listing all tasks without filters
+func testListAllTasks(t *testing.T, service *TaskService) {
+	allTasks, total, err := service.ListTasks("", "", 10, 0)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
+	assert.Len(t, allTasks, 3)
+}
+
+// testFilterByStatus tests filtering tasks by status
+func testFilterByStatus(t *testing.T, service *TaskService) {
+	queuedTasks, total, err := service.ListTasks(models.TaskStatusQueued, "", 10, 0)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, queuedTasks, 1)
+	assert.Equal(t, "Task 1", queuedTasks[0].Name)
+}
+
+// testFilterByCommand tests filtering tasks by command name
+func testFilterByCommand(t *testing.T, service *TaskService) {
+	command1Tasks, total, err := service.ListTasks("", "Command1", 10, 0)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), total)
+	assert.Len(t, command1Tasks, 2)
+}
+
+// testTaskPagination tests task list pagination
+func testTaskPagination(t *testing.T, service *TaskService) {
+	paginatedTasks, total, err := service.ListTasks("", "", 2, 1)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
+	assert.Len(t, paginatedTasks, 2)
+}
 
 // TestTaskHandler is a mock task handler for testing
 type TestTaskHandler struct {
@@ -139,76 +224,22 @@ func TestTaskService_ListTasks(t *testing.T) {
 	db, logger := setupTestDB(t)
 	defer cleanupTestDB(db)
 
-	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
-	require.NoError(t, err)
-
-	service := NewTaskService(db, logger)
+	service := setupTaskServiceForTesting(t, db, logger)
 	defer service.Shutdown()
 
-	// Create test tasks
-	tasks := []*models.Task{
-		{
-			Name:        "Task 1",
-			CommandName: "Command1",
-			Status:      models.TaskStatusQueued,
-			Priority:    models.TaskPriorityHigh,
-			Trigger:     models.TaskTriggerApi,
-			QueuedAt:    time.Now(),
-			Body:        models.TaskBody{},
-			Progress:    models.TaskProgress{},
-		},
-		{
-			Name:        "Task 2",
-			CommandName: "Command2",
-			Status:      models.TaskStatusCompleted,
-			Priority:    models.TaskPriorityNormal,
-			Trigger:     models.TaskTriggerScheduled,
-			QueuedAt:    time.Now(),
-			Body:        models.TaskBody{},
-			Progress:    models.TaskProgress{},
-		},
-		{
-			Name:        "Task 3",
-			CommandName: "Command1",
-			Status:      models.TaskStatusFailed,
-			Priority:    models.TaskPriorityLow,
-			Trigger:     models.TaskTriggerManual,
-			QueuedAt:    time.Now(),
-			Body:        models.TaskBody{},
-			Progress:    models.TaskProgress{},
-		},
-	}
-
-	for _, task := range tasks {
-		err = db.GORM.Create(task).Error
-		require.NoError(t, err)
-	}
+	createTestTasks(t, db)
 
 	// Test listing all tasks
-	allTasks, total, err := service.ListTasks("", "", 10, 0)
-	require.NoError(t, err)
-	assert.Equal(t, int64(3), total)
-	assert.Len(t, allTasks, 3)
+	testListAllTasks(t, service)
 
 	// Test filtering by status
-	queuedTasks, total, err := service.ListTasks(models.TaskStatusQueued, "", 10, 0)
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), total)
-	assert.Len(t, queuedTasks, 1)
-	assert.Equal(t, "Task 1", queuedTasks[0].Name)
+	testFilterByStatus(t, service)
 
 	// Test filtering by command
-	command1Tasks, total, err := service.ListTasks("", "Command1", 10, 0)
-	require.NoError(t, err)
-	assert.Equal(t, int64(2), total)
-	assert.Len(t, command1Tasks, 2)
+	testFilterByCommand(t, service)
 
 	// Test pagination
-	paginatedTasks, total, err := service.ListTasks("", "", 2, 1)
-	require.NoError(t, err)
-	assert.Equal(t, int64(3), total)
-	assert.Len(t, paginatedTasks, 2)
+	testTaskPagination(t, service)
 }
 
 func TestTaskService_CancelTask(t *testing.T) {

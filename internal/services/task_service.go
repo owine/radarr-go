@@ -11,6 +11,7 @@ import (
 	"github.com/radarr/radarr-go/internal/database"
 	"github.com/radarr/radarr-go/internal/logger"
 	"github.com/radarr/radarr-go/internal/models"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -325,33 +326,61 @@ func (pool *TaskWorkerPool) worker(ctx context.Context, service *TaskService) {
 
 // executeTask runs a single task
 func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskService, task *models.Task) {
-	logger := pool.logger.With("taskId", task.ID, "command", task.CommandName)
+	if pool.shouldAbortTaskBeforeExecution(service, task) {
+		return
+	}
 
-	// Check if task was cancelled before execution
+	startTime := pool.markTaskAsStarted(service, task)
+	if startTime.IsZero() {
+		return
+	}
+
+	handler := pool.findTaskHandler(service, task)
+	if handler == nil {
+		return
+	}
+
+	taskErr := pool.executeTaskWithHandler(ctx, service, task, handler)
+
+	pool.finalizeTaskExecution(service, task, taskErr, startTime)
+}
+
+// shouldAbortTaskBeforeExecution checks if task should be aborted before execution
+func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService, task *models.Task) bool {
+	logger := pool.logger.With("taskId", task.ID)
 	var currentStatus models.TaskStatus
 	if err := service.db.GORM.Model(&models.Task{}).Where("id = ?", task.ID).
 		Select("status").Scan(&currentStatus).Error; err != nil {
 		logger.Errorw("Failed to check task status before execution", "error", err)
-		return
+		return true
 	}
 
 	if currentStatus == models.TaskStatusCancelling {
 		if err := service.updateTaskStatus(task.ID, models.TaskStatusAborted, "Task was cancelled before execution", nil); err != nil {
 			logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
 		}
-		return
+		return true
 	}
 
-	// Mark task as started
+	return false
+}
+
+// markTaskAsStarted marks task as started and returns start time
+func (pool *TaskWorkerPool) markTaskAsStarted(service *TaskService, task *models.Task) time.Time {
+	logger := pool.logger.With("taskId", task.ID)
 	startTime := time.Now()
 	if err := service.updateTaskStatus(task.ID, models.TaskStatusStarted, "Task execution started", &startTime); err != nil {
 		logger.Errorw("Failed to update task status to started", "error", err)
-		return
+		return time.Time{} // Return zero time to indicate failure
 	}
 
 	logger.Infow("Task execution started")
+	return startTime
+}
 
-	// Find handler for this command
+// findTaskHandler finds and validates the handler for a task
+func (pool *TaskWorkerPool) findTaskHandler(service *TaskService, task *models.Task) TaskHandler {
+	logger := pool.logger.With("taskId", task.ID)
 	service.executionMutex.RLock()
 	handler, exists := service.handlers[task.CommandName]
 	service.executionMutex.RUnlock()
@@ -363,9 +392,18 @@ func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskServic
 			logger.Errorw("Failed to update task status to failed", "taskId", task.ID, "error", updateErr)
 		}
 		logger.Errorw("Task failed: no handler", "error", err)
-		return
+		return nil
 	}
 
+	return handler
+}
+
+// executeTaskWithHandler executes the task using the provided handler
+func (pool *TaskWorkerPool) executeTaskWithHandler(
+	ctx context.Context, service *TaskService, task *models.Task,
+	handler TaskHandler,
+) error {
+	logger := pool.logger.With("taskId", task.ID)
 	// Create progress update function
 	updateProgress := func(percent int, message string) {
 		if err := service.updateTaskProgress(task.ID, percent, message); err != nil {
@@ -373,7 +411,7 @@ func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskServic
 		}
 	}
 
-	// Execute the task
+	// Execute the task with panic recovery
 	var taskErr error
 	func() {
 		defer func() {
@@ -383,56 +421,88 @@ func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskServic
 			}
 		}()
 
-		// Create task-specific context with cancellation
-		taskCtx, taskCancel := context.WithCancel(ctx)
-		defer taskCancel()
-
-		// Start goroutine to monitor for cancellation
-		go func() {
-			ticker := time.NewTicker(5 * time.Second)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-taskCtx.Done():
-					return
-				case <-ticker.C:
-					var status models.TaskStatus
-					if err := service.db.GORM.Model(&models.Task{}).Where("id = ?", task.ID).
-						Select("status").Scan(&status).Error; err != nil {
-						continue
-					}
-					if status == models.TaskStatusCancelling {
-						taskCancel()
-						return
-					}
-				}
-			}
-		}()
-
+		taskCtx := pool.createCancellableTaskContext(ctx, service, task)
 		taskErr = handler.Execute(taskCtx, task, updateProgress)
 	}()
 
-	// Update task status based on result
+	return taskErr
+}
+
+// createCancellableTaskContext creates a context that can be cancelled by monitoring task status
+func (pool *TaskWorkerPool) createCancellableTaskContext(
+	ctx context.Context, service *TaskService, task *models.Task,
+) context.Context {
+	taskCtx, taskCancel := context.WithCancel(ctx)
+
+	// Start goroutine to monitor for cancellation
+	go func() {
+		defer taskCancel()
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-taskCtx.Done():
+				return
+			case <-ticker.C:
+				var status models.TaskStatus
+				if err := service.db.GORM.Model(&models.Task{}).Where("id = ?", task.ID).
+					Select("status").Scan(&status).Error; err != nil {
+					continue
+				}
+				if status == models.TaskStatusCancelling {
+					return
+				}
+			}
+		}
+	}()
+
+	return taskCtx
+}
+
+// finalizeTaskExecution updates final task status based on execution result
+func (pool *TaskWorkerPool) finalizeTaskExecution(
+	service *TaskService, task *models.Task, taskErr error, startTime time.Time,
+) {
 	endTime := time.Now()
+	logger := pool.logger.With("taskId", task.ID)
+
 	if taskErr != nil {
-		if ctx.Err() != nil || errors.Is(taskErr, context.Canceled) {
-			if err := service.updateTaskStatus(task.ID, models.TaskStatusAborted, "Task was cancelled", &endTime); err != nil {
-				logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
-			}
-			logger.Infow("Task was cancelled")
-		} else {
-			if err := service.updateTaskStatus(task.ID, models.TaskStatusFailed, taskErr.Error(), &endTime); err != nil {
-				logger.Errorw("Failed to update task status to failed", "taskId", task.ID, "error", err)
-			}
-			logger.Errorw("Task failed", "error", taskErr)
-		}
+		pool.handleTaskFailure(service, task, taskErr, endTime, logger)
 	} else {
-		if err := service.updateTaskStatus(task.ID, models.TaskStatusCompleted, "Task completed successfully", &endTime); err != nil {
-			logger.Errorw("Failed to update task status to completed", "taskId", task.ID, "error", err)
-		}
-		logger.Infow("Task completed successfully", "duration", endTime.Sub(startTime))
+		pool.handleTaskSuccess(service, task, endTime, startTime, logger)
 	}
+}
+
+// handleTaskFailure handles task failure scenarios
+func (pool *TaskWorkerPool) handleTaskFailure(
+	service *TaskService, task *models.Task, taskErr error,
+	endTime time.Time, logger *zap.SugaredLogger,
+) {
+	if errors.Is(taskErr, context.Canceled) {
+		if err := service.updateTaskStatus(task.ID, models.TaskStatusAborted, "Task was cancelled", &endTime); err != nil {
+			logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
+		}
+		logger.Infow("Task was cancelled")
+	} else {
+		if err := service.updateTaskStatus(task.ID, models.TaskStatusFailed, taskErr.Error(), &endTime); err != nil {
+			logger.Errorw("Failed to update task status to failed", "taskId", task.ID, "error", err)
+		}
+		logger.Errorw("Task failed", "error", taskErr)
+	}
+}
+
+// handleTaskSuccess handles successful task completion
+func (pool *TaskWorkerPool) handleTaskSuccess(
+	service *TaskService, task *models.Task, endTime, startTime time.Time,
+	logger *zap.SugaredLogger,
+) {
+	if err := service.updateTaskStatus(
+		task.ID, models.TaskStatusCompleted, "Task completed successfully", &endTime,
+	); err != nil {
+		logger.Errorw("Failed to update task status to completed", "taskId", task.ID, "error", err)
+	}
+	logger.Infow("Task completed successfully", "duration", endTime.Sub(startTime))
 }
 
 // getActiveTasks returns a slice of active task IDs

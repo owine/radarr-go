@@ -21,7 +21,8 @@ type WantedMoviesService struct {
 }
 
 // NewWantedMoviesService creates a new instance of WantedMoviesService
-func NewWantedMoviesService(db *database.Database, logger *logger.Logger, movieService *MovieService, qualityService *QualityService) *WantedMoviesService {
+func NewWantedMoviesService(db *database.Database, logger *logger.Logger,
+	movieService *MovieService, qualityService *QualityService) *WantedMoviesService {
 	return &WantedMoviesService{
 		db:             db,
 		logger:         logger,
@@ -91,7 +92,8 @@ func (s *WantedMoviesService) GetMissingMovies(filter *models.WantedMovieFilter)
 }
 
 // GetCutoffUnmetMovies retrieves all movies with files below quality cutoff
-func (s *WantedMoviesService) GetCutoffUnmetMovies(filter *models.WantedMovieFilter) (*models.WantedMoviesResponse, error) {
+func (s *WantedMoviesService) GetCutoffUnmetMovies(
+	filter *models.WantedMovieFilter) (*models.WantedMoviesResponse, error) {
 	if filter == nil {
 		filter = &models.WantedMovieFilter{
 			Page:     1,
@@ -234,9 +236,13 @@ func (s *WantedMoviesService) applyFilters(query *gorm.DB, filter *models.Wanted
 
 	if filter.SearchRequired != nil {
 		if *filter.SearchRequired {
-			query = query.Where("search_attempts < max_search_attempts AND (next_search_time IS NULL OR next_search_time <= ?)", time.Now())
+			query = query.Where(
+				"search_attempts < max_search_attempts AND (next_search_time IS NULL OR next_search_time <= ?)",
+				time.Now())
 		} else {
-			query = query.Where("search_attempts >= max_search_attempts OR (next_search_time IS NOT NULL AND next_search_time > ?)", time.Now())
+			query = query.Where(
+				"search_attempts >= max_search_attempts OR (next_search_time IS NOT NULL AND next_search_time > ?)",
+				time.Now())
 		}
 	}
 
@@ -393,7 +399,8 @@ func (s *WantedMoviesService) analyzeMovie(movie *models.Movie, created, updated
 }
 
 // determineWantedStatus determines if a movie is wanted and why
-func (s *WantedMoviesService) determineWantedStatus(movie *models.Movie, profile *models.QualityProfile) (models.WantedStatus, *int, int, string) {
+func (s *WantedMoviesService) determineWantedStatus(movie *models.Movie,
+	profile *models.QualityProfile) (models.WantedStatus, *int, int, string) {
 	// Movie must be monitored and available to be wanted
 	if !movie.Monitored || !movie.IsAvailable {
 		return "", nil, 0, ""

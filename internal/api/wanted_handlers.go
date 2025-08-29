@@ -138,14 +138,16 @@ func (s *Server) handleTriggerWantedSearch(c *gin.Context) {
 	// Trigger searches for the selected movies
 	searchedCount := 0
 	for _, wantedMovie := range moviesToSearch {
-		if _, err := s.services.SearchService.SearchMovieReleases(wantedMovie.MovieID, searchTrigger.ForceSearch); err != nil {
+		if _, err := s.services.SearchService.SearchMovieReleases(
+			wantedMovie.MovieID, searchTrigger.ForceSearch); err != nil {
 			s.logger.Error("Failed to trigger search for wanted movie", "movieId", wantedMovie.MovieID, "error", err)
 			continue
 		}
 		searchedCount++
 
 		// Update search attempt tracking
-		if err := s.services.WantedMoviesService.UpdateSearchAttempt(wantedMovie.ID, false, "Search triggered", "", ""); err != nil {
+		if err := s.services.WantedMoviesService.UpdateSearchAttempt(
+			wantedMovie.ID, false, "Search triggered", "", ""); err != nil {
 			s.logger.Error("Failed to update search attempt tracking", "wantedMovieId", wantedMovie.ID, "error", err)
 		}
 	}
@@ -173,7 +175,9 @@ func (s *Server) handleWantedBulkOperation(c *gin.Context) {
 	err := s.services.WantedMoviesService.BulkOperation(&operation)
 	if err != nil {
 		s.logger.Error("Failed to perform bulk operation", "operation", operation.Operation, "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to perform bulk operation: %s", err.Error())})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Failed to perform bulk operation: %s", err.Error()),
+		})
 		return
 	}
 

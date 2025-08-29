@@ -141,7 +141,9 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 			Type:     d.Type(),
 			Source:   d.Name(),
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("Database connection pool experiencing waits (count: %d, duration: %v)", stats.WaitCount, stats.WaitDuration),
+			Message: fmt.Sprintf(
+				"Database connection pool experiencing waits (count: %d, duration: %v)",
+				stats.WaitCount, stats.WaitDuration),
 		})
 		if result.Status == models.HealthStatusHealthy {
 			result.Status = models.HealthStatusWarning

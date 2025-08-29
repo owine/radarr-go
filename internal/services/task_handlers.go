@@ -28,38 +28,17 @@ func NewRefreshMovieHandler(movieService MovieServiceInterface, metadataService 
 func (h *RefreshMovieHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
 	updateProgress(0, "Starting movie refresh")
 
-	// Get movie ID from task body
-	movieIDValue, exists := task.Body["movieId"]
-	if !exists {
-		return fmt.Errorf("movieId not found in task body")
-	}
-
-	var movieID int
-	switch v := movieIDValue.(type) {
-	case int:
-		movieID = v
-	case float64:
-		movieID = int(v)
-	case string:
-		var err error
-		movieID, err = strconv.Atoi(v)
-		if err != nil {
-			return fmt.Errorf("invalid movieId format: %v", v)
-		}
-	default:
-		return fmt.Errorf("invalid movieId type: %T", v)
+	movieID, err := h.extractMovieID(task)
+	if err != nil {
+		return err
 	}
 
 	updateProgress(10, "Fetching movie from database")
 
-	// Check if context is cancelled
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := h.checkContext(ctx); err != nil {
+		return err
 	}
 
-	// Get movie from database
 	movie, err := h.movieService.GetByID(movieID)
 	if err != nil {
 		return fmt.Errorf("failed to get movie %d: %w", movieID, err)
@@ -67,34 +46,59 @@ func (h *RefreshMovieHandler) Execute(ctx context.Context, task *models.Task, up
 
 	updateProgress(25, "Refreshing metadata from TMDB")
 
-	// Check if context is cancelled
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := h.checkContext(ctx); err != nil {
+		return err
 	}
 
-	// Refresh metadata from TMDB
 	if err := h.metadataService.RefreshMovieMetadata(movieID); err != nil {
 		return fmt.Errorf("failed to refresh metadata for movie %d: %w", movieID, err)
 	}
 
 	updateProgress(75, "Updating movie in database")
 
-	// Check if context is cancelled
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := h.checkContext(ctx); err != nil {
+		return err
 	}
 
-	// Update movie in database
 	if err := h.movieService.Update(movie); err != nil {
 		return fmt.Errorf("failed to update movie %d: %w", movieID, err)
 	}
 
 	updateProgress(100, "Movie refresh completed")
 	return nil
+}
+
+// extractMovieID extracts the movie ID from the task body
+func (h *RefreshMovieHandler) extractMovieID(task *models.Task) (int, error) {
+	movieIDValue, exists := task.Body["movieId"]
+	if !exists {
+		return 0, fmt.Errorf("movieId not found in task body")
+	}
+
+	switch v := movieIDValue.(type) {
+	case int:
+		return v, nil
+	case float64:
+		return int(v), nil
+	case string:
+		movieID, err := strconv.Atoi(v)
+		if err != nil {
+			return 0, fmt.Errorf("invalid movieId format: %v", v)
+		}
+		return movieID, nil
+	default:
+		return 0, fmt.Errorf("invalid movieId type: %T", v)
+	}
+}
+
+// checkContext checks if the context is cancelled
+func (h *RefreshMovieHandler) checkContext(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
 }
 
 // GetName returns the command name this handler processes
@@ -125,10 +129,9 @@ func NewRefreshAllMoviesHandler(movieService MovieServiceInterface, metadataServ
 func (h *RefreshAllMoviesHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
 	updateProgress(0, "Starting bulk movie refresh")
 
-	// Get all movies
-	movies, err := h.movieService.GetAll()
+	movies, err := h.getAllMoviesForRefresh()
 	if err != nil {
-		return fmt.Errorf("failed to list movies: %w", err)
+		return err
 	}
 
 	if len(movies) == 0 {
@@ -138,52 +141,91 @@ func (h *RefreshAllMoviesHandler) Execute(ctx context.Context, task *models.Task
 
 	updateProgress(10, fmt.Sprintf("Found %d movies to refresh", len(movies)))
 
-	// Process movies in batches
+	processed := h.processMoviesInBatches(ctx, movies, updateProgress)
+
+	updateProgress(100, fmt.Sprintf("Completed refreshing %d movies", processed))
+	return nil
+}
+
+// getAllMoviesForRefresh gets all movies that need metadata refresh
+func (h *RefreshAllMoviesHandler) getAllMoviesForRefresh() ([]models.Movie, error) {
+	movies, err := h.movieService.GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list movies: %w", err)
+	}
+	return movies, nil
+}
+
+// processMoviesInBatches processes movies in batches to refresh their metadata
+func (h *RefreshAllMoviesHandler) processMoviesInBatches(
+	ctx context.Context, movies []models.Movie,
+	updateProgress func(percent int, message string),
+) int {
 	processed := 0
 	batchSize := 10
+
 	for i := 0; i < len(movies); i += batchSize {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		if ctx.Err() != nil {
+			break
 		}
 
-		end := i + batchSize
-		if end > len(movies) {
-			end = len(movies)
-		}
-
-		batch := movies[i:end]
-		for _, movie := range batch {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			updateProgress(10+((processed*80)/len(movies)),
-				fmt.Sprintf("Refreshing movie: %s (%d/%d)", movie.Title, processed+1, len(movies)))
-
-			if err := h.metadataService.RefreshMovieMetadata(movie.ID); err != nil {
-				// Log error but continue with other movies
-				updateProgress(10+((processed*80)/len(movies)),
-					fmt.Sprintf("Failed to refresh movie: %s - %v", movie.Title, err))
-			} else {
-				if err := h.movieService.Update(&movie); err != nil {
-					updateProgress(10+((processed*80)/len(movies)),
-						fmt.Sprintf("Failed to save movie: %s - %v", movie.Title, err))
-				}
-			}
-
-			processed++
-		}
+		batch := h.getBatch(movies, i, batchSize)
+		processed += h.processBatch(ctx, batch, movies, processed, updateProgress)
 
 		// Small delay between batches to avoid overwhelming TMDB API
 		time.Sleep(1 * time.Second)
 	}
 
-	updateProgress(100, fmt.Sprintf("Completed refreshing %d movies", processed))
-	return nil
+	return processed
+}
+
+// getBatch extracts a batch of movies from the full list
+func (h *RefreshAllMoviesHandler) getBatch(movies []models.Movie, start, batchSize int) []models.Movie {
+	end := start + batchSize
+	if end > len(movies) {
+		end = len(movies)
+	}
+	return movies[start:end]
+}
+
+// processBatch processes a single batch of movies
+func (h *RefreshAllMoviesHandler) processBatch(
+	ctx context.Context, batch []models.Movie, allMovies []models.Movie,
+	startProcessed int, updateProgress func(percent int, message string),
+) int {
+	batchProcessed := 0
+
+	for _, movie := range batch {
+		if ctx.Err() != nil {
+			break
+		}
+
+		processed := startProcessed + batchProcessed
+		h.processMovie(movie, allMovies, processed, updateProgress)
+		batchProcessed++
+	}
+
+	return batchProcessed
+}
+
+// processMovie processes a single movie for metadata refresh
+func (h *RefreshAllMoviesHandler) processMovie(
+	movie models.Movie, allMovies []models.Movie, processed int,
+	updateProgress func(percent int, message string),
+) {
+	updateProgress(10+((processed*80)/len(allMovies)),
+		fmt.Sprintf("Refreshing movie: %s (%d/%d)", movie.Title, processed+1, len(allMovies)))
+
+	if err := h.metadataService.RefreshMovieMetadata(movie.ID); err != nil {
+		// Log error but continue with other movies
+		updateProgress(10+((processed*80)/len(allMovies)),
+			fmt.Sprintf("Failed to refresh movie: %s - %v", movie.Title, err))
+	} else {
+		if err := h.movieService.Update(&movie); err != nil {
+			updateProgress(10+((processed*80)/len(allMovies)),
+				fmt.Sprintf("Failed to save movie: %s - %v", movie.Title, err))
+		}
+	}
 }
 
 // GetName returns the command name this handler processes
@@ -212,44 +254,12 @@ func NewSyncImportListHandler(importListService ImportListServiceInterface) *Syn
 func (h *SyncImportListHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
 	updateProgress(0, "Starting import list sync")
 
-	// Get import list ID from task body (optional - sync all if not specified)
-	var importListID *int
-	if listIDValue, exists := task.Body["importListId"]; exists {
-		switch v := listIDValue.(type) {
-		case int:
-			importListID = &v
-		case float64:
-			id := int(v)
-			importListID = &id
-		case string:
-			if id, err := strconv.Atoi(v); err == nil {
-				importListID = &id
-			}
-		}
-	}
-
+	importListID := h.extractImportListID(task)
 	updateProgress(10, "Fetching import lists")
 
-	var importLists []*models.ImportList
-
-	if importListID != nil {
-		// Sync specific import list
-		importList, err := h.importListService.GetImportListByID(*importListID)
-		if err != nil {
-			return fmt.Errorf("failed to get import list %d: %w", *importListID, err)
-		}
-		importLists = []*models.ImportList{importList}
-	} else {
-		// Sync all enabled import lists
-		enabledLists, err := h.importListService.GetEnabledImportLists()
-		if err != nil {
-			return fmt.Errorf("failed to get import lists: %w", err)
-		}
-		// Convert slice to pointer slice
-		importLists = make([]*models.ImportList, len(enabledLists))
-		for i := range enabledLists {
-			importLists[i] = &enabledLists[i]
-		}
+	importLists, err := h.getImportListsToSync(importListID)
+	if err != nil {
+		return err
 	}
 
 	if len(importLists) == 0 {
@@ -259,14 +269,73 @@ func (h *SyncImportListHandler) Execute(ctx context.Context, task *models.Task, 
 
 	updateProgress(20, fmt.Sprintf("Found %d import lists to sync", len(importLists)))
 
+	totalAdded := h.syncAllImportLists(ctx, importLists, updateProgress)
+
+	updateProgress(100, fmt.Sprintf("Import list sync completed. Added %d movies total", totalAdded))
+	return nil
+}
+
+// extractImportListID extracts the import list ID from task body
+func (h *SyncImportListHandler) extractImportListID(task *models.Task) *int {
+	if listIDValue, exists := task.Body["importListId"]; exists {
+		switch v := listIDValue.(type) {
+		case int:
+			return &v
+		case float64:
+			id := int(v)
+			return &id
+		case string:
+			if id, err := strconv.Atoi(v); err == nil {
+				return &id
+			}
+		}
+	}
+	return nil
+}
+
+// getImportListsToSync gets the import lists that need to be synced
+func (h *SyncImportListHandler) getImportListsToSync(importListID *int) ([]*models.ImportList, error) {
+	if importListID != nil {
+		return h.getSpecificImportList(*importListID)
+	}
+	return h.getAllEnabledImportLists()
+}
+
+// getSpecificImportList gets a specific import list by ID
+func (h *SyncImportListHandler) getSpecificImportList(importListID int) ([]*models.ImportList, error) {
+	importList, err := h.importListService.GetImportListByID(importListID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get import list %d: %w", importListID, err)
+	}
+	return []*models.ImportList{importList}, nil
+}
+
+// getAllEnabledImportLists gets all enabled import lists
+func (h *SyncImportListHandler) getAllEnabledImportLists() ([]*models.ImportList, error) {
+	enabledLists, err := h.importListService.GetEnabledImportLists()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get import lists: %w", err)
+	}
+
+	// Convert slice to pointer slice
+	importLists := make([]*models.ImportList, len(enabledLists))
+	for i := range enabledLists {
+		importLists[i] = &enabledLists[i]
+	}
+	return importLists, nil
+}
+
+// syncAllImportLists syncs all provided import lists
+func (h *SyncImportListHandler) syncAllImportLists(
+	ctx context.Context, importLists []*models.ImportList,
+	updateProgress func(percent int, message string),
+) int {
 	totalAdded := 0
 	processed := 0
 
 	for _, importList := range importLists {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		if ctx.Err() != nil {
+			break
 		}
 
 		progress := 20 + ((processed * 70) / len(importLists))
@@ -283,8 +352,7 @@ func (h *SyncImportListHandler) Execute(ctx context.Context, task *models.Task, 
 		processed++
 	}
 
-	updateProgress(100, fmt.Sprintf("Import list sync completed. Added %d movies total", totalAdded))
-	return nil
+	return totalAdded
 }
 
 // GetName returns the command name this handler processes

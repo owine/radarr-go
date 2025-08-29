@@ -10,6 +10,11 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+const (
+	// providerVersion is the default version for notification providers
+	providerVersion = "1.0.0"
+)
+
 // DefaultProviderFactory is the default implementation of ProviderFactory
 type DefaultProviderFactory struct {
 	logger    *logger.Logger
@@ -101,137 +106,258 @@ func (f *DefaultProviderFactory) GetProviderInfo(providerType models.Notificatio
 		return nil, err
 	}
 
-	info := &ProviderInfo{
+	info := f.createBaseProviderInfo(provider, providerType)
+	f.addProviderMetadata(info, providerType)
+
+	return info, nil
+}
+
+// createBaseProviderInfo creates the base provider info structure
+func (f *DefaultProviderFactory) createBaseProviderInfo(
+	provider Provider, providerType models.NotificationType,
+) *ProviderInfo {
+	return &ProviderInfo{
 		Type:         providerType,
 		Name:         provider.GetName(),
 		Capabilities: provider.GetCapabilities(),
 		ConfigFields: provider.GetConfigFields(),
 		IsEnabled:    true,
 	}
+}
 
-	// Add provider-specific metadata
+// addProviderMetadata adds provider-specific metadata to the info
+func (f *DefaultProviderFactory) addProviderMetadata(info *ProviderInfo, providerType models.NotificationType) {
+	switch providerType {
+	case models.NotificationTypeDiscord, models.NotificationTypeSlack:
+		f.addChatProviderMetadata(info, providerType)
+	case models.NotificationTypeEmail, models.NotificationTypeMailgun, models.NotificationTypeSendGrid:
+		f.addEmailProviderMetadata(info, providerType)
+	case models.NotificationTypePushover, models.NotificationTypePushbullet, models.NotificationTypeGotify:
+		f.addPushProviderMetadata(info, providerType)
+	case models.NotificationTypePlex, models.NotificationTypeEmby,
+		models.NotificationTypeJellyfin, models.NotificationTypeKodi:
+		f.addMediaServerProviderMetadata(info, providerType)
+	case models.NotificationTypeTelegram, models.NotificationTypeWebhook, models.NotificationTypeJoin,
+		models.NotificationTypeApprise, models.NotificationTypeNotifiarr, models.NotificationTypeCustomScript,
+		models.NotificationTypeSynologyIndexer, models.NotificationTypeTwitter, models.NotificationTypeSignal,
+		models.NotificationTypeMatrix, models.NotificationTypeNtfy:
+		f.addMiscProviderMetadata(info, providerType)
+	}
+}
+
+// addChatProviderMetadata adds metadata for chat providers
+func (f *DefaultProviderFactory) addChatProviderMetadata(info *ProviderInfo, providerType models.NotificationType) {
 	switch providerType {
 	case models.NotificationTypeDiscord:
 		info.Description = "Send notifications to Discord channels via webhooks"
 		info.Website = "https://discord.com"
 		info.DocsURL = "https://support.discord.com/hc/en-us/articles/228383668"
-		info.Version = "1.0.0"
 	case models.NotificationTypeSlack:
 		info.Description = "Send notifications to Slack channels via webhooks"
 		info.Website = "https://slack.com"
 		info.DocsURL = "https://api.slack.com/messaging/webhooks"
-		info.Version = "1.0.0"
+	// Handle all other cases that might be passed to this function
+	case models.NotificationTypeEmail, models.NotificationTypeTelegram, models.NotificationTypeWebhook,
+		models.NotificationTypePushover, models.NotificationTypePushbullet, models.NotificationTypeGotify,
+		models.NotificationTypeJoin, models.NotificationTypeApprise, models.NotificationTypeNotifiarr,
+		models.NotificationTypeMailgun, models.NotificationTypeSendGrid, models.NotificationTypePlex,
+		models.NotificationTypeEmby, models.NotificationTypeJellyfin, models.NotificationTypeKodi,
+		models.NotificationTypeCustomScript, models.NotificationTypeSynologyIndexer,
+		models.NotificationTypeTwitter, models.NotificationTypeSignal, models.NotificationTypeMatrix,
+		models.NotificationTypeNtfy:
+		// These should not be handled by this function, but included for exhaustiveness
+		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
+	}
+	info.Version = providerVersion
+}
+
+// addEmailProviderMetadata adds metadata for email providers
+func (f *DefaultProviderFactory) addEmailProviderMetadata(info *ProviderInfo, providerType models.NotificationType) {
+	switch providerType {
 	case models.NotificationTypeEmail:
 		info.Description = "Send email notifications via SMTP"
-		info.Website = ""
-		info.DocsURL = ""
-		info.Version = "1.0.0"
-	case models.NotificationTypeWebhook:
-		info.Description = "Send HTTP POST notifications to any webhook endpoint"
-		info.Website = ""
-		info.DocsURL = ""
-		info.Version = "1.0.0"
-	case models.NotificationTypePushover:
-		info.Description = "Send push notifications to mobile devices via Pushover"
-		info.Website = "https://pushover.net"
-		info.DocsURL = "https://pushover.net/api"
-		info.Version = "1.0.0"
-	case models.NotificationTypeTelegram:
-		info.Description = "Send notifications via Telegram bot"
-		info.Website = "https://telegram.org"
-		info.DocsURL = "https://core.telegram.org/bots/api"
-		info.Version = "1.0.0"
-	case models.NotificationTypePushbullet:
-		info.Description = "Send push notifications via Pushbullet"
-		info.Website = "https://www.pushbullet.com"
-		info.DocsURL = "https://docs.pushbullet.com"
-		info.Version = "1.0.0"
-	case models.NotificationTypeGotify:
-		info.Description = "Send push notifications via Gotify server"
-		info.Website = "https://gotify.net"
-		info.DocsURL = "https://gotify.net/docs"
-		info.Version = "1.0.0"
 	case models.NotificationTypeMailgun:
 		info.Description = "Send email notifications via Mailgun service"
 		info.Website = "https://www.mailgun.com"
 		info.DocsURL = "https://documentation.mailgun.com/en/latest/"
-		info.Version = "1.0.0"
 	case models.NotificationTypeSendGrid:
 		info.Description = "Send email notifications via SendGrid service"
 		info.Website = "https://sendgrid.com"
 		info.DocsURL = "https://docs.sendgrid.com"
-		info.Version = "1.0.0"
-	case models.NotificationTypeCustomScript:
-		info.Description = "Execute custom scripts with notification data"
-		info.Website = ""
-		info.DocsURL = ""
-		info.Version = "1.0.0"
-	case models.NotificationTypeJoin:
-		info.Description = "Send push notifications via Join"
-		info.Website = "https://joaoapps.com/join/"
-		info.DocsURL = "https://joaoapps.com/join/api/"
-		info.Version = "1.0.0"
-	case models.NotificationTypeApprise:
-		info.Description = "Send notifications via Apprise"
-		info.Website = "https://github.com/caronc/apprise"
-		info.DocsURL = "https://github.com/caronc/apprise/wiki"
-		info.Version = "1.0.0"
-	case models.NotificationTypeNotifiarr:
-		info.Description = "Send notifications via Notifiarr"
-		info.Website = "https://notifiarr.com"
-		info.DocsURL = "https://notifiarr.com/docs"
-		info.Version = "1.0.0"
+	// Handle all other cases that might be passed to this function
+	case models.NotificationTypeDiscord, models.NotificationTypeSlack, models.NotificationTypeTelegram,
+		models.NotificationTypeWebhook, models.NotificationTypePushover, models.NotificationTypePushbullet,
+		models.NotificationTypeGotify, models.NotificationTypeJoin, models.NotificationTypeApprise,
+		models.NotificationTypeNotifiarr, models.NotificationTypePlex, models.NotificationTypeEmby,
+		models.NotificationTypeJellyfin, models.NotificationTypeKodi, models.NotificationTypeCustomScript,
+		models.NotificationTypeSynologyIndexer, models.NotificationTypeTwitter,
+		models.NotificationTypeSignal, models.NotificationTypeMatrix, models.NotificationTypeNtfy:
+		// These should not be handled by this function, but included for exhaustiveness
+		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
+	}
+	info.Version = providerVersion
+}
+
+// addPushProviderMetadata adds metadata for push notification providers
+func (f *DefaultProviderFactory) addPushProviderMetadata(info *ProviderInfo, providerType models.NotificationType) {
+	switch providerType {
+	case models.NotificationTypePushover:
+		info.Description = "Send push notifications to mobile devices via Pushover"
+		info.Website = "https://pushover.net"
+		info.DocsURL = "https://pushover.net/api"
+	case models.NotificationTypePushbullet:
+		info.Description = "Send push notifications via Pushbullet"
+		info.Website = "https://www.pushbullet.com"
+		info.DocsURL = "https://docs.pushbullet.com"
+	case models.NotificationTypeGotify:
+		info.Description = "Send push notifications via Gotify server"
+		info.Website = "https://gotify.net"
+		info.DocsURL = "https://gotify.net/docs"
+	// Handle all other cases that might be passed to this function
+	case models.NotificationTypeEmail, models.NotificationTypeDiscord, models.NotificationTypeSlack,
+		models.NotificationTypeTelegram, models.NotificationTypeWebhook, models.NotificationTypeJoin,
+		models.NotificationTypeApprise, models.NotificationTypeNotifiarr, models.NotificationTypeMailgun,
+		models.NotificationTypeSendGrid, models.NotificationTypePlex, models.NotificationTypeEmby,
+		models.NotificationTypeJellyfin, models.NotificationTypeKodi, models.NotificationTypeCustomScript,
+		models.NotificationTypeSynologyIndexer, models.NotificationTypeTwitter,
+		models.NotificationTypeSignal, models.NotificationTypeMatrix, models.NotificationTypeNtfy:
+		// These should not be handled by this function, but included for exhaustiveness
+		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
+	}
+	info.Version = providerVersion
+}
+
+// addMediaServerProviderMetadata adds metadata for media server providers
+func (f *DefaultProviderFactory) addMediaServerProviderMetadata(
+	info *ProviderInfo, providerType models.NotificationType,
+) {
+	switch providerType {
 	case models.NotificationTypePlex:
 		info.Description = "Send notifications to Plex Media Server"
 		info.Website = "https://www.plex.tv"
 		info.DocsURL = "https://support.plex.tv/articles/115002267687-webhooks/"
-		info.Version = "1.0.0"
 	case models.NotificationTypeEmby:
 		info.Description = "Send notifications to Emby Media Server"
 		info.Website = "https://emby.media"
 		info.DocsURL = "https://github.com/MediaBrowser/Emby/wiki/Webhooks"
-		info.Version = "1.0.0"
 	case models.NotificationTypeJellyfin:
 		info.Description = "Send notifications to Jellyfin Media Server"
 		info.Website = "https://jellyfin.org"
 		info.DocsURL = "https://jellyfin.org/docs/general/server/webhooks"
-		info.Version = "1.0.0"
 	case models.NotificationTypeKodi:
 		info.Description = "Send notifications to Kodi"
 		info.Website = "https://kodi.tv"
 		info.DocsURL = "https://kodi.wiki/view/JSON-RPC_API"
-		info.Version = "1.0.0"
-	case models.NotificationTypeSynologyIndexer:
-		info.Description = "Send notifications via Synology Indexer"
-		info.Website = "https://www.synology.com"
-		info.DocsURL = ""
-		info.Version = "1.0.0"
-	case models.NotificationTypeTwitter:
-		info.Description = "Send notifications via Twitter"
-		info.Website = "https://twitter.com"
-		info.DocsURL = "https://developer.twitter.com/en/docs"
-		info.Version = "1.0.0"
-	case models.NotificationTypeSignal:
-		info.Description = "Send notifications via Signal"
-		info.Website = "https://signal.org"
-		info.DocsURL = "https://github.com/bbernhard/signal-cli-rest-api"
-		info.Version = "1.0.0"
-	case models.NotificationTypeMatrix:
-		info.Description = "Send notifications via Matrix"
-		info.Website = "https://matrix.org"
-		info.DocsURL = "https://matrix.org/docs/guides/client-server-api"
-		info.Version = "1.0.0"
-	case models.NotificationTypeNtfy:
-		info.Description = "Send notifications via Ntfy"
-		info.Website = "https://ntfy.sh"
-		info.DocsURL = "https://docs.ntfy.sh/"
-		info.Version = "1.0.0"
-	default:
+	// Handle all other cases that might be passed to this function
+	case models.NotificationTypeEmail, models.NotificationTypeDiscord, models.NotificationTypeSlack,
+		models.NotificationTypeTelegram, models.NotificationTypeWebhook, models.NotificationTypePushover,
+		models.NotificationTypePushbullet, models.NotificationTypeGotify, models.NotificationTypeJoin,
+		models.NotificationTypeApprise, models.NotificationTypeNotifiarr, models.NotificationTypeMailgun,
+		models.NotificationTypeSendGrid, models.NotificationTypeCustomScript,
+		models.NotificationTypeSynologyIndexer, models.NotificationTypeTwitter,
+		models.NotificationTypeSignal, models.NotificationTypeMatrix, models.NotificationTypeNtfy:
+		// These should not be handled by this function, but included for exhaustiveness
 		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
-		info.Version = "1.0.0"
 	}
+	info.Version = providerVersion
+}
 
-	return info, nil
+// addMiscProviderMetadata adds metadata for miscellaneous providers
+func (f *DefaultProviderFactory) addMiscProviderMetadata(info *ProviderInfo, providerType models.NotificationType) {
+	switch providerType {
+	case models.NotificationTypeWebhook:
+		f.setWebhookMetadata(info)
+	case models.NotificationTypeTelegram:
+		f.setTelegramMetadata(info)
+	case models.NotificationTypeCustomScript:
+		f.setCustomScriptMetadata(info)
+	case models.NotificationTypeJoin:
+		f.setJoinMetadata(info)
+	case models.NotificationTypeApprise:
+		f.setAppriseMetadata(info)
+	case models.NotificationTypeNotifiarr:
+		f.setNotifiarrMetadata(info)
+	case models.NotificationTypeSynologyIndexer:
+		f.setSynologyMetadata(info)
+	case models.NotificationTypeTwitter:
+		f.setTwitterMetadata(info)
+	case models.NotificationTypeSignal:
+		f.setSignalMetadata(info)
+	case models.NotificationTypeMatrix:
+		f.setMatrixMetadata(info)
+	case models.NotificationTypeNtfy:
+		f.setNtfyMetadata(info)
+	// Handle cases that should not be in this function
+	case models.NotificationTypeEmail, models.NotificationTypeDiscord, models.NotificationTypeSlack,
+		models.NotificationTypePushover, models.NotificationTypePushbullet, models.NotificationTypeGotify,
+		models.NotificationTypeMailgun, models.NotificationTypeSendGrid, models.NotificationTypePlex,
+		models.NotificationTypeEmby, models.NotificationTypeJellyfin, models.NotificationTypeKodi:
+		// These should be handled by other functions, but included for exhaustiveness
+		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
+	}
+	info.Version = providerVersion
+}
+
+// Helper functions for individual provider metadata
+func (f *DefaultProviderFactory) setWebhookMetadata(info *ProviderInfo) {
+	info.Description = "Send HTTP POST notifications to any webhook endpoint"
+}
+
+func (f *DefaultProviderFactory) setTelegramMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Telegram bot"
+	info.Website = "https://telegram.org"
+	info.DocsURL = "https://core.telegram.org/bots/api"
+}
+
+func (f *DefaultProviderFactory) setCustomScriptMetadata(info *ProviderInfo) {
+	info.Description = "Execute custom scripts with notification data"
+}
+
+func (f *DefaultProviderFactory) setJoinMetadata(info *ProviderInfo) {
+	info.Description = "Send push notifications via Join"
+	info.Website = "https://joaoapps.com/join/"
+	info.DocsURL = "https://joaoapps.com/join/api/"
+}
+
+func (f *DefaultProviderFactory) setAppriseMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Apprise"
+	info.Website = "https://github.com/caronc/apprise"
+	info.DocsURL = "https://github.com/caronc/apprise/wiki"
+}
+
+func (f *DefaultProviderFactory) setNotifiarrMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Notifiarr"
+	info.Website = "https://notifiarr.com"
+	info.DocsURL = "https://notifiarr.com/docs"
+}
+
+func (f *DefaultProviderFactory) setSynologyMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Synology Indexer"
+	info.Website = "https://www.synology.com"
+}
+
+func (f *DefaultProviderFactory) setTwitterMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Twitter"
+	info.Website = "https://twitter.com"
+	info.DocsURL = "https://developer.twitter.com/en/docs"
+}
+
+func (f *DefaultProviderFactory) setSignalMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Signal"
+	info.Website = "https://signal.org"
+	info.DocsURL = "https://github.com/bbernhard/signal-cli-rest-api"
+}
+
+func (f *DefaultProviderFactory) setMatrixMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Matrix"
+	info.Website = "https://matrix.org"
+	info.DocsURL = "https://matrix.org/docs/guides/client-server-api"
+}
+
+func (f *DefaultProviderFactory) setNtfyMetadata(info *ProviderInfo) {
+	info.Description = "Send notifications via Ntfy"
+	info.Website = "https://ntfy.sh"
+	info.DocsURL = "https://docs.ntfy.sh/"
 }
 
 // GetAllProviderInfo returns information about all supported providers
