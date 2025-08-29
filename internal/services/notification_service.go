@@ -14,6 +14,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Notification event type constants
+const (
+	NotificationEventGrab     = "grab"
+	NotificationEventDownload = "download"
+	NotificationEventHealth   = "health"
+)
+
 // NotificationService provides operations for managing notifications and alerts.
 type NotificationService struct {
 	db               *database.Database
@@ -253,9 +260,9 @@ func (s *NotificationService) shouldSendNotificationForEvent(notification *model
 	}
 
 	switch eventType {
-	case "grab":
+	case NotificationEventGrab:
 		return notification.SupportsOnGrab && notification.OnGrab
-	case "download":
+	case NotificationEventDownload:
 		return notification.SupportsOnDownload && notification.OnDownload
 	case "upgrade":
 		return notification.SupportsOnUpgrade && notification.OnUpgrade
@@ -267,7 +274,7 @@ func (s *NotificationService) shouldSendNotificationForEvent(notification *model
 		return notification.SupportsOnMovieDelete && notification.OnMovieDelete
 	case "movieFileDelete":
 		return notification.SupportsOnMovieFileDelete && notification.OnMovieFileDelete
-	case "health":
+	case NotificationEventHealth:
 		return notification.SupportsOnHealthIssue && notification.OnHealthIssue
 	case "applicationUpdate":
 		return notification.SupportsOnApplicationUpdate && notification.OnApplicationUpdate
@@ -476,12 +483,12 @@ func (s *NotificationService) GetNotificationStats() (map[string]interface{}, er
 // buildSubject builds a subject line for a notification event
 func (s *NotificationService) buildSubject(event *models.NotificationEvent) string {
 	switch event.EventType {
-	case "grab":
+	case NotificationEventGrab:
 		if event.Movie != nil {
 			return fmt.Sprintf("%s (%d) - Grabbed", event.Movie.Title, event.Movie.Year)
 		}
 		return "Movie Grabbed"
-	case "download":
+	case NotificationEventDownload:
 		if event.Movie != nil {
 			return fmt.Sprintf("%s (%d) - Downloaded", event.Movie.Title, event.Movie.Year)
 		}
@@ -511,7 +518,7 @@ func (s *NotificationService) buildSubject(event *models.NotificationEvent) stri
 			return fmt.Sprintf("%s (%d) - File Deleted", event.Movie.Title, event.Movie.Year)
 		}
 		return "Movie File Deleted"
-	case "health":
+	case NotificationEventHealth:
 		if event.HealthCheck != nil {
 			return fmt.Sprintf("Radarr Health Issue - %s", event.HealthCheck.Type)
 		}
@@ -530,7 +537,7 @@ func (s *NotificationService) buildBody(event *models.NotificationEvent) string 
 	}
 
 	switch event.EventType {
-	case "grab":
+	case NotificationEventGrab:
 		if event.Movie != nil {
 			body := fmt.Sprintf("Movie '%s (%d)' was grabbed", event.Movie.Title, event.Movie.Year)
 			if event.DownloadClient != "" {
@@ -545,7 +552,7 @@ func (s *NotificationService) buildBody(event *models.NotificationEvent) string 
 			return body
 		}
 		return "A movie was grabbed from an indexer."
-	case "download":
+	case NotificationEventDownload:
 		if event.Movie != nil {
 			body := fmt.Sprintf("Movie '%s (%d)' has been downloaded and imported", event.Movie.Title, event.Movie.Year)
 			if event.Quality != nil {
@@ -560,7 +567,7 @@ func (s *NotificationService) buildBody(event *models.NotificationEvent) string 
 			return body
 		}
 		return "A movie has been downloaded and imported."
-	case "health":
+	case NotificationEventHealth:
 		if event.HealthCheck != nil {
 			body := fmt.Sprintf("A health issue has been detected in Radarr.\n\nType: %s\nStatus: %s\nMessage: %s",
 				event.HealthCheck.Type, event.HealthCheck.Status, event.HealthCheck.Message)

@@ -241,19 +241,21 @@ func (s *ParseService) extractQuality(title string) models.Quality {
 	case strings.Contains(titleLower, "2160p") || strings.Contains(titleLower, "4k"):
 		quality.Quality = models.QualityDefinition{ID: 10, Name: "2160p", Resolution: 2160}
 	case strings.Contains(titleLower, "1080p"):
-		if strings.Contains(titleLower, "bluray") {
+		switch {
+		case strings.Contains(titleLower, "bluray"):
 			quality.Quality = models.QualityDefinition{ID: 7, Name: "1080p Bluray", Resolution: 1080, Source: "bluray"}
-		} else if strings.Contains(titleLower, "web-dl") || strings.Contains(titleLower, "webrip") {
+		case strings.Contains(titleLower, "web-dl") || strings.Contains(titleLower, "webrip"):
 			quality.Quality = models.QualityDefinition{ID: 6, Name: "1080p WEB-DL", Resolution: 1080, Source: "webdl"}
-		} else {
+		default:
 			quality.Quality = models.QualityDefinition{ID: 5, Name: "1080p HDTV", Resolution: 1080, Source: "hdtv"}
 		}
 	case strings.Contains(titleLower, "720p"):
-		if strings.Contains(titleLower, "bluray") {
+		switch {
+		case strings.Contains(titleLower, "bluray"):
 			quality.Quality = models.QualityDefinition{ID: 4, Name: "720p Bluray", Resolution: 720, Source: "bluray"}
-		} else if strings.Contains(titleLower, "web-dl") || strings.Contains(titleLower, "webrip") {
+		case strings.Contains(titleLower, "web-dl") || strings.Contains(titleLower, "webrip"):
 			quality.Quality = models.QualityDefinition{ID: 3, Name: "720p WEB-DL", Resolution: 720, Source: "webdl"}
-		} else {
+		default:
 			quality.Quality = models.QualityDefinition{ID: 2, Name: "720p HDTV", Resolution: 720, Source: "hdtv"}
 		}
 	case strings.Contains(titleLower, "480p") || strings.Contains(titleLower, "dvdrip"):

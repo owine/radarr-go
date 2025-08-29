@@ -567,13 +567,14 @@ func (s *FileOrganizationService) parseQualityFromFilename(filename string) (*mo
 	// Basic quality detection
 	var qualityDef models.QualityDefinition
 
-	if strings.Contains(name, "2160p") || strings.Contains(name, "4k") {
+	switch {
+	case strings.Contains(name, "2160p") || strings.Contains(name, "4k"):
 		qualityDef = models.QualityDefinition{ID: 7, Name: "Bluray-2160p", Source: "bluray", Resolution: 2160}
-	} else if strings.Contains(name, "1080p") {
+	case strings.Contains(name, "1080p"):
 		qualityDef = models.QualityDefinition{ID: 6, Name: "Bluray-1080p", Source: "bluray", Resolution: 1080}
-	} else if strings.Contains(name, "720p") {
+	case strings.Contains(name, "720p"):
 		qualityDef = models.QualityDefinition{ID: 4, Name: "HDTV-720p", Source: "tv", Resolution: 720}
-	} else {
+	default:
 		qualityDef = models.QualityDefinition{ID: 1, Name: "Unknown", Source: "unknown", Resolution: 0}
 	}
 

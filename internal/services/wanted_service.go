@@ -214,6 +214,14 @@ func (s *WantedMoviesService) GetAllWanted(filter *models.WantedMovieFilter) (*m
 
 // applyFilters applies filtering criteria to the query
 func (s *WantedMoviesService) applyFilters(query *gorm.DB, filter *models.WantedMovieFilter) *gorm.DB {
+	query = s.applyBasicFilters(query, filter)
+	query = s.applySearchFilters(query, filter)
+	query = s.applyMovieRelatedFilters(query, filter)
+	return query
+}
+
+// applyBasicFilters applies basic status and priority filters
+func (s *WantedMoviesService) applyBasicFilters(query *gorm.DB, filter *models.WantedMovieFilter) *gorm.DB {
 	if filter.Status != nil {
 		query = query.Where("status = ?", *filter.Status)
 	}
@@ -234,6 +242,11 @@ func (s *WantedMoviesService) applyFilters(query *gorm.DB, filter *models.Wanted
 		query = query.Where("is_available = ?", *filter.IsAvailable)
 	}
 
+	return query
+}
+
+// applySearchFilters applies search-related filters
+func (s *WantedMoviesService) applySearchFilters(query *gorm.DB, filter *models.WantedMovieFilter) *gorm.DB {
 	if filter.SearchRequired != nil {
 		if *filter.SearchRequired {
 			query = query.Where(
@@ -254,6 +267,11 @@ func (s *WantedMoviesService) applyFilters(query *gorm.DB, filter *models.Wanted
 		query = query.Where("last_search_time > ?", *filter.LastSearchAfter)
 	}
 
+	return query
+}
+
+// applyMovieRelatedFilters applies filters that require joining with the movies table
+func (s *WantedMoviesService) applyMovieRelatedFilters(query *gorm.DB, filter *models.WantedMovieFilter) *gorm.DB {
 	if filter.QualityProfileID != nil {
 		query = query.Joins("JOIN movies ON movies.id = wanted_movies.movie_id").
 			Where("movies.quality_profile_id = ?", *filter.QualityProfileID)

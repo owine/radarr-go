@@ -20,8 +20,8 @@ func (s *Server) handleGetHealth(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	// Parse query parameters
-	forceRefresh := c.DefaultQuery("forceRefresh", "false") == "true"
-	includeIssues := c.DefaultQuery("includeIssues", "true") == "true"
+	forceRefresh := c.DefaultQuery("forceRefresh", falseBoolString) == trueBoolString
+	includeIssues := c.DefaultQuery("includeIssues", trueBoolString) == trueBoolString
 
 	var types []models.HealthCheckType
 	if typeParam := c.Query("types"); typeParam != "" {
@@ -155,13 +155,13 @@ func (s *Server) parseHealthIssueSources(c *gin.Context, filter *models.HealthIs
 // parseHealthIssueBooleanFilters parses resolved and dismissed boolean filters
 func (s *Server) parseHealthIssueBooleanFilters(c *gin.Context, filter *models.HealthIssueFilter) {
 	if resolved := c.Query("resolved"); resolved != "" {
-		if r := resolved == "true"; resolved == "true" || resolved == "false" {
+		if r := resolved == trueBoolString; resolved == trueBoolString || resolved == falseBoolString {
 			filter.Resolved = &r
 		}
 	}
 
 	if dismissed := c.Query("dismissed"); dismissed != "" {
-		if d := dismissed == "true"; dismissed == "true" || dismissed == "false" {
+		if d := dismissed == trueBoolString; dismissed == trueBoolString || dismissed == falseBoolString {
 			filter.Dismissed = &d
 		}
 	}

@@ -11,6 +11,11 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+// Import list processing result constants
+const (
+	ImportListResultAdded = "added"
+)
+
 // ImportListService provides operations for managing import lists and movie discovery
 type ImportListService struct {
 	db              *database.Database
@@ -273,7 +278,7 @@ func (s *ImportListService) processSingleMovie(
 	}
 
 	switch processed {
-	case "added":
+	case ImportListResultAdded:
 		result.MoviesAdded++
 	case "updated":
 		result.MoviesUpdated++
@@ -504,7 +509,7 @@ func (s *ImportListService) processImportListMovie(
 		_ = newMovie
 
 		s.logger.Info("Added movie from import list", "title", movie.Title, "tmdbId", movie.TmdbID, "listId", list.ID)
-		return "added", nil
+		return ImportListResultAdded, nil
 	}
 
 	// Store as discovered movie for manual review

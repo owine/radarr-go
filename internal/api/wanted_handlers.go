@@ -94,52 +94,86 @@ func (s *Server) handleTriggerWantedSearch(c *gin.Context) {
 		return
 	}
 
-	// Get movies to search based on the trigger criteria
+	moviesToSearch, err := s.getMoviesToSearch(&searchTrigger, c)
+	if err != nil {
+		return // Error response already sent
+	}
+
+	searchedCount := s.executeMovieSearches(moviesToSearch, searchTrigger.ForceSearch)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Search triggered successfully",
+		"searchedCount": searchedCount,
+		"totalEligible": len(moviesToSearch),
+	})
+}
+
+// getMoviesToSearch determines which movies should be searched based on the trigger criteria
+func (s *Server) getMoviesToSearch(
+	searchTrigger *models.WantedSearchTrigger, c *gin.Context,
+) ([]models.WantedMovie, error) {
+	if len(searchTrigger.MovieIDs) > 0 {
+		return s.getSpecificMoviesToSearch(searchTrigger)
+	}
+	return s.getAllEligibleMoviesToSearch(searchTrigger, c)
+}
+
+// getSpecificMoviesToSearch gets specific movies to search by ID
+func (s *Server) getSpecificMoviesToSearch(searchTrigger *models.WantedSearchTrigger) ([]models.WantedMovie, error) {
 	var moviesToSearch []models.WantedMovie
 
-	if len(searchTrigger.MovieIDs) > 0 {
-		// Search specific movies
-		for _, movieID := range searchTrigger.MovieIDs {
-			wantedMovie, err := s.services.WantedMoviesService.GetByMovieID(movieID)
-			if err != nil {
-				s.logger.Warn("Movie not in wanted list", "movieId", movieID)
-				continue
-			}
-			if searchTrigger.ForceSearch || wantedMovie.IsEligibleForSearch() {
-				moviesToSearch = append(moviesToSearch, *wantedMovie)
-			}
-		}
-	} else {
-		// Search all eligible wanted movies
-		eligible, err := s.services.WantedMoviesService.GetEligibleForSearch(100) // Limit to 100 for performance
+	for _, movieID := range searchTrigger.MovieIDs {
+		wantedMovie, err := s.services.WantedMoviesService.GetByMovieID(movieID)
 		if err != nil {
-			s.logger.Error("Failed to get eligible wanted movies", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get eligible movies for search"})
-			return
+			s.logger.Warn("Movie not in wanted list", "movieId", movieID)
+			continue
 		}
-
-		for _, wantedMovie := range eligible {
-			include := true
-
-			// Apply status filters
-			if searchTrigger.FilterMissing && wantedMovie.Status != models.WantedStatusMissing {
-				include = false
-			}
-			if searchTrigger.FilterCutoff && wantedMovie.Status != models.WantedStatusCutoffUnmet {
-				include = false
-			}
-
-			if include {
-				moviesToSearch = append(moviesToSearch, wantedMovie)
-			}
+		if searchTrigger.ForceSearch || wantedMovie.IsEligibleForSearch() {
+			moviesToSearch = append(moviesToSearch, *wantedMovie)
 		}
 	}
 
-	// Trigger searches for the selected movies
+	return moviesToSearch, nil
+}
+
+// getAllEligibleMoviesToSearch gets all eligible movies with optional filtering
+func (s *Server) getAllEligibleMoviesToSearch(
+	searchTrigger *models.WantedSearchTrigger, c *gin.Context,
+) ([]models.WantedMovie, error) {
+	eligible, err := s.services.WantedMoviesService.GetEligibleForSearch(100) // Limit to 100 for performance
+	if err != nil {
+		s.logger.Error("Failed to get eligible wanted movies", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get eligible movies for search"})
+		return nil, err
+	}
+
+	var moviesToSearch []models.WantedMovie
+	for _, wantedMovie := range eligible {
+		if s.shouldIncludeMovie(wantedMovie, searchTrigger) {
+			moviesToSearch = append(moviesToSearch, wantedMovie)
+		}
+	}
+
+	return moviesToSearch, nil
+}
+
+// shouldIncludeMovie determines if a movie should be included based on filters
+func (s *Server) shouldIncludeMovie(wantedMovie models.WantedMovie, searchTrigger *models.WantedSearchTrigger) bool {
+	if searchTrigger.FilterMissing && wantedMovie.Status != models.WantedStatusMissing {
+		return false
+	}
+	if searchTrigger.FilterCutoff && wantedMovie.Status != models.WantedStatusCutoffUnmet {
+		return false
+	}
+	return true
+}
+
+// executeMovieSearches executes searches for the selected movies
+func (s *Server) executeMovieSearches(moviesToSearch []models.WantedMovie, forceSearch bool) int {
 	searchedCount := 0
 	for _, wantedMovie := range moviesToSearch {
 		if _, err := s.services.SearchService.SearchMovieReleases(
-			wantedMovie.MovieID, searchTrigger.ForceSearch); err != nil {
+			wantedMovie.MovieID, forceSearch); err != nil {
 			s.logger.Error("Failed to trigger search for wanted movie", "movieId", wantedMovie.MovieID, "error", err)
 			continue
 		}
@@ -151,12 +185,7 @@ func (s *Server) handleTriggerWantedSearch(c *gin.Context) {
 			s.logger.Error("Failed to update search attempt tracking", "wantedMovieId", wantedMovie.ID, "error", err)
 		}
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Search triggered successfully",
-		"searchedCount": searchedCount,
-		"totalEligible": len(moviesToSearch),
-	})
+	return searchedCount
 }
 
 // handleWantedBulkOperation handles POST /api/v3/wanted/bulk
@@ -368,7 +397,7 @@ func (s *Server) parseStatusAndPriorityParams(c *gin.Context, filter *models.Wan
 
 func (s *Server) parseBooleanParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if isAvailableStr := c.Query("isAvailable"); isAvailableStr != "" {
-		isAvailable := strings.ToLower(isAvailableStr) == "true"
+		isAvailable := strings.ToLower(isAvailableStr) == trueBoolString
 		filter.IsAvailable = &isAvailable
 	}
 
