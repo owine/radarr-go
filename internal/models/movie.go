@@ -54,6 +54,7 @@ type Movie struct {
 	Ratings               Ratings      `json:"ratings" db:"ratings" gorm:"type:text"`
 	MovieFile             *MovieFile   `json:"movieFile,omitempty" gorm:"foreignKey:MovieFileID"`
 	Collection            *Collection  `json:"collection,omitempty" db:"collection" gorm:"type:text"`
+	CollectionTmdbID      *int         `json:"collectionTmdbId,omitempty" db:"collection_tmdb_id"`
 	Popularity            float64      `json:"popularity" db:"popularity"`
 
 	// Timestamps

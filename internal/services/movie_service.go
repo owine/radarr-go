@@ -302,3 +302,77 @@ func (s *MovieService) GetMoviesWithFilesCount() (int64, error) {
 	}
 	return count, nil
 }
+
+// AssignToCollection assigns a movie to a collection
+func (s *MovieService) AssignToCollection(movieID int, collectionTmdbID int) error {
+	err := s.db.GORM.Model(&models.Movie{}).
+		Where("id = ?", movieID).
+		Update("collection_tmdb_id", collectionTmdbID).Error
+
+	if err != nil {
+		s.logger.Error("Failed to assign movie to collection", "movieId", movieID, "collectionTmdbId", collectionTmdbID, "error", err)
+		return fmt.Errorf("failed to assign movie to collection: %w", err)
+	}
+
+	s.logger.Info("Assigned movie to collection", "movieId", movieID, "collectionTmdbId", collectionTmdbID)
+	return nil
+}
+
+// RemoveFromCollection removes a movie from its collection
+func (s *MovieService) RemoveFromCollection(movieID int) error {
+	err := s.db.GORM.Model(&models.Movie{}).
+		Where("id = ?", movieID).
+		Update("collection_tmdb_id", nil).Error
+
+	if err != nil {
+		s.logger.Error("Failed to remove movie from collection", "movieId", movieID, "error", err)
+		return fmt.Errorf("failed to remove movie from collection: %w", err)
+	}
+
+	s.logger.Info("Removed movie from collection", "movieId", movieID)
+	return nil
+}
+
+// GetMoviesByCollection retrieves all movies in a collection
+func (s *MovieService) GetMoviesByCollection(collectionTmdbID int) ([]models.Movie, error) {
+	var movies []models.Movie
+
+	err := s.db.GORM.Preload("MovieFile").
+		Where("collection_tmdb_id = ?", collectionTmdbID).
+		Find(&movies).Error
+
+	if err != nil {
+		s.logger.Error("Failed to get movies by collection", "collectionTmdbId", collectionTmdbID, "error", err)
+		return nil, fmt.Errorf("failed to get movies by collection: %w", err)
+	}
+
+	return movies, nil
+}
+
+// AutoAssignToCollections automatically assigns movies to collections based on TMDB metadata
+func (s *MovieService) AutoAssignToCollections() error {
+	// This would be called periodically to automatically assign movies to collections
+	// based on their TMDB collection information
+	var movies []models.Movie
+
+	// Get movies that have collection info but aren't assigned yet
+	err := s.db.GORM.Where("collection IS NOT NULL AND collection_tmdb_id IS NULL").Find(&movies).Error
+	if err != nil {
+		s.logger.Error("Failed to fetch movies for auto-assignment", "error", err)
+		return fmt.Errorf("failed to fetch movies: %w", err)
+	}
+
+	assigned := 0
+	for _, movie := range movies {
+		if movie.Collection != nil && movie.Collection.TmdbID > 0 {
+			if err := s.AssignToCollection(movie.ID, movie.Collection.TmdbID); err != nil {
+				s.logger.Warn("Failed to auto-assign movie to collection", "movieId", movie.ID, "collectionTmdbId", movie.Collection.TmdbID, "error", err)
+			} else {
+				assigned++
+			}
+		}
+	}
+
+	s.logger.Info("Auto-assigned movies to collections", "assigned", assigned, "total", len(movies))
+	return nil
+}

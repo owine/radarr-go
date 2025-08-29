@@ -26,6 +26,7 @@ type Config struct {
 	Auth     AuthConfig     `mapstructure:"auth"`
 	Storage  StorageConfig  `mapstructure:"storage"`
 	TMDB     TMDBConfig     `mapstructure:"tmdb"`
+	Health   HealthConfig   `mapstructure:"health"`
 }
 
 // ServerConfig contains HTTP server configuration settings
@@ -75,6 +76,19 @@ type StorageConfig struct {
 // TMDBConfig contains TheMovieDB API configuration
 type TMDBConfig struct {
 	APIKey string `mapstructure:"api_key"`
+}
+
+// HealthConfig contains health monitoring configuration settings
+type HealthConfig struct {
+	Enabled                    bool   `mapstructure:"enabled"`
+	Interval                   string `mapstructure:"interval"`
+	DiskSpaceWarningThreshold  int64  `mapstructure:"disk_space_warning_threshold"`
+	DiskSpaceCriticalThreshold int64  `mapstructure:"disk_space_critical_threshold"`
+	DatabaseTimeoutThreshold   string `mapstructure:"database_timeout_threshold"`
+	ExternalServiceTimeout     string `mapstructure:"external_service_timeout"`
+	MetricsRetentionDays       int    `mapstructure:"metrics_retention_days"`
+	NotifyCriticalIssues       bool   `mapstructure:"notify_critical_issues"`
+	NotifyWarningIssues        bool   `mapstructure:"notify_warning_issues"`
 }
 
 // Load reads and parses the configuration from file and environment variables
@@ -146,6 +160,17 @@ func setDefaults(vip *viper.Viper, dataDir string) {
 	vip.SetDefault("storage.data_directory", dataDir)
 	vip.SetDefault("storage.movie_directory", filepath.Join(dataDir, "movies"))
 	vip.SetDefault("storage.backup_directory", filepath.Join(dataDir, "backups"))
+
+	// Health monitoring defaults
+	vip.SetDefault("health.enabled", true)
+	vip.SetDefault("health.interval", "15m")
+	vip.SetDefault("health.disk_space_warning_threshold", 5*1024*1024*1024)  // 5GB
+	vip.SetDefault("health.disk_space_critical_threshold", 1*1024*1024*1024) // 1GB
+	vip.SetDefault("health.database_timeout_threshold", "5s")
+	vip.SetDefault("health.external_service_timeout", "10s")
+	vip.SetDefault("health.metrics_retention_days", 30)
+	vip.SetDefault("health.notify_critical_issues", true)
+	vip.SetDefault("health.notify_warning_issues", false)
 }
 
 func ensureDirectories(config *Config) error {

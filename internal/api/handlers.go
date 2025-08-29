@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/radarr/radarr-go/internal/models"
+	"github.com/radarr/radarr-go/internal/services"
 )
 
 const (
@@ -1583,4 +1585,931 @@ func (s *Server) handleGrabRelease(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// Task Management Handlers
+
+// handleGetTasks retrieves tasks with optional filtering
+func (s *Server) handleGetTasks(c *gin.Context) {
+	// Parse query parameters
+	status := c.Query("status")
+	commandName := c.Query("command")
+	limitStr := c.DefaultQuery("limit", "20")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+		return
+	}
+
+	tasks, total, err := s.services.TaskService.ListTasks(models.TaskStatus(status), commandName, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to get tasks", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
+		return
+	}
+
+	response := gin.H{
+		"records":    tasks,
+		"total":      total,
+		"page":       (offset / limit) + 1,
+		"pageSize":   limit,
+		"totalPages": (int(total) + limit - 1) / limit,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// handleGetTask retrieves a single task by ID
+func (s *Server) handleGetTask(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	task, err := s.services.TaskService.GetTask(id)
+	if err != nil {
+		s.logger.Error("Failed to get task", "id", id, "error", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, task)
+}
+
+// handleQueueTask queues a new task for execution
+func (s *Server) handleQueueTask(c *gin.Context) {
+	var request struct {
+		Name        string              `json:"name" binding:"required"`
+		CommandName string              `json:"commandName" binding:"required"`
+		Body        models.TaskBody     `json:"body"`
+		Priority    models.TaskPriority `json:"priority"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task request data"})
+		return
+	}
+
+	// Set default priority if not specified
+	if request.Priority == "" {
+		request.Priority = models.TaskPriorityNormal
+	}
+
+	task, err := s.services.TaskService.QueueTask(
+		request.Name,
+		request.CommandName,
+		request.Body,
+		request.Priority,
+		models.TaskTriggerApi,
+	)
+	if err != nil {
+		s.logger.Error("Failed to queue task", "command", request.CommandName, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue task"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, task)
+}
+
+// handleCancelTask cancels a running or queued task
+func (s *Server) handleCancelTask(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.services.TaskService.CancelTask(id); err != nil {
+		s.logger.Error("Failed to cancel task", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel task"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Task cancelled"})
+}
+
+// handleGetQueueStatus returns the current status of all task queues
+func (s *Server) handleGetQueueStatus(c *gin.Context) {
+	status := s.services.TaskService.GetQueueStatus()
+	c.JSON(http.StatusOK, status)
+}
+
+// handleGetScheduledTasks retrieves all scheduled tasks
+func (s *Server) handleGetScheduledTasks(c *gin.Context) {
+	scheduledTasks, err := s.services.TaskService.GetScheduledTasks()
+	if err != nil {
+		s.logger.Error("Failed to get scheduled tasks", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve scheduled tasks"})
+		return
+	}
+
+	c.JSON(http.StatusOK, scheduledTasks)
+}
+
+// handleCreateScheduledTask creates a new scheduled task
+func (s *Server) handleCreateScheduledTask(c *gin.Context) {
+	var request struct {
+		Name        string              `json:"name" binding:"required"`
+		CommandName string              `json:"commandName" binding:"required"`
+		Body        models.TaskBody     `json:"body"`
+		Interval    int64               `json:"interval" binding:"required"` // milliseconds
+		Priority    models.TaskPriority `json:"priority"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scheduled task data"})
+		return
+	}
+
+	// Set default priority if not specified
+	if request.Priority == "" {
+		request.Priority = models.TaskPriorityNormal
+	}
+
+	interval := time.Duration(request.Interval) * time.Millisecond
+	scheduledTask, err := s.services.TaskService.CreateScheduledTask(
+		request.Name,
+		request.CommandName,
+		request.Body,
+		interval,
+		request.Priority,
+	)
+	if err != nil {
+		s.logger.Error("Failed to create scheduled task", "name", request.Name, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create scheduled task"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, scheduledTask)
+}
+
+// handleUpdateScheduledTask updates a scheduled task
+func (s *Server) handleUpdateScheduledTask(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var request struct {
+		Name     *string              `json:"name,omitempty"`
+		Body     *models.TaskBody     `json:"body,omitempty"`
+		Interval *int64               `json:"interval,omitempty"` // milliseconds
+		Priority *models.TaskPriority `json:"priority,omitempty"`
+		Enabled  *bool                `json:"enabled,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scheduled task data"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+	if request.Name != nil {
+		updates["name"] = *request.Name
+	}
+	if request.Body != nil {
+		updates["body"] = *request.Body
+	}
+	if request.Interval != nil {
+		updates["interval"] = time.Duration(*request.Interval) * time.Millisecond
+	}
+	if request.Priority != nil {
+		updates["priority"] = *request.Priority
+	}
+	if request.Enabled != nil {
+		updates["enabled"] = *request.Enabled
+	}
+
+	if err := s.services.TaskService.UpdateScheduledTask(id, updates); err != nil {
+		s.logger.Error("Failed to update scheduled task", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update scheduled task"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Scheduled task updated"})
+}
+
+// handleDeleteScheduledTask deletes a scheduled task
+func (s *Server) handleDeleteScheduledTask(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.services.TaskService.DeleteScheduledTask(id); err != nil {
+		s.logger.Error("Failed to delete scheduled task", "id", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete scheduled task"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Scheduled task deleted"})
+}
+
+// Command handlers for specific task operations
+
+// handleRefreshMovie queues a refresh task for a specific movie
+func (s *Server) handleRefreshMovie(c *gin.Context) {
+	id, err := s.parseIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	body := models.TaskBody{
+		"movieId": id,
+	}
+
+	task, err := s.services.TaskService.QueueTask(
+		fmt.Sprintf("Refresh Movie - ID %d", id),
+		"RefreshMovie",
+		body,
+		models.TaskPriorityNormal,
+		models.TaskTriggerApi,
+	)
+	if err != nil {
+		s.logger.Error("Failed to queue movie refresh task", "movieId", id, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue movie refresh"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, task)
+}
+
+// handleRefreshAllMovies queues a task to refresh all movies
+func (s *Server) handleRefreshAllMovies(c *gin.Context) {
+	task, err := s.services.TaskService.QueueTask(
+		"Refresh All Movies",
+		"RefreshAllMovies",
+		models.TaskBody{},
+		models.TaskPriorityNormal,
+		models.TaskTriggerApi,
+	)
+	if err != nil {
+		s.logger.Error("Failed to queue refresh all movies task", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue refresh all movies"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, task)
+}
+
+// handleRunHealthCheck queues a system health check task
+func (s *Server) handleRunHealthCheck(c *gin.Context) {
+	task, err := s.services.TaskService.QueueTask(
+		"System Health Check",
+		"HealthCheck",
+		models.TaskBody{},
+		models.TaskPriorityHigh,
+		models.TaskTriggerApi,
+	)
+	if err != nil {
+		s.logger.Error("Failed to queue health check task", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue health check"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, task)
+}
+
+// handleRunCleanup queues a cleanup task
+func (s *Server) handleRunCleanup(c *gin.Context) {
+	task, err := s.services.TaskService.QueueTask(
+		"System Cleanup",
+		"Cleanup",
+		models.TaskBody{},
+		models.TaskPriorityLow,
+		models.TaskTriggerApi,
+	)
+	if err != nil {
+		s.logger.Error("Failed to queue cleanup task", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue cleanup"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, task)
+}
+
+// File Organization and Import Handlers
+
+// handleGetFileOrganizations returns file organization records
+func (s *Server) handleGetFileOrganizations(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	organizations, err := s.services.FileOrganizationService.GetFileOrganizations(limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to get file organizations", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file organizations"})
+		return
+	}
+
+	c.JSON(http.StatusOK, organizations)
+}
+
+// handleGetFileOrganizationByID returns a specific file organization record
+func (s *Server) handleGetFileOrganizationByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid organization ID"})
+		return
+	}
+
+	organization, err := s.services.FileOrganizationService.GetFileOrganizationByID(id)
+	if err != nil {
+		s.logger.Error("Failed to get file organization", "id", id, "error", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "File organization not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, organization)
+}
+
+// handleRetryFailedOrganizations retries failed file organization operations
+func (s *Server) handleRetryFailedOrganizations(c *gin.Context) {
+	if err := s.services.FileOrganizationService.RetryFailedOrganizations(); err != nil {
+		s.logger.Error("Failed to retry file organizations", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retry file organizations"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Retry initiated for failed file organizations"})
+}
+
+// handleScanDirectory scans a directory for importable files
+func (s *Server) handleScanDirectory(c *gin.Context) {
+	var request struct {
+		Path string `json:"path" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	files, err := s.services.FileOrganizationService.ScanDirectory(request.Path)
+	if err != nil {
+		s.logger.Error("Failed to scan directory", "path", request.Path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan directory"})
+		return
+	}
+
+	c.JSON(http.StatusOK, files)
+}
+
+// handleProcessImport processes files for import
+func (s *Server) handleProcessImport(c *gin.Context) {
+	var request struct {
+		Path       string                    `json:"path" binding:"required"`
+		ImportMode models.ImportDecisionType `json:"importMode"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	options := &services.ImportOptions{
+		ImportMode: request.ImportMode,
+	}
+
+	if options.ImportMode == "" {
+		options.ImportMode = models.ImportDecisionApproved
+	}
+
+	result, err := s.services.ImportService.ProcessImport(request.Path, options)
+	if err != nil {
+		s.logger.Error("Failed to process import", "path", request.Path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process import"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// handleGetManualImports returns manual import candidates
+func (s *Server) handleGetManualImports(c *gin.Context) {
+	path := c.Query("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Path parameter is required"})
+		return
+	}
+
+	manualImports, err := s.services.ImportService.GetManualImports(path)
+	if err != nil {
+		s.logger.Error("Failed to get manual imports", "path", path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get manual imports"})
+		return
+	}
+
+	c.JSON(http.StatusOK, manualImports)
+}
+
+// handleProcessManualImport processes a manual import
+func (s *Server) handleProcessManualImport(c *gin.Context) {
+	var manualImport models.ManualImport
+
+	if err := c.ShouldBindJSON(&manualImport); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid manual import data"})
+		return
+	}
+
+	if err := s.services.ImportService.ProcessManualImport(&manualImport); err != nil {
+		s.logger.Error("Failed to process manual import", "path", manualImport.Path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process manual import"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Manual import processed successfully"})
+}
+
+// handlePreviewNaming generates a preview of file naming
+func (s *Server) handlePreviewNaming(c *gin.Context) {
+	movieID, err := strconv.Atoi(c.Param("movieId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid movie ID"})
+		return
+	}
+
+	movie, err := s.services.MovieService.GetByID(movieID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+		return
+	}
+
+	config, err := s.services.NamingService.GetNamingConfig()
+	if err != nil {
+		s.logger.Error("Failed to get naming config", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get naming config"})
+		return
+	}
+
+	preview, err := s.services.NamingService.PreviewNaming(movie, config)
+	if err != nil {
+		s.logger.Error("Failed to generate naming preview", "movieId", movieID, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate naming preview"})
+		return
+	}
+
+	c.JSON(http.StatusOK, preview)
+}
+
+// handleGetFileOperations returns file operations
+func (s *Server) handleGetFileOperations(c *gin.Context) {
+	status := models.FileOperationStatus(c.Query("status"))
+	operationType := models.FileOperationType(c.Query("type"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	operations, err := s.services.FileOperationService.GetOperations(status, operationType, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to get file operations", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get file operations"})
+		return
+	}
+
+	c.JSON(http.StatusOK, operations)
+}
+
+// handleGetFileOperation returns a specific file operation
+func (s *Server) handleGetFileOperation(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid operation ID"})
+		return
+	}
+
+	operation, err := s.services.FileOperationService.GetOperationByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File operation not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, operation)
+}
+
+// handleCancelFileOperation cancels a file operation
+func (s *Server) handleCancelFileOperation(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid operation ID"})
+		return
+	}
+
+	if err := s.services.FileOperationService.CancelOperation(id); err != nil {
+		s.logger.Error("Failed to cancel file operation", "id", id, "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "File operation canceled"})
+}
+
+// handleGetFileOperationSummary returns file operation summary
+func (s *Server) handleGetFileOperationSummary(c *gin.Context) {
+	summary, err := s.services.FileOperationService.GetOperationSummary()
+	if err != nil {
+		s.logger.Error("Failed to get file operation summary", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get operation summary"})
+		return
+	}
+
+	c.JSON(http.StatusOK, summary)
+}
+
+// handleExtractMediaInfo extracts media info from a file
+func (s *Server) handleExtractMediaInfo(c *gin.Context) {
+	var request struct {
+		Path string `json:"path" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	mediaInfo, err := s.services.MediaInfoService.ExtractMediaInfo(request.Path)
+	if err != nil {
+		s.logger.Error("Failed to extract media info", "path", request.Path, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract media info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, mediaInfo)
+}
+
+// Notification handlers
+func (s *Server) handleGetNotifications(c *gin.Context) {
+	notifications, err := s.services.NotificationService.GetNotifications()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, notifications)
+}
+
+func (s *Server) handleGetNotification(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification ID"})
+		return
+	}
+
+	notification, err := s.services.NotificationService.GetNotificationByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "notification not found"})
+		return
+	}
+	c.JSON(http.StatusOK, notification)
+}
+
+func (s *Server) handleCreateNotification(c *gin.Context) {
+	var notification models.Notification
+	if err := c.ShouldBindJSON(&notification); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := s.services.NotificationService.CreateNotification(&notification); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, notification)
+}
+
+func (s *Server) handleUpdateNotification(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification ID"})
+		return
+	}
+
+	var notification models.Notification
+	if err := c.ShouldBindJSON(&notification); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	notification.ID = id
+	if err := s.services.NotificationService.UpdateNotification(&notification); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, notification)
+}
+
+func (s *Server) handleDeleteNotification(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification ID"})
+		return
+	}
+
+	if err := s.services.NotificationService.DeleteNotification(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (s *Server) handleTestNotification(c *gin.Context) {
+	var notification models.Notification
+	if err := c.ShouldBindJSON(&notification); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result, err := s.services.NotificationService.TestNotification(&notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Server) handleGetNotificationProviders(c *gin.Context) {
+	providers, err := s.services.NotificationService.GetProviderInfo()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, providers)
+}
+
+func (s *Server) handleGetNotificationProviderFields(c *gin.Context) {
+	providerType := models.NotificationType(c.Param("type"))
+	fields, err := s.services.NotificationService.GetProviderFields(providerType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, fields)
+}
+
+func (s *Server) handleGetNotificationHistory(c *gin.Context) {
+	limit := DefaultPageSize
+	offset := 0
+
+	if l := c.Query("limit"); l != "" {
+		if parsedLimit, err := strconv.Atoi(l); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	if o := c.Query("offset"); o != "" {
+		if parsedOffset, err := strconv.Atoi(o); err == nil && parsedOffset >= 0 {
+			offset = parsedOffset
+		}
+	}
+
+	history, err := s.services.NotificationService.GetNotificationHistory(limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, history)
+}
+
+// Calendar API handlers
+
+// handleGetCalendar retrieves calendar events based on query parameters
+func (s *Server) handleGetCalendar(c *gin.Context) {
+	request, err := s.parseCalendarRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := s.services.CalendarService.GetCalendarEvents(request)
+	if err != nil {
+		s.logger.Error("Failed to get calendar events", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve calendar events"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// handleGetCalendarFeed generates an iCal feed for external calendar applications
+func (s *Server) handleGetCalendarFeed(c *gin.Context) {
+	// Parse feed configuration from query parameters
+	config := s.services.ICalService.ParseICalFeedParams(s.extractQueryParams(c))
+
+	// Validate configuration
+	if err := s.services.ICalService.ValidateICalFeedConfig(config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check authentication if required
+	if config.RequireAuth {
+		providedKey := c.Query("passKey")
+		if providedKey == "" || providedKey != config.PassKey {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or missing pass key"})
+			return
+		}
+	}
+
+	// Generate base URL for event links
+	baseURL := fmt.Sprintf("%s://%s", s.getScheme(c), c.Request.Host)
+	if s.config.Server.URLBase != "" {
+		baseURL += s.config.Server.URLBase
+	}
+
+	// Generate iCal feed
+	icalData, err := s.services.ICalService.GenerateICalFeed(config, baseURL)
+	if err != nil {
+		s.logger.Error("Failed to generate iCal feed", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate calendar feed"})
+		return
+	}
+
+	// Set appropriate headers for iCal content
+	c.Header("Content-Type", "text/calendar; charset=utf-8")
+	c.Header("Content-Disposition", "attachment; filename=\"radarr-calendar.ics\"")
+	c.Header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+
+	c.String(http.StatusOK, icalData)
+}
+
+// handleGetCalendarConfiguration retrieves calendar configuration settings
+func (s *Server) handleGetCalendarConfiguration(c *gin.Context) {
+	config, err := s.services.CalendarService.GetCalendarConfiguration()
+	if err != nil {
+		s.logger.Error("Failed to get calendar configuration", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve calendar configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+// handleUpdateCalendarConfiguration updates calendar configuration settings
+func (s *Server) handleUpdateCalendarConfiguration(c *gin.Context) {
+	var config models.CalendarConfiguration
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid calendar configuration data"})
+		return
+	}
+
+	if err := s.services.CalendarService.UpdateCalendarConfiguration(&config); err != nil {
+		s.logger.Error("Failed to update calendar configuration", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update calendar configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, config)
+}
+
+// handleGetCalendarStats retrieves calendar statistics
+func (s *Server) handleGetCalendarStats(c *gin.Context) {
+	stats, err := s.services.CalendarService.GetCalendarStats()
+	if err != nil {
+		s.logger.Error("Failed to get calendar statistics", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve calendar statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// handleRefreshCalendar forces a refresh of calendar events and clears cache
+func (s *Server) handleRefreshCalendar(c *gin.Context) {
+	if err := s.services.CalendarService.RefreshCalendarEvents(); err != nil {
+		s.logger.Error("Failed to refresh calendar events", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh calendar events"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Calendar events refreshed successfully"})
+}
+
+// handleGetCalendarFeedURL generates a URL for accessing the iCal feed
+func (s *Server) handleGetCalendarFeedURL(c *gin.Context) {
+	config := s.services.ICalService.ParseICalFeedParams(s.extractQueryParams(c))
+
+	baseURL := fmt.Sprintf("%s://%s", s.getScheme(c), c.Request.Host)
+	if s.config.Server.URLBase != "" {
+		baseURL += s.config.Server.URLBase
+	}
+
+	feedURL := s.services.ICalService.GenerateICalFeedURL(baseURL, config)
+
+	c.JSON(http.StatusOK, gin.H{
+		"url":    feedURL,
+		"config": config,
+	})
+}
+
+// Helper functions for calendar handlers
+
+// parseCalendarRequest parses query parameters into a calendar request
+func (s *Server) parseCalendarRequest(c *gin.Context) (*models.CalendarRequest, error) {
+	request := &models.CalendarRequest{}
+
+	// Parse date range
+	if startStr := c.Query("start"); startStr != "" {
+		if start, err := time.Parse(time.RFC3339, startStr); err == nil {
+			request.Start = &start
+		} else if start, err := time.Parse("2006-01-02", startStr); err == nil {
+			request.Start = &start
+		} else {
+			return nil, fmt.Errorf("invalid start date format: %s", startStr)
+		}
+	}
+
+	if endStr := c.Query("end"); endStr != "" {
+		if end, err := time.Parse(time.RFC3339, endStr); err == nil {
+			request.End = &end
+		} else if end, err := time.Parse("2006-01-02", endStr); err == nil {
+			request.End = &end
+		} else {
+			return nil, fmt.Errorf("invalid end date format: %s", endStr)
+		}
+	}
+
+	// Parse view type
+	if viewStr := c.Query("view"); viewStr != "" {
+		request.View = models.CalendarViewType(viewStr)
+	}
+
+	// Parse event types
+	if eventTypesStr := c.Query("eventTypes"); eventTypesStr != "" {
+		eventTypeStrs := strings.Split(eventTypesStr, ",")
+		for _, eventTypeStr := range eventTypeStrs {
+			eventType := models.CalendarEventType(strings.TrimSpace(eventTypeStr))
+			request.EventTypes = append(request.EventTypes, eventType)
+		}
+	}
+
+	// Parse movie IDs
+	if movieIDsStr := c.Query("movieIds"); movieIDsStr != "" {
+		movieIDStrs := strings.Split(movieIDsStr, ",")
+		for _, movieIDStr := range movieIDStrs {
+			if movieID, err := strconv.Atoi(strings.TrimSpace(movieIDStr)); err == nil {
+				request.MovieIDs = append(request.MovieIDs, movieID)
+			}
+		}
+	}
+
+	// Parse tags
+	if tagsStr := c.Query("tags"); tagsStr != "" {
+		tagStrs := strings.Split(tagsStr, ",")
+		for _, tagStr := range tagStrs {
+			if tag, err := strconv.Atoi(strings.TrimSpace(tagStr)); err == nil {
+				request.Tags = append(request.Tags, tag)
+			}
+		}
+	}
+
+	// Parse monitored flag
+	if monitoredStr := c.Query("monitored"); monitoredStr != "" {
+		monitored := strings.ToLower(monitoredStr) == "true"
+		request.Monitored = &monitored
+	}
+
+	// Parse include flags
+	request.IncludeUnmonitored = c.DefaultQuery("includeUnmonitored", "false") == "true"
+	request.IncludeMovieInformation = c.DefaultQuery("includeMovieInformation", "true") == "true"
+
+	return request, nil
+}
+
+// extractQueryParams extracts all query parameters as a map
+func (s *Server) extractQueryParams(c *gin.Context) map[string]string {
+	params := make(map[string]string)
+	for key, values := range c.Request.URL.Query() {
+		if len(values) > 0 {
+			params[key] = values[0]
+		}
+	}
+	return params
+}
+
+// getScheme determines the HTTP scheme (http or https)
+func (s *Server) getScheme(c *gin.Context) string {
+	if s.config.Server.EnableSSL {
+		return "https"
+	}
+
+	if c.GetHeader("X-Forwarded-Proto") == "https" {
+		return "https"
+	}
+
+	return "http"
 }

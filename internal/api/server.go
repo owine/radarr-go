@@ -95,6 +95,9 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	// Queue management
 	s.setupQueueRoutes(v3)
 
+	// Task management
+	s.setupTaskRoutes(v3)
+
 	// History and Activity
 	s.setupHistoryRoutes(v3)
 	s.setupActivityRoutes(v3)
@@ -102,12 +105,36 @@ func (s *Server) setupAPIRoutes(v3 *gin.RouterGroup) {
 	// Configuration
 	s.setupConfigRoutes(v3)
 
+	// Notifications
+	s.setupNotificationRoutes(v3)
+
+	// File Organization and Import
+	s.setupFileOrganizationRoutes(v3)
+
 	// Search & Release Management
 	s.setupSearchRoutes(v3)
+
+	// Health monitoring
+	s.setupHealthRoutes(v3)
+
+	// Calendar
+	s.setupCalendarRoutes(v3)
+
+	// Wanted movies
+	s.setupWantedRoutes(v3)
 
 	// Search
 	searchRoutes := v3.Group("/search")
 	searchRoutes.GET("/movie", s.handleSearchMovies)
+
+	// Collections
+	s.setupCollectionRoutes(v3)
+
+	// Parse functionality
+	s.setupParseRoutes(v3)
+
+	// Rename functionality
+	s.setupRenameRoutes(v3)
 }
 
 func (s *Server) setupMovieRoutes(v3 *gin.RouterGroup) {
@@ -199,6 +226,19 @@ func (s *Server) setupQueueRoutes(v3 *gin.RouterGroup) {
 	queueRoutes.DELETE("/:id", s.handleRemoveQueueItem)
 	queueRoutes.DELETE("/bulk", s.handleRemoveQueueItemsBulk)
 	queueRoutes.GET("/stats", s.handleGetQueueStats)
+}
+
+func (s *Server) setupNotificationRoutes(v3 *gin.RouterGroup) {
+	notificationRoutes := v3.Group("/notification")
+	notificationRoutes.GET("", s.handleGetNotifications)
+	notificationRoutes.GET("/:id", s.handleGetNotification)
+	notificationRoutes.POST("", s.handleCreateNotification)
+	notificationRoutes.PUT("/:id", s.handleUpdateNotification)
+	notificationRoutes.DELETE("/:id", s.handleDeleteNotification)
+	notificationRoutes.POST("/test", s.handleTestNotification)
+	notificationRoutes.GET("/schema", s.handleGetNotificationProviders)
+	notificationRoutes.GET("/schema/:type", s.handleGetNotificationProviderFields)
+	notificationRoutes.GET("/history", s.handleGetNotificationHistory)
 }
 
 func (s *Server) setupTemplateRoutes() {
@@ -356,4 +396,155 @@ func (s *Server) setupSearchRoutes(v3 *gin.RouterGroup) {
 	searchRoutes.GET("", s.handleSearchReleases)
 	searchRoutes.GET("/movie/:id", s.handleSearchMovieReleases)
 	searchRoutes.GET("/interactive", s.handleInteractiveSearch)
+}
+
+func (s *Server) setupTaskRoutes(v3 *gin.RouterGroup) {
+	// Task management routes (Radarr command API)
+	commandRoutes := v3.Group("/command")
+	commandRoutes.GET("", s.handleGetTasks)
+	commandRoutes.GET("/:id", s.handleGetTask)
+	commandRoutes.POST("", s.handleQueueTask)
+	commandRoutes.DELETE("/:id", s.handleCancelTask)
+
+	// System task routes
+	systemRoutes := v3.Group("/system/task")
+	systemRoutes.GET("", s.handleGetScheduledTasks)
+	systemRoutes.POST("", s.handleCreateScheduledTask)
+	systemRoutes.PUT("/:id", s.handleUpdateScheduledTask)
+	systemRoutes.DELETE("/:id", s.handleDeleteScheduledTask)
+	systemRoutes.GET("/status", s.handleGetQueueStatus)
+
+	// Command-specific task routes
+	movieCommands := v3.Group("/movie")
+	movieCommands.POST("/:id/refresh", s.handleRefreshMovie)
+	movieCommands.POST("/refresh", s.handleRefreshAllMovies)
+
+	// Import list sync commands are already handled in setupImportListRoutes()
+
+	systemCommands := v3.Group("/system")
+	systemCommands.POST("/health", s.handleRunHealthCheck)
+	systemCommands.POST("/cleanup", s.handleRunCleanup)
+}
+
+func (s *Server) setupFileOrganizationRoutes(v3 *gin.RouterGroup) {
+	// File Organization routes
+	orgRoutes := v3.Group("/fileorganization")
+	orgRoutes.GET("", s.handleGetFileOrganizations)
+	orgRoutes.GET("/:id", s.handleGetFileOrganizationByID)
+	orgRoutes.POST("/retry", s.handleRetryFailedOrganizations)
+	orgRoutes.POST("/scan", s.handleScanDirectory)
+
+	// Import routes
+	importRoutes := v3.Group("/import")
+	importRoutes.POST("/process", s.handleProcessImport)
+	importRoutes.GET("/manual", s.handleGetManualImports)
+	importRoutes.POST("/manual", s.handleProcessManualImport)
+
+	// Additional naming routes (basic naming routes are in setupConfigRoutes)
+	v3.GET("/config/naming/preview/:movieId", s.handlePreviewNaming)
+
+	// File operation tracking routes
+	operationRoutes := v3.Group("/fileoperation")
+	operationRoutes.GET("", s.handleGetFileOperations)
+	operationRoutes.GET("/:id", s.handleGetFileOperation)
+	operationRoutes.DELETE("/:id", s.handleCancelFileOperation)
+	operationRoutes.GET("/summary", s.handleGetFileOperationSummary)
+
+	// Media info routes
+	mediaInfoRoutes := v3.Group("/mediainfo")
+	mediaInfoRoutes.POST("/extract", s.handleExtractMediaInfo)
+}
+
+// setupHealthRoutes configures health monitoring and diagnostics routes
+func (s *Server) setupHealthRoutes(v3 *gin.RouterGroup) {
+	// Health status routes
+	healthRoutes := v3.Group("/health")
+	healthRoutes.GET("", s.handleGetHealth)                    // Overall health status
+	healthRoutes.GET("/dashboard", s.handleGetHealthDashboard) // Complete health dashboard
+	healthRoutes.GET("/check/:name", s.handleGetHealthCheck)   // Run specific health check
+
+	// Health issues management
+	issueRoutes := healthRoutes.Group("/issue")
+	issueRoutes.GET("", s.handleGetHealthIssues)                 // List health issues with filtering
+	issueRoutes.GET("/:id", s.handleGetHealthIssue)              // Get specific health issue
+	issueRoutes.POST("/:id/dismiss", s.handleDismissHealthIssue) // Dismiss a health issue
+	issueRoutes.POST("/:id/resolve", s.handleResolveHealthIssue) // Mark health issue as resolved
+
+	// System resource monitoring
+	systemRoutes := healthRoutes.Group("/system")
+	systemRoutes.GET("/resources", s.handleGetSystemResources) // Current system resources
+	systemRoutes.GET("/diskspace", s.handleGetDiskSpace)       // Disk space information
+
+	// Performance metrics
+	metricsRoutes := healthRoutes.Group("/metrics")
+	metricsRoutes.GET("", s.handleGetPerformanceMetrics)            // Performance metrics with time range
+	metricsRoutes.POST("/record", s.handleRecordPerformanceMetrics) // Manually record metrics
+
+	// Health monitoring control
+	monitoringRoutes := healthRoutes.Group("/monitoring")
+	monitoringRoutes.POST("/start", s.handleStartHealthMonitoring) // Start background monitoring
+	monitoringRoutes.POST("/stop", s.handleStopHealthMonitoring)   // Stop background monitoring
+	monitoringRoutes.POST("/cleanup", s.handleCleanupHealthData)   // Cleanup old health data
+}
+
+// setupCalendarRoutes configures calendar and event tracking routes
+func (s *Server) setupCalendarRoutes(v3 *gin.RouterGroup) {
+	// Calendar events routes
+	calendarRoutes := v3.Group("/calendar")
+	calendarRoutes.GET("", s.handleGetCalendar)                 // Get calendar events with filtering
+	calendarRoutes.GET("/feed.ics", s.handleGetCalendarFeed)    // iCal feed for external applications
+	calendarRoutes.GET("/feed/url", s.handleGetCalendarFeedURL) // Generate iCal feed URL
+	calendarRoutes.POST("/refresh", s.handleRefreshCalendar)    // Force refresh calendar events
+	calendarRoutes.GET("/stats", s.handleGetCalendarStats)      // Calendar statistics
+
+	// Calendar configuration routes
+	configRoutes := calendarRoutes.Group("/config")
+	configRoutes.GET("", s.handleGetCalendarConfiguration)    // Get calendar configuration
+	configRoutes.PUT("", s.handleUpdateCalendarConfiguration) // Update calendar configuration
+}
+
+// setupWantedRoutes configures wanted movies tracking and management routes
+func (s *Server) setupWantedRoutes(v3 *gin.RouterGroup) {
+	// Wanted movies routes
+	wantedRoutes := v3.Group("/wanted")
+	wantedRoutes.GET("/missing", s.handleGetMissingMovies)          // Get missing movies
+	wantedRoutes.GET("/cutoff", s.handleGetCutoffUnmetMovies)       // Get cutoff unmet movies
+	wantedRoutes.GET("", s.handleGetAllWantedMovies)                // Get all wanted movies with filters
+	wantedRoutes.GET("/stats", s.handleGetWantedStats)              // Get wanted movies statistics
+	wantedRoutes.GET("/:id", s.handleGetWantedMovie)                // Get specific wanted movie
+	wantedRoutes.POST("/search", s.handleTriggerWantedSearch)       // Trigger searches for wanted movies
+	wantedRoutes.POST("/bulk", s.handleWantedBulkOperation)         // Bulk operations on wanted movies
+	wantedRoutes.POST("/refresh", s.handleRefreshWantedMovies)      // Refresh wanted movies analysis
+	wantedRoutes.PUT("/:id/priority", s.handleUpdateWantedPriority) // Update wanted movie priority
+	wantedRoutes.DELETE("/:id", s.handleRemoveWantedMovie)          // Remove from wanted list
+}
+
+// setupCollectionRoutes configures movie collection management routes
+func (s *Server) setupCollectionRoutes(v3 *gin.RouterGroup) {
+	collectionRoutes := v3.Group("/collection")
+	collectionRoutes.GET("", s.handleGetCollections)                         // Get all collections
+	collectionRoutes.GET("/:id", s.handleGetCollection)                      // Get specific collection
+	collectionRoutes.POST("", s.handleCreateCollection)                      // Create new collection
+	collectionRoutes.PUT("/:id", s.handleUpdateCollection)                   // Update collection
+	collectionRoutes.DELETE("/:id", s.handleDeleteCollection)                // Delete collection
+	collectionRoutes.POST("/:id/search", s.handleSearchCollectionMovies)     // Search for missing movies
+	collectionRoutes.POST("/:id/sync", s.handleSyncCollectionFromTMDB)       // Sync from TMDB
+	collectionRoutes.GET("/:id/statistics", s.handleGetCollectionStatistics) // Get collection statistics
+}
+
+// setupParseRoutes configures release name parsing routes
+func (s *Server) setupParseRoutes(v3 *gin.RouterGroup) {
+	parseRoutes := v3.Group("/parse")
+	parseRoutes.GET("", s.handleParseReleaseTitle)        // Parse single release title
+	parseRoutes.POST("", s.handleParseMultipleTitles)     // Parse multiple release titles
+	parseRoutes.DELETE("/cache", s.handleClearParseCache) // Clear parse cache
+}
+
+// setupRenameRoutes configures file and folder renaming routes
+func (s *Server) setupRenameRoutes(v3 *gin.RouterGroup) {
+	renameRoutes := v3.Group("/rename")
+	renameRoutes.GET("/preview", s.handlePreviewRename)                   // Preview file renames
+	renameRoutes.POST("", s.handleRenameMovies)                           // Execute file renames
+	renameRoutes.GET("/preview/folder", s.handlePreviewMovieFolderRename) // Preview folder renames
+	renameRoutes.POST("/folder", s.handleRenameMovieFolders)              // Execute folder renames
 }
