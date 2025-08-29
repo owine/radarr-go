@@ -822,7 +822,9 @@ type queueQueryParams struct {
 }
 
 const (
-	trueBoolString = "true"
+	trueBoolString  = "true"
+	falseBoolString = "false"
+	httpsScheme     = "https"
 )
 
 func (s *Server) parseQueueQueryParams(c *gin.Context) queueQueryParams {
@@ -840,8 +842,8 @@ func (s *Server) parseQueueQueryParams(c *gin.Context) queueQueryParams {
 		params.Status = []models.QueueStatus{st}
 	}
 
-	params.IncludeUnknownMovieItems = c.DefaultQuery("includeUnknownMovieItems", "false") == trueBoolString
-	params.IncludeMovie = c.DefaultQuery("includeMovie", "false") == trueBoolString
+	params.IncludeUnknownMovieItems = c.DefaultQuery("includeUnknownMovieItems", falseBoolString) == trueBoolString
+	params.IncludeMovie = c.DefaultQuery("includeMovie", falseBoolString) == trueBoolString
 	params.Page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
 	params.PageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 	params.SortKey = c.DefaultQuery("sortKey", "timeleft")
@@ -893,9 +895,9 @@ func (s *Server) handleRemoveQueueItem(c *gin.Context) {
 	}
 
 	removeFromClient := c.DefaultQuery("removeFromClient", trueBoolString) == trueBoolString
-	blocklist := c.DefaultQuery("blocklist", "false") == trueBoolString
-	skipRedownload := c.DefaultQuery("skipRedownload", "false") == trueBoolString
-	changeCategory := c.DefaultQuery("changeCategory", "false") == trueBoolString
+	blocklist := c.DefaultQuery("blocklist", falseBoolString) == trueBoolString
+	skipRedownload := c.DefaultQuery("skipRedownload", falseBoolString) == trueBoolString
+	changeCategory := c.DefaultQuery("changeCategory", falseBoolString) == trueBoolString
 
 	err = s.services.QueueService.RemoveQueueItem(id, removeFromClient, blocklist, skipRedownload, changeCategory)
 	if err != nil {
@@ -915,9 +917,9 @@ func (s *Server) handleRemoveQueueItemsBulk(c *gin.Context) {
 	}
 
 	removeFromClient := c.DefaultQuery("removeFromClient", trueBoolString) == trueBoolString
-	blocklist := c.DefaultQuery("blocklist", "false") == trueBoolString
-	skipRedownload := c.DefaultQuery("skipRedownload", "false") == trueBoolString
-	changeCategory := c.DefaultQuery("changeCategory", "false") == trueBoolString
+	blocklist := c.DefaultQuery("blocklist", falseBoolString) == trueBoolString
+	skipRedownload := c.DefaultQuery("skipRedownload", falseBoolString) == trueBoolString
+	changeCategory := c.DefaultQuery("changeCategory", falseBoolString) == trueBoolString
 
 	err := s.services.QueueService.RemoveQueueItems(
 		bulkRequest.IDs, removeFromClient, blocklist, skipRedownload, changeCategory)
@@ -2504,11 +2506,11 @@ func (s *Server) extractQueryParams(c *gin.Context) map[string]string {
 // getScheme determines the HTTP scheme (http or https)
 func (s *Server) getScheme(c *gin.Context) string {
 	if s.config.Server.EnableSSL {
-		return "https"
+		return httpsScheme
 	}
 
-	if c.GetHeader("X-Forwarded-Proto") == "https" {
-		return "https"
+	if c.GetHeader("X-Forwarded-Proto") == httpsScheme {
+		return httpsScheme
 	}
 
 	return "http"

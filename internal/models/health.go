@@ -284,6 +284,10 @@ func GetWorstStatus(statuses ...HealthStatus) HealthStatus {
 			if worst == HealthStatusHealthy {
 				worst = HealthStatusUnknown
 			}
+		case HealthStatusHealthy:
+			// Healthy status doesn't change the worst status
+		case HealthStatusOK:
+			// OK status doesn't change the worst status (equivalent to healthy)
 		}
 	}
 	return worst

@@ -301,7 +301,11 @@ func (s *Server) handlePreviewRename(c *gin.Context) {
 }
 
 // handleRenameRequest processes a rename request using the provided operation function
-func (s *Server) handleRenameRequest(c *gin.Context, operation func(context.Context, []int) error, operationType, logAction string) {
+func (s *Server) handleRenameRequest(
+	c *gin.Context,
+	operation func(context.Context, []int) error,
+	operationType, logAction string,
+) {
 	var request models.RenameMovieRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
@@ -347,5 +351,10 @@ func (s *Server) handlePreviewMovieFolderRename(c *gin.Context) {
 
 // handleRenameMovieFolders performs actual folder renaming for movies
 func (s *Server) handleRenameMovieFolders(c *gin.Context) {
-	s.handleRenameRequest(c, s.services.RenameService.RenameMovieFolders, "Movie folders", "Failed to rename movie folders")
+	s.handleRenameRequest(
+		c,
+		s.services.RenameService.RenameMovieFolders,
+		"Movie folders",
+		"Failed to rename movie folders",
+	)
 }

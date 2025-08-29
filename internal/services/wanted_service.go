@@ -601,6 +601,9 @@ func (s *WantedMoviesService) BulkOperation(operation *models.WantedMoviesBulkOp
 	case models.BulkOpRemove:
 		return s.bulkRemove(operation.MovieIDs)
 
+	case models.BulkOpSearch:
+		return s.bulkSearch(operation.MovieIDs)
+
 	default:
 		return fmt.Errorf("unknown bulk operation: %s", operation.Operation)
 	}
@@ -649,6 +652,31 @@ func (s *WantedMoviesService) bulkRemove(movieIDs []int) error {
 	}
 
 	s.logger.Info("Bulk remove wanted movies completed", "affectedRows", result.RowsAffected)
+	return nil
+}
+
+func (s *WantedMoviesService) bulkSearch(movieIDs []int) error {
+	// Trigger search for specified movies
+	var wantedMovies []models.WantedMovie
+	result := s.db.GORM.Where("movie_id IN ?", movieIDs).Find(&wantedMovies)
+	if result.Error != nil {
+		return fmt.Errorf("failed to fetch wanted movies for search: %w", result.Error)
+	}
+
+	// Update last search time for all movies
+	now := time.Now()
+	updateResult := s.db.GORM.Model(&models.WantedMovie{}).
+		Where("movie_id IN ?", movieIDs).
+		Updates(map[string]interface{}{
+			"last_search_time": &now,
+			"search_attempts":  gorm.Expr("search_attempts + 1"),
+		})
+
+	if updateResult.Error != nil {
+		return fmt.Errorf("failed to update search metadata: %w", updateResult.Error)
+	}
+
+	s.logger.Info("Bulk search initiated for wanted movies", "count", len(wantedMovies))
 	return nil
 }
 

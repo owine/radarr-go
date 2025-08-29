@@ -2,7 +2,7 @@
 package services
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -269,6 +269,9 @@ func (s *CalendarService) calculateAvailabilityDate(movie *models.Movie, now tim
 			preDBDate := movie.PhysicalRelease.AddDate(0, 0, -7)
 			return &preDBDate
 		}
+	case models.AvailabilityTBA:
+		// For TBA (To Be Announced), no specific availability date
+		return nil
 	}
 	return nil
 }
@@ -303,6 +306,8 @@ func (s *CalendarService) isAllDayEvent(eventType models.CalendarEventType) bool
 	switch eventType {
 	case models.CalendarEventCinemaRelease, models.CalendarEventPhysicalRelease, models.CalendarEventDigitalRelease:
 		return true
+	case models.CalendarEventAnnouncement, models.CalendarEventMonitoring, models.CalendarEventAvailability:
+		return false
 	default:
 		return false
 	}
@@ -428,7 +433,7 @@ func (s *CalendarService) setDefaultDateRange(request *models.CalendarRequest) *
 // generateCacheKey creates a cache key for the calendar request
 func (s *CalendarService) generateCacheKey(request *models.CalendarRequest) string {
 	data, _ := json.Marshal(request)
-	hash := md5.Sum(data)
+	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
 

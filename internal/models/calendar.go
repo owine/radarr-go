@@ -370,6 +370,10 @@ func (e *CalendarEvent) ToICalEvent(baseURL string) ICalEvent {
 		categories = append(categories, "Digital Release", "Movies")
 	case CalendarEventAnnouncement:
 		categories = append(categories, "Announcement", "Movies")
+	case CalendarEventMonitoring:
+		categories = append(categories, "Monitoring", "Movies")
+	case CalendarEventAvailability:
+		categories = append(categories, "Availability", "Movies")
 	}
 
 	var url string

@@ -166,6 +166,66 @@ func (f *DefaultProviderFactory) GetProviderInfo(providerType models.Notificatio
 		info.Website = ""
 		info.DocsURL = ""
 		info.Version = "1.0.0"
+	case models.NotificationTypeJoin:
+		info.Description = "Send push notifications via Join"
+		info.Website = "https://joaoapps.com/join/"
+		info.DocsURL = "https://joaoapps.com/join/api/"
+		info.Version = "1.0.0"
+	case models.NotificationTypeApprise:
+		info.Description = "Send notifications via Apprise"
+		info.Website = "https://github.com/caronc/apprise"
+		info.DocsURL = "https://github.com/caronc/apprise/wiki"
+		info.Version = "1.0.0"
+	case models.NotificationTypeNotifiarr:
+		info.Description = "Send notifications via Notifiarr"
+		info.Website = "https://notifiarr.com"
+		info.DocsURL = "https://notifiarr.com/docs"
+		info.Version = "1.0.0"
+	case models.NotificationTypePlex:
+		info.Description = "Send notifications to Plex Media Server"
+		info.Website = "https://www.plex.tv"
+		info.DocsURL = "https://support.plex.tv/articles/115002267687-webhooks/"
+		info.Version = "1.0.0"
+	case models.NotificationTypeEmby:
+		info.Description = "Send notifications to Emby Media Server"
+		info.Website = "https://emby.media"
+		info.DocsURL = "https://github.com/MediaBrowser/Emby/wiki/Webhooks"
+		info.Version = "1.0.0"
+	case models.NotificationTypeJellyfin:
+		info.Description = "Send notifications to Jellyfin Media Server"
+		info.Website = "https://jellyfin.org"
+		info.DocsURL = "https://jellyfin.org/docs/general/server/webhooks"
+		info.Version = "1.0.0"
+	case models.NotificationTypeKodi:
+		info.Description = "Send notifications to Kodi"
+		info.Website = "https://kodi.tv"
+		info.DocsURL = "https://kodi.wiki/view/JSON-RPC_API"
+		info.Version = "1.0.0"
+	case models.NotificationTypeSynologyIndexer:
+		info.Description = "Send notifications via Synology Indexer"
+		info.Website = "https://www.synology.com"
+		info.DocsURL = ""
+		info.Version = "1.0.0"
+	case models.NotificationTypeTwitter:
+		info.Description = "Send notifications via Twitter"
+		info.Website = "https://twitter.com"
+		info.DocsURL = "https://developer.twitter.com/en/docs"
+		info.Version = "1.0.0"
+	case models.NotificationTypeSignal:
+		info.Description = "Send notifications via Signal"
+		info.Website = "https://signal.org"
+		info.DocsURL = "https://github.com/bbernhard/signal-cli-rest-api"
+		info.Version = "1.0.0"
+	case models.NotificationTypeMatrix:
+		info.Description = "Send notifications via Matrix"
+		info.Website = "https://matrix.org"
+		info.DocsURL = "https://matrix.org/docs/guides/client-server-api"
+		info.Version = "1.0.0"
+	case models.NotificationTypeNtfy:
+		info.Description = "Send notifications via Ntfy"
+		info.Website = "https://ntfy.sh"
+		info.DocsURL = "https://docs.ntfy.sh/"
+		info.Version = "1.0.0"
 	default:
 		info.Description = fmt.Sprintf("Notification provider for %s", providerType)
 		info.Version = "1.0.0"

@@ -202,7 +202,7 @@ func (s *RenameService) renameMovie(ctx context.Context, movieID int) error {
 	}
 
 	// Ensure target directory exists
-	if err := os.MkdirAll(filepath.Dir(newPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(newPath), 0750); err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 

@@ -111,7 +111,7 @@ func (s *FileOrganizationService) OrganizeFile(
 
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(destinationPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		s.logger.Error("Failed to create destination directory", "dir", destDir, "error", err)
 		fileOrg.MarkAsFailed(fmt.Sprintf("Failed to create destination directory: %v", err))
 		if saveErr := s.saveFileOrganization(fileOrg); saveErr != nil {
@@ -133,6 +133,8 @@ func (s *FileOrganizationService) OrganizeFile(
 		movieFile, err = s.copyFile(sourcePath, destinationPath, namingConfig)
 	case models.FileOperationHardlink:
 		movieFile, err = s.hardlinkFile(sourcePath, destinationPath, namingConfig)
+	case models.FileOperationSymlink:
+		movieFile, err = s.symlinkFile(sourcePath, destinationPath, namingConfig)
 	default:
 		err = fmt.Errorf("unsupported operation: %s", operation)
 	}
@@ -300,6 +302,29 @@ func (s *FileOrganizationService) hardlinkFile(sourcePath, destPath string, conf
 	}
 
 	if fileInfo, err := os.Stat(destPath); err == nil {
+		movieFile.Size = fileInfo.Size()
+	}
+
+	return movieFile, nil
+}
+
+func (s *FileOrganizationService) symlinkFile(
+	sourcePath, destPath string, _ *models.NamingConfig,
+) (*models.MovieFile, error) {
+	// Create symbolic link
+	if err := os.Symlink(sourcePath, destPath); err != nil {
+		return nil, fmt.Errorf("failed to create symbolic link: %w", err)
+	}
+
+	// Create movie file record
+	movieFile := &models.MovieFile{
+		Path:             destPath,
+		RelativePath:     destPath,
+		DateAdded:        time.Now(),
+		OriginalFilePath: sourcePath,
+	}
+
+	if fileInfo, err := os.Stat(sourcePath); err == nil {
 		movieFile.Size = fileInfo.Size()
 	}
 

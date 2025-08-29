@@ -89,6 +89,9 @@ func (s *ImportService) ProcessImport(path string, options *ImportOptions) (*mod
 			s.processApprovedImport(&decision, result)
 		case models.ImportDecisionRejected:
 			s.processRejectedImport(&decision, result)
+		case models.ImportDecisionUnknown:
+			// Unknown decisions are treated as skipped
+			result.SkippedFiles = append(result.SkippedFiles, decision.Item)
 		}
 	}
 

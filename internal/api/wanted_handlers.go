@@ -298,7 +298,17 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 		SortDir:  "DESC",
 	}
 
-	// Parse page and pageSize
+	s.parsePaginationParams(c, filter)
+	s.parseSortingParams(c, filter)
+	s.parseStatusAndPriorityParams(c, filter)
+	s.parseBooleanParams(c, filter)
+	s.parseFilterParams(c, filter)
+	s.parseTimeParams(c, filter)
+
+	return filter, nil
+}
+
+func (s *Server) parsePaginationParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if pageStr := c.Query("page"); pageStr != "" {
 		if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
 			filter.Page = page
@@ -313,22 +323,23 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 			filter.PageSize = pageSize
 		}
 	}
+}
 
-	// Parse sorting
+func (s *Server) parseSortingParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if sortBy := c.Query("sortKey"); sortBy != "" {
 		filter.SortBy = sortBy
 	}
 	if sortDir := c.Query("sortDirection"); sortDir != "" {
 		filter.SortDir = strings.ToUpper(sortDir)
 	}
+}
 
-	// Parse status filter
+func (s *Server) parseStatusAndPriorityParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if statusStr := c.Query("status"); statusStr != "" {
 		status := models.WantedStatus(statusStr)
 		filter.Status = &status
 	}
 
-	// Parse priority filters
 	if priorityStr := c.Query("priority"); priorityStr != "" {
 		if priority, err := strconv.Atoi(priorityStr); err == nil {
 			p := models.WantedPriority(priority)
@@ -349,8 +360,9 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 			filter.MaxPriority = &p
 		}
 	}
+}
 
-	// Parse boolean filters
+func (s *Server) parseBooleanParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if isAvailableStr := c.Query("isAvailable"); isAvailableStr != "" {
 		isAvailable := strings.ToLower(isAvailableStr) == "true"
 		filter.IsAvailable = &isAvailable
@@ -365,27 +377,27 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 		monitored := strings.ToLower(monitoredStr) == "true"
 		filter.Monitored = &monitored
 	}
+}
 
-	// Parse quality profile filter
+func (s *Server) parseFilterParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if qualityProfileIDStr := c.Query("qualityProfileId"); qualityProfileIDStr != "" {
 		if qualityProfileID, err := strconv.Atoi(qualityProfileIDStr); err == nil {
 			filter.QualityProfileID = &qualityProfileID
 		}
 	}
 
-	// Parse year filter
 	if yearStr := c.Query("year"); yearStr != "" {
 		if year, err := strconv.Atoi(yearStr); err == nil {
 			filter.Year = &year
 		}
 	}
 
-	// Parse genre filter
 	if genre := c.Query("genre"); genre != "" {
 		filter.Genre = &genre
 	}
+}
 
-	// Parse time filters
+func (s *Server) parseTimeParams(c *gin.Context, filter *models.WantedMovieFilter) {
 	if lastSearchBeforeStr := c.Query("lastSearchBefore"); lastSearchBeforeStr != "" {
 		if lastSearchBefore, err := time.Parse(time.RFC3339, lastSearchBeforeStr); err == nil {
 			filter.LastSearchBefore = &lastSearchBefore
@@ -397,6 +409,4 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 			filter.LastSearchAfter = &lastSearchAfter
 		}
 	}
-
-	return filter, nil
 }

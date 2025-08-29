@@ -285,6 +285,8 @@ func (ts *TaskService) getPoolNameForTask(task *models.Task) string {
 	switch task.Priority {
 	case models.TaskPriorityHigh:
 		return "high-priority"
+	case models.TaskPriorityNormal:
+		return "default"
 	case models.TaskPriorityLow:
 		return "background"
 	default:
@@ -465,6 +467,10 @@ func (ts *TaskService) updateTaskStatus(taskID int, status models.TaskStatus, me
 			updates["started_at"] = *timestamp
 		case models.TaskStatusCompleted, models.TaskStatusFailed, models.TaskStatusAborted:
 			updates["ended_at"] = *timestamp
+		case models.TaskStatusQueued:
+			// Queued tasks don't need timestamp updates
+		case models.TaskStatusCancelling:
+			// Cancelling tasks don't need timestamp updates
 		}
 	}
 

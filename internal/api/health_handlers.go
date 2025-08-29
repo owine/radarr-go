@@ -9,6 +9,10 @@ import (
 	"github.com/radarr/radarr-go/internal/models"
 )
 
+const (
+	healthIssueNotFoundError = "health issue not found"
+)
+
 // Health API Handlers
 
 // handleGetHealth returns overall system health status
@@ -173,7 +177,7 @@ func (s *Server) handleGetHealthIssue(c *gin.Context) {
 	issue, err := s.services.HealthService.GetHealthIssueByID(id)
 	if err != nil {
 		s.logger.Errorw("Failed to get health issue", "id", id, "error", err)
-		if err.Error() == "health issue not found" {
+		if err.Error() == healthIssueNotFoundError {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Health issue not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve health issue"})
@@ -194,7 +198,7 @@ func (s *Server) handleDismissHealthIssue(c *gin.Context) {
 
 	if err := s.services.HealthService.DismissHealthIssue(id); err != nil {
 		s.logger.Errorw("Failed to dismiss health issue", "id", id, "error", err)
-		if err.Error() == "health issue not found" {
+		if err.Error() == healthIssueNotFoundError {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Health issue not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to dismiss health issue"})
@@ -215,7 +219,7 @@ func (s *Server) handleResolveHealthIssue(c *gin.Context) {
 
 	if err := s.services.HealthService.ResolveHealthIssue(id); err != nil {
 		s.logger.Errorw("Failed to resolve health issue", "id", id, "error", err)
-		if err.Error() == "health issue not found" {
+		if err.Error() == healthIssueNotFoundError {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Health issue not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve health issue"})

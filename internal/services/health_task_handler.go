@@ -56,6 +56,10 @@ func (h *HealthCheckTaskHandler) Execute(ctx context.Context, task *models.Task,
 			warningCount++
 		case models.HealthStatusError:
 			errorCount++
+		case models.HealthStatusHealthy, models.HealthStatusOK:
+			// Healthy checks don't increment any counter
+		case models.HealthStatusUnknown:
+			// Unknown checks don't increment any counter
 		}
 	}
 
