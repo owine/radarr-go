@@ -77,7 +77,9 @@ func (his *HealthIssueService) UpdateIssue(issue *models.HealthIssue) error {
 }
 
 // GetIssues implements HealthIssueServiceInterface
-func (his *HealthIssueService) GetIssues(filter models.HealthIssueFilter, limit, offset int) ([]models.HealthIssue, int64, error) {
+func (his *HealthIssueService) GetIssues(
+	filter models.HealthIssueFilter, limit, offset int,
+) ([]models.HealthIssue, int64, error) {
 	query := his.db.GORM.Model(&models.HealthIssue{})
 
 	// Apply filters
@@ -253,7 +255,9 @@ func (his *HealthIssueService) GetActiveIssues(limit, offset int) ([]models.Heal
 }
 
 // GetIssuesBySeverity returns issues filtered by severity level
-func (his *HealthIssueService) GetIssuesBySeverity(severity models.HealthSeverity, limit, offset int) ([]models.HealthIssue, int64, error) {
+func (his *HealthIssueService) GetIssuesBySeverity(
+	severity models.HealthSeverity, limit, offset int,
+) ([]models.HealthIssue, int64, error) {
 	filter := models.HealthIssueFilter{
 		Severities: []models.HealthSeverity{severity},
 		Resolved:   boolPointer(false),

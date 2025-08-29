@@ -249,7 +249,9 @@ func (s *FileOrganizationService) logOrganizationCompletion(
 }
 
 // moveFile moves a file from source to destination
-func (s *FileOrganizationService) moveFile(sourcePath, destPath string, config *models.NamingConfig) (*models.MovieFile, error) {
+func (s *FileOrganizationService) moveFile(
+	sourcePath, destPath string, config *models.NamingConfig,
+) (*models.MovieFile, error) {
 	// Validate file paths for security
 	if err := s.validateFilePath(sourcePath); err != nil {
 		return nil, fmt.Errorf("invalid source path: %w", err)
@@ -489,7 +491,8 @@ func (s *FileOrganizationService) CheckFreeSpace(destPath string, fileSize int64
 		return nil
 	}
 
-	availableBytes := int64(product)
+	// Safe conversion - already checked that product <= math.MaxInt64 above
+	availableBytes := int64(product)                                    // #nosec G115 - overflow checked above
 	requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
 
 	if availableBytes < requiredBytes {

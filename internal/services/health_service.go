@@ -343,7 +343,9 @@ func (hs *HealthService) GetHealthStatus(ctx context.Context) models.HealthStatu
 }
 
 // GetHealthIssues implements HealthServiceInterface
-func (hs *HealthService) GetHealthIssues(filter models.HealthIssueFilter, limit, offset int) ([]models.HealthIssue, int64, error) {
+func (hs *HealthService) GetHealthIssues(
+	filter models.HealthIssueFilter, limit, offset int,
+) ([]models.HealthIssue, int64, error) {
 	query := hs.db.GORM.Model(&models.HealthIssue{})
 
 	// Apply filters
@@ -645,7 +647,9 @@ func (hs *HealthService) RecordPerformanceMetrics(ctx context.Context) error {
 }
 
 // GetPerformanceMetrics implements HealthServiceInterface
-func (hs *HealthService) GetPerformanceMetrics(since, until *time.Time, limit int) ([]models.PerformanceMetrics, error) {
+func (hs *HealthService) GetPerformanceMetrics(
+	since, until *time.Time, limit int,
+) ([]models.PerformanceMetrics, error) {
 	if hs.performanceMonitor == nil {
 		return nil, fmt.Errorf("performance monitor not available")
 	}

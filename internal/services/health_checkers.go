@@ -231,7 +231,9 @@ func (d *DiskSpaceHealthChecker) Check(ctx context.Context) models.HealthCheckEx
 	return result
 }
 
-func (d *DiskSpaceHealthChecker) checkPath(path string, result *models.HealthCheckExecution, issues *[]models.HealthIssue) error {
+func (d *DiskSpaceHealthChecker) checkPath(
+	path string, result *models.HealthCheckExecution, issues *[]models.HealthIssue,
+) error {
 	diskInfo, err := d.getDiskSpaceInfo(path)
 	if err != nil {
 		*issues = append(*issues, models.HealthIssue{
@@ -256,7 +258,10 @@ func (d *DiskSpaceHealthChecker) checkPath(path string, result *models.HealthChe
 			Type:     d.Type(),
 			Source:   d.Name(),
 			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Critical disk space on %s: %.2f GB free (%.1f%% used)", path, float64(diskInfo.FreeBytes)/1024/1024/1024, diskInfo.UsagePercent),
+			Message: fmt.Sprintf(
+				"Critical disk space on %s: %.2f GB free (%.1f%% used)",
+				path, float64(diskInfo.FreeBytes)/1024/1024/1024, diskInfo.UsagePercent,
+			),
 		})
 		result.Status = models.HealthStatusCritical
 	} else if diskInfo.FreeBytes < d.healthConfig.DiskSpaceWarningThreshold {
@@ -264,7 +269,10 @@ func (d *DiskSpaceHealthChecker) checkPath(path string, result *models.HealthChe
 			Type:     d.Type(),
 			Source:   d.Name(),
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("Low disk space on %s: %.2f GB free (%.1f%% used)", path, float64(diskInfo.FreeBytes)/1024/1024/1024, diskInfo.UsagePercent),
+			Message: fmt.Sprintf(
+				"Low disk space on %s: %.2f GB free (%.1f%% used)",
+				path, float64(diskInfo.FreeBytes)/1024/1024/1024, diskInfo.UsagePercent,
+			),
 		})
 		if result.Status == models.HealthStatusHealthy {
 			result.Status = models.HealthStatusWarning
@@ -345,7 +353,10 @@ func (s *SystemResourcesHealthChecker) Check(ctx context.Context) models.HealthC
 			Type:     s.Type(),
 			Source:   s.Name(),
 			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Critical memory usage: %.1f%% (%.1f MB / %.1f MB)", memoryUsagePercent, memoryUsageMB, memoryTotalMB),
+			Message: fmt.Sprintf(
+				"Critical memory usage: %.1f%% (%.1f MB / %.1f MB)",
+				memoryUsagePercent, memoryUsageMB, memoryTotalMB,
+			),
 		})
 		result.Status = models.HealthStatusCritical
 	} else if memoryUsagePercent > 80 {
@@ -353,7 +364,10 @@ func (s *SystemResourcesHealthChecker) Check(ctx context.Context) models.HealthC
 			Type:     s.Type(),
 			Source:   s.Name(),
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("High memory usage: %.1f%% (%.1f MB / %.1f MB)", memoryUsagePercent, memoryUsageMB, memoryTotalMB),
+			Message: fmt.Sprintf(
+				"High memory usage: %.1f%% (%.1f MB / %.1f MB)",
+				memoryUsagePercent, memoryUsageMB, memoryTotalMB,
+			),
 		})
 		if result.Status == models.HealthStatusHealthy {
 			result.Status = models.HealthStatusWarning
