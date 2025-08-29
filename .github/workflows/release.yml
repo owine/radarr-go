@@ -535,7 +535,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Log in to Docker Hub
-      if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+      if: ${{ vars.ENABLE_DOCKER_HUB == 'true' }}
       uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -554,7 +554,7 @@ jobs:
           type=raw,value=latest,enable=${{ !needs.validate.outputs.is_prerelease }}
 
     - name: Extract metadata for Docker Hub
-      if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+      if: ${{ vars.ENABLE_DOCKER_HUB == 'true' }}
       id: meta-docker
       uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       with:
@@ -584,7 +584,7 @@ jobs:
         sbom: true         # Generate SBOM for security
 
     - name: Build and push to Docker Hub
-      if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
+      if: ${{ vars.ENABLE_DOCKER_HUB == 'true' }}
       id: build-docker
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       with:
@@ -610,7 +610,7 @@ jobs:
         echo "- **Digest**: \`${{ steps.build-ghcr.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Tags**: ${{ steps.meta-ghcr.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [[ "${{ secrets.DOCKER_USERNAME }}" != "" ]]; then
+        if [[ "${{ vars.ENABLE_DOCKER_HUB }}" == "true" ]]; then
           echo "### Docker Hub" >> $GITHUB_STEP_SUMMARY
           echo "- **Digest**: \`${{ steps.build-docker.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Tags**: ${{ steps.meta-docker.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
@@ -798,7 +798,7 @@ jobs:
 
         echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
         echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+        if [ "${{ vars.ENABLE_DOCKER_HUB }}" = "true" ]; then
           echo "- **Docker Hub**: \`radarr/radarr-go:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
         fi
         if [ "$IS_PRERELEASE" != "true" ]; then
