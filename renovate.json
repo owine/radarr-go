@@ -24,7 +24,6 @@
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
-      "matchPackagePatterns": ["*"],
       "isVulnerabilityAlert": true,
       "addLabels": [
         "security"
@@ -33,7 +32,10 @@
       "schedule": [
         "at any time"
       ],
-      "prPriority": 10
+      "prPriority": 10,
+      "matchPackageNames": [
+        "*"
+      ]
     },
     {
       "description": "Go major updates - separate PRs, manual review",
