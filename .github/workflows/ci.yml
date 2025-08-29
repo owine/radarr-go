@@ -22,10 +22,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@v5.0.0
+      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -36,7 +36,7 @@ jobs:
     # Enhanced dependency caching
     - name: Cache Go modules and tools
       id: cache
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
       with:
         path: |
           ~/.cache/go-build
@@ -58,7 +58,7 @@ jobs:
 
     # Combined linting and security in parallel steps
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v8.0.0
+      uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8.0.0
       with:
         version: latest
         args: --timeout=5m
@@ -87,7 +87,7 @@ jobs:
 
     - name: Upload SARIF file
       if: always()
-      uses: github/codeql-action/upload-sarif@v3.0.0
+      uses: github/codeql-action/upload-sarif@b374143c1149a9115d881581d29b8390bbcbb59c # v3.22.11
       with:
         sarif_file: gosec.sarif
       continue-on-error: true
@@ -147,7 +147,7 @@ jobs:
         ls -la artifacts/
 
     - name: Store build artifacts
-      uses: actions/upload-artifact@v4.0.0
+      uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
       with:
         name: build-artifacts
         path: artifacts/
@@ -199,11 +199,11 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     # Reuse enhanced caching from previous job
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@v5.0.0
+      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -212,7 +212,7 @@ jobs:
           go.work.sum
 
     - name: Restore Go modules and tools cache
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
       with:
         path: |
           ~/.cache/go-build
@@ -224,7 +224,7 @@ jobs:
           go-${{ runner.os }}-
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v5.0.0
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         name: build-artifacts
         path: ./artifacts
@@ -258,7 +258,7 @@ jobs:
         RADARR_DATABASE_PASSWORD: test_password_123
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5.0.0
+      uses: codecov/codecov-action@3b1354a6c45db9f1008891f4eafc1a7e94ce1d18 # v5.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.db }}.out
@@ -305,19 +305,19 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v5.0.0
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         name: build-artifacts
         path: ./artifacts
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3.0.0
+      uses: docker/setup-buildx-action@0d103c3126aa41d772a8362f6aa67afac040f80c # v3.1.0
 
     - name: Log in to Container Registry
-      uses: docker/login-action@v3.0.0
+      uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -325,7 +325,7 @@ jobs:
 
     - name: Extract metadata
       id: meta
-      uses: docker/metadata-action@v5.0.0
+      uses: docker/metadata-action@f19c3691d56f26e3f97547999df66a9ecbf0d9b0 # v5.1.0
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
@@ -334,7 +334,7 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v6.0.0
+      uses: docker/build-push-action@94f8f8c2eec4bc3f1d78c1755580779804cb87b2 # v6.0.1
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -349,7 +349,7 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Publish artifacts
-      uses: actions/upload-artifact@v4.0.0
+      uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
       with:
         name: published-artifacts-${{ github.ref_name }}
         path: artifacts/
