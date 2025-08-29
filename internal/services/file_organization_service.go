@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/radarr/radarr-go/internal/database"
@@ -485,44 +483,11 @@ func (s *FileOrganizationService) CheckFreeSpace(destPath string, fileSize int64
 		return nil
 	}
 
-	// Get disk usage for destination path
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(filepath.Dir(destPath), &stat); err != nil {
+	availableBytes, err := s.getDiskSpace(filepath.Dir(destPath))
+	if err != nil {
 		return fmt.Errorf("failed to get disk usage: %w", err)
 	}
 
-	// Calculate available space with overflow protection
-	bavail := stat.Bavail // uint64
-	bsize := stat.Bsize   // uint32
-
-	// Check for overflow in multiplication
-	if bavail > 0 && bsize > 0 && bavail > uint64(math.MaxInt64)/uint64(bsize) {
-		// Handle overflow by using MaxInt64 as available space
-		availableBytes := int64(math.MaxInt64)
-		requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
-
-		if availableBytes < requiredBytes {
-			return fmt.Errorf("insufficient disk space: available %d bytes, required %d bytes",
-				availableBytes, requiredBytes)
-		}
-		return nil
-	}
-
-	// Safe conversion after overflow check
-	product := bavail * uint64(bsize) // #nosec G115 - overflow checked below
-	if product > math.MaxInt64 {
-		availableBytes := int64(math.MaxInt64)                              // #nosec G115 - capped at MaxInt64
-		requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
-
-		if availableBytes < requiredBytes {
-			return fmt.Errorf("insufficient disk space: available %d bytes, required %d bytes",
-				availableBytes, requiredBytes)
-		}
-		return nil
-	}
-
-	// Safe conversion - already checked that product <= math.MaxInt64 above
-	availableBytes := int64(product)                                    // #nosec G115 - overflow checked above
 	requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
 
 	if availableBytes < requiredBytes {
