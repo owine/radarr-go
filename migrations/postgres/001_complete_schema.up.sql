@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS quality_profiles (
     cutoff_format_score INTEGER DEFAULT 0,
     format_items TEXT DEFAULT '[]'::TEXT,
     upgrade_allowed BOOLEAN DEFAULT TRUE,
-    language_id INTEGER DEFAULT 1,
+    language VARCHAR(50) DEFAULT 'english',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -746,8 +746,8 @@ INSERT INTO quality_definitions (id, title, weight, min_size, max_size) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert default quality profile
-INSERT INTO quality_profiles (id, name, cutoff, items) VALUES
-(1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]')
+INSERT INTO quality_profiles (id, name, cutoff, items, language) VALUES
+(1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]', 'english')
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert default host configuration

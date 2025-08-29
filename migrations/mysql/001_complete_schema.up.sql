@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS quality_profiles (
     name VARCHAR(255) NOT NULL UNIQUE,
     cutoff INT NOT NULL,
     items TEXT NOT NULL,
+    language VARCHAR(50) DEFAULT 'english',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -102,6 +103,6 @@ INSERT INTO quality_definitions (id, title, weight, min_size, max_size) VALUES
 ON DUPLICATE KEY UPDATE id=id;
 
 -- Insert default quality profile
-INSERT INTO quality_profiles (id, name, cutoff, items) VALUES
-(1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]')
+INSERT INTO quality_profiles (id, name, cutoff, items, language) VALUES
+(1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]', 'english')
 ON DUPLICATE KEY UPDATE id=id;
