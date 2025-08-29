@@ -49,20 +49,14 @@ CREATE TABLE IF NOT EXISTS health_checks (
     INDEX idx_health_checks_time (time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add new columns to notifications table if they don't exist
--- Note: MySQL doesn't have IF NOT EXISTS for columns, so we use a procedure
+-- Add new columns to notifications table
+-- These columns are not in the base schema, so they can be added directly
 
-DELIMITER //
-CREATE PROCEDURE AddNotificationColumns()
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; -- Ignore duplicate column errors
+-- Add on_movie_added column
+ALTER TABLE notifications ADD COLUMN on_movie_added BOOLEAN DEFAULT FALSE;
 
-    -- Only add columns that aren't already in the base table
-    ALTER TABLE notifications ADD COLUMN on_movie_added BOOLEAN DEFAULT FALSE;
-    ALTER TABLE notifications ADD COLUMN supports_on_movie_added BOOLEAN DEFAULT TRUE;
-    ALTER TABLE notifications ADD COLUMN supports_on_manual_interaction_required BOOLEAN DEFAULT TRUE;
-END //
-DELIMITER ;
+-- Add supports_on_movie_added column
+ALTER TABLE notifications ADD COLUMN supports_on_movie_added BOOLEAN DEFAULT TRUE;
 
-CALL AddNotificationColumns();
-DROP PROCEDURE AddNotificationColumns;
+-- Add supports_on_manual_interaction_required column
+ALTER TABLE notifications ADD COLUMN supports_on_manual_interaction_required BOOLEAN DEFAULT TRUE;
