@@ -347,12 +347,35 @@ func (s *ImportService) checkExistingFile(file models.ImportableFile, movie *mod
 func (s *ImportService) processApprovedImport(decision *models.ImportDecision, result *models.FileImportResult) {
 	s.logger.Info("Processing approved import", "file", decision.Item.Path, "movie", decision.LocalMovie.Title)
 
+	namingConfig, mediaInfo := s.prepareImportResources(decision, result)
+	if namingConfig == nil {
+		return // Error already handled
+	}
+
+	orgResult := s.organizeImportFile(decision, result, namingConfig)
+	if orgResult == nil {
+		return // Error already handled
+	}
+
+	movieFile := s.createMovieFileRecord(decision, orgResult, mediaInfo)
+	if movieFile == nil {
+		s.moveToErrored(decision, result, "Failed to create movie file record")
+		return
+	}
+
+	s.finalizeImport(decision, result, movieFile, orgResult)
+}
+
+// prepareImportResources gets naming config and media info for import
+func (s *ImportService) prepareImportResources(
+	decision *models.ImportDecision, result *models.FileImportResult,
+) (*models.NamingConfig, *models.MediaInfo) {
 	// Get naming configuration
 	namingConfig, err := s.namingService.GetNamingConfig()
 	if err != nil {
 		s.logger.Error("Failed to get naming config", "error", err)
 		s.moveToErrored(decision, result, err.Error())
-		return
+		return nil, nil
 	}
 
 	// Extract media info
@@ -362,7 +385,14 @@ func (s *ImportService) processApprovedImport(decision *models.ImportDecision, r
 		// Continue without media info
 	}
 
-	// Organize the file
+	return namingConfig, mediaInfo
+}
+
+// organizeImportFile handles file organization for import
+func (s *ImportService) organizeImportFile(
+	decision *models.ImportDecision, result *models.FileImportResult,
+	namingConfig *models.NamingConfig,
+) *models.FileOrganizationResult {
 	orgResult, err := s.fileOrganizationService.OrganizeFile(
 		decision.Item.Path,
 		decision.LocalMovie,
@@ -373,16 +403,23 @@ func (s *ImportService) processApprovedImport(decision *models.ImportDecision, r
 	if err != nil {
 		s.logger.Error("Failed to organize file", "file", decision.Item.Path, "error", err)
 		s.moveToErrored(decision, result, err.Error())
-		return
+		return nil
 	}
 
 	if !orgResult.Success {
 		s.logger.Error("File organization failed", "file", decision.Item.Path, "error", orgResult.Error)
 		s.moveToErrored(decision, result, orgResult.Error)
-		return
+		return nil
 	}
 
-	// Create movie file record
+	return orgResult
+}
+
+// createMovieFileRecord creates and saves a movie file record
+func (s *ImportService) createMovieFileRecord(
+	decision *models.ImportDecision, orgResult *models.FileOrganizationResult,
+	mediaInfo *models.MediaInfo,
+) *models.MovieFile {
 	movieFile := &models.MovieFile{
 		MovieID:          decision.LocalMovie.ID,
 		Path:             orgResult.OrganizedPath,
@@ -396,13 +433,19 @@ func (s *ImportService) processApprovedImport(decision *models.ImportDecision, r
 		movieFile.MediaInfo = *mediaInfo
 	}
 
-	// Save movie file
 	if err := s.movieFileService.Create(movieFile); err != nil {
 		s.logger.Error("Failed to create movie file record", "error", err)
-		s.moveToErrored(decision, result, err.Error())
-		return
+		return nil
 	}
 
+	return movieFile
+}
+
+// finalizeImport completes the import process
+func (s *ImportService) finalizeImport(
+	decision *models.ImportDecision, result *models.FileImportResult,
+	movieFile *models.MovieFile, orgResult *models.FileOrganizationResult,
+) {
 	// Update movie to mark it as having a file
 	decision.LocalMovie.HasFile = true
 	decision.LocalMovie.MovieFileID = movieFile.ID

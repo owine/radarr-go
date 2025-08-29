@@ -123,63 +123,85 @@ func (s *NamingService) BuildFileName(
 func (s *NamingService) buildTokenMap(movie *models.Movie, quality *models.Quality, mediaInfo *models.MediaInfo) map[string]string {
 	tokens := make(map[string]string)
 
-	if movie != nil {
-		// Movie tokens
-		tokens["{Movie Title}"] = movie.Title
-		tokens["{Movie CleanTitle}"] = s.cleanTitle(movie.Title)
-		tokens["{Movie TitleThe}"] = s.moveArticleToEnd(movie.Title)
-		tokens["{Movie OriginalTitle}"] = movie.OriginalTitle
-		tokens["{Movie TitleFirstCharacter}"] = s.getFirstCharacter(movie.Title)
+	s.addMovieTokens(tokens, movie)
+	s.addQualityTokens(tokens, quality)
+	s.addMediaInfoTokens(tokens, mediaInfo)
+	s.setOptionalTokenDefaults(tokens)
 
-		// Release year tokens
-		if movie.Year > 0 {
-			tokens["{Release Year}"] = strconv.Itoa(movie.Year)
-			tokens["{Release YearFirst}"] = strconv.Itoa(movie.Year)
-		} else {
-			tokens["{Release Year}"] = "Unknown"
-			tokens["{Release YearFirst}"] = "Unknown"
-		}
+	return tokens
+}
 
-		// IMDB/TMDB tokens
-		tokens["{ImdbId}"] = movie.ImdbID
-		tokens["{Tmdb Id}"] = strconv.Itoa(movie.TmdbID)
-
-		// Collection token
-		// tokens["{Movie Collection}"] = movie.Collection // Would be added if collection field exists
+// addMovieTokens adds movie-related tokens to the token map
+func (s *NamingService) addMovieTokens(tokens map[string]string, movie *models.Movie) {
+	if movie == nil {
+		return
 	}
 
-	if quality != nil {
-		// Quality tokens
-		tokens["{Quality Full}"] = s.buildQualityString(quality)
-		tokens["{Quality Title}"] = quality.Quality.Name
+	// Movie tokens
+	tokens["{Movie Title}"] = movie.Title
+	tokens["{Movie CleanTitle}"] = s.cleanTitle(movie.Title)
+	tokens["{Movie TitleThe}"] = s.moveArticleToEnd(movie.Title)
+	tokens["{Movie OriginalTitle}"] = movie.OriginalTitle
+	tokens["{Movie TitleFirstCharacter}"] = s.getFirstCharacter(movie.Title)
 
-		// Proper/Repack tokens
-		if quality.Revision.IsRepack {
-			tokens["{Quality Proper}"] = "Repack"
-			tokens["{Quality Real}"] = "REPACK"
-		} else if quality.Revision.Real > 0 {
-			tokens["{Quality Proper}"] = "Proper"
-			tokens["{Quality Real}"] = "REAL"
-		} else {
-			tokens["{Quality Proper}"] = ""
-			tokens["{Quality Real}"] = ""
-		}
+	// Release year tokens
+	if movie.Year > 0 {
+		tokens["{Release Year}"] = strconv.Itoa(movie.Year)
+		tokens["{Release YearFirst}"] = strconv.Itoa(movie.Year)
+	} else {
+		tokens["{Release Year}"] = "Unknown"
+		tokens["{Release YearFirst}"] = "Unknown"
 	}
 
-	if mediaInfo != nil {
-		// Media info tokens
-		tokens["{MediaInfo Simple}"] = s.buildSimpleMediaInfo(mediaInfo)
-		tokens["{MediaInfo Full}"] = s.buildFullMediaInfo(mediaInfo)
-		tokens["{MediaInfo VideoCodec}"] = mediaInfo.VideoCodec
-		tokens["{MediaInfo VideoBitDepth}"] = s.formatBitDepth(mediaInfo.VideoBitDepth)
-		tokens["{MediaInfo VideoResolution}"] = mediaInfo.Resolution
-		tokens["{MediaInfo AudioCodec}"] = mediaInfo.AudioCodec
-		tokens["{MediaInfo AudioChannels}"] = s.formatAudioChannels(mediaInfo.AudioChannels)
-		tokens["{MediaInfo AudioLanguages}"] = mediaInfo.AudioLanguages
-		tokens["{MediaInfo SubtitleLanguages}"] = mediaInfo.Subtitles
+	// IMDB/TMDB tokens
+	tokens["{ImdbId}"] = movie.ImdbID
+	tokens["{Tmdb Id}"] = strconv.Itoa(movie.TmdbID)
+}
+
+// addQualityTokens adds quality-related tokens to the token map
+func (s *NamingService) addQualityTokens(tokens map[string]string, quality *models.Quality) {
+	if quality == nil {
+		return
 	}
 
-	// Set empty values for missing optional tokens
+	// Quality tokens
+	tokens["{Quality Full}"] = s.buildQualityString(quality)
+	tokens["{Quality Title}"] = quality.Quality.Name
+
+	// Proper/Repack tokens
+	switch {
+	case quality.Revision.IsRepack:
+		tokens["{Quality Proper}"] = "Repack"
+		tokens["{Quality Real}"] = "REPACK"
+	case quality.Revision.Real > 0:
+		tokens["{Quality Proper}"] = "Proper"
+		tokens["{Quality Real}"] = "REAL"
+	default:
+		tokens["{Quality Proper}"] = ""
+		tokens["{Quality Real}"] = ""
+	}
+}
+
+// addMediaInfoTokens adds media info-related tokens to the token map
+func (s *NamingService) addMediaInfoTokens(tokens map[string]string, mediaInfo *models.MediaInfo) {
+	if mediaInfo == nil {
+		return
+	}
+
+	// Media info tokens
+	tokens["{MediaInfo Simple}"] = s.buildSimpleMediaInfo(mediaInfo)
+	tokens["{MediaInfo Full}"] = s.buildFullMediaInfo(mediaInfo)
+	tokens["{MediaInfo VideoCodec}"] = mediaInfo.VideoCodec
+	tokens["{MediaInfo VideoBitDepth}"] = s.formatBitDepth(mediaInfo.VideoBitDepth)
+	tokens["{MediaInfo VideoResolution}"] = mediaInfo.Resolution
+	tokens["{MediaInfo AudioCodec}"] = mediaInfo.AudioCodec
+	tokens["{MediaInfo AudioChannels}"] = s.formatAudioChannels(mediaInfo.AudioChannels)
+	tokens["{MediaInfo AudioLanguages}"] = mediaInfo.AudioLanguages
+	tokens["{MediaInfo SubtitleLanguages}"] = mediaInfo.Subtitles
+}
+
+// setOptionalTokenDefaults sets empty values for missing optional tokens
+func (s *NamingService) setOptionalTokenDefaults(tokens map[string]string) {
 	optionalTokens := []string{
 		"{Movie OriginalTitle}", "{Movie Collection}", "{Edition Tags}",
 		"{Custom Formats}", "{Release Group}", "{ImdbId}",
@@ -195,8 +217,6 @@ func (s *NamingService) buildTokenMap(movie *models.Movie, quality *models.Quali
 			tokens[token] = ""
 		}
 	}
-
-	return tokens
 }
 
 // replaceTokens replaces all tokens in the format string with their values

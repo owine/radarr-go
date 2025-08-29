@@ -165,10 +165,17 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 	hs.mu.RLock()
 	defer hs.mu.RUnlock()
 
-	var checks []models.HealthCheckExecution
-	var allIssues []models.HealthIssue
+	checkersToRun := hs.determineCheckersToRun(types)
+	checks, allIssues := hs.executeHealthChecks(ctx, checkersToRun)
+	result := hs.buildHealthCheckResult(checks, allIssues, startTime)
 
-	// Determine which checkers to run
+	hs.finalizeHealthCheckResult(result, allIssues, startTime)
+
+	return result
+}
+
+// determineCheckersToRun determines which health checkers should be executed
+func (hs *HealthService) determineCheckersToRun(types []models.HealthCheckType) map[string]HealthChecker {
 	checkersToRun := make(map[string]HealthChecker)
 
 	if len(types) == 0 {
@@ -187,13 +194,35 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 		}
 	}
 
-	// Run health checks concurrently with timeout
+	return checkersToRun
+}
+
+// executeHealthChecks runs health checks concurrently and collects results
+func (hs *HealthService) executeHealthChecks(
+	ctx context.Context, checkersToRun map[string]HealthChecker,
+) ([]models.HealthCheckExecution, []models.HealthIssue) {
 	checkResults := make(chan models.HealthCheckExecution, len(checkersToRun))
 	var wg sync.WaitGroup
 
 	checkCtx, checkCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer checkCancel()
 
+	hs.runCheckersAsync(checkCtx, checkersToRun, checkResults, &wg)
+
+	// Wait for all checks to complete
+	go func() {
+		wg.Wait()
+		close(checkResults)
+	}()
+
+	return hs.collectHealthCheckResults(checkResults)
+}
+
+// runCheckersAsync runs health checkers asynchronously
+func (hs *HealthService) runCheckersAsync(
+	ctx context.Context, checkersToRun map[string]HealthChecker,
+	checkResults chan<- models.HealthCheckExecution, wg *sync.WaitGroup,
+) {
 	for name, checker := range checkersToRun {
 		if !checker.IsEnabled() {
 			continue
@@ -204,25 +233,26 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 			defer wg.Done()
 
 			checkStart := time.Now()
-			result := checker.Check(checkCtx)
+			result := checker.Check(ctx)
 			result.Duration = time.Since(checkStart)
 			result.Timestamp = checkStart
 
 			select {
 			case checkResults <- result:
-			case <-checkCtx.Done():
+			case <-ctx.Done():
 				hs.logger.Warnw("Health check result timeout", "checker", name)
 			}
 		}(name, checker)
 	}
+}
 
-	// Wait for all checks to complete
-	go func() {
-		wg.Wait()
-		close(checkResults)
-	}()
+// collectHealthCheckResults collects and processes health check results
+func (hs *HealthService) collectHealthCheckResults(
+	checkResults <-chan models.HealthCheckExecution,
+) ([]models.HealthCheckExecution, []models.HealthIssue) {
+	var checks []models.HealthCheckExecution
+	var allIssues []models.HealthIssue
 
-	// Collect results
 	for result := range checkResults {
 		checks = append(checks, result)
 		allIssues = append(allIssues, result.Issues...)
@@ -237,11 +267,18 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 		}
 	}
 
-	// Calculate overall status and summary
+	return checks, allIssues
+}
+
+// buildHealthCheckResult creates the final health check result
+func (hs *HealthService) buildHealthCheckResult(
+	checks []models.HealthCheckExecution, allIssues []models.HealthIssue,
+	startTime time.Time,
+) models.HealthCheckResult {
 	overallStatus := hs.calculateOverallStatus(checks)
 	summary := hs.calculateSummary(checks)
 
-	result := models.HealthCheckResult{
+	return models.HealthCheckResult{
 		OverallStatus: overallStatus,
 		Checks:        checks,
 		Issues:        allIssues,
@@ -249,7 +286,13 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 		Timestamp:     startTime,
 		Duration:      time.Since(startTime),
 	}
+}
 
+// finalizeHealthCheckResult handles post-processing of health check results
+func (hs *HealthService) finalizeHealthCheckResult(
+	result models.HealthCheckResult, allIssues []models.HealthIssue,
+	startTime time.Time,
+) {
 	// Store issues in database
 	go hs.storeHealthIssues(allIssues)
 
@@ -259,11 +302,9 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 
 	hs.logger.Infow("Health check completed",
 		"duration", result.Duration,
-		"overall_status", overallStatus,
-		"total_checks", len(checks),
+		"overall_status", result.OverallStatus,
+		"total_checks", len(result.Checks),
 		"issues", len(allIssues))
-
-	return result
 }
 
 // RunCheck implements HealthServiceInterface

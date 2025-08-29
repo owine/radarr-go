@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/radarr/radarr-go/internal/models"
@@ -10,133 +11,163 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCollectionService(t *testing.T) {
+func TestCollectionService_CreateAndGet(t *testing.T) {
 	db, logger := setupTestDB(t)
 	defer cleanupTestDB(db)
 
 	service := NewCollectionService(db, logger)
+	ctx := context.Background()
 
-	t.Run("CreateAndGetCollection", func(t *testing.T) {
-		ctx := context.Background()
-		collection := &models.MovieCollection{
-			Title:               "Test Collection",
-			CleanTitle:          "testcollection",
-			TmdbID:              12345,
-			Overview:            "A test movie collection",
-			Monitored:           true,
-			QualityProfileID:    1,
-			MinimumAvailability: models.AvailabilityReleased,
-			SearchOnAdd:         true,
-		}
+	collection := createTestCollection("Test Collection", 12345)
 
-		// Create collection
-		created, err := service.Create(ctx, collection)
+	// Create collection
+	created, err := service.Create(ctx, collection)
+	require.NoError(t, err)
+	assert.NotZero(t, created.ID)
+	assert.Equal(t, collection.Title, created.Title)
+	assert.Equal(t, collection.TmdbID, created.TmdbID)
+
+	// Test retrieval methods
+	testCollectionRetrieval(ctx, t, service, created)
+}
+
+func TestCollectionService_Update(t *testing.T) {
+	db, logger := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	service := NewCollectionService(db, logger)
+	ctx := context.Background()
+
+	collection := createTestCollection("Original Title", 54321)
+	collection.MinimumAvailability = models.AvailabilityAnnounced
+
+	created, err := service.Create(ctx, collection)
+	require.NoError(t, err)
+
+	// Update collection
+	updates := &models.MovieCollection{
+		TmdbID:              54321,
+		Monitored:           false,
+		MinimumAvailability: models.AvailabilityReleased,
+	}
+
+	updated, err := service.Update(ctx, created.ID, updates)
+	require.NoError(t, err)
+	assert.False(t, updated.Monitored)
+	assert.Equal(t, models.AvailabilityReleased, updated.MinimumAvailability)
+}
+
+func TestCollectionService_Delete(t *testing.T) {
+	db, logger := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	service := NewCollectionService(db, logger)
+	ctx := context.Background()
+
+	collection := createTestCollection("To Delete", 99999)
+
+	created, err := service.Create(ctx, collection)
+	require.NoError(t, err)
+
+	// Delete collection without movies
+	err = service.Delete(ctx, created.ID, false)
+	require.NoError(t, err)
+
+	// Verify it's deleted
+	_, err = service.GetByID(ctx, created.ID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}
+
+func TestCollectionService_GetAll(t *testing.T) {
+	db, logger := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	service := NewCollectionService(db, logger)
+	ctx := context.Background()
+
+	// Create test collections
+	testCollections := createMultipleTestCollections()
+
+	for _, c := range testCollections {
+		_, err := service.Create(ctx, c)
 		require.NoError(t, err)
-		assert.NotZero(t, created.ID)
-		assert.Equal(t, collection.Title, created.Title)
-		assert.Equal(t, collection.TmdbID, created.TmdbID)
+	}
 
-		// Get by ID
-		retrieved, err := service.GetByID(ctx, created.ID)
-		require.NoError(t, err)
-		assert.Equal(t, created.ID, retrieved.ID)
-		assert.Equal(t, created.Title, retrieved.Title)
+	// Test getting all and filtered collections
+	testGetAllCollections(ctx, t, service)
+}
 
-		// Get by TMDB ID
-		byTmdb, err := service.GetByTmdbID(ctx, created.TmdbID)
-		require.NoError(t, err)
-		assert.Equal(t, created.ID, byTmdb.ID)
-	})
+func TestCollectionService_Statistics(t *testing.T) {
+	db, logger := setupTestDB(t)
+	defer cleanupTestDB(db)
 
-	t.Run("UpdateCollection", func(t *testing.T) {
-		ctx := context.Background()
-		collection := &models.MovieCollection{
-			Title:               "Original Title",
-			TmdbID:              54321,
-			QualityProfileID:    1,
-			MinimumAvailability: models.AvailabilityAnnounced,
-		}
+	service := NewCollectionService(db, logger)
+	ctx := context.Background()
 
-		created, err := service.Create(ctx, collection)
-		require.NoError(t, err)
+	collection := createTestCollection("Stats Test", 88888)
 
-		// Update collection
-		updates := &models.MovieCollection{
-			TmdbID:              54321,
-			Monitored:           false,
-			MinimumAvailability: models.AvailabilityReleased,
-		}
+	created, err := service.Create(ctx, collection)
+	require.NoError(t, err)
 
-		updated, err := service.Update(ctx, created.ID, updates)
-		require.NoError(t, err)
-		assert.False(t, updated.Monitored)
-		assert.Equal(t, models.AvailabilityReleased, updated.MinimumAvailability)
-	})
+	stats, err := service.GetCollectionStatistics(ctx, created.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, stats)
+	assert.Zero(t, stats.MovieCount) // No movies added yet
+}
 
-	t.Run("DeleteCollection", func(t *testing.T) {
-		ctx := context.Background()
-		collection := &models.MovieCollection{
-			Title:            "To Delete",
-			TmdbID:           99999,
-			QualityProfileID: 1,
-		}
+// createTestCollection creates a basic test collection
+func createTestCollection(title string, tmdbID int) *models.MovieCollection {
+	return &models.MovieCollection{
+		Title:               title,
+		CleanTitle:          strings.ToLower(strings.ReplaceAll(title, " ", "")),
+		TmdbID:              tmdbID,
+		Overview:            "A test movie collection",
+		Monitored:           true,
+		QualityProfileID:    1,
+		MinimumAvailability: models.AvailabilityReleased,
+		SearchOnAdd:         true,
+	}
+}
 
-		created, err := service.Create(ctx, collection)
-		require.NoError(t, err)
+// testCollectionRetrieval tests various collection retrieval methods
+func testCollectionRetrieval(
+	ctx context.Context, t *testing.T, service *CollectionService,
+	created *models.MovieCollection,
+) {
+	// Get by ID
+	retrieved, err := service.GetByID(ctx, created.ID)
+	require.NoError(t, err)
+	assert.Equal(t, created.ID, retrieved.ID)
+	assert.Equal(t, created.Title, retrieved.Title)
 
-		// Delete collection without movies
-		err = service.Delete(ctx, created.ID, false)
-		require.NoError(t, err)
+	// Get by TMDB ID
+	byTmdb, err := service.GetByTmdbID(ctx, created.TmdbID)
+	require.NoError(t, err)
+	assert.Equal(t, created.ID, byTmdb.ID)
+}
 
-		// Verify it's deleted
-		_, err = service.GetByID(ctx, created.ID)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "not found")
-	})
+// createMultipleTestCollections creates multiple test collections
+func createMultipleTestCollections() []*models.MovieCollection {
+	return []*models.MovieCollection{
+		{Title: "Collection 1", TmdbID: 11111, QualityProfileID: 1, Monitored: true},
+		{Title: "Collection 2", TmdbID: 22222, QualityProfileID: 1, Monitored: false},
+	}
+}
 
-	t.Run("GetAllCollections", func(t *testing.T) {
-		ctx := context.Background()
+// testGetAllCollections tests getting all collections with filtering
+func testGetAllCollections(ctx context.Context, t *testing.T, service *CollectionService) {
+	// Get all collections
+	all, err := service.GetAll(ctx, nil)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, len(all), 2)
 
-		// Create test collections
-		collections := []*models.MovieCollection{
-			{Title: "Collection 1", TmdbID: 11111, QualityProfileID: 1, Monitored: true},
-			{Title: "Collection 2", TmdbID: 22222, QualityProfileID: 1, Monitored: false},
-		}
+	// Get monitored collections only
+	monitored := true
+	monitoredCollections, err := service.GetAll(ctx, &monitored)
+	require.NoError(t, err)
 
-		for _, c := range collections {
-			_, err := service.Create(ctx, c)
-			require.NoError(t, err)
-		}
-
-		// Get all collections
-		all, err := service.GetAll(ctx, nil)
-		require.NoError(t, err)
-		assert.GreaterOrEqual(t, len(all), 2)
-
-		// Get monitored collections only
-		monitored := true
-		monitoredCollections, err := service.GetAll(ctx, &monitored)
-		require.NoError(t, err)
-
-		for _, c := range monitoredCollections {
-			assert.True(t, c.Monitored)
-		}
-	})
-
-	t.Run("GetCollectionStatistics", func(t *testing.T) {
-		ctx := context.Background()
-		collection := &models.MovieCollection{
-			Title:            "Stats Test",
-			TmdbID:           88888,
-			QualityProfileID: 1,
-		}
-
-		created, err := service.Create(ctx, collection)
-		require.NoError(t, err)
-
-		stats, err := service.GetCollectionStatistics(ctx, created.ID)
-		require.NoError(t, err)
-		assert.NotNil(t, stats)
-		assert.Zero(t, stats.MovieCount) // No movies added yet
-	})
+	for _, c := range monitoredCollections {
+		assert.True(t, c.Monitored)
+	}
 }

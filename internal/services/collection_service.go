@@ -282,49 +282,77 @@ func (s *CollectionService) GetCollectionStatistics(ctx context.Context, collect
 
 // enrichFromTMDB fetches additional collection metadata from TMDB
 func (s *CollectionService) enrichFromTMDB(ctx context.Context, collection *models.MovieCollection) error {
-	// This is a simplified TMDB integration
-	// In production, you would use a proper TMDB client library
-	url := fmt.Sprintf("https://api.themoviedb.org/3/collection/%d?api_key=YOUR_API_KEY", collection.TmdbID)
+	tmdbData, err := s.fetchTMDBData(ctx, collection.TmdbID)
+	if err != nil {
+		return err
+	}
 
+	s.updateCollectionFromTMDB(collection, tmdbData)
+	return nil
+}
+
+// fetchTMDBData retrieves collection data from TMDB API
+func (s *CollectionService) fetchTMDBData(ctx context.Context, tmdbID int) (*tmdbCollectionData, error) {
+	url := fmt.Sprintf("https://api.themoviedb.org/3/collection/%d?api_key=YOUR_API_KEY", tmdbID)
+
+	resp, err := s.makeTMDBRequest(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			s.logger.Warnw("Failed to close response body", "error", closeErr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("TMDB API returned status %d", resp.StatusCode)
+	}
+
+	return s.parseTMDBResponse(resp.Body)
+}
+
+// makeTMDBRequest creates and executes HTTP request to TMDB
+func (s *CollectionService) makeTMDBRequest(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create TMDB request: %w", err)
+		return nil, fmt.Errorf("failed to create TMDB request: %w", err)
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to fetch from TMDB: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			// Log the error but don't fail the whole operation
-			// since we're already in a defer context
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("TMDB API returned status %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to fetch from TMDB: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	return resp, nil
+}
+
+// parseTMDBResponse parses TMDB API response into structured data
+func (s *CollectionService) parseTMDBResponse(body io.Reader) (*tmdbCollectionData, error) {
+	responseBody, err := io.ReadAll(body)
 	if err != nil {
-		return fmt.Errorf("failed to read TMDB response: %w", err)
+		return nil, fmt.Errorf("failed to read TMDB response: %w", err)
 	}
 
-	var tmdbData struct {
-		ID           int    `json:"id"`
-		Name         string `json:"name"`
-		Overview     string `json:"overview"`
-		PosterPath   string `json:"poster_path"`
-		BackdropPath string `json:"backdrop_path"`
+	var tmdbData tmdbCollectionData
+	if err := json.Unmarshal(responseBody, &tmdbData); err != nil {
+		return nil, fmt.Errorf("failed to parse TMDB response: %w", err)
 	}
 
-	if err := json.Unmarshal(body, &tmdbData); err != nil {
-		return fmt.Errorf("failed to parse TMDB response: %w", err)
-	}
+	return &tmdbData, nil
+}
 
-	// Update collection with TMDB data
+// updateCollectionFromTMDB updates collection fields with TMDB data
+func (s *CollectionService) updateCollectionFromTMDB(collection *models.MovieCollection, tmdbData *tmdbCollectionData) {
+	s.updateCollectionBasicFields(collection, tmdbData)
+	s.updateCollectionImages(collection, tmdbData)
+}
+
+// updateCollectionBasicFields updates basic collection fields from TMDB data
+func (s *CollectionService) updateCollectionBasicFields(
+	collection *models.MovieCollection, tmdbData *tmdbCollectionData,
+) {
 	if collection.Title == "" {
 		collection.Title = tmdbData.Name
 	}
@@ -337,26 +365,37 @@ func (s *CollectionService) enrichFromTMDB(ctx context.Context, collection *mode
 	if collection.SortTitle == "" {
 		collection.SortTitle = tmdbData.Name
 	}
+}
 
-	// Update images if empty
-	if len(collection.Images) == 0 {
-		var images models.MediaCover
-		if tmdbData.PosterPath != "" {
-			images = append(images, models.MediaCoverImage{
-				CoverType: "poster",
-				URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.PosterPath),
-				RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.PosterPath),
-			})
-		}
-		if tmdbData.BackdropPath != "" {
-			images = append(images, models.MediaCoverImage{
-				CoverType: "fanart",
-				URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.BackdropPath),
-				RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.BackdropPath),
-			})
-		}
-		collection.Images = images
+// updateCollectionImages updates collection images from TMDB data
+func (s *CollectionService) updateCollectionImages(collection *models.MovieCollection, tmdbData *tmdbCollectionData) {
+	if len(collection.Images) > 0 {
+		return // Already has images
 	}
 
-	return nil
+	var images models.MediaCover
+	if tmdbData.PosterPath != "" {
+		images = append(images, models.MediaCoverImage{
+			CoverType: "poster",
+			URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.PosterPath),
+			RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.PosterPath),
+		})
+	}
+	if tmdbData.BackdropPath != "" {
+		images = append(images, models.MediaCoverImage{
+			CoverType: "fanart",
+			URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.BackdropPath),
+			RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.BackdropPath),
+		})
+	}
+	collection.Images = images
+}
+
+// tmdbCollectionData represents TMDB collection response structure
+type tmdbCollectionData struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Overview     string `json:"overview"`
+	PosterPath   string `json:"poster_path"`
+	BackdropPath string `json:"backdrop_path"`
 }

@@ -87,8 +87,27 @@ func TestHealthIssueService_GetIssues(t *testing.T) {
 	db, log := setupTestDB(t)
 	service := NewHealthIssueService(db, log)
 
-	// Create test issues
-	issues := []*models.HealthIssue{
+	// Create test issues and run tests
+	testGetIssuesWithTestData(t, service)
+}
+
+// testGetIssuesWithTestData creates test issues and runs get issues tests
+func testGetIssuesWithTestData(t *testing.T, service *HealthIssueService) {
+	issues := createTestHealthIssues()
+
+	for _, issue := range issues {
+		err := service.CreateIssue(issue)
+		require.NoError(t, err)
+	}
+
+	testGetAllIssues(t, service)
+	testGetIssuesFiltering(t, service)
+	testGetIssuesPagination(t, service)
+}
+
+// createTestHealthIssues creates a set of test health issues
+func createTestHealthIssues() []*models.HealthIssue {
+	return []*models.HealthIssue{
 		{
 			Type:     models.HealthCheckTypeDatabase,
 			Source:   "Database Checker",
@@ -109,18 +128,18 @@ func TestHealthIssueService_GetIssues(t *testing.T) {
 			IsResolved: true,
 		},
 	}
+}
 
-	for _, issue := range issues {
-		err := service.CreateIssue(issue)
-		require.NoError(t, err)
-	}
-
-	// Test getting all issues
+// testGetAllIssues tests getting all issues without filters
+func testGetAllIssues(t *testing.T, service *HealthIssueService) {
 	allIssues, total, err := service.GetIssues(models.HealthIssueFilter{}, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, int64(3), total)
 	assert.Len(t, allIssues, 3)
+}
 
+// testGetIssuesFiltering tests filtering issues by various criteria
+func testGetIssuesFiltering(t *testing.T, service *HealthIssueService) {
 	// Test filtering by type
 	dbIssues, total, err := service.GetIssues(models.HealthIssueFilter{
 		Types: []models.HealthCheckType{models.HealthCheckTypeDatabase},
@@ -146,8 +165,10 @@ func TestHealthIssueService_GetIssues(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), total)
 	assert.Len(t, unresolvedIssues, 2)
+}
 
-	// Test pagination
+// testGetIssuesPagination tests pagination functionality
+func testGetIssuesPagination(t *testing.T, service *HealthIssueService) {
 	page1, total, err := service.GetIssues(models.HealthIssueFilter{}, 2, 0)
 	require.NoError(t, err)
 	assert.Equal(t, int64(3), total)

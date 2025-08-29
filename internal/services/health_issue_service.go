@@ -271,19 +271,44 @@ func (his *HealthIssueService) GetCriticalIssues(limit, offset int) ([]models.He
 func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 	var stats HealthIssuesStats
 
+	if err := his.collectBasicStats(&stats); err != nil {
+		return nil, err
+	}
+
+	if err := his.collectSeverityStats(&stats); err != nil {
+		return nil, err
+	}
+
+	if err := his.collectTypeStats(&stats); err != nil {
+		return nil, err
+	}
+
+	if err := his.collectTimeBasedStats(&stats); err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
+// collectBasicStats collects total and active issue counts
+func (his *HealthIssueService) collectBasicStats(stats *HealthIssuesStats) error {
 	// Total issues
 	if err := his.db.GORM.Model(&models.HealthIssue{}).Count(&stats.Total).Error; err != nil {
-		return nil, fmt.Errorf("failed to count total issues: %w", err)
+		return fmt.Errorf("failed to count total issues: %w", err)
 	}
 
 	// Active issues
 	if err := his.db.GORM.Model(&models.HealthIssue{}).
 		Where("is_resolved = false AND is_dismissed = false").
 		Count(&stats.Active).Error; err != nil {
-		return nil, fmt.Errorf("failed to count active issues: %w", err)
+		return fmt.Errorf("failed to count active issues: %w", err)
 	}
 
-	// Issues by severity
+	return nil
+}
+
+// collectSeverityStats collects issues grouped by severity
+func (his *HealthIssueService) collectSeverityStats(stats *HealthIssuesStats) error {
 	var severityStats []struct {
 		Severity string `json:"severity"`
 		Count    int64  `json:"count"`
@@ -294,7 +319,7 @@ func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 		Where("is_resolved = false AND is_dismissed = false").
 		Group("severity").
 		Scan(&severityStats).Error; err != nil {
-		return nil, fmt.Errorf("failed to count issues by severity: %w", err)
+		return fmt.Errorf("failed to count issues by severity: %w", err)
 	}
 
 	stats.BySeverity = make(map[models.HealthSeverity]int64)
@@ -302,7 +327,11 @@ func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 		stats.BySeverity[models.HealthSeverity(stat.Severity)] = stat.Count
 	}
 
-	// Issues by type
+	return nil
+}
+
+// collectTypeStats collects issues grouped by type
+func (his *HealthIssueService) collectTypeStats(stats *HealthIssuesStats) error {
 	var typeStats []struct {
 		Type  string `json:"type"`
 		Count int64  `json:"count"`
@@ -313,7 +342,7 @@ func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 		Where("is_resolved = false AND is_dismissed = false").
 		Group("type").
 		Scan(&typeStats).Error; err != nil {
-		return nil, fmt.Errorf("failed to count issues by type: %w", err)
+		return fmt.Errorf("failed to count issues by type: %w", err)
 	}
 
 	stats.ByType = make(map[models.HealthCheckType]int64)
@@ -321,12 +350,17 @@ func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 		stats.ByType[models.HealthCheckType(stat.Type)] = stat.Count
 	}
 
+	return nil
+}
+
+// collectTimeBasedStats collects recent and resolved issue counts
+func (his *HealthIssueService) collectTimeBasedStats(stats *HealthIssuesStats) error {
 	// Recent issues (last 24 hours)
 	since := time.Now().Add(-24 * time.Hour)
 	if err := his.db.GORM.Model(&models.HealthIssue{}).
 		Where("created_at >= ?", since).
 		Count(&stats.Recent24h).Error; err != nil {
-		return nil, fmt.Errorf("failed to count recent issues: %w", err)
+		return fmt.Errorf("failed to count recent issues: %w", err)
 	}
 
 	// Resolved issues (last 30 days)
@@ -334,10 +368,10 @@ func (his *HealthIssueService) GetIssuesStats() (*HealthIssuesStats, error) {
 	if err := his.db.GORM.Model(&models.HealthIssue{}).
 		Where("is_resolved = true AND resolved_at >= ?", since30d).
 		Count(&stats.Resolved30d).Error; err != nil {
-		return nil, fmt.Errorf("failed to count resolved issues: %w", err)
+		return fmt.Errorf("failed to count resolved issues: %w", err)
 	}
 
-	return &stats, nil
+	return nil
 }
 
 // HealthIssuesStats represents statistics about health issues

@@ -2424,27 +2424,55 @@ func (s *Server) handleGetCalendarFeedURL(c *gin.Context) {
 func (s *Server) parseCalendarRequest(c *gin.Context) (*models.CalendarRequest, error) {
 	request := &models.CalendarRequest{}
 
-	// Parse date range
+	if err := s.parseCalendarDateRange(c, request); err != nil {
+		return nil, err
+	}
+
+	s.parseCalendarViewAndTypes(c, request)
+	s.parseCalendarFilters(c, request)
+	s.parseCalendarIncludeFlags(c, request)
+
+	return request, nil
+}
+
+// parseCalendarDateRange parses start and end date parameters
+func (s *Server) parseCalendarDateRange(c *gin.Context, request *models.CalendarRequest) error {
 	if startStr := c.Query("start"); startStr != "" {
-		if start, err := time.Parse(time.RFC3339, startStr); err == nil {
-			request.Start = &start
-		} else if start, err := time.Parse("2006-01-02", startStr); err == nil {
-			request.Start = &start
-		} else {
-			return nil, fmt.Errorf("invalid start date format: %s", startStr)
+		start, err := s.parseCalendarDate(startStr)
+		if err != nil {
+			return fmt.Errorf("invalid start date format: %s", startStr)
 		}
+		request.Start = start
 	}
 
 	if endStr := c.Query("end"); endStr != "" {
-		if end, err := time.Parse(time.RFC3339, endStr); err == nil {
-			request.End = &end
-		} else if end, err := time.Parse("2006-01-02", endStr); err == nil {
-			request.End = &end
-		} else {
-			return nil, fmt.Errorf("invalid end date format: %s", endStr)
+		end, err := s.parseCalendarDate(endStr)
+		if err != nil {
+			return fmt.Errorf("invalid end date format: %s", endStr)
 		}
+		request.End = end
 	}
 
+	return nil
+}
+
+// parseCalendarDate parses a date string in multiple formats
+func (s *Server) parseCalendarDate(dateStr string) (*time.Time, error) {
+	// Try RFC3339 format first
+	if date, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return &date, nil
+	}
+
+	// Try date-only format
+	if date, err := time.Parse("2006-01-02", dateStr); err == nil {
+		return &date, nil
+	}
+
+	return nil, fmt.Errorf("unsupported date format")
+}
+
+// parseCalendarViewAndTypes parses view type and event types
+func (s *Server) parseCalendarViewAndTypes(c *gin.Context, request *models.CalendarRequest) {
 	// Parse view type
 	if viewStr := c.Query("view"); viewStr != "" {
 		request.View = models.CalendarViewType(viewStr)
@@ -2458,7 +2486,10 @@ func (s *Server) parseCalendarRequest(c *gin.Context) (*models.CalendarRequest, 
 			request.EventTypes = append(request.EventTypes, eventType)
 		}
 	}
+}
 
+// parseCalendarFilters parses movie IDs, tags, and monitored filter
+func (s *Server) parseCalendarFilters(c *gin.Context, request *models.CalendarRequest) {
 	// Parse movie IDs
 	if movieIDsStr := c.Query("movieIds"); movieIDsStr != "" {
 		movieIDStrs := strings.Split(movieIDsStr, ",")
@@ -2484,12 +2515,12 @@ func (s *Server) parseCalendarRequest(c *gin.Context) (*models.CalendarRequest, 
 		monitored := strings.ToLower(monitoredStr) == "true"
 		request.Monitored = &monitored
 	}
+}
 
-	// Parse include flags
+// parseCalendarIncludeFlags parses include flags for calendar request
+func (s *Server) parseCalendarIncludeFlags(c *gin.Context, request *models.CalendarRequest) {
 	request.IncludeUnmonitored = c.DefaultQuery("includeUnmonitored", "false") == "true"
 	request.IncludeMovieInformation = c.DefaultQuery("includeMovieInformation", "true") == "true"
-
-	return request, nil
 }
 
 // extractQueryParams extracts all query parameters as a map

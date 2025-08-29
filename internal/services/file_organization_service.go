@@ -47,26 +47,48 @@ func (s *FileOrganizationService) OrganizeFile(
 	start := time.Now()
 	s.logger.Info("Starting file organization", "source", sourcePath, "movie", movie.Title)
 
-	// Create file organization record
+	fileOrg, err := s.initializeFileOrganization(sourcePath, movie, operation)
+	if err != nil {
+		return s.buildFailureResult(sourcePath, err.Error()), err
+	}
+
+	mediaInfo, destinationPath, err := s.prepareOrganization(fileOrg, movie, namingConfig, sourcePath)
+	if err != nil {
+		s.handleOrganizationFailure(fileOrg, err.Error())
+		return s.buildFailureResult(sourcePath, err.Error()), err
+	}
+
+	movieFile, err := s.executeFileOperation(sourcePath, destinationPath, operation, namingConfig)
+	if err != nil {
+		s.handleOrganizationFailure(fileOrg, fmt.Sprintf("File operation failed: %v", err))
+		return s.buildFailureResult(sourcePath, err.Error()), err
+	}
+
+	s.finalizeOrganization(fileOrg, movieFile, movie, mediaInfo, destinationPath)
+
+	processingTime := time.Since(start)
+	s.logOrganizationCompletion(sourcePath, destinationPath, processingTime)
+
+	return s.buildSuccessResult(sourcePath, destinationPath, movie, movieFile, operation, processingTime), nil
+}
+
+// initializeFileOrganization creates and initializes file organization record
+func (s *FileOrganizationService) initializeFileOrganization(
+	sourcePath string, movie *models.Movie, operation models.FileOperation,
+) (*models.FileOrganization, error) {
+	fileInfo, err := os.Stat(sourcePath)
+	if err != nil {
+		s.logger.Error("Failed to get file info", "path", sourcePath, "error", err)
+		return nil, fmt.Errorf("failed to get file info: %w", err)
+	}
+
 	fileOrg := &models.FileOrganization{
 		SourcePath:       sourcePath,
 		MovieID:          &movie.ID,
 		Operation:        operation,
 		OriginalFileName: filepath.Base(sourcePath),
+		Size:             fileInfo.Size(),
 	}
-
-	// Get file info
-	fileInfo, err := os.Stat(sourcePath)
-	if err != nil {
-		s.logger.Error("Failed to get file info", "path", sourcePath, "error", err)
-		return &models.FileOrganizationResult{
-			OriginalPath: sourcePath,
-			Success:      false,
-			Error:        fmt.Sprintf("Failed to get file info: %v", err),
-		}, err
-	}
-
-	fileOrg.Size = fileInfo.Size()
 
 	// Parse quality from filename
 	quality, err := s.parseQualityFromFilename(sourcePath)
@@ -74,88 +96,101 @@ func (s *FileOrganizationService) OrganizeFile(
 		fileOrg.Quality = quality
 	}
 
+	return fileOrg, nil
+}
+
+// prepareOrganization handles preparation steps for file organization
+func (s *FileOrganizationService) prepareOrganization(
+	fileOrg *models.FileOrganization, movie *models.Movie,
+	namingConfig *models.NamingConfig, sourcePath string,
+) (*models.MediaInfo, string, error) {
 	// Extract media info if enabled
 	var mediaInfo *models.MediaInfo
 	if namingConfig.EnableMediaInfo {
 		mediaInfo, _ = s.mediaInfoService.ExtractMediaInfo(sourcePath)
 	}
 
-	// Generate destination path using naming service
+	// Generate destination path
 	destinationPath, err := s.namingService.BuildMovieFilePath(movie, fileOrg.Quality, mediaInfo, namingConfig)
 	if err != nil {
 		s.logger.Error("Failed to build destination path", "error", err)
-		fileOrg.MarkAsFailed(fmt.Sprintf("Failed to build destination path: %v", err))
-		if saveErr := s.saveFileOrganization(fileOrg); saveErr != nil {
-			s.logger.Error("Failed to save file organization failure record", "error", saveErr)
-		}
-		return &models.FileOrganizationResult{
-			OriginalPath: sourcePath,
-			Success:      false,
-			Error:        err.Error(),
-		}, err
+		return nil, "", fmt.Errorf("failed to build destination path: %w", err)
 	}
 
 	fileOrg.DestinationPath = destinationPath
 	fileOrg.OrganizedFileName = filepath.Base(destinationPath)
 
-	// Save initial record
-	if err := s.saveFileOrganization(fileOrg); err != nil {
-		s.logger.Error("Failed to save file organization record", "error", err)
+	// Save and mark as processing
+	if err := s.saveAndMarkProcessing(fileOrg); err != nil {
+		return nil, "", err
 	}
 
-	// Mark as processing
+	// Create destination directory
+	if err := s.createDestinationDirectory(destinationPath); err != nil {
+		return nil, "", err
+	}
+
+	return mediaInfo, destinationPath, nil
+}
+
+// saveAndMarkProcessing saves initial record and marks as processing
+func (s *FileOrganizationService) saveAndMarkProcessing(
+	fileOrg *models.FileOrganization,
+) error {
+	if err := s.saveFileOrganization(fileOrg); err != nil {
+		s.logger.Error("Failed to save file organization record", "error", err)
+		return err
+	}
+
 	fileOrg.MarkAsProcessing()
 	if err := s.saveFileOrganization(fileOrg); err != nil {
 		s.logger.Error("Failed to save file organization processing record", "error", err)
+		return err
 	}
 
-	// Create destination directory if it doesn't exist
+	return nil
+}
+
+// createDestinationDirectory creates the destination directory if needed
+func (s *FileOrganizationService) createDestinationDirectory(destinationPath string) error {
 	destDir := filepath.Dir(destinationPath)
 	if err := os.MkdirAll(destDir, 0750); err != nil {
 		s.logger.Error("Failed to create destination directory", "dir", destDir, "error", err)
-		fileOrg.MarkAsFailed(fmt.Sprintf("Failed to create destination directory: %v", err))
-		if saveErr := s.saveFileOrganization(fileOrg); saveErr != nil {
-			s.logger.Error("Failed to save file organization failure record", "error", saveErr)
-		}
-		return &models.FileOrganizationResult{
-			OriginalPath: sourcePath,
-			Success:      false,
-			Error:        err.Error(),
-		}, err
+		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
+	return nil
+}
 
-	// Perform the file operation
-	var movieFile *models.MovieFile
+// executeFileOperation performs the specified file operation
+func (s *FileOrganizationService) executeFileOperation(
+	sourcePath, destinationPath string, operation models.FileOperation,
+	namingConfig *models.NamingConfig,
+) (*models.MovieFile, error) {
 	switch operation {
 	case models.FileOperationMove:
-		movieFile, err = s.moveFile(sourcePath, destinationPath, namingConfig)
+		return s.moveFile(sourcePath, destinationPath, namingConfig)
 	case models.FileOperationCopy:
-		movieFile, err = s.copyFile(sourcePath, destinationPath, namingConfig)
+		return s.copyFile(sourcePath, destinationPath, namingConfig)
 	case models.FileOperationHardlink:
-		movieFile, err = s.hardlinkFile(sourcePath, destinationPath, namingConfig)
+		return s.hardlinkFile(sourcePath, destinationPath, namingConfig)
 	case models.FileOperationSymlink:
-		movieFile, err = s.symlinkFile(sourcePath, destinationPath, namingConfig)
+		return s.symlinkFile(sourcePath, destinationPath, namingConfig)
 	default:
-		err = fmt.Errorf("unsupported operation: %s", operation)
+		return nil, fmt.Errorf("unsupported operation: %s", operation)
 	}
+}
 
-	if err != nil {
-		s.logger.Error("File operation failed", "operation", operation, "error", err)
-		fileOrg.MarkAsFailed(fmt.Sprintf("File operation failed: %v", err))
-		if saveErr := s.saveFileOrganization(fileOrg); saveErr != nil {
-			s.logger.Error("Failed to save file organization failure record", "error", saveErr)
-		}
-		return &models.FileOrganizationResult{
-			OriginalPath: sourcePath,
-			Success:      false,
-			Error:        err.Error(),
-		}, err
-	}
-
+// finalizeOrganization completes the organization process
+func (s *FileOrganizationService) finalizeOrganization(
+	fileOrg *models.FileOrganization, movieFile *models.MovieFile,
+	movie *models.Movie, mediaInfo *models.MediaInfo, destinationPath string,
+) {
 	// Update movie file record
 	if movieFile != nil {
 		movieFile.MovieID = movie.ID
-		movieFile.Quality = *fileOrg.Quality
+		if fileOrg.Quality != nil {
+			movieFile.Quality = *fileOrg.Quality
+		}
 		if mediaInfo != nil {
 			movieFile.MediaInfo = *mediaInfo
 		}
@@ -166,13 +201,31 @@ func (s *FileOrganizationService) OrganizeFile(
 	if err := s.saveFileOrganization(fileOrg); err != nil {
 		s.logger.Error("Failed to save completed file organization record", "error", err)
 	}
+}
 
-	processingTime := time.Since(start)
-	s.logger.Info("File organization completed",
-		"source", sourcePath,
-		"destination", destinationPath,
-		"duration", processingTime)
+// handleOrganizationFailure handles failure scenarios
+func (s *FileOrganizationService) handleOrganizationFailure(fileOrg *models.FileOrganization, errorMsg string) {
+	fileOrg.MarkAsFailed(errorMsg)
+	if saveErr := s.saveFileOrganization(fileOrg); saveErr != nil {
+		s.logger.Error("Failed to save file organization failure record", "error", saveErr)
+	}
+}
 
+// buildFailureResult creates a failure result
+func (s *FileOrganizationService) buildFailureResult(sourcePath, errorMsg string) *models.FileOrganizationResult {
+	return &models.FileOrganizationResult{
+		OriginalPath: sourcePath,
+		Success:      false,
+		Error:        errorMsg,
+	}
+}
+
+// buildSuccessResult creates a success result
+func (s *FileOrganizationService) buildSuccessResult(
+	sourcePath, destinationPath string, movie *models.Movie,
+	movieFile *models.MovieFile, operation models.FileOperation,
+	processingTime time.Duration,
+) *models.FileOrganizationResult {
 	return &models.FileOrganizationResult{
 		OriginalPath:     sourcePath,
 		OrganizedPath:    destinationPath,
@@ -181,7 +234,17 @@ func (s *FileOrganizationService) OrganizeFile(
 		Success:          true,
 		OrganizationType: string(operation),
 		ProcessingTime:   processingTime,
-	}, nil
+	}
+}
+
+// logOrganizationCompletion logs successful completion
+func (s *FileOrganizationService) logOrganizationCompletion(
+	sourcePath, destinationPath string, processingTime time.Duration,
+) {
+	s.logger.Info("File organization completed",
+		"source", sourcePath,
+		"destination", destinationPath,
+		"duration", processingTime)
 }
 
 // moveFile moves a file from source to destination

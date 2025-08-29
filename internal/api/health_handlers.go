@@ -93,31 +93,67 @@ func (s *Server) handleGetHealthDashboard(c *gin.Context) {
 
 // handleGetHealthIssues returns health issues with filtering and pagination
 func (s *Server) handleGetHealthIssues(c *gin.Context) {
-	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	limit := pageSize
-	offset := (page - 1) * pageSize
+	page, pageSize := s.parseHealthIssuesPagination(c)
+	filter := s.parseHealthIssuesFilter(c)
 
-	// Parse filter parameters
+	issues, total, err := s.services.HealthService.GetHealthIssues(filter, pageSize, (page-1)*pageSize)
+	if err != nil {
+		s.logger.Errorw("Failed to get health issues", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve health issues"})
+		return
+	}
+
+	response := s.buildHealthIssuesPaginatedResponse(issues, total, page, pageSize)
+	c.JSON(http.StatusOK, response)
+}
+
+// parseHealthIssuesPagination parses pagination parameters from request
+func (s *Server) parseHealthIssuesPagination(c *gin.Context) (page, pageSize int) {
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	return page, pageSize
+}
+
+// parseHealthIssuesFilter parses filter parameters from request
+func (s *Server) parseHealthIssuesFilter(c *gin.Context) models.HealthIssueFilter {
 	filter := models.HealthIssueFilter{}
 
+	s.parseHealthIssueTypes(c, &filter)
+	s.parseHealthIssueSeverities(c, &filter)
+	s.parseHealthIssueSources(c, &filter)
+	s.parseHealthIssueBooleanFilters(c, &filter)
+	s.parseHealthIssueTimeFilters(c, &filter)
+
+	return filter
+}
+
+// parseHealthIssueTypes parses type filters
+func (s *Server) parseHealthIssueTypes(c *gin.Context, filter *models.HealthIssueFilter) {
 	if types := c.QueryArray("types"); len(types) > 0 {
 		for _, t := range types {
 			filter.Types = append(filter.Types, models.HealthCheckType(t))
 		}
 	}
+}
 
+// parseHealthIssueSeverities parses severity filters
+func (s *Server) parseHealthIssueSeverities(c *gin.Context, filter *models.HealthIssueFilter) {
 	if severities := c.QueryArray("severities"); len(severities) > 0 {
 		for _, s := range severities {
 			filter.Severities = append(filter.Severities, models.HealthSeverity(s))
 		}
 	}
+}
 
+// parseHealthIssueSources parses source filters
+func (s *Server) parseHealthIssueSources(c *gin.Context, filter *models.HealthIssueFilter) {
 	if sources := c.QueryArray("sources"); len(sources) > 0 {
 		filter.Sources = sources
 	}
+}
 
+// parseHealthIssueBooleanFilters parses resolved and dismissed boolean filters
+func (s *Server) parseHealthIssueBooleanFilters(c *gin.Context, filter *models.HealthIssueFilter) {
 	if resolved := c.Query("resolved"); resolved != "" {
 		if r := resolved == "true"; resolved == "true" || resolved == "false" {
 			filter.Resolved = &r
@@ -129,7 +165,10 @@ func (s *Server) handleGetHealthIssues(c *gin.Context) {
 			filter.Dismissed = &d
 		}
 	}
+}
 
+// parseHealthIssueTimeFilters parses time-based filters
+func (s *Server) parseHealthIssueTimeFilters(c *gin.Context, filter *models.HealthIssueFilter) {
 	if since := c.Query("since"); since != "" {
 		if t, err := time.Parse(time.RFC3339, since); err == nil {
 			filter.Since = &t
@@ -141,19 +180,15 @@ func (s *Server) handleGetHealthIssues(c *gin.Context) {
 			filter.Until = &t
 		}
 	}
+}
 
-	// Get issues
-	issues, total, err := s.services.HealthService.GetHealthIssues(filter, limit, offset)
-	if err != nil {
-		s.logger.Errorw("Failed to get health issues", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve health issues"})
-		return
-	}
-
-	// Calculate pagination info
+// buildHealthIssuesPaginatedResponse builds paginated response for health issues
+func (s *Server) buildHealthIssuesPaginatedResponse(
+	issues []models.HealthIssue, total int64, page, pageSize int,
+) gin.H {
 	totalPages := (int(total) + pageSize - 1) / pageSize
 
-	response := gin.H{
+	return gin.H{
 		"records":     issues,
 		"total":       total,
 		"page":        page,
@@ -162,8 +197,6 @@ func (s *Server) handleGetHealthIssues(c *gin.Context) {
 		"hasNextPage": page < totalPages,
 		"hasPrevPage": page > 1,
 	}
-
-	c.JSON(http.StatusOK, response)
 }
 
 // handleGetHealthIssue returns a specific health issue
