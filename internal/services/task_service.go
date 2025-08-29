@@ -100,7 +100,12 @@ func (ts *TaskService) RegisterHandler(handler TaskHandler) {
 }
 
 // QueueTask queues a new task for execution
-func (ts *TaskService) QueueTask(name, commandName string, body models.TaskBody, priority models.TaskPriority, trigger models.TaskTrigger) (*models.Task, error) {
+func (ts *TaskService) QueueTask(
+	name, commandName string,
+	body models.TaskBody,
+	priority models.TaskPriority,
+	trigger models.TaskTrigger,
+) (*models.Task, error) {
 	task := &models.Task{
 		Name:        name,
 		CommandName: commandName,
@@ -145,7 +150,11 @@ func (ts *TaskService) GetTask(id int) (*models.Task, error) {
 }
 
 // ListTasks retrieves tasks with optional filtering
-func (ts *TaskService) ListTasks(status models.TaskStatus, commandName string, limit, offset int) ([]*models.Task, int64, error) {
+func (ts *TaskService) ListTasks(
+	status models.TaskStatus,
+	commandName string,
+	limit, offset int,
+) ([]*models.Task, int64, error) {
 	query := ts.db.GORM.Model(&models.Task{})
 
 	if status != "" {
@@ -194,7 +203,12 @@ func (ts *TaskService) CancelTask(id int) error {
 }
 
 // CreateScheduledTask creates a new scheduled task
-func (ts *TaskService) CreateScheduledTask(name, commandName string, body models.TaskBody, interval time.Duration, priority models.TaskPriority) (*models.ScheduledTask, error) {
+func (ts *TaskService) CreateScheduledTask(
+	name, commandName string,
+	body models.TaskBody,
+	interval time.Duration,
+	priority models.TaskPriority,
+) (*models.ScheduledTask, error) {
 	scheduledTask := &models.ScheduledTask{
 		Name:        name,
 		CommandName: commandName,
@@ -356,7 +370,9 @@ func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService,
 	}
 
 	if currentStatus == models.TaskStatusCancelling {
-		if err := service.updateTaskStatus(task.ID, models.TaskStatusAborted, "Task was cancelled before execution", nil); err != nil {
+		err := service.updateTaskStatus(task.ID, models.TaskStatusAborted,
+			"Task was cancelled before execution", nil)
+		if err != nil {
 			logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
 		}
 		return true
@@ -369,7 +385,9 @@ func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService,
 func (pool *TaskWorkerPool) markTaskAsStarted(service *TaskService, task *models.Task) time.Time {
 	logger := pool.logger.With("taskId", task.ID)
 	startTime := time.Now()
-	if err := service.updateTaskStatus(task.ID, models.TaskStatusStarted, "Task execution started", &startTime); err != nil {
+	err := service.updateTaskStatus(task.ID, models.TaskStatusStarted,
+		"Task execution started", &startTime)
+	if err != nil {
 		logger.Errorw("Failed to update task status to started", "error", err)
 		return time.Time{} // Return zero time to indicate failure
 	}
@@ -518,7 +536,12 @@ func (pool *TaskWorkerPool) getActiveTasks() []int {
 }
 
 // updateTaskStatus updates the status and timing of a task
-func (ts *TaskService) updateTaskStatus(taskID int, status models.TaskStatus, message string, timestamp *time.Time) error {
+func (ts *TaskService) updateTaskStatus(
+	taskID int,
+	status models.TaskStatus,
+	message string,
+	timestamp *time.Time,
+) error {
 	updates := map[string]interface{}{
 		"status":     status,
 		"updated_at": time.Now(),

@@ -21,7 +21,10 @@ func NewTemplateEngine(logger *logger.Logger) *DefaultTemplateEngine {
 }
 
 // RenderTemplate renders a template with the given context
-func (e *DefaultTemplateEngine) RenderTemplate(template *NotificationTemplate, message *NotificationMessage) (*RenderedTemplate, error) {
+func (e *DefaultTemplateEngine) RenderTemplate(
+	template *NotificationTemplate,
+	message *NotificationMessage,
+) (*RenderedTemplate, error) {
 	if template == nil {
 		return nil, fmt.Errorf("template is nil")
 	}

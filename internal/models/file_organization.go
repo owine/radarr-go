@@ -42,22 +42,24 @@ func (FileOrganization) TableName() string {
 // OrganizationStatus represents the status of a file organization operation
 type OrganizationStatus string
 
+// Organization status constants
 const (
-	OrganizationStatusPending    OrganizationStatus = "pending"
-	OrganizationStatusProcessing OrganizationStatus = "processing"
-	OrganizationStatusCompleted  OrganizationStatus = "completed"
-	OrganizationStatusFailed     OrganizationStatus = "failed"
-	OrganizationStatusSkipped    OrganizationStatus = "skipped"
+	OrganizationStatusPending    OrganizationStatus = "pending"    // Organization is pending
+	OrganizationStatusProcessing OrganizationStatus = "processing" // Organization is processing
+	OrganizationStatusCompleted  OrganizationStatus = "completed"  // Organization completed
+	OrganizationStatusFailed     OrganizationStatus = "failed"     // Organization failed
+	OrganizationStatusSkipped    OrganizationStatus = "skipped"    // Organization was skipped
 )
 
 // FileOperation represents the type of file operation to perform
 type FileOperation string
 
+// File operation constants
 const (
-	FileOperationMove     FileOperation = "move"
-	FileOperationCopy     FileOperation = "copy"
-	FileOperationHardlink FileOperation = "hardlink"
-	FileOperationSymlink  FileOperation = "symlink"
+	FileOperationMove     FileOperation = "move"     // Move file operation
+	FileOperationCopy     FileOperation = "copy"     // Copy file operation
+	FileOperationHardlink FileOperation = "hardlink" // Hard link operation
+	FileOperationSymlink  FileOperation = "symlink"  // Symbolic link operation
 )
 
 // ImportDecision represents a decision about importing a file
@@ -74,10 +76,11 @@ type ImportDecision struct {
 // ImportDecisionType represents the type of import decision
 type ImportDecisionType string
 
+// Import decision type constants
 const (
-	ImportDecisionApproved ImportDecisionType = "approved"
-	ImportDecisionRejected ImportDecisionType = "rejected"
-	ImportDecisionUnknown  ImportDecisionType = "unknown"
+	ImportDecisionApproved ImportDecisionType = "approved" // Import approved
+	ImportDecisionRejected ImportDecisionType = "rejected" // Import rejected
+	ImportDecisionUnknown  ImportDecisionType = "unknown"  // Import decision unknown
 )
 
 // ImportRejection represents a reason why an import was rejected
@@ -89,29 +92,31 @@ type ImportRejection struct {
 // ImportRejectionReason represents specific rejection reasons
 type ImportRejectionReason string
 
+// Import rejection reason constants
 const (
-	ImportRejectionUnknownMovie      ImportRejectionReason = "Unknown Movie"
-	ImportRejectionExistingFile      ImportRejectionReason = "Existing File"
-	ImportRejectionSameFile          ImportRejectionReason = "Same File"
-	ImportRejectionQualityCutoff     ImportRejectionReason = "Quality Cutoff"
-	ImportRejectionBetterQuality     ImportRejectionReason = "Better Quality Available"
-	ImportRejectionUnwantedLanguage  ImportRejectionReason = "Unwanted Language"
-	ImportRejectionUnwantedQuality   ImportRejectionReason = "Unwanted Quality"
-	ImportRejectionTorrentNotSeeding ImportRejectionReason = "Torrent Not Seeding"
-	ImportRejectionInvalidPath       ImportRejectionReason = "Invalid Path"
-	ImportRejectionFileNotFound      ImportRejectionReason = "File Not Found"
-	ImportRejectionAlreadyImported   ImportRejectionReason = "Already Imported"
-	ImportRejectionSample            ImportRejectionReason = "Sample"
-	ImportRejectionWrongMovie        ImportRejectionReason = "Wrong Movie"
-	ImportRejectionHardlinkedFile    ImportRejectionReason = "Hardline File"
+	ImportRejectionUnknownMovie      ImportRejectionReason = "Unknown Movie"            // Movie is unknown
+	ImportRejectionExistingFile      ImportRejectionReason = "Existing File"            // File already exists
+	ImportRejectionSameFile          ImportRejectionReason = "Same File"                // Same file
+	ImportRejectionQualityCutoff     ImportRejectionReason = "Quality Cutoff"           // Quality cutoff met
+	ImportRejectionBetterQuality     ImportRejectionReason = "Better Quality Available" // Better quality available
+	ImportRejectionUnwantedLanguage  ImportRejectionReason = "Unwanted Language"        // Unwanted language
+	ImportRejectionUnwantedQuality   ImportRejectionReason = "Unwanted Quality"         // Unwanted quality
+	ImportRejectionTorrentNotSeeding ImportRejectionReason = "Torrent Not Seeding"      // Torrent not seeding
+	ImportRejectionInvalidPath       ImportRejectionReason = "Invalid Path"             // Invalid path
+	ImportRejectionFileNotFound      ImportRejectionReason = "File Not Found"           // File not found
+	ImportRejectionAlreadyImported   ImportRejectionReason = "Already Imported"         // Already imported
+	ImportRejectionSample            ImportRejectionReason = "Sample"                   // Sample file
+	ImportRejectionWrongMovie        ImportRejectionReason = "Wrong Movie"              // Wrong movie
+	ImportRejectionHardlinkedFile    ImportRejectionReason = "Hardline File"            // Hard linked file
 )
 
 // ImportRejectionType represents the type of rejection
 type ImportRejectionType string
 
+// Import rejection type constants
 const (
-	ImportRejectionTypePermanent ImportRejectionType = "permanent"
-	ImportRejectionTypeTemporary ImportRejectionType = "temporary"
+	ImportRejectionTypePermanent ImportRejectionType = "permanent" // Permanent rejection
+	ImportRejectionTypeTemporary ImportRejectionType = "temporary" // Temporary rejection
 )
 
 // ImportableFile represents a file that can be imported

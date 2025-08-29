@@ -134,7 +134,9 @@ func NewPerformanceMetricsTaskHandler(healthService HealthServiceInterface) *Per
 }
 
 // Execute collects and records performance metrics
-func (p *PerformanceMetricsTaskHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (p *PerformanceMetricsTaskHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting performance metrics collection")
 
 	updateProgress(25, "Collecting system metrics")
@@ -183,7 +185,9 @@ func NewHealthMaintenanceTaskHandler(
 }
 
 // Execute performs health system maintenance tasks
-func (m *HealthMaintenanceTaskHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (m *HealthMaintenanceTaskHandler) Execute(
+	_ context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting health system maintenance")
 
 	updateProgress(20, "Cleaning up old performance metrics")
@@ -230,7 +234,10 @@ type HealthReportTaskHandler struct {
 }
 
 // NewHealthReportTaskHandler creates a new health report task handler
-func NewHealthReportTaskHandler(healthService HealthServiceInterface, healthIssueService HealthIssueServiceInterface) *HealthReportTaskHandler {
+func NewHealthReportTaskHandler(
+	healthService HealthServiceInterface,
+	healthIssueService HealthIssueServiceInterface,
+) *HealthReportTaskHandler {
 	return &HealthReportTaskHandler{
 		healthService:      healthService,
 		healthIssueService: healthIssueService,
@@ -238,7 +245,9 @@ func NewHealthReportTaskHandler(healthService HealthServiceInterface, healthIssu
 }
 
 // Execute generates comprehensive health reports
-func (r *HealthReportTaskHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (r *HealthReportTaskHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting health report generation")
 
 	updateProgress(20, "Collecting health dashboard data")

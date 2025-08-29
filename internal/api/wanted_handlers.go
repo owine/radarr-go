@@ -15,11 +15,7 @@ import (
 
 // handleGetMissingMovies handles GET /api/v3/wanted/missing
 func (s *Server) handleGetMissingMovies(c *gin.Context) {
-	filter, err := s.parseWantedMovieFilter(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid filter parameters: %s", err.Error())})
-		return
-	}
+	filter := s.parseWantedMovieFilter(c)
 
 	response, err := s.services.WantedMoviesService.GetMissingMovies(filter)
 	if err != nil {
@@ -33,11 +29,7 @@ func (s *Server) handleGetMissingMovies(c *gin.Context) {
 
 // handleGetCutoffUnmetMovies handles GET /api/v3/wanted/cutoff
 func (s *Server) handleGetCutoffUnmetMovies(c *gin.Context) {
-	filter, err := s.parseWantedMovieFilter(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid filter parameters: %s", err.Error())})
-		return
-	}
+	filter := s.parseWantedMovieFilter(c)
 
 	response, err := s.services.WantedMoviesService.GetCutoffUnmetMovies(filter)
 	if err != nil {
@@ -51,11 +43,7 @@ func (s *Server) handleGetCutoffUnmetMovies(c *gin.Context) {
 
 // handleGetAllWantedMovies handles GET /api/v3/wanted
 func (s *Server) handleGetAllWantedMovies(c *gin.Context) {
-	filter, err := s.parseWantedMovieFilter(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid filter parameters: %s", err.Error())})
-		return
-	}
+	filter := s.parseWantedMovieFilter(c)
 
 	response, err := s.services.WantedMoviesService.GetAllWanted(filter)
 	if err != nil {
@@ -323,7 +311,7 @@ func (s *Server) handleRemoveWantedMovie(c *gin.Context) {
 }
 
 // parseWantedMovieFilter parses query parameters into a WantedMovieFilter
-func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilter, error) {
+func (s *Server) parseWantedMovieFilter(c *gin.Context) *models.WantedMovieFilter {
 	filter := &models.WantedMovieFilter{
 		Page:     1,
 		PageSize: DefaultPageSize,
@@ -338,7 +326,7 @@ func (s *Server) parseWantedMovieFilter(c *gin.Context) (*models.WantedMovieFilt
 	s.parseFilterParams(c, filter)
 	s.parseTimeParams(c, filter)
 
-	return filter, nil
+	return filter
 }
 
 func (s *Server) parsePaginationParams(c *gin.Context, filter *models.WantedMovieFilter) {

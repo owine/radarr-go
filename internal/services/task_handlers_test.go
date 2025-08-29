@@ -139,7 +139,7 @@ func TestRefreshMovieHandler_InvalidMovieID(t *testing.T) {
 		Body: models.TaskBody{},
 	}
 
-	updateProgress := func(percent int, message string) {}
+	updateProgress := func(_ int, _ string) {}
 	ctx := context.Background()
 	err := handler.Execute(ctx, task, updateProgress)
 
@@ -221,7 +221,7 @@ func TestRefreshAllMoviesHandler_NoMovies(t *testing.T) {
 	movieService.On("GetAll").Return([]models.Movie{}, nil)
 
 	task := &models.Task{ID: 1, Body: models.TaskBody{}}
-	updateProgress := func(percent int, message string) {}
+	updateProgress := func(_ int, _ string) {}
 
 	ctx := context.Background()
 	err := handler.Execute(ctx, task, updateProgress)
@@ -322,7 +322,7 @@ func TestSyncImportListHandler_SpecificList(t *testing.T) {
 		Body: models.TaskBody{"importListId": 1},
 	}
 
-	updateProgress := func(percent int, message string) {}
+	updateProgress := func(_ int, _ string) {}
 
 	// Execute handler
 	ctx := context.Background()
@@ -334,7 +334,11 @@ func TestSyncImportListHandler_SpecificList(t *testing.T) {
 }
 
 // testTaskHandler is a helper function to test task handlers with common functionality
-func testTaskHandler(t *testing.T, handler TaskHandler, expectedName, expectedDescription, expectedStartMessage string) {
+func testTaskHandler(
+	t *testing.T,
+	handler TaskHandler,
+	expectedName, expectedDescription, expectedStartMessage string,
+) {
 	// Test basic properties
 	assert.Equal(t, expectedName, handler.GetName())
 	assert.Equal(t, expectedDescription, handler.GetDescription())
@@ -388,7 +392,9 @@ func TestCleanupHandler(t *testing.T) {
 		Logger: nil,
 	}
 	handler := NewCleanupHandler(container)
-	testTaskHandler(t, handler, "Cleanup", "Performs cleanup tasks like removing old logs and completed downloads", "Starting cleanup")
+	testTaskHandler(t, handler, "Cleanup",
+		"Performs cleanup tasks like removing old logs and completed downloads",
+		"Starting cleanup")
 }
 
 func TestTaskHandlerCancellation(t *testing.T) {
@@ -405,7 +411,7 @@ func TestTaskHandlerCancellation(t *testing.T) {
 		Body: models.TaskBody{"movieId": 1},
 	}
 
-	updateProgress := func(percent int, message string) {
+	updateProgress := func(_ int, _ string) {
 		// Simulate slow progress update
 		time.Sleep(20 * time.Millisecond)
 	}

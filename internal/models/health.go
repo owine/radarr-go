@@ -15,28 +15,30 @@ const (
 // HealthSeverity represents the severity level of health issues
 type HealthSeverity string
 
+// Health severity level constants
 const (
-	HealthSeverityInfo     HealthSeverity = "info"
-	HealthSeverityWarning  HealthSeverity = "warning"
-	HealthSeverityError    HealthSeverity = "error"
-	HealthSeverityCritical HealthSeverity = "critical"
+	HealthSeverityInfo     HealthSeverity = "info"     // Informational severity
+	HealthSeverityWarning  HealthSeverity = "warning"  // Warning severity
+	HealthSeverityError    HealthSeverity = "error"    // Error severity
+	HealthSeverityCritical HealthSeverity = "critical" // Critical severity
 )
 
 // HealthCheckType represents different types of health checks
 type HealthCheckType string
 
+// Health check type constants
 const (
-	HealthCheckTypeDatabase        HealthCheckType = "database"
-	HealthCheckTypeDiskSpace       HealthCheckType = "diskSpace"
-	HealthCheckTypeDownloadClient  HealthCheckType = "downloadClient"
-	HealthCheckTypeIndexer         HealthCheckType = "indexer"
-	HealthCheckTypeImportList      HealthCheckType = "importList"
-	HealthCheckTypeRootFolder      HealthCheckType = "rootFolder"
-	HealthCheckTypeNetwork         HealthCheckType = "network"
-	HealthCheckTypeSystem          HealthCheckType = "system"
-	HealthCheckTypePerformance     HealthCheckType = "performance"
-	HealthCheckTypeConfiguration   HealthCheckType = "configuration"
-	HealthCheckTypeExternalService HealthCheckType = "externalService"
+	HealthCheckTypeDatabase        HealthCheckType = "database"        // Database check
+	HealthCheckTypeDiskSpace       HealthCheckType = "diskSpace"       // Disk space check
+	HealthCheckTypeDownloadClient  HealthCheckType = "downloadClient"  // Download client check
+	HealthCheckTypeIndexer         HealthCheckType = "indexer"         // Indexer check
+	HealthCheckTypeImportList      HealthCheckType = "importList"      // Import list check
+	HealthCheckTypeRootFolder      HealthCheckType = "rootFolder"      // Root folder check
+	HealthCheckTypeNetwork         HealthCheckType = "network"         // Network check
+	HealthCheckTypeSystem          HealthCheckType = "system"          // System check
+	HealthCheckTypePerformance     HealthCheckType = "performance"     // Performance check
+	HealthCheckTypeConfiguration   HealthCheckType = "configuration"   // Configuration check
+	HealthCheckTypeExternalService HealthCheckType = "externalService" // External service check
 )
 
 // HealthIssue represents a specific health issue detected in the system

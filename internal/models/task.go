@@ -78,8 +78,8 @@ const (
 	TaskTriggerScheduled TaskTrigger = "scheduled"
 	// TaskTriggerSystem for system-triggered tasks
 	TaskTriggerSystem TaskTrigger = "system"
-	// TaskTriggerApi for API-triggered tasks
-	TaskTriggerApi TaskTrigger = "api"
+	// TaskTriggerAPI for API-triggered tasks
+	TaskTriggerAPI TaskTrigger = "api"
 )
 
 // TaskBody holds the task-specific parameters and configuration
@@ -182,7 +182,7 @@ type TaskQueue struct {
 }
 
 // BeforeCreate hook validates task data before creation
-func (t *Task) BeforeCreate(tx *gorm.DB) error {
+func (t *Task) BeforeCreate(_ *gorm.DB) error {
 	if t.Name == "" {
 		return gorm.ErrInvalidValue
 	}
@@ -208,7 +208,7 @@ func (t *Task) BeforeCreate(tx *gorm.DB) error {
 }
 
 // BeforeUpdate hook calculates duration when task ends
-func (t *Task) BeforeUpdate(tx *gorm.DB) error {
+func (t *Task) BeforeUpdate(_ *gorm.DB) error {
 	if t.StartedAt != nil && t.EndedAt != nil && t.Duration == nil {
 		duration := t.EndedAt.Sub(*t.StartedAt)
 		t.Duration = &duration
@@ -232,7 +232,7 @@ func (t *Task) CanBeCancelled() bool {
 }
 
 // BeforeCreate hook validates scheduled task data before creation
-func (st *ScheduledTask) BeforeCreate(tx *gorm.DB) error {
+func (st *ScheduledTask) BeforeCreate(_ *gorm.DB) error {
 	if st.Name == "" {
 		return gorm.ErrInvalidValue
 	}
@@ -265,7 +265,7 @@ func (st *ScheduledTask) ShouldRun() bool {
 }
 
 // BeforeCreate hook validates task queue data before creation
-func (tq *TaskQueue) BeforeCreate(tx *gorm.DB) error {
+func (tq *TaskQueue) BeforeCreate(_ *gorm.DB) error {
 	if tq.Name == "" {
 		return gorm.ErrInvalidValue
 	}

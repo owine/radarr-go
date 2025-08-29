@@ -29,7 +29,7 @@ func createTestTasks(t *testing.T, db *database.Database) {
 			CommandName: "Command1",
 			Status:      models.TaskStatusQueued,
 			Priority:    models.TaskPriorityHigh,
-			Trigger:     models.TaskTriggerApi,
+			Trigger:     models.TaskTriggerAPI,
 			QueuedAt:    time.Now(),
 			Body:        models.TaskBody{},
 			Progress:    models.TaskProgress{},
@@ -111,7 +111,9 @@ func NewTestTaskHandler(name, description string) *TestTaskHandler {
 	}
 }
 
-func (h *TestTaskHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *TestTaskHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	h.executed = true
 
 	updateProgress(0, "Starting test task")
@@ -163,7 +165,7 @@ func TestTaskService_QueueTask(t *testing.T) {
 		"TestCommand",
 		models.TaskBody{"key": "value"},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 
 	require.NoError(t, err)
@@ -173,7 +175,7 @@ func TestTaskService_QueueTask(t *testing.T) {
 	assert.Equal(t, "TestCommand", task.CommandName)
 	assert.Equal(t, models.TaskStatusQueued, task.Status)
 	assert.Equal(t, models.TaskPriorityNormal, task.Priority)
-	assert.Equal(t, models.TaskTriggerApi, task.Trigger)
+	assert.Equal(t, models.TaskTriggerAPI, task.Trigger)
 	assert.NotZero(t, task.QueuedAt)
 
 	// Give task time to execute
@@ -264,7 +266,7 @@ func TestTaskService_CancelTask(t *testing.T) {
 		"SlowCommand",
 		models.TaskBody{},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	require.NoError(t, err)
 
@@ -401,7 +403,7 @@ func TestTaskService_TaskProgress(t *testing.T) {
 		"ProgressCommand",
 		models.TaskBody{},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	require.NoError(t, err)
 
@@ -439,7 +441,7 @@ func TestTaskService_TaskFailure(t *testing.T) {
 		"FailCommand",
 		models.TaskBody{},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	require.NoError(t, err)
 
@@ -470,7 +472,7 @@ func TestTaskService_UnknownHandler(t *testing.T) {
 		"UnknownCommand",
 		models.TaskBody{},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	require.NoError(t, err)
 

@@ -271,7 +271,9 @@ func (s *RenameService) renameMovieFolder(ctx context.Context, movieID int) erro
 }
 
 // generateFileName generates a new file name based on naming configuration
-func (s *RenameService) generateFileName(ctx context.Context, movie *models.Movie, movieFile *models.MovieFile) (string, error) {
+func (s *RenameService) generateFileName(
+	_ context.Context, movie *models.Movie, movieFile *models.MovieFile,
+) (string, error) {
 	namingConfig, err := s.namingService.GetNamingConfig()
 	if err != nil {
 		return "", fmt.Errorf("failed to get naming config: %w", err)
@@ -284,10 +286,7 @@ func (s *RenameService) generateFileName(ctx context.Context, movie *models.Movi
 
 	// Parse the naming template
 	template := namingConfig.StandardMovieFormat
-	fileName, err := s.parseNamingTemplate(template, movie, movieFile)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse naming template: %w", err)
-	}
+	fileName := s.parseNamingTemplate(template, movie, movieFile)
 
 	// Clean the filename
 	fileName = s.cleanFileName(fileName)
@@ -302,7 +301,7 @@ func (s *RenameService) generateFileName(ctx context.Context, movie *models.Movi
 }
 
 // generateFolderName generates a new folder name based on naming configuration
-func (s *RenameService) generateFolderName(ctx context.Context, movie *models.Movie) (string, error) {
+func (s *RenameService) generateFolderName(_ context.Context, movie *models.Movie) (string, error) {
 	namingConfig, err := s.namingService.GetNamingConfig()
 	if err != nil {
 		return "", fmt.Errorf("failed to get naming config: %w", err)
@@ -311,24 +310,22 @@ func (s *RenameService) generateFolderName(ctx context.Context, movie *models.Mo
 	if namingConfig.MovieFolderFormat == "" {
 		// Use default format if none specified
 		template := "{Movie Title} ({Release Year})"
-		folderName, err := s.parseNamingTemplate(template, movie, nil)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse default naming template: %w", err)
-		}
+		folderName := s.parseNamingTemplate(template, movie, nil)
 		return s.cleanFileName(folderName), nil
 	}
 
 	// Parse the naming template
-	folderName, err := s.parseNamingTemplate(namingConfig.MovieFolderFormat, movie, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse naming template: %w", err)
-	}
+	folderName := s.parseNamingTemplate(namingConfig.MovieFolderFormat, movie, nil)
 
 	return s.cleanFileName(folderName), nil
 }
 
 // parseNamingTemplate parses a naming template and replaces tokens with actual values
-func (s *RenameService) parseNamingTemplate(template string, movie *models.Movie, movieFile *models.MovieFile) (string, error) {
+func (s *RenameService) parseNamingTemplate(
+	template string,
+	movie *models.Movie,
+	movieFile *models.MovieFile,
+) string {
 	result := template
 
 	// Movie-based replacements
@@ -369,7 +366,7 @@ func (s *RenameService) parseNamingTemplate(template string, movie *models.Movie
 	result = regexp.MustCompile(`\[\s*\]`).ReplaceAllString(result, "")
 	result = strings.TrimSpace(result)
 
-	return result, nil
+	return result
 }
 
 // cleanFileName cleans a filename by removing/replacing illegal characters
@@ -410,7 +407,7 @@ func (s *RenameService) getQualityProperString(quality models.Quality) string {
 }
 
 // getMediaInfoSimple returns simplified media info
-func (s *RenameService) getMediaInfoSimple(movieFile *models.MovieFile) string {
+func (s *RenameService) getMediaInfoSimple(_ *models.MovieFile) string {
 	// This would extract resolution, codec, etc. from MediaInfo
 	// For now, return empty string as a placeholder
 	return ""

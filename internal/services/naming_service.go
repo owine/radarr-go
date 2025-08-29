@@ -120,7 +120,11 @@ func (s *NamingService) BuildFileName(
 }
 
 // buildTokenMap creates a map of tokens and their replacement values
-func (s *NamingService) buildTokenMap(movie *models.Movie, quality *models.Quality, mediaInfo *models.MediaInfo) map[string]string {
+func (s *NamingService) buildTokenMap(
+	movie *models.Movie,
+	quality *models.Quality,
+	mediaInfo *models.MediaInfo,
+) map[string]string {
 	tokens := make(map[string]string)
 
 	s.addMovieTokens(tokens, movie)

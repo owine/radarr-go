@@ -1671,7 +1671,7 @@ func (s *Server) handleQueueTask(c *gin.Context) {
 		request.CommandName,
 		request.Body,
 		request.Priority,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue task", "command", request.CommandName, "error", err)
@@ -1837,7 +1837,7 @@ func (s *Server) handleRefreshMovie(c *gin.Context) {
 		"RefreshMovie",
 		body,
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue movie refresh task", "movieId", id, "error", err)
@@ -1855,7 +1855,7 @@ func (s *Server) handleRefreshAllMovies(c *gin.Context) {
 		"RefreshAllMovies",
 		models.TaskBody{},
 		models.TaskPriorityNormal,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue refresh all movies task", "error", err)
@@ -1873,7 +1873,7 @@ func (s *Server) handleRunHealthCheck(c *gin.Context) {
 		"HealthCheck",
 		models.TaskBody{},
 		models.TaskPriorityHigh,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue health check task", "error", err)
@@ -1891,7 +1891,7 @@ func (s *Server) handleRunCleanup(c *gin.Context) {
 		"Cleanup",
 		models.TaskBody{},
 		models.TaskPriorityLow,
-		models.TaskTriggerApi,
+		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue cleanup task", "error", err)
@@ -1989,7 +1989,7 @@ func (s *Server) handleProcessImport(c *gin.Context) {
 		options.ImportMode = models.ImportDecisionApproved
 	}
 
-	result, err := s.services.ImportService.ProcessImport(request.Path, options)
+	result, err := s.services.ImportService.ProcessImport(c.Request.Context(), request.Path, options)
 	if err != nil {
 		s.logger.Error("Failed to process import", "path", request.Path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process import"})
@@ -2026,7 +2026,7 @@ func (s *Server) handleProcessManualImport(c *gin.Context) {
 		return
 	}
 
-	if err := s.services.ImportService.ProcessManualImport(&manualImport); err != nil {
+	if err := s.services.ImportService.ProcessManualImport(c.Request.Context(), &manualImport); err != nil {
 		s.logger.Error("Failed to process manual import", "path", manualImport.Path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process manual import"})
 		return
@@ -2140,7 +2140,7 @@ func (s *Server) handleExtractMediaInfo(c *gin.Context) {
 		return
 	}
 
-	mediaInfo, err := s.services.MediaInfoService.ExtractMediaInfo(request.Path)
+	mediaInfo, err := s.services.MediaInfoService.ExtractMediaInfo(c.Request.Context(), request.Path)
 	if err != nil {
 		s.logger.Error("Failed to extract media info", "path", request.Path, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract media info"})

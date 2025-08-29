@@ -177,9 +177,7 @@ func (pm *PerformanceMonitor) GetAverageMetrics(since, until time.Time) (*models
 }
 
 // DetectPerformanceIssues implements PerformanceMonitorInterface
-func (pm *PerformanceMonitor) DetectPerformanceIssues(ctx context.Context) ([]models.HealthIssue, error) {
-	var issues []models.HealthIssue
-
+func (pm *PerformanceMonitor) DetectPerformanceIssues(_ context.Context) ([]models.HealthIssue, error) {
 	// Get recent metrics (last 15 minutes)
 	since := time.Now().Add(-15 * time.Minute)
 	metrics, err := pm.GetMetrics(&since, nil, 10)
@@ -188,109 +186,129 @@ func (pm *PerformanceMonitor) DetectPerformanceIssues(ctx context.Context) ([]mo
 	}
 
 	if len(metrics) == 0 {
-		return issues, nil
+		return []models.HealthIssue{}, nil
 	}
 
 	// Analyze latest metrics
 	latest := metrics[0]
+	var issues []models.HealthIssue
 
-	// CPU usage issues
+	pm.checkCPUIssues(latest, &issues)
+	pm.checkMemoryIssues(latest, &issues)
+	pm.checkDiskIssues(latest, &issues)
+	pm.checkDatabaseLatencyIssues(latest, &issues)
+	pm.checkAPILatencyIssues(latest, &issues)
+	pm.checkQueueSizeIssues(latest, &issues)
+
+	return issues, nil
+}
+
+func (pm *PerformanceMonitor) checkCPUIssues(latest models.PerformanceMetrics, issues *[]models.HealthIssue) {
 	if latest.CPUUsagePercent > 90 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityCritical,
 			Message:  fmt.Sprintf("Critical CPU usage: %.1f%%", latest.CPUUsagePercent),
 		})
 	} else if latest.CPUUsagePercent > 80 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("High CPU usage: %.1f%%", latest.CPUUsagePercent),
 		})
 	}
+}
 
-	// Memory usage issues
+func (pm *PerformanceMonitor) checkMemoryIssues(latest models.PerformanceMetrics, issues *[]models.HealthIssue) {
 	memoryUsagePercent := (latest.MemoryUsageMB / latest.MemoryTotalMB) * 100
 	if memoryUsagePercent > 90 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Critical memory usage: %.1f%% (%.1f MB / %.1f MB)", memoryUsagePercent, latest.MemoryUsageMB, latest.MemoryTotalMB),
+			Message: fmt.Sprintf("Critical memory usage: %.1f%% (%.1f MB / %.1f MB)",
+				memoryUsagePercent, latest.MemoryUsageMB, latest.MemoryTotalMB),
 		})
 	} else if memoryUsagePercent > 80 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("High memory usage: %.1f%% (%.1f MB / %.1f MB)", memoryUsagePercent, latest.MemoryUsageMB, latest.MemoryTotalMB),
+			Message: fmt.Sprintf("High memory usage: %.1f%% (%.1f MB / %.1f MB)",
+				memoryUsagePercent, latest.MemoryUsageMB, latest.MemoryTotalMB),
 		})
 	}
+}
 
-	// Disk usage issues
+func (pm *PerformanceMonitor) checkDiskIssues(latest models.PerformanceMetrics, issues *[]models.HealthIssue) {
 	if latest.DiskUsagePercent > 95 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Critical disk usage: %.1f%% (%.1f GB available)", latest.DiskUsagePercent, latest.DiskAvailableGB),
+			Message: fmt.Sprintf("Critical disk usage: %.1f%% (%.1f GB available)",
+				latest.DiskUsagePercent, latest.DiskAvailableGB),
 		})
 	} else if latest.DiskUsagePercent > 85 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("High disk usage: %.1f%% (%.1f GB available)", latest.DiskUsagePercent, latest.DiskAvailableGB),
+			Message: fmt.Sprintf("High disk usage: %.1f%% (%.1f GB available)",
+				latest.DiskUsagePercent, latest.DiskAvailableGB),
 		})
 	}
+}
 
-	// Database latency issues
+func (pm *PerformanceMonitor) checkDatabaseLatencyIssues(
+	latest models.PerformanceMetrics, issues *[]models.HealthIssue,
+) {
 	if latest.DatabaseLatencyMs > 1000 { // 1 second
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityError,
 			Message:  fmt.Sprintf("High database latency: %.1f ms", latest.DatabaseLatencyMs),
 		})
 	} else if latest.DatabaseLatencyMs > 500 { // 500ms
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("Elevated database latency: %.1f ms", latest.DatabaseLatencyMs),
 		})
 	}
+}
 
-	// API latency issues
+func (pm *PerformanceMonitor) checkAPILatencyIssues(latest models.PerformanceMetrics, issues *[]models.HealthIssue) {
 	if latest.APILatencyMs > 5000 { // 5 seconds
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityError,
 			Message:  fmt.Sprintf("High API latency: %.1f ms", latest.APILatencyMs),
 		})
 	} else if latest.APILatencyMs > 2000 { // 2 seconds
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("Elevated API latency: %.1f ms", latest.APILatencyMs),
 		})
 	}
+}
 
-	// Queue size issues
+func (pm *PerformanceMonitor) checkQueueSizeIssues(latest models.PerformanceMetrics, issues *[]models.HealthIssue) {
 	if latest.QueueSize > 1000 {
-		issues = append(issues, models.HealthIssue{
+		*issues = append(*issues, models.HealthIssue{
 			Type:     models.HealthCheckTypePerformance,
 			Source:   "Performance Monitor",
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("Large queue size: %d items", latest.QueueSize),
 		})
 	}
-
-	return issues, nil
 }
 
 // CleanupOldMetrics implements PerformanceMonitorInterface

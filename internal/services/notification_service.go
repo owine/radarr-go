@@ -308,7 +308,9 @@ func (s *NotificationService) validateNotification(notification *models.Notifica
 }
 
 // convertEventToMessage converts a notification event to a notification message
-func (s *NotificationService) convertEventToMessage(event *models.NotificationEvent) *notifications.NotificationMessage {
+func (s *NotificationService) convertEventToMessage(
+	event *models.NotificationEvent,
+) *notifications.NotificationMessage {
 	return &notifications.NotificationMessage{
 		Subject:        s.buildSubject(event),
 		Body:           s.buildBody(event),
@@ -404,7 +406,7 @@ func (s *NotificationService) sendNotificationWithRetry(
 
 // applyTemplate applies template rendering to a notification message
 func (s *NotificationService) applyTemplate(
-	notification *models.Notification,
+	_ *models.Notification,
 	message *notifications.NotificationMessage) (*notifications.NotificationMessage, error) {
 	// Get default template for event type
 	template, exists := s.defaultTemplates[message.EventType]
@@ -623,7 +625,9 @@ func (s *NotificationService) GetProviderInfo() ([]*notifications.ProviderInfo, 
 }
 
 // GetProviderFields returns configuration fields for a specific provider type
-func (s *NotificationService) GetProviderFields(providerType models.NotificationType) ([]models.NotificationField, error) {
+func (s *NotificationService) GetProviderFields(
+	providerType models.NotificationType,
+) ([]models.NotificationField, error) {
 	provider, err := s.factory.CreateProvider(providerType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create provider: %w", err)

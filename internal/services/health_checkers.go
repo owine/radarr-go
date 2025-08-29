@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,22 +22,27 @@ type DatabaseHealthChecker struct {
 	config models.HealthCheckConfig
 }
 
+// Name returns the human-readable name of this health checker
 func (d *DatabaseHealthChecker) Name() string {
 	return "Database Connectivity"
 }
 
+// Type returns the health check type identifier
 func (d *DatabaseHealthChecker) Type() models.HealthCheckType {
 	return models.HealthCheckTypeDatabase
 }
 
+// IsEnabled returns whether this health checker is enabled
 func (d *DatabaseHealthChecker) IsEnabled() bool {
 	return d.config.Enabled
 }
 
+// GetInterval returns the check interval for this health checker
 func (d *DatabaseHealthChecker) GetInterval() time.Duration {
 	return d.config.Interval
 }
 
+// Check performs database connectivity health check
 func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExecution {
 	start := time.Now()
 	result := models.HealthCheckExecution{
@@ -50,55 +56,95 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 	// Test database connection
 	sqlDB, err := d.db.GORM.DB()
 	if err != nil {
-		result.Status = models.HealthStatusCritical
-		result.Message = "Failed to get database connection"
-		result.Error = err
-		result.Issues = []models.HealthIssue{{
-			Type:     d.Type(),
-			Source:   d.Name(),
-			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Database connection error: %v", err),
-		}}
-		return result
+		return d.createConnectionErrorResult(result, err)
 	}
 
-	// Ping database with timeout
+	// Test database ping
+	pingDuration, err := d.testDatabasePing(ctx, sqlDB)
+	if err != nil {
+		return d.createPingErrorResult(result, err)
+	}
+
+	// Test database query
+	queryDuration, movieCount, err := d.testDatabaseQuery(ctx)
+	if err != nil {
+		return d.createQueryErrorResult(result, err)
+	}
+
+	// Populate performance details
+	d.populatePerformanceDetails(&result, sqlDB, pingDuration, queryDuration, movieCount)
+
+	// Evaluate health and create issues
+	issues := d.evaluatePerformanceIssues(pingDuration, queryDuration, sqlDB.Stats())
+	d.finalizeResult(&result, issues)
+
+	return result
+}
+
+func (d *DatabaseHealthChecker) createConnectionErrorResult(
+	result models.HealthCheckExecution, err error,
+) models.HealthCheckExecution {
+	result.Status = models.HealthStatusCritical
+	result.Message = "Failed to get database connection"
+	result.Error = err
+	result.Issues = []models.HealthIssue{{
+		Type:     d.Type(),
+		Source:   d.Name(),
+		Severity: models.HealthSeverityCritical,
+		Message:  fmt.Sprintf("Database connection error: %v", err),
+	}}
+	return result
+}
+
+func (d *DatabaseHealthChecker) testDatabasePing(ctx context.Context, sqlDB *sql.DB) (time.Duration, error) {
 	pingCtx, cancel := context.WithTimeout(ctx, d.config.DatabaseTimeoutThreshold)
 	defer cancel()
 
 	pingStart := time.Now()
-	if err := sqlDB.PingContext(pingCtx); err != nil {
-		result.Status = models.HealthStatusCritical
-		result.Message = "Database ping failed"
-		result.Error = err
-		result.Issues = []models.HealthIssue{{
-			Type:     d.Type(),
-			Source:   d.Name(),
-			Severity: models.HealthSeverityCritical,
-			Message:  fmt.Sprintf("Database ping failed: %v", err),
-		}}
-		return result
-	}
-	pingDuration := time.Since(pingStart)
+	err := sqlDB.PingContext(pingCtx)
+	return time.Since(pingStart), err
+}
 
-	// Test a simple query
+func (d *DatabaseHealthChecker) createPingErrorResult(
+	result models.HealthCheckExecution, err error,
+) models.HealthCheckExecution {
+	result.Status = models.HealthStatusCritical
+	result.Message = "Database ping failed"
+	result.Error = err
+	result.Issues = []models.HealthIssue{{
+		Type:     d.Type(),
+		Source:   d.Name(),
+		Severity: models.HealthSeverityCritical,
+		Message:  fmt.Sprintf("Database ping failed: %v", err),
+	}}
+	return result
+}
+
+func (d *DatabaseHealthChecker) testDatabaseQuery(ctx context.Context) (time.Duration, int64, error) {
 	queryStart := time.Now()
 	var count int64
-	if err := d.db.GORM.WithContext(ctx).Raw("SELECT COUNT(*) FROM movies").Scan(&count).Error; err != nil {
-		result.Status = models.HealthStatusError
-		result.Message = "Database query test failed"
-		result.Error = err
-		result.Issues = []models.HealthIssue{{
-			Type:     d.Type(),
-			Source:   d.Name(),
-			Severity: models.HealthSeverityError,
-			Message:  fmt.Sprintf("Database query failed: %v", err),
-		}}
-		return result
-	}
-	queryDuration := time.Since(queryStart)
+	err := d.db.GORM.WithContext(ctx).Raw("SELECT COUNT(*) FROM movies").Scan(&count).Error
+	return time.Since(queryStart), count, err
+}
 
-	// Check connection pool stats
+func (d *DatabaseHealthChecker) createQueryErrorResult(
+	result models.HealthCheckExecution, err error,
+) models.HealthCheckExecution {
+	result.Status = models.HealthStatusError
+	result.Message = "Database query test failed"
+	result.Error = err
+	result.Issues = []models.HealthIssue{{
+		Type:     d.Type(),
+		Source:   d.Name(),
+		Severity: models.HealthSeverityError,
+		Message:  fmt.Sprintf("Database query failed: %v", err),
+	}}
+	return result
+}
+
+func (d *DatabaseHealthChecker) populatePerformanceDetails(
+	result *models.HealthCheckExecution, sqlDB *sql.DB, pingDuration, queryDuration time.Duration, movieCount int64,
+) {
 	stats := sqlDB.Stats()
 	result.Details["ping_duration_ms"] = pingDuration.Milliseconds()
 	result.Details["query_duration_ms"] = queryDuration.Milliseconds()
@@ -109,9 +155,12 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 	result.Details["wait_duration_ms"] = stats.WaitDuration.Milliseconds()
 	result.Details["max_idle_closed"] = stats.MaxIdleClosed
 	result.Details["max_lifetime_closed"] = stats.MaxLifetimeClosed
-	result.Details["movie_count"] = count
+	result.Details["movie_count"] = movieCount
+}
 
-	// Evaluate performance and connection health
+func (d *DatabaseHealthChecker) evaluatePerformanceIssues(
+	pingDuration, queryDuration time.Duration, stats sql.DBStats,
+) []models.HealthIssue {
 	var issues []models.HealthIssue
 
 	if pingDuration > d.config.DatabaseTimeoutThreshold {
@@ -121,7 +170,6 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("Database ping is slow (%v > %v)", pingDuration, d.config.DatabaseTimeoutThreshold),
 		})
-		result.Status = models.HealthStatusWarning
 	}
 
 	if queryDuration > 2*time.Second {
@@ -131,9 +179,6 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 			Severity: models.HealthSeverityWarning,
 			Message:  fmt.Sprintf("Database query is slow (%v)", queryDuration),
 		})
-		if result.Status == models.HealthStatusHealthy {
-			result.Status = models.HealthStatusWarning
-		}
 	}
 
 	if stats.WaitCount > 0 && stats.WaitDuration > 100*time.Millisecond {
@@ -145,19 +190,32 @@ func (d *DatabaseHealthChecker) Check(ctx context.Context) models.HealthCheckExe
 				"Database connection pool experiencing waits (count: %d, duration: %v)",
 				stats.WaitCount, stats.WaitDuration),
 		})
-		if result.Status == models.HealthStatusHealthy {
-			result.Status = models.HealthStatusWarning
-		}
 	}
 
+	return issues
+}
+
+func (d *DatabaseHealthChecker) finalizeResult(result *models.HealthCheckExecution, issues []models.HealthIssue) {
 	result.Issues = issues
 	if len(issues) == 0 {
 		result.Message = "Database is healthy"
-	} else {
-		result.Message = fmt.Sprintf("Database has %d issue(s)", len(issues))
+		return
 	}
 
-	return result
+	result.Message = fmt.Sprintf("Database has %d issue(s)", len(issues))
+	// Update status based on issues
+	for _, issue := range issues {
+		if issue.Severity == models.HealthSeverityCritical {
+			result.Status = models.HealthStatusCritical
+			return
+		}
+		if issue.Severity == models.HealthSeverityError && result.Status == models.HealthStatusHealthy {
+			result.Status = models.HealthStatusError
+		}
+		if issue.Severity == models.HealthSeverityWarning && result.Status == models.HealthStatusHealthy {
+			result.Status = models.HealthStatusWarning
+		}
+	}
 }
 
 // DiskSpaceHealthChecker checks available disk space
@@ -168,23 +226,28 @@ type DiskSpaceHealthChecker struct {
 	healthConfig models.HealthCheckConfig
 }
 
+// Name returns the human-readable name of this health checker
 func (d *DiskSpaceHealthChecker) Name() string {
 	return "Disk Space"
 }
 
+// Type returns the health check type identifier
 func (d *DiskSpaceHealthChecker) Type() models.HealthCheckType {
 	return models.HealthCheckTypeDiskSpace
 }
 
+// IsEnabled returns whether this health checker is enabled
 func (d *DiskSpaceHealthChecker) IsEnabled() bool {
 	return d.healthConfig.Enabled
 }
 
+// GetInterval returns the check interval for this health checker
 func (d *DiskSpaceHealthChecker) GetInterval() time.Duration {
 	return d.healthConfig.Interval
 }
 
-func (d *DiskSpaceHealthChecker) Check(ctx context.Context) models.HealthCheckExecution {
+// Check performs disk space health check
+func (d *DiskSpaceHealthChecker) Check(_ context.Context) models.HealthCheckExecution {
 	result := models.HealthCheckExecution{
 		Type:      d.Type(),
 		Source:    d.Name(),
@@ -198,9 +261,7 @@ func (d *DiskSpaceHealthChecker) Check(ctx context.Context) models.HealthCheckEx
 
 	// Check data directory
 	dataDir := d.config.Storage.DataDirectory
-	if err := d.checkPath(dataDir, &result, &issues); err != nil {
-		d.logger.Errorw("Failed to check data directory", "path", dataDir, "error", err)
-	}
+	d.checkPath(dataDir, &result, &issues)
 	pathsChecked = append(pathsChecked, dataDir)
 
 	// TODO: Get root folders from config service and check them
@@ -212,9 +273,7 @@ func (d *DiskSpaceHealthChecker) Check(ctx context.Context) models.HealthCheckEx
 
 	for _, path := range commonPaths {
 		if _, err := os.Stat(path); err == nil {
-			if err := d.checkPath(path, &result, &issues); err != nil {
-				d.logger.Errorw("Failed to check path", "path", path, "error", err)
-			}
+			d.checkPath(path, &result, &issues)
 			pathsChecked = append(pathsChecked, path)
 		}
 	}
@@ -233,20 +292,8 @@ func (d *DiskSpaceHealthChecker) Check(ctx context.Context) models.HealthCheckEx
 
 func (d *DiskSpaceHealthChecker) checkPath(
 	path string, result *models.HealthCheckExecution, issues *[]models.HealthIssue,
-) error {
-	diskInfo, err := d.getDiskSpaceInfo(path)
-	if err != nil {
-		*issues = append(*issues, models.HealthIssue{
-			Type:     d.Type(),
-			Source:   d.Name(),
-			Severity: models.HealthSeverityError,
-			Message:  fmt.Sprintf("Failed to check disk space for %s: %v", path, err),
-		})
-		if result.Status == models.HealthStatusHealthy {
-			result.Status = models.HealthStatusError
-		}
-		return err
-	}
+) {
+	diskInfo := d.getDiskSpaceInfo(path)
 
 	result.Details[fmt.Sprintf("%s_free_bytes", filepath.Base(path))] = diskInfo.FreeBytes
 	result.Details[fmt.Sprintf("%s_total_bytes", filepath.Base(path))] = diskInfo.TotalBytes
@@ -278,12 +325,10 @@ func (d *DiskSpaceHealthChecker) checkPath(
 			result.Status = models.HealthStatusWarning
 		}
 	}
-
-	return nil
 }
 
 // getDiskSpaceInfo returns disk space information for a path
-func (d *DiskSpaceHealthChecker) getDiskSpaceInfo(path string) (*models.DiskSpaceInfo, error) {
+func (d *DiskSpaceHealthChecker) getDiskSpaceInfo(path string) *models.DiskSpaceInfo {
 	// This is a placeholder implementation
 	// In production, use platform-specific implementations
 
@@ -296,7 +341,7 @@ func (d *DiskSpaceHealthChecker) getDiskSpaceInfo(path string) (*models.DiskSpac
 		IsAccessible: true,
 		Warning:      false,
 		Critical:     false,
-	}, nil
+	}
 }
 
 // SystemResourcesHealthChecker checks system resource usage
@@ -305,23 +350,28 @@ type SystemResourcesHealthChecker struct {
 	config models.HealthCheckConfig
 }
 
+// Name returns the human-readable name of this health checker
 func (s *SystemResourcesHealthChecker) Name() string {
 	return "System Resources"
 }
 
+// Type returns the health check type identifier
 func (s *SystemResourcesHealthChecker) Type() models.HealthCheckType {
 	return models.HealthCheckTypeSystem
 }
 
+// IsEnabled returns whether this health checker is enabled
 func (s *SystemResourcesHealthChecker) IsEnabled() bool {
 	return s.config.Enabled
 }
 
+// GetInterval returns the check interval for this health checker
 func (s *SystemResourcesHealthChecker) GetInterval() time.Duration {
 	return s.config.Interval
 }
 
-func (s *SystemResourcesHealthChecker) Check(ctx context.Context) models.HealthCheckExecution {
+// Check performs system resources health check
+func (s *SystemResourcesHealthChecker) Check(_ context.Context) models.HealthCheckExecution {
 	result := models.HealthCheckExecution{
 		Type:      s.Type(),
 		Source:    s.Name(),
@@ -330,9 +380,27 @@ func (s *SystemResourcesHealthChecker) Check(ctx context.Context) models.HealthC
 		Details:   make(map[string]interface{}),
 	}
 
-	var issues []models.HealthIssue
+	// Collect memory statistics
+	memoryStats := s.collectMemoryStats()
+	s.populateMemoryDetails(&result, memoryStats)
 
-	// Memory statistics
+	// Evaluate system resource issues
+	issues := s.evaluateSystemIssues(memoryStats)
+	s.finalizeSystemResult(&result, issues)
+
+	return result
+}
+
+type memoryStats struct {
+	usageMB      float64
+	totalMB      float64
+	usagePercent float64
+	goroutines   int
+	gcCycles     uint32
+	nextGCMB     float64
+}
+
+func (s *SystemResourcesHealthChecker) collectMemoryStats() memoryStats {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -340,62 +408,84 @@ func (s *SystemResourcesHealthChecker) Check(ctx context.Context) models.HealthC
 	memoryTotalMB := float64(m.Sys) / 1024 / 1024
 	memoryUsagePercent := (memoryUsageMB / memoryTotalMB) * 100
 
-	result.Details["memory_usage_mb"] = memoryUsageMB
-	result.Details["memory_total_mb"] = memoryTotalMB
-	result.Details["memory_usage_percent"] = memoryUsagePercent
-	result.Details["goroutines"] = runtime.NumGoroutine()
-	result.Details["gc_cycles"] = m.NumGC
-	result.Details["next_gc_mb"] = float64(m.NextGC) / 1024 / 1024
+	return memoryStats{
+		usageMB:      memoryUsageMB,
+		totalMB:      memoryTotalMB,
+		usagePercent: memoryUsagePercent,
+		goroutines:   runtime.NumGoroutine(),
+		gcCycles:     m.NumGC,
+		nextGCMB:     float64(m.NextGC) / 1024 / 1024,
+	}
+}
+
+func (s *SystemResourcesHealthChecker) populateMemoryDetails(result *models.HealthCheckExecution, stats memoryStats) {
+	result.Details["memory_usage_mb"] = stats.usageMB
+	result.Details["memory_total_mb"] = stats.totalMB
+	result.Details["memory_usage_percent"] = stats.usagePercent
+	result.Details["goroutines"] = stats.goroutines
+	result.Details["gc_cycles"] = stats.gcCycles
+	result.Details["next_gc_mb"] = stats.nextGCMB
+}
+
+func (s *SystemResourcesHealthChecker) evaluateSystemIssues(stats memoryStats) []models.HealthIssue {
+	var issues []models.HealthIssue
 
 	// Check memory usage thresholds
-	if memoryUsagePercent > 90 {
+	if stats.usagePercent > 90 {
 		issues = append(issues, models.HealthIssue{
 			Type:     s.Type(),
 			Source:   s.Name(),
 			Severity: models.HealthSeverityCritical,
 			Message: fmt.Sprintf(
 				"Critical memory usage: %.1f%% (%.1f MB / %.1f MB)",
-				memoryUsagePercent, memoryUsageMB, memoryTotalMB,
+				stats.usagePercent, stats.usageMB, stats.totalMB,
 			),
 		})
-		result.Status = models.HealthStatusCritical
-	} else if memoryUsagePercent > 80 {
+	} else if stats.usagePercent > 80 {
 		issues = append(issues, models.HealthIssue{
 			Type:     s.Type(),
 			Source:   s.Name(),
 			Severity: models.HealthSeverityWarning,
 			Message: fmt.Sprintf(
 				"High memory usage: %.1f%% (%.1f MB / %.1f MB)",
-				memoryUsagePercent, memoryUsageMB, memoryTotalMB,
+				stats.usagePercent, stats.usageMB, stats.totalMB,
 			),
 		})
-		if result.Status == models.HealthStatusHealthy {
-			result.Status = models.HealthStatusWarning
-		}
 	}
 
 	// Check goroutine count
-	goroutines := runtime.NumGoroutine()
-	if goroutines > 10000 {
+	if stats.goroutines > 10000 {
 		issues = append(issues, models.HealthIssue{
 			Type:     s.Type(),
 			Source:   s.Name(),
 			Severity: models.HealthSeverityWarning,
-			Message:  fmt.Sprintf("High goroutine count: %d", goroutines),
+			Message:  fmt.Sprintf("High goroutine count: %d", stats.goroutines),
 		})
-		if result.Status == models.HealthStatusHealthy {
-			result.Status = models.HealthStatusWarning
-		}
 	}
 
+	return issues
+}
+
+func (s *SystemResourcesHealthChecker) finalizeSystemResult(
+	result *models.HealthCheckExecution, issues []models.HealthIssue,
+) {
 	result.Issues = issues
 	if len(issues) == 0 {
 		result.Message = "System resources are healthy"
-	} else {
-		result.Message = fmt.Sprintf("Found %d system resource issue(s)", len(issues))
+		return
 	}
 
-	return result
+	result.Message = fmt.Sprintf("Found %d system resource issue(s)", len(issues))
+	// Update status based on issues
+	for _, issue := range issues {
+		if issue.Severity == models.HealthSeverityCritical {
+			result.Status = models.HealthStatusCritical
+			return
+		}
+		if issue.Severity == models.HealthSeverityWarning && result.Status == models.HealthStatusHealthy {
+			result.Status = models.HealthStatusWarning
+		}
+	}
 }
 
 // RootFolderHealthChecker checks accessibility of configured root folders
@@ -405,23 +495,28 @@ type RootFolderHealthChecker struct {
 	config *config.Config
 }
 
+// Name returns the human-readable name of this health checker
 func (r *RootFolderHealthChecker) Name() string {
 	return "Root Folder Accessibility"
 }
 
+// Type returns the health check type identifier
 func (r *RootFolderHealthChecker) Type() models.HealthCheckType {
 	return models.HealthCheckTypeRootFolder
 }
 
+// IsEnabled returns whether this health checker is enabled
 func (r *RootFolderHealthChecker) IsEnabled() bool {
 	return true // Always enabled
 }
 
+// GetInterval returns the check interval for this health checker
 func (r *RootFolderHealthChecker) GetInterval() time.Duration {
 	return 30 * time.Minute
 }
 
-func (r *RootFolderHealthChecker) Check(ctx context.Context) models.HealthCheckExecution {
+// Check performs root folder accessibility health check
+func (r *RootFolderHealthChecker) Check(_ context.Context) models.HealthCheckExecution {
 	result := models.HealthCheckExecution{
 		Type:      r.Type(),
 		Source:    r.Name(),
@@ -431,71 +526,91 @@ func (r *RootFolderHealthChecker) Check(ctx context.Context) models.HealthCheckE
 	}
 
 	var issues []models.HealthIssue
-	var checkedPaths []string
-
 	// TODO: Get root folders from config service
 	// For now, check the data directory
 	paths := []string{r.config.Storage.DataDirectory}
-
-	for _, path := range paths {
-		checkedPaths = append(checkedPaths, path)
-
-		// Check if path exists and is accessible
-		info, err := os.Stat(path)
-		if err != nil {
-			issues = append(issues, models.HealthIssue{
-				Type:     r.Type(),
-				Source:   r.Name(),
-				Severity: models.HealthSeverityCritical,
-				Message:  fmt.Sprintf("Root folder not accessible: %s - %v", path, err),
-			})
-			result.Status = models.HealthStatusCritical
-			continue
-		}
-
-		// Check if it's a directory
-		if !info.IsDir() {
-			issues = append(issues, models.HealthIssue{
-				Type:     r.Type(),
-				Source:   r.Name(),
-				Severity: models.HealthSeverityError,
-				Message:  fmt.Sprintf("Root folder path is not a directory: %s", path),
-			})
-			if result.Status == models.HealthStatusHealthy {
-				result.Status = models.HealthStatusError
-			}
-			continue
-		}
-
-		// Check write permissions by creating a temporary file
-		testFile := filepath.Join(path, ".radarr-health-check")
-		if err := os.WriteFile(testFile, []byte("test"), 0400); err != nil {
-			issues = append(issues, models.HealthIssue{
-				Type:     r.Type(),
-				Source:   r.Name(),
-				Severity: models.HealthSeverityError,
-				Message:  fmt.Sprintf("Root folder not writable: %s - %v", path, err),
-			})
-			if result.Status == models.HealthStatusHealthy {
-				result.Status = models.HealthStatusError
-			}
-		} else {
-			// Clean up test file
-			if err := os.Remove(testFile); err != nil {
-				// Not critical if cleanup fails, just log it
-				r.logger.Debug("Failed to clean up test file", "file", testFile, "error", err)
-			}
-		}
-	}
+	checkedPaths := r.checkAllPaths(paths, &issues)
 
 	result.Details["checked_paths"] = checkedPaths
-	result.Issues = issues
-
-	if len(issues) == 0 {
-		result.Message = "All root folders are accessible"
-	} else {
-		result.Message = fmt.Sprintf("Found %d root folder issue(s)", len(issues))
-	}
+	r.finalizeRootFolderResult(&result, issues)
 
 	return result
+}
+
+func (r *RootFolderHealthChecker) checkAllPaths(paths []string, issues *[]models.HealthIssue) []string {
+	var checkedPaths []string
+	for _, path := range paths {
+		checkedPaths = append(checkedPaths, path)
+		r.checkSinglePath(path, issues)
+	}
+	return checkedPaths
+}
+
+func (r *RootFolderHealthChecker) checkSinglePath(path string, issues *[]models.HealthIssue) {
+	// Check if path exists and is accessible
+	info, err := os.Stat(path)
+	if err != nil {
+		*issues = append(*issues, models.HealthIssue{
+			Type:     r.Type(),
+			Source:   r.Name(),
+			Severity: models.HealthSeverityCritical,
+			Message:  fmt.Sprintf("Root folder not accessible: %s - %v", path, err),
+		})
+		return
+	}
+
+	// Check if it's a directory
+	if !info.IsDir() {
+		*issues = append(*issues, models.HealthIssue{
+			Type:     r.Type(),
+			Source:   r.Name(),
+			Severity: models.HealthSeverityError,
+			Message:  fmt.Sprintf("Root folder path is not a directory: %s", path),
+		})
+		return
+	}
+
+	// Check write permissions
+	r.checkWritePermissions(path, issues)
+}
+
+func (r *RootFolderHealthChecker) checkWritePermissions(path string, issues *[]models.HealthIssue) {
+	testFile := filepath.Join(path, ".radarr-health-check")
+	if err := os.WriteFile(testFile, []byte("test"), 0400); err != nil {
+		*issues = append(*issues, models.HealthIssue{
+			Type:     r.Type(),
+			Source:   r.Name(),
+			Severity: models.HealthSeverityError,
+			Message:  fmt.Sprintf("Root folder not writable: %s - %v", path, err),
+		})
+		return
+	}
+
+	// Clean up test file
+	if err := os.Remove(testFile); err != nil {
+		// Not critical if cleanup fails, just log it
+		r.logger.Debug("Failed to clean up test file", "file", testFile, "error", err)
+	}
+}
+
+func (r *RootFolderHealthChecker) finalizeRootFolderResult(
+	result *models.HealthCheckExecution, issues []models.HealthIssue,
+) {
+	result.Issues = issues
+	if len(issues) == 0 {
+		result.Message = "All root folders are accessible"
+		return
+	}
+
+	result.Message = fmt.Sprintf("Found %d root folder issue(s)", len(issues))
+	// Update status based on issues
+	for _, issue := range issues {
+		if issue.Severity == models.HealthSeverityCritical {
+			result.Status = models.HealthStatusCritical
+			return
+		}
+		if issue.Severity == models.HealthSeverityError && result.Status == models.HealthStatusHealthy {
+			result.Status = models.HealthStatusError
+		}
+	}
 }

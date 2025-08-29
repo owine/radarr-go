@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,7 +31,7 @@ func NewMediaInfoService(db *database.Database, logger *logger.Logger) *MediaInf
 }
 
 // ExtractMediaInfo extracts comprehensive media information from a video file
-func (s *MediaInfoService) ExtractMediaInfo(filePath string) (*models.MediaInfo, error) {
+func (s *MediaInfoService) ExtractMediaInfo(ctx context.Context, filePath string) (*models.MediaInfo, error) {
 	s.logger.Debug("Extracting media info", "file", filePath)
 
 	// Check if file exists
@@ -39,32 +40,29 @@ func (s *MediaInfoService) ExtractMediaInfo(filePath string) (*models.MediaInfo,
 	}
 
 	// Try ffprobe first (most reliable)
-	if mediaInfo, err := s.extractWithFFProbe(filePath); err == nil {
+	if mediaInfo, err := s.extractWithFFProbe(ctx, filePath); err == nil {
 		return mediaInfo, nil
 	}
 
 	// Fallback to mediainfo command
-	if mediaInfo, err := s.extractWithMediaInfo(filePath); err == nil {
+	if mediaInfo, err := s.extractWithMediaInfo(ctx, filePath); err == nil {
 		return mediaInfo, nil
 	}
 
 	// Fallback to basic file analysis
-	mediaInfo, err := s.extractBasicInfo(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract media info: %w", err)
-	}
+	mediaInfo := s.extractBasicInfo(filePath)
 
 	return mediaInfo, nil
 }
 
 // extractWithFFProbe uses ffprobe to extract detailed media information
-func (s *MediaInfoService) extractWithFFProbe(filePath string) (*models.MediaInfo, error) {
+func (s *MediaInfoService) extractWithFFProbe(ctx context.Context, filePath string) (*models.MediaInfo, error) {
 	// Check if ffprobe is available
 	if _, err := exec.LookPath("ffprobe"); err != nil {
 		return nil, fmt.Errorf("ffprobe not found")
 	}
 
-	cmd := exec.Command("ffprobe",
+	cmd := exec.CommandContext(ctx, "ffprobe",
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_format",
@@ -80,13 +78,13 @@ func (s *MediaInfoService) extractWithFFProbe(filePath string) (*models.MediaInf
 }
 
 // extractWithMediaInfo uses mediainfo command to extract media information
-func (s *MediaInfoService) extractWithMediaInfo(filePath string) (*models.MediaInfo, error) {
+func (s *MediaInfoService) extractWithMediaInfo(ctx context.Context, filePath string) (*models.MediaInfo, error) {
 	// Check if mediainfo is available
 	if _, err := exec.LookPath("mediainfo"); err != nil {
 		return nil, fmt.Errorf("mediainfo not found")
 	}
 
-	cmd := exec.Command("mediainfo", "--Output=JSON", filePath)
+	cmd := exec.CommandContext(ctx, "mediainfo", "--Output=JSON", filePath)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("mediainfo execution failed: %w", err)
@@ -96,7 +94,7 @@ func (s *MediaInfoService) extractWithMediaInfo(filePath string) (*models.MediaI
 }
 
 // extractBasicInfo extracts basic information using file properties and naming patterns
-func (s *MediaInfoService) extractBasicInfo(filePath string) (*models.MediaInfo, error) {
+func (s *MediaInfoService) extractBasicInfo(filePath string) *models.MediaInfo {
 	fileName := filepath.Base(filePath)
 
 	mediaInfo := &models.MediaInfo{
@@ -130,7 +128,7 @@ func (s *MediaInfoService) extractBasicInfo(filePath string) (*models.MediaInfo,
 		"videoCodec", mediaInfo.VideoCodec,
 		"audioCodec", mediaInfo.AudioCodec)
 
-	return mediaInfo, nil
+	return mediaInfo
 }
 
 // parseFFProbeOutput parses ffprobe JSON output to extract media information
@@ -149,8 +147,8 @@ func (s *MediaInfoService) parseFFProbeOutput(output string) (*models.MediaInfo,
 
 	if matches := regexp.MustCompile(`"width":\s*(\d+)`).FindStringSubmatch(output); len(matches) > 1 {
 		if width, err := strconv.Atoi(matches[1]); err == nil {
-			if height_matches := regexp.MustCompile(`"height":\s*(\d+)`).FindStringSubmatch(output); len(height_matches) > 1 {
-				if height, err := strconv.Atoi(height_matches[1]); err == nil {
+			if heightMatches := regexp.MustCompile(`"height":\s*(\d+)`).FindStringSubmatch(output); len(heightMatches) > 1 {
+				if height, err := strconv.Atoi(heightMatches[1]); err == nil {
 					mediaInfo.Resolution = fmt.Sprintf("%dx%d", width, height)
 				}
 			}
@@ -334,7 +332,7 @@ func (s *MediaInfoService) UpdateMediaInfo(movieFileID int, mediaInfo *models.Me
 }
 
 // RefreshMediaInfo re-extracts media information for a movie file
-func (s *MediaInfoService) RefreshMediaInfo(movieFileID int) error {
+func (s *MediaInfoService) RefreshMediaInfo(ctx context.Context, movieFileID int) error {
 	var movieFile models.MovieFile
 
 	err := s.db.GORM.Where("id = ?", movieFileID).First(&movieFile).Error
@@ -343,7 +341,7 @@ func (s *MediaInfoService) RefreshMediaInfo(movieFileID int) error {
 	}
 
 	// Extract fresh media info
-	mediaInfo, err := s.ExtractMediaInfo(movieFile.Path)
+	mediaInfo, err := s.ExtractMediaInfo(ctx, movieFile.Path)
 	if err != nil {
 		return fmt.Errorf("failed to extract media info: %w", err)
 	}
@@ -364,8 +362,8 @@ func (s *MediaInfoService) RefreshMediaInfo(movieFileID int) error {
 }
 
 // ValidateMediaInfo validates that a video file has extractable media information
-func (s *MediaInfoService) ValidateMediaInfo(filePath string) error {
-	mediaInfo, err := s.ExtractMediaInfo(filePath)
+func (s *MediaInfoService) ValidateMediaInfo(ctx context.Context, filePath string) error {
+	mediaInfo, err := s.ExtractMediaInfo(ctx, filePath)
 	if err != nil {
 		return err
 	}
@@ -412,12 +410,12 @@ func (s *MediaInfoService) GetVideoFileSize(filePath string) (int64, error) {
 }
 
 // GetVideoFileDuration attempts to get video duration from media info
-func (s *MediaInfoService) GetVideoFileDuration(filePath string) (time.Duration, error) {
+func (s *MediaInfoService) GetVideoFileDuration(ctx context.Context, filePath string) (time.Duration, error) {
 	// This would require more sophisticated media analysis
 	// For now, return a placeholder implementation
 
 	// In a real implementation, this would use ffprobe or mediainfo to get duration
-	cmd := exec.Command("ffprobe", "-v", "quiet", "-show_entries",
+	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "quiet", "-show_entries",
 		"format=duration", "-of", "csv=p=0", filePath)
 
 	output, err := cmd.Output()

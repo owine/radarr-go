@@ -86,14 +86,14 @@ func (s *ICalService) writeICalHeader(builder *strings.Builder, config *models.C
 	builder.WriteString("METHOD:PUBLISH\r\n")
 
 	// Calendar properties
-	builder.WriteString(fmt.Sprintf("X-WR-CALNAME:%s\r\n", s.escapeText(config.Title)))
-	builder.WriteString(fmt.Sprintf("X-WR-CALDESC:%s\r\n", s.escapeText(config.Description)))
-	builder.WriteString(fmt.Sprintf("X-WR-TIMEZONE:%s\r\n", config.TimeZone))
+	fmt.Fprintf(builder, "X-WR-CALNAME:%s\r\n", s.escapeText(config.Title))
+	fmt.Fprintf(builder, "X-WR-CALDESC:%s\r\n", s.escapeText(config.Description))
+	fmt.Fprintf(builder, "X-WR-TIMEZONE:%s\r\n", config.TimeZone)
 	builder.WriteString("X-WR-REFRESHINTERVAL:PT1H\r\n") // Refresh every hour
 
 	// Publish information
-	builder.WriteString(fmt.Sprintf("X-PUBLISHED-TTL:PT1H\r\n"))
-	builder.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", s.formatDateTime(now)))
+	builder.WriteString("X-PUBLISHED-TTL:PT1H\r\n")
+	fmt.Fprintf(builder, "DTSTAMP:%s\r\n", s.formatDateTime(now))
 
 	// Time zone information (if not UTC)
 	if config.TimeZone != "UTC" {
@@ -107,7 +107,7 @@ func (s *ICalService) writeTimeZoneInfo(builder *strings.Builder, timeZone strin
 	// you would want to include proper VTIMEZONE components.
 	// For now, we'll note that all times are in UTC.
 	builder.WriteString("BEGIN:VTIMEZONE\r\n")
-	builder.WriteString(fmt.Sprintf("TZID:%s\r\n", timeZone))
+	fmt.Fprintf(builder, "TZID:%s\r\n", timeZone)
 	builder.WriteString("BEGIN:STANDARD\r\n")
 	builder.WriteString("DTSTART:19700101T000000\r\n")
 	builder.WriteString("TZOFFSETFROM:+0000\r\n")
@@ -122,46 +122,46 @@ func (s *ICalService) writeICalEvent(builder *strings.Builder, event *models.ICa
 	builder.WriteString("BEGIN:VEVENT\r\n")
 
 	// Required properties
-	builder.WriteString(fmt.Sprintf("UID:%s\r\n", s.escapeText(event.UID)))
-	builder.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", s.formatDateTime(event.Created)))
+	fmt.Fprintf(builder, "UID:%s\r\n", s.escapeText(event.UID))
+	fmt.Fprintf(builder, "DTSTAMP:%s\r\n", s.formatDateTime(event.Created))
 
 	// Event dates
 	if event.AllDay {
-		builder.WriteString(fmt.Sprintf("DTSTART;VALUE=DATE:%s\r\n", s.formatDate(event.Start)))
+		fmt.Fprintf(builder, "DTSTART;VALUE=DATE:%s\r\n", s.formatDate(event.Start))
 		if event.End != nil {
-			builder.WriteString(fmt.Sprintf("DTEND;VALUE=DATE:%s\r\n", s.formatDate(*event.End)))
+			fmt.Fprintf(builder, "DTEND;VALUE=DATE:%s\r\n", s.formatDate(*event.End))
 		}
 	} else {
-		builder.WriteString(fmt.Sprintf("DTSTART:%s\r\n", s.formatDateTime(event.Start)))
+		fmt.Fprintf(builder, "DTSTART:%s\r\n", s.formatDateTime(event.Start))
 		if event.End != nil {
-			builder.WriteString(fmt.Sprintf("DTEND:%s\r\n", s.formatDateTime(*event.End)))
+			fmt.Fprintf(builder, "DTEND:%s\r\n", s.formatDateTime(*event.End))
 		}
 	}
 
 	// Event properties
-	builder.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", s.escapeText(event.Summary)))
+	fmt.Fprintf(builder, "SUMMARY:%s\r\n", s.escapeText(event.Summary))
 
 	if event.Description != "" {
 		description := s.wrapText(s.escapeText(event.Description), 75)
-		builder.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", description))
+		fmt.Fprintf(builder, "DESCRIPTION:%s\r\n", description)
 	}
 
 	if event.Location != "" {
-		builder.WriteString(fmt.Sprintf("LOCATION:%s\r\n", s.escapeText(event.Location)))
+		fmt.Fprintf(builder, "LOCATION:%s\r\n", s.escapeText(event.Location))
 	}
 
 	if event.URL != "" {
-		builder.WriteString(fmt.Sprintf("URL:%s\r\n", event.URL))
+		fmt.Fprintf(builder, "URL:%s\r\n", event.URL)
 	}
 
 	// Categories
 	if len(event.Categories) > 0 {
 		categories := strings.Join(event.Categories, ",")
-		builder.WriteString(fmt.Sprintf("CATEGORIES:%s\r\n", s.escapeText(categories)))
+		fmt.Fprintf(builder, "CATEGORIES:%s\r\n", s.escapeText(categories))
 	}
 
 	// Status
-	builder.WriteString(fmt.Sprintf("STATUS:%s\r\n", event.Status))
+	fmt.Fprintf(builder, "STATUS:%s\r\n", event.Status)
 
 	// Transparency (show as busy/free)
 	if event.AllDay {
@@ -171,10 +171,10 @@ func (s *ICalService) writeICalEvent(builder *strings.Builder, event *models.ICa
 	}
 
 	// Last modified
-	builder.WriteString(fmt.Sprintf("LAST-MODIFIED:%s\r\n", s.formatDateTime(event.LastMod)))
+	fmt.Fprintf(builder, "LAST-MODIFIED:%s\r\n", s.formatDateTime(event.LastMod))
 
 	// Sequence
-	builder.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", event.Sequence))
+	fmt.Fprintf(builder, "SEQUENCE:%d\r\n", event.Sequence)
 
 	// Priority (1-9, with 1 being highest)
 	builder.WriteString("PRIORITY:5\r\n") // Medium priority

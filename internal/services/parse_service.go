@@ -156,13 +156,19 @@ func (s *ParseService) initializeRegexes() {
 	s.releaseGroupRegex = regexp.MustCompile(`(?i)[\[\(]?([a-z0-9_\-\.]+)[\]\)]?$`)
 
 	// Language patterns
-	s.languageRegex = regexp.MustCompile(`(?i)\b(?:english|spanish|french|german|italian|portuguese|russian|chinese|japanese|korean|hindi|arabic|dutch|swedish|norwegian|danish|finnish)\b`)
+	languagePattern := `(?i)\b(?:english|spanish|french|german|italian|portuguese|russian|chinese|` +
+		`japanese|korean|hindi|arabic|dutch|swedish|norwegian|danish|finnish)\b`
+	s.languageRegex = regexp.MustCompile(languagePattern)
 
 	// Edition patterns
-	s.editionRegex = regexp.MustCompile(`(?i)\b(?:director'?s?\.?cut|extended|unrated|theatrical|remastered|criterion|special\.edition)\b`)
+	editionPattern := `(?i)\b(?:director'?s?\.?cut|extended|unrated|theatrical|` +
+		`remastered|criterion|special\.edition)\b`
+	s.editionRegex = regexp.MustCompile(editionPattern)
 
 	// Source patterns
-	s.sourceRegex = regexp.MustCompile(`(?i)\b(?:bluray|bdrip|web-dl|webrip|hdtv|dvdrip|ts|cam|hdcam|r5|dvdscr|workprint|ppv)\b`)
+	sourcePattern := `(?i)\b(?:bluray|bdrip|web-dl|webrip|hdtv|dvdrip|ts|cam|hdcam|` +
+		`r5|dvdscr|workprint|ppv)\b`
+	s.sourceRegex = regexp.MustCompile(sourcePattern)
 
 	// Codec patterns
 	s.codecRegex = regexp.MustCompile(`(?i)\b(?:x264|x265|h264|h265|hevc|xvid|divx|vc-1|mpeg2)\b`)
@@ -299,7 +305,8 @@ func (s *ParseService) cleanMovieTitle(title string) string {
 	title = strings.TrimSpace(title)
 
 	// Remove common artifacts
-	title = regexp.MustCompile(`(?i)\b(?:dvdrip|bdrip|webrip|hdtv|web-dl|bluray|1080p|720p|480p)\b`).ReplaceAllString(title, "")
+	artifactPattern := `(?i)\b(?:dvdrip|bdrip|webrip|hdtv|web-dl|bluray|1080p|720p|480p)\b`
+	title = regexp.MustCompile(artifactPattern).ReplaceAllString(title, "")
 	title = regexp.MustCompile(`\s+`).ReplaceAllString(title, " ")
 	title = strings.TrimSpace(title)
 
@@ -317,25 +324,33 @@ func (s *ParseService) findMatchingMovie(ctx context.Context, parsed *models.Par
 
 	// First try: exact title and year match
 	if parsed.Year > 0 {
-		if err := query.Where("title ILIKE ? AND year = ?", parsed.PrimaryMovieTitle, parsed.Year).First(&movie).Error; err == nil {
+		err := query.Where("title ILIKE ? AND year = ?", parsed.PrimaryMovieTitle, parsed.Year).
+			First(&movie).Error
+		if err == nil {
 			return &movie, nil
 		}
 	}
 
 	// Second try: fuzzy title match with year
 	if parsed.Year > 0 {
-		if err := query.Where("title ILIKE ? AND year = ?", fmt.Sprintf("%%%s%%", parsed.PrimaryMovieTitle), parsed.Year).First(&movie).Error; err == nil {
+		fuzzyTitle := fmt.Sprintf("%%%s%%", parsed.PrimaryMovieTitle)
+		err := query.Where("title ILIKE ? AND year = ?", fuzzyTitle, parsed.Year).
+			First(&movie).Error
+		if err == nil {
 			return &movie, nil
 		}
 	}
 
 	// Third try: exact title match without year
-	if err := query.Where("title ILIKE ?", parsed.PrimaryMovieTitle).First(&movie).Error; err == nil {
+	err := query.Where("title ILIKE ?", parsed.PrimaryMovieTitle).First(&movie).Error
+	if err == nil {
 		return &movie, nil
 	}
 
 	// Fourth try: fuzzy title match without year
-	if err := query.Where("title ILIKE ?", fmt.Sprintf("%%%s%%", parsed.PrimaryMovieTitle)).First(&movie).Error; err == nil {
+	fuzzyTitle := fmt.Sprintf("%%%s%%", parsed.PrimaryMovieTitle)
+	err = query.Where("title ILIKE ?", fuzzyTitle).First(&movie).Error
+	if err == nil {
 		return &movie, nil
 	}
 

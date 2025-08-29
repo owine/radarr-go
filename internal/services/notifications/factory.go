@@ -1,3 +1,4 @@
+// Package notifications provides notification providers and factory functionality for various notification services.
 package notifications
 
 import (
@@ -437,13 +438,15 @@ func (p *StubProvider) GetConfigFields() []models.NotificationField {
 }
 
 // ValidateConfig validates the provider configuration
-func (p *StubProvider) ValidateConfig(settings models.NotificationSettings) error {
+func (p *StubProvider) ValidateConfig(_ models.NotificationSettings) error {
 	p.logger.Debug("Validating stub provider config", "provider", p.name)
 	return nil
 }
 
 // SendNotification logs that it would send a notification
-func (p *StubProvider) SendNotification(ctx context.Context, settings models.NotificationSettings, message *NotificationMessage) error {
+func (p *StubProvider) SendNotification(
+	_ context.Context, _ models.NotificationSettings, message *NotificationMessage,
+) error {
 	p.logger.Debug("Would send notification",
 		"provider", p.name,
 		"eventType", message.EventType,
@@ -452,7 +455,7 @@ func (p *StubProvider) SendNotification(ctx context.Context, settings models.Not
 }
 
 // TestConnection simulates a successful test
-func (p *StubProvider) TestConnection(ctx context.Context, settings models.NotificationSettings) error {
+func (p *StubProvider) TestConnection(_ context.Context, _ models.NotificationSettings) error {
 	p.logger.Debug("Testing stub provider connection", "provider", p.name)
 	return nil
 }

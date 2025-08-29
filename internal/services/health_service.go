@@ -513,7 +513,7 @@ func (hs *HealthService) storeHealthIssues(issues []models.HealthIssue) {
 }
 
 // GetSystemResources implements HealthServiceInterface
-func (hs *HealthService) GetSystemResources(ctx context.Context) (*models.SystemResourceInfo, error) {
+func (hs *HealthService) GetSystemResources(_ context.Context) (*models.SystemResourceInfo, error) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -552,7 +552,7 @@ func (hs *HealthService) GetSystemResources(ctx context.Context) (*models.System
 }
 
 // CheckDiskSpace implements HealthServiceInterface
-func (hs *HealthService) CheckDiskSpace(ctx context.Context) ([]models.DiskSpaceInfo, error) {
+func (hs *HealthService) CheckDiskSpace(_ context.Context) ([]models.DiskSpaceInfo, error) {
 	var diskSpaceInfo []models.DiskSpaceInfo
 
 	if hs.systemChecker == nil {
@@ -702,13 +702,9 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 		hs.logger.Errorw("Failed to check disk space", "error", err)
 	}
 
-	// Get service health (if available)
+	// Get service health (placeholder for future implementation)
 	var serviceHealth []models.ServiceHealthInfo
-	if hs.serviceChecker != nil {
-		// These methods would need to be implemented
-		// serviceHealth = append(serviceHealth, hs.serviceChecker.CheckDownloadClients(ctx)...)
-		// serviceHealth = append(serviceHealth, hs.serviceChecker.CheckIndexers(ctx)...)
-	}
+	_ = hs.serviceChecker // Service health checks will be implemented in the future
 
 	// Get performance trend (last 24 hours)
 	since := time.Now().Add(-24 * time.Hour)

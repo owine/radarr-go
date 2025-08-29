@@ -264,7 +264,7 @@ func (m *MockHealthChecker) Type() models.HealthCheckType {
 	return m.checkType
 }
 
-func (m *MockHealthChecker) Check(ctx context.Context) models.HealthCheckExecution {
+func (m *MockHealthChecker) Check(_ context.Context) models.HealthCheckExecution {
 	return m.result
 }
 

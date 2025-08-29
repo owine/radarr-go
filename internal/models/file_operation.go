@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// FileOperation represents a file system operation being tracked
+// FileOperationRecord represents a file system operation being tracked
 type FileOperationRecord struct {
 	ID              int                 `json:"id" gorm:"primaryKey;autoIncrement"`
 	OperationType   FileOperationType   `json:"operationType" gorm:"not null"`
@@ -31,26 +31,28 @@ func (FileOperationRecord) TableName() string {
 // FileOperationType represents the type of file operation
 type FileOperationType string
 
+// File operation type constants
 const (
-	FileOperationTypeImport    FileOperationType = "import"
-	FileOperationTypeOrganize  FileOperationType = "organize"
-	FileOperationTypeMove      FileOperationType = "move"
-	FileOperationTypeCopy      FileOperationType = "copy"
-	FileOperationTypeHardlink  FileOperationType = "hardlink"
-	FileOperationTypeDelete    FileOperationType = "delete"
-	FileOperationTypeRename    FileOperationType = "rename"
-	FileOperationTypeMediaInfo FileOperationType = "mediainfo"
+	FileOperationTypeImport    FileOperationType = "import"    // Import operation
+	FileOperationTypeOrganize  FileOperationType = "organize"  // Organization operation
+	FileOperationTypeMove      FileOperationType = "move"      // Move operation
+	FileOperationTypeCopy      FileOperationType = "copy"      // Copy operation
+	FileOperationTypeHardlink  FileOperationType = "hardlink"  // Hard link operation
+	FileOperationTypeDelete    FileOperationType = "delete"    // Delete operation
+	FileOperationTypeRename    FileOperationType = "rename"    // Rename operation
+	FileOperationTypeMediaInfo FileOperationType = "mediainfo" // Media info operation
 )
 
 // FileOperationStatus represents the status of a file operation
 type FileOperationStatus string
 
+// File operation status constants
 const (
-	FileOperationStatusPending    FileOperationStatus = "pending"
-	FileOperationStatusProcessing FileOperationStatus = "processing"
-	FileOperationStatusCompleted  FileOperationStatus = "completed"
-	FileOperationStatusFailed     FileOperationStatus = "failed"
-	FileOperationStatusCanceled   FileOperationStatus = "canceled"
+	FileOperationStatusPending    FileOperationStatus = "pending"    // Operation is pending
+	FileOperationStatusProcessing FileOperationStatus = "processing" // Operation is processing
+	FileOperationStatusCompleted  FileOperationStatus = "completed"  // Operation completed successfully
+	FileOperationStatusFailed     FileOperationStatus = "failed"     // Operation failed
+	FileOperationStatusCanceled   FileOperationStatus = "canceled"   // Operation was canceled
 )
 
 // IsCompleted returns true if the operation has completed successfully

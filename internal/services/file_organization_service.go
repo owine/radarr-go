@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"math"
@@ -40,7 +41,7 @@ func NewFileOrganizationService(
 
 // OrganizeFile organizes a single file according to naming configuration
 func (s *FileOrganizationService) OrganizeFile(
-	sourcePath string,
+	ctx context.Context, sourcePath string,
 	movie *models.Movie,
 	namingConfig *models.NamingConfig,
 	operation models.FileOperation,
@@ -53,7 +54,7 @@ func (s *FileOrganizationService) OrganizeFile(
 		return s.buildFailureResult(sourcePath, err.Error()), err
 	}
 
-	mediaInfo, destinationPath, err := s.prepareOrganization(fileOrg, movie, namingConfig, sourcePath)
+	mediaInfo, destinationPath, err := s.prepareOrganization(ctx, fileOrg, movie, namingConfig, sourcePath)
 	if err != nil {
 		s.handleOrganizationFailure(fileOrg, err.Error())
 		return s.buildFailureResult(sourcePath, err.Error()), err
@@ -92,8 +93,8 @@ func (s *FileOrganizationService) initializeFileOrganization(
 	}
 
 	// Parse quality from filename
-	quality, err := s.parseQualityFromFilename(sourcePath)
-	if err == nil && quality != nil {
+	quality := s.parseQualityFromFilename(sourcePath)
+	if quality != nil {
 		fileOrg.Quality = quality
 	}
 
@@ -102,13 +103,13 @@ func (s *FileOrganizationService) initializeFileOrganization(
 
 // prepareOrganization handles preparation steps for file organization
 func (s *FileOrganizationService) prepareOrganization(
-	fileOrg *models.FileOrganization, movie *models.Movie,
+	ctx context.Context, fileOrg *models.FileOrganization, movie *models.Movie,
 	namingConfig *models.NamingConfig, sourcePath string,
 ) (*models.MediaInfo, string, error) {
 	// Extract media info if enabled
 	var mediaInfo *models.MediaInfo
 	if namingConfig.EnableMediaInfo {
-		mediaInfo, _ = s.mediaInfoService.ExtractMediaInfo(sourcePath)
+		mediaInfo, _ = s.mediaInfoService.ExtractMediaInfo(ctx, sourcePath)
 	}
 
 	// Generate destination path
@@ -271,10 +272,8 @@ func (s *FileOrganizationService) moveFile(
 		return nil, fmt.Errorf("failed to move file: %w", err)
 	}
 
-	// Set permissions if configured
-	if config != nil {
-		// Note: permission setting would be implemented based on MediaManagementConfig
-	}
+	// Set permissions if configured (placeholder for future implementation)
+	_ = config // MediaManagementConfig permissions will be implemented in the future
 
 	// Create movie file record
 	movieFile := &models.MovieFile{
@@ -327,7 +326,10 @@ func (s *FileOrganizationService) validateFilePath(filePath string) error {
 }
 
 // copyFile copies a file from source to destination
-func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *models.NamingConfig) (*models.MovieFile, error) {
+func (s *FileOrganizationService) copyFile(
+	sourcePath, destPath string,
+	_ *models.NamingConfig,
+) (*models.MovieFile, error) {
 	// Validate file paths for security
 	if err := s.validateFilePath(sourcePath); err != nil {
 		return nil, fmt.Errorf("invalid source path: %w", err)
@@ -336,31 +338,51 @@ func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *
 		return nil, fmt.Errorf("invalid destination path: %w", err)
 	}
 
+	// Perform the actual file copy operation
+	if err := s.performFileCopy(sourcePath, destPath); err != nil {
+		return nil, err
+	}
+
+	// Create and return movie file record
+	return s.createMovieFileRecord(sourcePath, destPath), nil
+}
+
+// performFileCopy handles the low-level file copying operation
+func (s *FileOrganizationService) performFileCopy(sourcePath, destPath string) error {
 	sourceFile, err := os.Open(sourcePath) // #nosec G304 - path validated above
 	if err != nil {
-		return nil, fmt.Errorf("failed to open source file: %w", err)
+		return fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer func() {
 		if err := sourceFile.Close(); err != nil {
-			// Note: This is in a defer, so we can't return the error
-			// Log it if we had a logger available in this context
+			s.logger.Warn("Failed to close source file", "path", sourcePath, "error", err)
 		}
 	}()
 
 	destFile, err := os.Create(destPath) // #nosec G304 - path validated above
 	if err != nil {
-		return nil, fmt.Errorf("failed to create destination file: %w", err)
+		return fmt.Errorf("failed to create destination file: %w", err)
 	}
 	defer func() {
 		if err := destFile.Close(); err != nil {
-			// Note: This is in a defer, so we can't return the error
-			// Log it if we had a logger available in this context
+			s.logger.Warn("Failed to close destination file", "path", destPath, "error", err)
 		}
 	}()
 
-	// Copy file contents
+	// Copy file contents with buffering
+	if err := s.copyFileContents(sourceFile, destFile); err != nil {
+		return err
+	}
+
+	// Copy file permissions
+	s.copyFilePermissions(sourceFile, destPath)
+	return nil
+}
+
+// copyFileContents copies data from source to destination file
+func (s *FileOrganizationService) copyFileContents(sourceFile, destFile *os.File) error {
 	if _, err := sourceFile.Seek(0, 0); err != nil {
-		return nil, err
+		return err
 	}
 
 	buffer := make([]byte, 64*1024) // 64KB buffer
@@ -368,26 +390,31 @@ func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *
 		n, err := sourceFile.Read(buffer)
 		if n > 0 {
 			if _, writeErr := destFile.Write(buffer[:n]); writeErr != nil {
-				return nil, fmt.Errorf("failed to write to destination: %w", writeErr)
+				return fmt.Errorf("failed to write to destination: %w", writeErr)
 			}
 		}
 		if err != nil {
 			if err.Error() == "EOF" {
 				break
 			}
-			return nil, fmt.Errorf("failed to read source file: %w", err)
+			return fmt.Errorf("failed to read source file: %w", err)
 		}
 	}
+	return nil
+}
 
-	// Copy file permissions
+// copyFilePermissions copies file permissions from source to destination
+func (s *FileOrganizationService) copyFilePermissions(sourceFile *os.File, destPath string) {
 	if sourceInfo, err := sourceFile.Stat(); err == nil {
 		if err := os.Chmod(destPath, sourceInfo.Mode()); err != nil {
 			// Log but don't fail - permissions are not critical for functionality
 			s.logger.Warn("Failed to set file permissions", "path", destPath, "error", err)
 		}
 	}
+}
 
-	// Create movie file record
+// createMovieFileRecord creates a MovieFile record for the copied file
+func (s *FileOrganizationService) createMovieFileRecord(sourcePath, destPath string) *models.MovieFile {
 	movieFile := &models.MovieFile{
 		Path:             destPath,
 		RelativePath:     destPath,
@@ -400,11 +427,14 @@ func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *
 		movieFile.Size = fileInfo.Size()
 	}
 
-	return movieFile, nil
+	return movieFile
 }
 
 // hardlinkFile creates a hard link from source to destination
-func (s *FileOrganizationService) hardlinkFile(sourcePath, destPath string, config *models.NamingConfig) (*models.MovieFile, error) {
+func (s *FileOrganizationService) hardlinkFile(
+	sourcePath, destPath string,
+	_ *models.NamingConfig,
+) (*models.MovieFile, error) {
 	// Create hard link
 	if err := os.Link(sourcePath, destPath); err != nil {
 		return nil, fmt.Errorf("failed to create hard link: %w", err)
@@ -644,7 +674,7 @@ func (s *FileOrganizationService) ScanDirectory(path string) ([]models.Importabl
 }
 
 // parseQualityFromFilename attempts to parse quality information from filename
-func (s *FileOrganizationService) parseQualityFromFilename(filename string) (*models.Quality, error) {
+func (s *FileOrganizationService) parseQualityFromFilename(filename string) *models.Quality {
 	// This would implement quality parsing logic similar to Radarr's parser
 	// For now, return a basic implementation
 	name := strings.ToLower(filepath.Base(filename))
@@ -666,7 +696,7 @@ func (s *FileOrganizationService) parseQualityFromFilename(filename string) (*mo
 	return &models.Quality{
 		Quality:  qualityDef,
 		Revision: models.Revision{Version: 1, Real: 0, IsRepack: false},
-	}, nil
+	}
 }
 
 // isVideoFile checks if a file extension indicates a video file

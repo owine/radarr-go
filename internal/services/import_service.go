@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -45,7 +46,9 @@ func NewImportService(
 }
 
 // ProcessImport processes imported files and makes decisions about them
-func (s *ImportService) ProcessImport(path string, options *ImportOptions) (*models.FileImportResult, error) {
+func (s *ImportService) ProcessImport(
+	ctx context.Context, path string, options *ImportOptions,
+) (*models.FileImportResult, error) {
 	start := time.Now()
 	s.logger.Info("Starting import process", "path", path)
 
@@ -83,7 +86,7 @@ func (s *ImportService) ProcessImport(path string, options *ImportOptions) (*mod
 	for _, decision := range importDecisions {
 		switch decision.Decision {
 		case models.ImportDecisionApproved:
-			s.processApprovedImport(&decision, result)
+			s.processApprovedImport(ctx, &decision, result)
 		case models.ImportDecisionRejected:
 			s.processRejectedImport(&decision, result)
 		case models.ImportDecisionUnknown:
@@ -292,7 +295,7 @@ func (s *ImportService) cleanMovieName(filename string) string {
 }
 
 // extractYearFromFilename extracts year from filename
-func (s *ImportService) extractYearFromFilename(filename string) int {
+func (s *ImportService) extractYearFromFilename(_ string) int {
 	// Look for 4-digit year pattern
 	yearPattern := `\b(19|20)(\d{2})\b`
 
@@ -334,7 +337,7 @@ func (s *ImportService) checkQualityUpgrade(
 }
 
 // checkExistingFile checks if a file already exists at the intended destination
-func (s *ImportService) checkExistingFile(file models.ImportableFile, movie *models.Movie) (bool, error) {
+func (s *ImportService) checkExistingFile(_ models.ImportableFile, movie *models.Movie) (bool, error) {
 	// Get naming configuration
 	namingConfig, err := s.namingService.GetNamingConfig()
 	if err != nil {
@@ -353,15 +356,17 @@ func (s *ImportService) checkExistingFile(file models.ImportableFile, movie *mod
 }
 
 // processApprovedImport processes an approved import decision
-func (s *ImportService) processApprovedImport(decision *models.ImportDecision, result *models.FileImportResult) {
+func (s *ImportService) processApprovedImport(
+	ctx context.Context, decision *models.ImportDecision, result *models.FileImportResult,
+) {
 	s.logger.Info("Processing approved import", "file", decision.Item.Path, "movie", decision.LocalMovie.Title)
 
-	namingConfig, mediaInfo := s.prepareImportResources(decision, result)
+	namingConfig, mediaInfo := s.prepareImportResources(ctx, decision, result)
 	if namingConfig == nil {
 		return // Error already handled
 	}
 
-	orgResult := s.organizeImportFile(decision, result, namingConfig)
+	orgResult := s.organizeImportFile(ctx, decision, result, namingConfig)
 	if orgResult == nil {
 		return // Error already handled
 	}
@@ -377,7 +382,7 @@ func (s *ImportService) processApprovedImport(decision *models.ImportDecision, r
 
 // prepareImportResources gets naming config and media info for import
 func (s *ImportService) prepareImportResources(
-	decision *models.ImportDecision, result *models.FileImportResult,
+	ctx context.Context, decision *models.ImportDecision, result *models.FileImportResult,
 ) (*models.NamingConfig, *models.MediaInfo) {
 	// Get naming configuration
 	namingConfig, err := s.namingService.GetNamingConfig()
@@ -388,7 +393,7 @@ func (s *ImportService) prepareImportResources(
 	}
 
 	// Extract media info
-	mediaInfo, err := s.mediaInfoService.ExtractMediaInfo(decision.Item.Path)
+	mediaInfo, err := s.mediaInfoService.ExtractMediaInfo(ctx, decision.Item.Path)
 	if err != nil {
 		s.logger.Warn("Failed to extract media info", "file", decision.Item.Path, "error", err)
 		// Continue without media info
@@ -399,11 +404,11 @@ func (s *ImportService) prepareImportResources(
 
 // organizeImportFile handles file organization for import
 func (s *ImportService) organizeImportFile(
-	decision *models.ImportDecision, result *models.FileImportResult,
+	ctx context.Context, decision *models.ImportDecision, result *models.FileImportResult,
 	namingConfig *models.NamingConfig,
 ) *models.FileOrganizationResult {
 	orgResult, err := s.fileOrganizationService.OrganizeFile(
-		decision.Item.Path,
+		ctx, decision.Item.Path,
 		decision.LocalMovie,
 		namingConfig,
 		models.FileOperationMove,
@@ -484,7 +489,11 @@ func (s *ImportService) processRejectedImport(
 }
 
 // moveToErrored moves an import to the error list
-func (s *ImportService) moveToErrored(decision *models.ImportDecision, result *models.FileImportResult, errorMsg string) {
+func (s *ImportService) moveToErrored(
+	decision *models.ImportDecision,
+	result *models.FileImportResult,
+	errorMsg string,
+) {
 	s.logger.Error("Moving import to errors", "file", decision.Item.Path, "error", errorMsg)
 
 	result.ErrorFiles = append(result.ErrorFiles, decision.Item)
@@ -531,7 +540,7 @@ func (s *ImportService) GetManualImports(path string) ([]models.ManualImport, er
 }
 
 // ProcessManualImport processes a manual import with user-provided details
-func (s *ImportService) ProcessManualImport(manualImport *models.ManualImport) error {
+func (s *ImportService) ProcessManualImport(ctx context.Context, manualImport *models.ManualImport) error {
 	s.logger.Info("Processing manual import", "file", manualImport.Path)
 
 	if manualImport.Movie == nil {
@@ -556,7 +565,7 @@ func (s *ImportService) ProcessManualImport(manualImport *models.ManualImport) e
 	result := &models.FileImportResult{}
 
 	// Process the import
-	s.processApprovedImport(&decision, result)
+	s.processApprovedImport(ctx, &decision, result)
 
 	return nil
 }

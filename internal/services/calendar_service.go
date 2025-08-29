@@ -235,7 +235,7 @@ func (s *CalendarService) generateEventDescription(movie *models.Movie, eventTyp
 }
 
 // determineEventStatus determines the status of an event based on its date and movie status
-func (s *CalendarService) determineEventStatus(eventDate time.Time, movie *models.Movie) models.CalendarEventStatus {
+func (s *CalendarService) determineEventStatus(eventDate time.Time, _ *models.Movie) models.CalendarEventStatus {
 	now := time.Now()
 
 	// Check for missing or TBA dates
@@ -261,7 +261,7 @@ func (s *CalendarService) determineEventStatus(eventDate time.Time, movie *model
 }
 
 // calculateAvailabilityDate calculates when a movie becomes available for download
-func (s *CalendarService) calculateAvailabilityDate(movie *models.Movie, now time.Time) *time.Time {
+func (s *CalendarService) calculateAvailabilityDate(movie *models.Movie, _ time.Time) *time.Time {
 	switch movie.MinimumAvailability {
 	case models.AvailabilityAnnounced:
 		return &movie.Added
@@ -349,7 +349,7 @@ func (s *CalendarService) filterEvents(
 }
 
 // passesFilters checks if an event passes all the applied filters
-func (s *CalendarService) passesFilters(event *models.CalendarEvent, request *models.CalendarRequest) bool {
+func (s *CalendarService) passesFilters(_ *models.CalendarEvent, _ *models.CalendarRequest) bool {
 	// Add any additional filter logic here
 	return true
 }

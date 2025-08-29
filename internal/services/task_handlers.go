@@ -17,7 +17,10 @@ type RefreshMovieHandler struct {
 }
 
 // NewRefreshMovieHandler creates a new refresh movie handler
-func NewRefreshMovieHandler(movieService MovieServiceInterface, metadataService MetadataServiceInterface) *RefreshMovieHandler {
+func NewRefreshMovieHandler(
+	movieService MovieServiceInterface,
+	metadataService MetadataServiceInterface,
+) *RefreshMovieHandler {
 	return &RefreshMovieHandler{
 		movieService:    movieService,
 		metadataService: metadataService,
@@ -25,7 +28,11 @@ func NewRefreshMovieHandler(movieService MovieServiceInterface, metadataService 
 }
 
 // Execute refreshes metadata for a specific movie
-func (h *RefreshMovieHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *RefreshMovieHandler) Execute(
+	ctx context.Context,
+	task *models.Task,
+	updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting movie refresh")
 
 	movieID, err := h.extractMovieID(task)
@@ -118,7 +125,10 @@ type RefreshAllMoviesHandler struct {
 }
 
 // NewRefreshAllMoviesHandler creates a new refresh all movies handler
-func NewRefreshAllMoviesHandler(movieService MovieServiceInterface, metadataService MetadataServiceInterface) *RefreshAllMoviesHandler {
+func NewRefreshAllMoviesHandler(
+	movieService MovieServiceInterface,
+	metadataService MetadataServiceInterface,
+) *RefreshAllMoviesHandler {
 	return &RefreshAllMoviesHandler{
 		movieService:    movieService,
 		metadataService: metadataService,
@@ -126,7 +136,9 @@ func NewRefreshAllMoviesHandler(movieService MovieServiceInterface, metadataServ
 }
 
 // Execute refreshes metadata for all movies
-func (h *RefreshAllMoviesHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *RefreshAllMoviesHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting bulk movie refresh")
 
 	movies, err := h.getAllMoviesForRefresh()
@@ -244,14 +256,20 @@ type SyncImportListHandler struct {
 }
 
 // NewSyncImportListHandler creates a new sync import list handler
-func NewSyncImportListHandler(importListService ImportListServiceInterface) *SyncImportListHandler {
+func NewSyncImportListHandler(
+	importListService ImportListServiceInterface,
+) *SyncImportListHandler {
 	return &SyncImportListHandler{
 		importListService: importListService,
 	}
 }
 
 // Execute syncs movies from import lists
-func (h *SyncImportListHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *SyncImportListHandler) Execute(
+	ctx context.Context,
+	task *models.Task,
+	updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting import list sync")
 
 	importListID := h.extractImportListID(task)
@@ -378,7 +396,9 @@ func NewHealthCheckHandler(container *Container) *HealthCheckHandler {
 }
 
 // Execute performs system health checks
-func (h *HealthCheckHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *HealthCheckHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting health check")
 
 	checks := []struct {
@@ -447,14 +467,14 @@ func (h *HealthCheckHandler) checkDatabase(ctx context.Context) error {
 }
 
 // checkDiskSpace verifies adequate disk space
-func (h *HealthCheckHandler) checkDiskSpace(ctx context.Context) error {
+func (h *HealthCheckHandler) checkDiskSpace(_ context.Context) error {
 	// This would implement actual disk space checking
 	// For now, just return success
 	return nil
 }
 
 // checkDownloadClients verifies download clients are accessible
-func (h *HealthCheckHandler) checkDownloadClients(ctx context.Context) error {
+func (h *HealthCheckHandler) checkDownloadClients(_ context.Context) error {
 	if h.container.DownloadService == nil {
 		return fmt.Errorf("download service not initialized")
 	}
@@ -477,7 +497,7 @@ func (h *HealthCheckHandler) checkDownloadClients(ctx context.Context) error {
 }
 
 // checkIndexers verifies indexers are accessible
-func (h *HealthCheckHandler) checkIndexers(ctx context.Context) error {
+func (h *HealthCheckHandler) checkIndexers(_ context.Context) error {
 	if h.container.IndexerService == nil {
 		return fmt.Errorf("indexer service not initialized")
 	}
@@ -500,7 +520,7 @@ func (h *HealthCheckHandler) checkIndexers(ctx context.Context) error {
 }
 
 // checkImportLists verifies import lists are accessible
-func (h *HealthCheckHandler) checkImportLists(ctx context.Context) error {
+func (h *HealthCheckHandler) checkImportLists(_ context.Context) error {
 	if h.container.ImportListService == nil {
 		return fmt.Errorf("import list service not initialized")
 	}
@@ -535,7 +555,9 @@ func NewCleanupHandler(container *Container) *CleanupHandler {
 }
 
 // Execute performs cleanup tasks
-func (h *CleanupHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *CleanupHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting cleanup")
 
 	cleanupTasks := []struct {
@@ -580,7 +602,7 @@ func (h *CleanupHandler) GetDescription() string {
 }
 
 // cleanupCompletedTasks removes old completed tasks
-func (h *CleanupHandler) cleanupCompletedTasks(ctx context.Context) error {
+func (h *CleanupHandler) cleanupCompletedTasks(_ context.Context) error {
 	if h.container.DB == nil {
 		return fmt.Errorf("database not initialized")
 	}
@@ -603,21 +625,21 @@ func (h *CleanupHandler) cleanupCompletedTasks(ctx context.Context) error {
 }
 
 // cleanupOldHistory removes old history records
-func (h *CleanupHandler) cleanupOldHistory(ctx context.Context) error {
+func (h *CleanupHandler) cleanupOldHistory(_ context.Context) error {
 	// This would implement history cleanup
 	// For now, just return success
 	return nil
 }
 
 // cleanupFailedDownloads removes failed downloads
-func (h *CleanupHandler) cleanupFailedDownloads(ctx context.Context) error {
+func (h *CleanupHandler) cleanupFailedDownloads(_ context.Context) error {
 	// This would implement failed download cleanup
 	// For now, just return success
 	return nil
 }
 
 // cleanupOrphanedFiles removes orphaned files
-func (h *CleanupHandler) cleanupOrphanedFiles(ctx context.Context) error {
+func (h *CleanupHandler) cleanupOrphanedFiles(_ context.Context) error {
 	// This would implement orphaned file cleanup
 	// For now, just return success
 	return nil
@@ -644,7 +666,9 @@ func NewRefreshWantedMoviesHandler(wantedService WantedMoviesServiceInterface) *
 }
 
 // Execute refreshes the wanted movies list
-func (h *RefreshWantedMoviesHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *RefreshWantedMoviesHandler) Execute(
+	_ context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting wanted movies refresh")
 
 	// Refresh wanted movies
@@ -689,7 +713,10 @@ type SearchServiceInterface interface {
 }
 
 // NewAutoWantedSearchHandler creates a new automatic wanted search handler
-func NewAutoWantedSearchHandler(wantedService WantedMoviesServiceInterface, searchService SearchServiceInterface) *AutoWantedSearchHandler {
+func NewAutoWantedSearchHandler(
+	wantedService WantedMoviesServiceInterface,
+	searchService SearchServiceInterface,
+) *AutoWantedSearchHandler {
 	return &AutoWantedSearchHandler{
 		wantedService: wantedService,
 		searchService: searchService,
@@ -697,7 +724,9 @@ func NewAutoWantedSearchHandler(wantedService WantedMoviesServiceInterface, sear
 }
 
 // Execute performs automatic searching for eligible wanted movies
-func (h *AutoWantedSearchHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *AutoWantedSearchHandler) Execute(
+	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Getting eligible wanted movies")
 
 	// Get movies eligible for search
