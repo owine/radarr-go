@@ -85,7 +85,10 @@ func (s *ParseService) ParseReleaseTitle(ctx context.Context, releaseTitle strin
 		s.logger.Warn("Failed to cache parse result", "title", releaseTitle, "error", err)
 	}
 
-	s.logger.Debug("Parsed release title", "title", releaseTitle, "movieTitle", parsedInfo.PrimaryMovieTitle, "year", parsedInfo.Year)
+	s.logger.Debug(
+		"Parsed release title",
+		"title", releaseTitle, "movieTitle", parsedInfo.PrimaryMovieTitle, "year", parsedInfo.Year,
+	)
 	return result, nil
 }
 
@@ -140,10 +143,14 @@ func (s *ParseService) CleanupOldCacheEntries(ctx context.Context, maxAge time.D
 // initializeRegexes initializes all the regular expressions used for parsing
 func (s *ParseService) initializeRegexes() {
 	// Title and year pattern (most important)
-	s.titleYearRegex = regexp.MustCompile(`(?i)^(.+?)[\.\s]+(?:[\(\[]?)(\d{4})(?:[\)\]]?)?.*`)
+	s.titleYearRegex = regexp.MustCompile(
+		`(?i)^(.+?)[\.\s]+(?:[\(\[]?)(\d{4})(?:[\)\]]?)?.*`,
+	)
 
 	// Quality patterns
-	s.qualityRegex = regexp.MustCompile(`(?i)\b(?:720p|1080p|2160p|4k|uhd|hd|sd|480p|576p|hdtv|webrip|web-dl|bluray|bdrip|dvdrip|ts|cam|hdcam)\b`)
+	s.qualityRegex = regexp.MustCompile(
+		`(?i)\b(?:720p|1080p|2160p|4k|uhd|hd|sd|480p|576p|hdtv|webrip|web-dl|bluray|bdrip|dvdrip|ts|cam|hdcam)\b`,
+	)
 
 	// Release group (usually at the end in brackets or after a dash)
 	s.releaseGroupRegex = regexp.MustCompile(`(?i)[\[\(]?([a-z0-9_\-\.]+)[\]\)]?$`)
