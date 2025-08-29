@@ -1,7 +1,7 @@
 -- File Organization and Import Management Tables
 
 -- Create file_organizations table
-CREATE TABLE file_organizations (
+CREATE TABLE IF NOT EXISTS file_organizations (
     id SERIAL PRIMARY KEY,
     source_path VARCHAR(500) NOT NULL,
     destination_path VARCHAR(500) NOT NULL,
@@ -26,12 +26,12 @@ CREATE TABLE file_organizations (
 );
 
 -- Create indexes on file_organizations
-CREATE INDEX idx_file_organizations_status ON file_organizations(status);
-CREATE INDEX idx_file_organizations_movie_id ON file_organizations(movie_id);
-CREATE INDEX idx_file_organizations_created_at ON file_organizations(created_at);
+CREATE INDEX IF NOT EXISTS idx_file_organizations_status ON file_organizations(status);
+CREATE INDEX IF NOT EXISTS idx_file_organizations_movie_id ON file_organizations(movie_id);
+CREATE INDEX IF NOT EXISTS idx_file_organizations_created_at ON file_organizations(created_at);
 
 -- Create manual_imports table
-CREATE TABLE manual_imports (
+CREATE TABLE IF NOT EXISTS manual_imports (
     id SERIAL PRIMARY KEY,
     path VARCHAR(500) NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -50,11 +50,11 @@ CREATE TABLE manual_imports (
 );
 
 -- Create indexes on manual_imports
-CREATE INDEX idx_manual_imports_movie_id ON manual_imports(movie_id);
-CREATE INDEX idx_manual_imports_created_at ON manual_imports(created_at);
+CREATE INDEX IF NOT EXISTS idx_manual_imports_movie_id ON manual_imports(movie_id);
+CREATE INDEX IF NOT EXISTS idx_manual_imports_created_at ON manual_imports(created_at);
 
 -- Create file_operations table for tracking file operations
-CREATE TABLE file_operations (
+CREATE TABLE IF NOT EXISTS file_operations (
     id SERIAL PRIMARY KEY,
     operation_type VARCHAR(20) NOT NULL,
     source_path VARCHAR(500) NOT NULL,
@@ -72,13 +72,13 @@ CREATE TABLE file_operations (
 );
 
 -- Create indexes on file_operations
-CREATE INDEX idx_file_operations_status ON file_operations(status);
-CREATE INDEX idx_file_operations_type ON file_operations(operation_type);
-CREATE INDEX idx_file_operations_movie_id ON file_operations(movie_id);
-CREATE INDEX idx_file_operations_created_at ON file_operations(created_at);
+CREATE INDEX IF NOT EXISTS idx_file_operations_status ON file_operations(status);
+CREATE INDEX IF NOT EXISTS idx_file_operations_type ON file_operations(operation_type);
+CREATE INDEX IF NOT EXISTS idx_file_operations_movie_id ON file_operations(movie_id);
+CREATE INDEX IF NOT EXISTS idx_file_operations_created_at ON file_operations(created_at);
 
 -- Create naming_config table
-CREATE TABLE naming_config (
+CREATE TABLE IF NOT EXISTS naming_config (
     id SERIAL PRIMARY KEY,
     rename_movies BOOLEAN DEFAULT false,
     replace_illegal_characters BOOLEAN DEFAULT true,
@@ -99,6 +99,7 @@ CREATE TABLE naming_config (
 
 -- Insert default naming configuration
 INSERT INTO naming_config (
+    id,
     rename_movies,
     replace_illegal_characters,
     colon_replacement_format,
@@ -113,6 +114,7 @@ INSERT INTO naming_config (
     extra_file_extensions,
     enable_media_info
 ) VALUES (
+    1,
     false,
     true,
     'delete',
@@ -126,7 +128,7 @@ INSERT INTO naming_config (
     false,
     '["srt", "nfo"]',
     true
-);
+) ON CONFLICT (id) DO NOTHING;
 
 -- Add triggers for updating the updated_at columns
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -1,7 +1,7 @@
 -- File Organization and Import Management Tables
 
 -- Create file_organizations table
-CREATE TABLE file_organizations (
+CREATE TABLE IF NOT EXISTS file_organizations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     source_path VARCHAR(500) NOT NULL,
     destination_path VARCHAR(500) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE file_organizations (
 ) ENGINE=InnoDB;
 
 -- Create manual_imports table
-CREATE TABLE manual_imports (
+CREATE TABLE IF NOT EXISTS manual_imports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     path VARCHAR(500) NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE manual_imports (
 ) ENGINE=InnoDB;
 
 -- Create file_operations table for tracking file operations
-CREATE TABLE file_operations (
+CREATE TABLE IF NOT EXISTS file_operations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     operation_type VARCHAR(20) NOT NULL,
     source_path VARCHAR(500) NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE file_operations (
 ) ENGINE=InnoDB;
 
 -- Create naming_config table
-CREATE TABLE naming_config (
+CREATE TABLE IF NOT EXISTS naming_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rename_movies BOOLEAN DEFAULT false,
     replace_illegal_characters BOOLEAN DEFAULT true,
@@ -95,7 +95,8 @@ CREATE TABLE naming_config (
 ) ENGINE=InnoDB;
 
 -- Insert default naming configuration
-INSERT INTO naming_config (
+INSERT IGNORE INTO naming_config (
+    id,
     rename_movies,
     replace_illegal_characters,
     colon_replacement_format,
@@ -110,6 +111,7 @@ INSERT INTO naming_config (
     extra_file_extensions,
     enable_media_info
 ) VALUES (
+    1,
     false,
     true,
     'delete',
