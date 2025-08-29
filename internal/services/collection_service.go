@@ -1,0 +1,362 @@
+// Package services provides business logic for the Radarr application.
+package services
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/radarr/radarr-go/internal/database"
+	"github.com/radarr/radarr-go/internal/logger"
+	"github.com/radarr/radarr-go/internal/models"
+	"gorm.io/gorm"
+)
+
+// CollectionService handles movie collection operations
+type CollectionService struct {
+	db     *database.Database
+	logger *logger.Logger
+}
+
+// NewCollectionService creates a new collection service
+func NewCollectionService(db *database.Database, logger *logger.Logger) *CollectionService {
+	return &CollectionService{
+		db:     db,
+		logger: logger,
+	}
+}
+
+// GetAll returns all collections with optional filtering
+func (s *CollectionService) GetAll(ctx context.Context, monitored *bool) ([]*models.MovieCollection, error) {
+	var collections []*models.MovieCollection
+
+	query := s.db.GORM.WithContext(ctx).
+		Preload("QualityProfile").
+		Order("title ASC")
+
+	if monitored != nil {
+		query = query.Where("monitored = ?", *monitored)
+	}
+
+	if err := query.Find(&collections).Error; err != nil {
+		s.logger.Error("Failed to fetch collections", "error", err)
+		return nil, fmt.Errorf("failed to fetch collections: %w", err)
+	}
+
+	s.logger.Info("Fetched collections", "count", len(collections))
+	return collections, nil
+}
+
+// GetByID returns a collection by its ID
+func (s *CollectionService) GetByID(ctx context.Context, id int) (*models.MovieCollection, error) {
+	var collection models.MovieCollection
+
+	if err := s.db.GORM.WithContext(ctx).
+		Preload("Movies").
+		Preload("QualityProfile").
+		First(&collection, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("collection with ID %d not found", id)
+		}
+		s.logger.Error("Failed to fetch collection by ID", "id", id, "error", err)
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	return &collection, nil
+}
+
+// GetByTmdbID returns a collection by its TMDB ID
+func (s *CollectionService) GetByTmdbID(ctx context.Context, tmdbID int) (*models.MovieCollection, error) {
+	var collection models.MovieCollection
+
+	if err := s.db.GORM.WithContext(ctx).
+		Preload("Movies").
+		Preload("QualityProfile").
+		Where("tmdb_id = ?", tmdbID).
+		First(&collection).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("collection with TMDB ID %d not found", tmdbID)
+		}
+		s.logger.Error("Failed to fetch collection by TMDB ID", "tmdbId", tmdbID, "error", err)
+		return nil, fmt.Errorf("failed to fetch collection: %w", err)
+	}
+
+	return &collection, nil
+}
+
+// Create creates a new collection
+func (s *CollectionService) Create(ctx context.Context, collection *models.MovieCollection) (*models.MovieCollection, error) {
+	// Check if collection already exists by TMDB ID
+	existing, err := s.GetByTmdbID(ctx, collection.TmdbID)
+	if err == nil {
+		return nil, fmt.Errorf("collection with TMDB ID %d already exists with ID %d", collection.TmdbID, existing.ID)
+	}
+
+	// Fetch additional metadata from TMDB if needed
+	if collection.Overview == "" || len(collection.Images) == 0 {
+		if err := s.enrichFromTMDB(ctx, collection); err != nil {
+			s.logger.Warn("Failed to enrich collection from TMDB", "tmdbId", collection.TmdbID, "error", err)
+		}
+	}
+
+	if err := s.db.GORM.WithContext(ctx).Create(collection).Error; err != nil {
+		s.logger.Error("Failed to create collection", "title", collection.Title, "error", err)
+		return nil, fmt.Errorf("failed to create collection: %w", err)
+	}
+
+	s.logger.Info("Created collection", "id", collection.ID, "title", collection.Title, "tmdbId", collection.TmdbID)
+	return collection, nil
+}
+
+// Update updates an existing collection
+func (s *CollectionService) Update(ctx context.Context, id int, updates *models.MovieCollection) (*models.MovieCollection, error) {
+	collection, err := s.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply changes
+	collection.ApplyChanges(updates)
+
+	if err := s.db.GORM.WithContext(ctx).Save(collection).Error; err != nil {
+		s.logger.Error("Failed to update collection", "id", id, "error", err)
+		return nil, fmt.Errorf("failed to update collection: %w", err)
+	}
+
+	s.logger.Info("Updated collection", "id", id, "title", collection.Title)
+	return collection, nil
+}
+
+// Delete deletes a collection and optionally its movies
+func (s *CollectionService) Delete(ctx context.Context, id int, deleteMovies bool) error {
+	collection, err := s.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if deleteMovies {
+		// Delete all movies in the collection
+		if err := s.db.GORM.WithContext(ctx).
+			Where("collection_tmdb_id = ?", collection.TmdbID).
+			Delete(&models.Movie{}).Error; err != nil {
+			s.logger.Error("Failed to delete movies from collection", "id", id, "error", err)
+			return fmt.Errorf("failed to delete movies from collection: %w", err)
+		}
+	} else {
+		// Remove collection reference from movies
+		if err := s.db.GORM.WithContext(ctx).
+			Model(&models.Movie{}).
+			Where("collection_tmdb_id = ?", collection.TmdbID).
+			Update("collection_tmdb_id", nil).Error; err != nil {
+			s.logger.Error("Failed to remove collection reference from movies", "id", id, "error", err)
+			return fmt.Errorf("failed to update movies: %w", err)
+		}
+	}
+
+	if err := s.db.GORM.WithContext(ctx).Delete(collection).Error; err != nil {
+		s.logger.Error("Failed to delete collection", "id", id, "error", err)
+		return fmt.Errorf("failed to delete collection: %w", err)
+	}
+
+	s.logger.Info("Deleted collection", "id", id, "title", collection.Title, "deleteMovies", deleteMovies)
+	return nil
+}
+
+// AddMovie adds a movie to a collection
+func (s *CollectionService) AddMovie(ctx context.Context, collectionID, movieID int) error {
+	collection, err := s.GetByID(ctx, collectionID)
+	if err != nil {
+		return err
+	}
+
+	// Update movie's collection reference
+	if err := s.db.GORM.WithContext(ctx).
+		Model(&models.Movie{}).
+		Where("id = ?", movieID).
+		Update("collection_tmdb_id", collection.TmdbID).Error; err != nil {
+		s.logger.Error("Failed to add movie to collection", "collectionId", collectionID, "movieId", movieID, "error", err)
+		return fmt.Errorf("failed to add movie to collection: %w", err)
+	}
+
+	s.logger.Info("Added movie to collection", "collectionId", collectionID, "movieId", movieID)
+	return nil
+}
+
+// RemoveMovie removes a movie from a collection
+func (s *CollectionService) RemoveMovie(ctx context.Context, collectionID, movieID int) error {
+	if err := s.db.GORM.WithContext(ctx).
+		Model(&models.Movie{}).
+		Where("id = ?", movieID).
+		Update("collection_tmdb_id", nil).Error; err != nil {
+		s.logger.Error("Failed to remove movie from collection", "collectionId", collectionID, "movieId", movieID, "error", err)
+		return fmt.Errorf("failed to remove movie from collection: %w", err)
+	}
+
+	s.logger.Info("Removed movie from collection", "collectionId", collectionID, "movieId", movieID)
+	return nil
+}
+
+// SearchMissing searches for missing movies in monitored collections
+func (s *CollectionService) SearchMissing(ctx context.Context, collectionID int) ([]int, error) {
+	collection, err := s.GetByID(ctx, collectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !collection.Monitored {
+		return nil, fmt.Errorf("collection %d is not monitored", collectionID)
+	}
+
+	// Find movies in collection without files
+	var movieIDs []int
+	if err := s.db.GORM.WithContext(ctx).
+		Model(&models.Movie{}).
+		Select("id").
+		Where("collection_tmdb_id = ? AND monitored = ? AND has_file = ?", collection.TmdbID, true, false).
+		Find(&movieIDs).Error; err != nil {
+		s.logger.Error("Failed to find missing movies in collection", "collectionId", collectionID, "error", err)
+		return nil, fmt.Errorf("failed to find missing movies: %w", err)
+	}
+
+	s.logger.Info("Found missing movies in collection", "collectionId", collectionID, "count", len(movieIDs))
+	return movieIDs, nil
+}
+
+// SyncFromTMDB syncs collection metadata from TMDB
+func (s *CollectionService) SyncFromTMDB(ctx context.Context, collectionID int) error {
+	collection, err := s.GetByID(ctx, collectionID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.enrichFromTMDB(ctx, collection); err != nil {
+		return fmt.Errorf("failed to sync from TMDB: %w", err)
+	}
+
+	// Update last sync time
+	collection.LastInfoSync = &time.Time{}
+	*collection.LastInfoSync = time.Now()
+
+	if err := s.db.GORM.WithContext(ctx).Save(collection).Error; err != nil {
+		s.logger.Error("Failed to save collection after TMDB sync", "id", collectionID, "error", err)
+		return fmt.Errorf("failed to save collection: %w", err)
+	}
+
+	s.logger.Info("Synced collection from TMDB", "id", collectionID, "tmdbId", collection.TmdbID)
+	return nil
+}
+
+// GetCollectionStatistics returns statistics for a collection
+func (s *CollectionService) GetCollectionStatistics(ctx context.Context, collectionID int) (*models.CollectionStatistics, error) {
+	collection, err := s.GetByID(ctx, collectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var stats models.CollectionStatistics
+	if err := s.db.GORM.WithContext(ctx).
+		Model(&models.Movie{}).
+		Select(
+			"COUNT(*) as movie_count",
+			"COUNT(CASE WHEN monitored = true THEN 1 END) as monitored_movie_count",
+			"COUNT(CASE WHEN has_file = true THEN 1 END) as has_file",
+			"SUM(CASE WHEN has_file = true THEN size_on_disk ELSE 0 END) as size_on_disk",
+		).
+		Where("collection_tmdb_id = ?", collection.TmdbID).
+		Scan(&stats).Error; err != nil {
+		s.logger.Error("Failed to calculate collection statistics", "collectionId", collectionID, "error", err)
+		return nil, fmt.Errorf("failed to calculate statistics: %w", err)
+	}
+
+	stats.AvailableMovieCount = stats.HasFile
+	if stats.MovieCount > 0 {
+		stats.PercentOfMovies = float64(stats.HasFile) / float64(stats.MovieCount) * 100
+	}
+
+	return &stats, nil
+}
+
+// enrichFromTMDB fetches additional collection metadata from TMDB
+func (s *CollectionService) enrichFromTMDB(ctx context.Context, collection *models.MovieCollection) error {
+	// This is a simplified TMDB integration
+	// In production, you would use a proper TMDB client library
+	url := fmt.Sprintf("https://api.themoviedb.org/3/collection/%d?api_key=YOUR_API_KEY", collection.TmdbID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create TMDB request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to fetch from TMDB: %w", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			// Log the error but don't fail the whole operation
+			// since we're already in a defer context
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("TMDB API returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read TMDB response: %w", err)
+	}
+
+	var tmdbData struct {
+		ID           int    `json:"id"`
+		Name         string `json:"name"`
+		Overview     string `json:"overview"`
+		PosterPath   string `json:"poster_path"`
+		BackdropPath string `json:"backdrop_path"`
+	}
+
+	if err := json.Unmarshal(body, &tmdbData); err != nil {
+		return fmt.Errorf("failed to parse TMDB response: %w", err)
+	}
+
+	// Update collection with TMDB data
+	if collection.Title == "" {
+		collection.Title = tmdbData.Name
+	}
+	if collection.Overview == "" {
+		collection.Overview = tmdbData.Overview
+	}
+	if collection.CleanTitle == "" {
+		collection.CleanTitle = strings.ToLower(strings.ReplaceAll(tmdbData.Name, " ", ""))
+	}
+	if collection.SortTitle == "" {
+		collection.SortTitle = tmdbData.Name
+	}
+
+	// Update images if empty
+	if len(collection.Images) == 0 {
+		var images models.MediaCover
+		if tmdbData.PosterPath != "" {
+			images = append(images, models.MediaCoverImage{
+				CoverType: "poster",
+				URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.PosterPath),
+				RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.PosterPath),
+			})
+		}
+		if tmdbData.BackdropPath != "" {
+			images = append(images, models.MediaCoverImage{
+				CoverType: "fanart",
+				URL:       fmt.Sprintf("https://image.tmdb.org/t/p/w500%s", tmdbData.BackdropPath),
+				RemoteURL: fmt.Sprintf("https://image.tmdb.org/t/p/original%s", tmdbData.BackdropPath),
+			})
+		}
+		collection.Images = images
+	}
+
+	return nil
+}
