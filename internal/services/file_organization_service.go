@@ -478,7 +478,7 @@ func (s *FileOrganizationService) CheckFreeSpace(destPath string, fileSize int64
 
 	// Safe conversion after overflow check
 	product := bavail * uint64(bsize)
-	if product > uint64(math.MaxInt64) {
+	if product > math.MaxInt64 {
 		availableBytes := int64(math.MaxInt64)
 		requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
 

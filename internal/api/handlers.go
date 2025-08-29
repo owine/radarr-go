@@ -1496,7 +1496,7 @@ func (s *Server) handleSearchReleases(c *gin.Context) {
 	request.SortOrder = c.DefaultQuery("sortOrder", "desc")
 	request.Source = models.ReleaseSourceSearch
 
-	forceSearch := c.DefaultQuery("forceSearch", "false") == "true"
+	forceSearch := c.DefaultQuery("forceSearch", "false") == trueBoolString
 
 	response, err := s.services.SearchService.SearchReleases(&request, forceSearch)
 	if err != nil {
@@ -1515,7 +1515,7 @@ func (s *Server) handleSearchMovieReleases(c *gin.Context) {
 		return
 	}
 
-	forceSearch := c.DefaultQuery("forceSearch", "false") == "true"
+	forceSearch := c.DefaultQuery("forceSearch", "false") == trueBoolString
 
 	response, err := s.services.SearchService.SearchMovieReleases(movieID, forceSearch)
 	if err != nil {
@@ -2512,15 +2512,15 @@ func (s *Server) parseCalendarFilters(c *gin.Context, request *models.CalendarRe
 
 	// Parse monitored flag
 	if monitoredStr := c.Query("monitored"); monitoredStr != "" {
-		monitored := strings.ToLower(monitoredStr) == "true"
+		monitored := strings.ToLower(monitoredStr) == trueBoolString
 		request.Monitored = &monitored
 	}
 }
 
 // parseCalendarIncludeFlags parses include flags for calendar request
 func (s *Server) parseCalendarIncludeFlags(c *gin.Context, request *models.CalendarRequest) {
-	request.IncludeUnmonitored = c.DefaultQuery("includeUnmonitored", "false") == "true"
-	request.IncludeMovieInformation = c.DefaultQuery("includeMovieInformation", "true") == "true"
+	request.IncludeUnmonitored = c.DefaultQuery("includeUnmonitored", "false") == trueBoolString
+	request.IncludeMovieInformation = c.DefaultQuery("includeMovieInformation", trueBoolString) == trueBoolString
 }
 
 // extractQueryParams extracts all query parameters as a map

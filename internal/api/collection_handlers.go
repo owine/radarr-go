@@ -18,7 +18,7 @@ import (
 func (s *Server) handleGetCollections(c *gin.Context) {
 	var monitored *bool
 	if monitoredStr := c.Query("monitored"); monitoredStr != "" {
-		if m := monitoredStr == "true"; true {
+		if m := monitoredStr == trueBoolString; true {
 			monitored = &m
 		}
 	}
@@ -113,7 +113,7 @@ func (s *Server) handleDeleteCollection(c *gin.Context) {
 		return
 	}
 
-	deleteMovies := c.Query("deleteMovies") == "true"
+	deleteMovies := c.Query("deleteMovies") == trueBoolString
 
 	if err := s.services.CollectionService.Delete(c.Request.Context(), id, deleteMovies); err != nil {
 		if strings.Contains(err.Error(), "not found") {

@@ -402,12 +402,12 @@ func (s *Server) parseBooleanParams(c *gin.Context, filter *models.WantedMovieFi
 	}
 
 	if searchRequiredStr := c.Query("searchRequired"); searchRequiredStr != "" {
-		searchRequired := strings.ToLower(searchRequiredStr) == "true"
+		searchRequired := strings.ToLower(searchRequiredStr) == trueBoolString
 		filter.SearchRequired = &searchRequired
 	}
 
 	if monitoredStr := c.Query("monitored"); monitoredStr != "" {
-		monitored := strings.ToLower(monitoredStr) == "true"
+		monitored := strings.ToLower(monitoredStr) == trueBoolString
 		filter.Monitored = &monitored
 	}
 }

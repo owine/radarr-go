@@ -89,11 +89,14 @@ func (s *CollectionService) GetByTmdbID(ctx context.Context, tmdbID int) (*model
 }
 
 // Create creates a new collection
-func (s *CollectionService) Create(ctx context.Context, collection *models.MovieCollection) (*models.MovieCollection, error) {
+func (s *CollectionService) Create(
+	ctx context.Context, collection *models.MovieCollection,
+) (*models.MovieCollection, error) {
 	// Check if collection already exists by TMDB ID
 	existing, err := s.GetByTmdbID(ctx, collection.TmdbID)
 	if err == nil {
-		return nil, fmt.Errorf("collection with TMDB ID %d already exists with ID %d", collection.TmdbID, existing.ID)
+		return nil, fmt.Errorf("collection with TMDB ID %d already exists with ID %d",
+			collection.TmdbID, existing.ID)
 	}
 
 	// Fetch additional metadata from TMDB if needed
@@ -113,7 +116,9 @@ func (s *CollectionService) Create(ctx context.Context, collection *models.Movie
 }
 
 // Update updates an existing collection
-func (s *CollectionService) Update(ctx context.Context, id int, updates *models.MovieCollection) (*models.MovieCollection, error) {
+func (s *CollectionService) Update(
+	ctx context.Context, id int, updates *models.MovieCollection,
+) (*models.MovieCollection, error) {
 	collection, err := s.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -192,7 +197,8 @@ func (s *CollectionService) RemoveMovie(ctx context.Context, collectionID, movie
 		Model(&models.Movie{}).
 		Where("id = ?", movieID).
 		Update("collection_tmdb_id", nil).Error; err != nil {
-		s.logger.Error("Failed to remove movie from collection", "collectionId", collectionID, "movieId", movieID, "error", err)
+		s.logger.Error("Failed to remove movie from collection",
+			"collectionId", collectionID, "movieId", movieID, "error", err)
 		return fmt.Errorf("failed to remove movie from collection: %w", err)
 	}
 
@@ -251,7 +257,9 @@ func (s *CollectionService) SyncFromTMDB(ctx context.Context, collectionID int) 
 }
 
 // GetCollectionStatistics returns statistics for a collection
-func (s *CollectionService) GetCollectionStatistics(ctx context.Context, collectionID int) (*models.CollectionStatistics, error) {
+func (s *CollectionService) GetCollectionStatistics(
+	ctx context.Context, collectionID int,
+) (*models.CollectionStatistics, error) {
 	collection, err := s.GetByID(ctx, collectionID)
 	if err != nil {
 		return nil, err

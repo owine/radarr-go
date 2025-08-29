@@ -455,7 +455,7 @@ func (r *RootFolderHealthChecker) Check(ctx context.Context) models.HealthCheckE
 
 		// Check write permissions by creating a temporary file
 		testFile := filepath.Join(path, ".radarr-health-check")
-		if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("test"), 0400); err != nil {
 			issues = append(issues, models.HealthIssue{
 				Type:     r.Type(),
 				Source:   r.Name(),

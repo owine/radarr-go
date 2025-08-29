@@ -79,7 +79,8 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.NamingService = NewNamingService(db, logger)
 	container.MediaInfoService = NewMediaInfoService(db, logger)
 	container.FileOperationService = NewFileOperationService(db, logger)
-	container.FileOrganizationService = NewFileOrganizationService(db, logger, container.NamingService, container.MediaInfoService)
+	container.FileOrganizationService = NewFileOrganizationService(db, logger, container.NamingService,
+		container.MediaInfoService)
 	container.ImportService = NewImportService(db, logger, container.MovieService, container.MovieFileService,
 		container.FileOrganizationService, container.MediaInfoService, container.NamingService)
 
@@ -105,13 +106,16 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.TaskService.RegisterHandler(NewRefreshAllMoviesHandler(container.MovieService, container.MetadataService))
 	container.TaskService.RegisterHandler(NewSyncImportListHandler(container.ImportListService))
 	container.TaskService.RegisterHandler(NewRefreshWantedMoviesHandler(container.WantedMoviesService))
-	container.TaskService.RegisterHandler(NewAutoWantedSearchHandler(container.WantedMoviesService, container.SearchService))
+	container.TaskService.RegisterHandler(NewAutoWantedSearchHandler(container.WantedMoviesService,
+		container.SearchService))
 
 	// Register health monitoring task handlers
 	container.TaskService.RegisterHandler(NewHealthCheckTaskHandler(container.HealthService))
 	container.TaskService.RegisterHandler(NewPerformanceMetricsTaskHandler(container.HealthService))
-	container.TaskService.RegisterHandler(NewHealthMaintenanceTaskHandler(container.HealthService, container.HealthIssueService))
-	container.TaskService.RegisterHandler(NewHealthReportTaskHandler(container.HealthService, container.HealthIssueService))
+	container.TaskService.RegisterHandler(NewHealthMaintenanceTaskHandler(container.HealthService,
+		container.HealthIssueService))
+	container.TaskService.RegisterHandler(NewHealthReportTaskHandler(container.HealthService,
+		container.HealthIssueService))
 
 	// Keep the legacy health check handler for compatibility
 	container.TaskService.RegisterHandler(NewHealthCheckHandler(container))
