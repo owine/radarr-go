@@ -15,13 +15,9 @@
   "platformAutomerge": true,
   "dependencyDashboard": true,
   "postUpdateOptions": [
-      "gomodTidy",
-      "gomodUpdateImportPaths",
-      "gomodMassage"
-    ],
-  "gomod": {
-    "enabled": true
-  },
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
   "ignorePaths": [
     "docker-compose.yml"
   ],
@@ -36,10 +32,7 @@
       "schedule": [
         "at any time"
       ],
-      "prPriority": 10,
-      "matchPackageNames": [
-        "*"
-      ]
+      "prPriority": 10
     },
     {
       "description": "Go major updates - separate PRs, manual review",
@@ -57,7 +50,7 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Go dependencies - group minor and patch updates with version constraints",
+      "description": "Go dependencies - group minor and patch updates, pin to patch versions",
       "matchManagers": [
         "gomod"
       ],
@@ -71,129 +64,10 @@
         "go"
       ],
       "minimumReleaseAge": "3 days",
-      "rangeStrategy": "pin",
-      "semanticCommits": "enabled"
+      "rangeStrategy": "pin"
     },
     {
-      "description": "Go toolchain updates - separate handling",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "golang"
-      ],
-      "groupName": "Go toolchain",
-      "automerge": false,
-      "addLabels": [
-        "go",
-        "toolchain"
-      ],
-      "minimumReleaseAge": "7 days",
-      "prPriority": 5
-    },
-    {
-      "description": "Go direct dependencies - enhanced tracking",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "require"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Go direct dependencies",
-      "automerge": true,
-      "addLabels": [
-        "go",
-        "direct"
-      ],
-      "minimumReleaseAge": "2 days",
-      "prPriority": 8
-    },
-    {
-      "description": "Go indirect dependencies - group all updates",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "groupName": "Go indirect dependencies",
-      "automerge": true,
-      "addLabels": [
-        "go",
-        "indirect"
-      ],
-      "minimumReleaseAge": "5 days",
-      "prPriority": 3,
-      "schedule": [
-        "before 6am on monday"
-      ]
-    },
-    {
-      "description": "Go workspace and tooling dependencies",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchPackageNames": [
-        "golang.org/x/**",
-        "go.uber.org/**"
-      ],
-      "groupName": "Go tooling and workspace",
-      "automerge": true,
-      "addLabels": [
-        "go",
-        "tooling"
-      ],
-      "minimumReleaseAge": "3 days",
-      "prPriority": 6
-    },
-    {
-      "description": "Testing and development dependencies",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchPackageNames": [
-        "github.com/stretchr/testify",
-        "github.com/golang-migrate/migrate/**",
-        "**/testify",
-        "**/mock*",
-        "**/test*"
-      ],
-      "groupName": "Testing dependencies",
-      "automerge": true,
-      "addLabels": [
-        "go",
-        "testing"
-      ],
-      "minimumReleaseAge": "1 day",
-      "prPriority": 7
-    },
-    {
-      "description": "Database drivers and ORM dependencies",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchPackageNames": [
-        "gorm.io/**",
-        "github.com/jackc/pgx/**",
-        "github.com/go-sql-driver/mysql",
-        "**/driver/**",
-        "**/gorm*"
-      ],
-      "groupName": "Database dependencies",
-      "automerge": true,
-      "addLabels": [
-        "go",
-        "database"
-      ],
-      "minimumReleaseAge": "4 days",
-      "prPriority": 9
-    },
-    {
-      "description": "GitHub Actions - group all updates with SHA pinning",
+      "description": "GitHub Actions - group all updates with SHA pinning and patch version pins",
       "matchManagers": [
         "github-actions"
       ],
@@ -204,10 +78,10 @@
       ],
       "minimumReleaseAge": "2 days",
       "pinDigests": true,
-      "followTag": true
+      "rangeStrategy": "pin"
     },
     {
-      "description": "Docker images - group minor and patch",
+      "description": "Docker images - group minor and patch updates, pin versions",
       "matchManagers": [
         "dockerfile",
         "docker-compose"
@@ -220,7 +94,9 @@
       "automerge": true,
       "addLabels": [
         "docker"
-      ]
+      ],
+      "rangeStrategy": "pin",
+      "pinDigests": true
     },
     {
       "description": "Docker major updates - separate PRs",
@@ -235,7 +111,9 @@
       "addLabels": [
         "docker",
         "major"
-      ]
+      ],
+      "rangeStrategy": "pin",
+      "pinDigests": true
     }
   ]
 }
