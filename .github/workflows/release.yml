@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Full history for proper version detection
 
@@ -97,7 +97,7 @@ jobs:
         echo "📝 Commit: ${COMMIT_SHA}"
 
     - name: Set up Go
-      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: false  # Disable cache for validation to ensure clean state
@@ -129,10 +129,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      uses: actions/checkout@v5
 
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -258,7 +258,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@v4
       with:
         name: release-archives-all
         path: archives/
@@ -275,7 +275,7 @@ jobs:
 
     steps:
     - name: Download release artifacts
-      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+      uses: actions/download-artifact@v5
       with:
         name: release-archives-all
         path: release-artifacts
@@ -374,7 +374,7 @@ jobs:
         echo "✅ Release preparation completed"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+      uses: softprops/action-gh-release@v2
       with:
         files: release-artifacts/*
         name: "Radarr Go v${{ needs.validate.outputs.version }}"
@@ -419,11 +419,11 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      uses: actions/checkout@v5
 
     # Docker build in parallel with integration test prep
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to registries in parallel
       run: |
@@ -439,7 +439,7 @@ jobs:
         wait
 
     - name: Build and push Docker images with enhanced caching
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64

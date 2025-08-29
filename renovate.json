@@ -69,7 +69,7 @@
       "minimumReleaseAge": "3 days"
     },
     {
-      "description": "GitHub Actions - group all updates",
+      "description": "GitHub Actions - group all updates with SHA pinning",
       "matchManagers": [
         "github-actions"
       ],
@@ -78,7 +78,9 @@
       "addLabels": [
         "github-actions"
       ],
-      "minimumReleaseAge": "2 days"
+      "minimumReleaseAge": "2 days",
+      "pinDigests": true,
+      "followTag": true
     },
     {
       "description": "Docker images - group minor and patch",
