@@ -24,6 +24,7 @@
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
+      "matchPackagePatterns": ["*"],
       "isVulnerabilityAlert": true,
       "addLabels": [
         "security"
@@ -50,7 +51,7 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Go dependencies - group minor and patch updates, pin to patch versions",
+      "description": "Go dependencies - group minor and patch updates",
       "matchManagers": [
         "gomod"
       ],
@@ -63,11 +64,10 @@
       "addLabels": [
         "go"
       ],
-      "minimumReleaseAge": "3 days",
-      "rangeStrategy": "pin"
+      "minimumReleaseAge": "3 days"
     },
     {
-      "description": "GitHub Actions - group all updates with SHA pinning and patch version pins",
+      "description": "GitHub Actions - group all updates with SHA pinning",
       "matchManagers": [
         "github-actions"
       ],
@@ -77,11 +77,10 @@
         "github-actions"
       ],
       "minimumReleaseAge": "2 days",
-      "pinDigests": true,
-      "rangeStrategy": "pin"
+      "pinDigests": true
     },
     {
-      "description": "Docker images - group minor and patch updates, pin versions",
+      "description": "Docker images - group minor and patch updates",
       "matchManagers": [
         "dockerfile",
         "docker-compose"
@@ -95,7 +94,6 @@
       "addLabels": [
         "docker"
       ],
-      "rangeStrategy": "pin",
       "pinDigests": true
     },
     {
@@ -112,7 +110,6 @@
         "docker",
         "major"
       ],
-      "rangeStrategy": "pin",
       "pinDigests": true
     }
   ]
