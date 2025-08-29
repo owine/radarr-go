@@ -36,7 +36,7 @@ jobs:
     # Enhanced dependency caching
     - name: Cache Go modules and tools
       id: cache
-      uses: actions/cache@f9c7de1a8b73c0b4077c0dbb4e30bdcbe48fad9f # v4
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
@@ -212,7 +212,7 @@ jobs:
           go.work.sum
 
     - name: Restore Go modules and tools cache
-      uses: actions/cache@f9c7de1a8b73c0b4077c0dbb4e30bdcbe48fad9f # v4
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
