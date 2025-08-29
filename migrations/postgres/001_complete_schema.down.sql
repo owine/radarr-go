@@ -4,6 +4,7 @@
 -- Drop all triggers first
 DROP TRIGGER IF EXISTS update_movies_updated_at ON movies;
 DROP TRIGGER IF EXISTS update_movie_files_updated_at ON movie_files;
+DROP TRIGGER IF EXISTS update_quality_definitions_updated_at ON quality_definitions;
 DROP TRIGGER IF EXISTS update_quality_profiles_updated_at ON quality_profiles;
 DROP TRIGGER IF EXISTS update_indexers_updated_at ON indexers;
 DROP TRIGGER IF EXISTS update_queue_items_updated_at ON queue_items;
@@ -47,5 +48,6 @@ DROP TABLE IF EXISTS download_clients;
 DROP TABLE IF EXISTS queue_items;
 DROP TABLE IF EXISTS indexers;
 DROP TABLE IF EXISTS quality_profiles;
+DROP TABLE IF EXISTS quality_definitions;
 DROP TABLE IF EXISTS movie_files;
 DROP TABLE IF EXISTS movies;
