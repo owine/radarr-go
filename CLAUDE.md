@@ -116,6 +116,8 @@ All services are managed through a `services.Container` that provides dependency
 - `MovieService`: Movie CRUD operations and search
 - `MovieFileService`: File management and metadata
 - `QualityService`, `IndexerService`, etc.: Domain-specific operations
+- `CalendarService`: Movie release date tracking and calendar event generation
+- `ICalService`: RFC 5545 compliant iCal feed generation for external calendar integration
 
 ### Database Architecture
 - **GORM Optimized**: Enhanced with prepared statements, transactions, and validation hooks
