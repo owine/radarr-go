@@ -16,8 +16,12 @@
   "dependencyDashboard": true,
   "postUpdateOptions": [
       "gomodTidy",
-      "gomodUpdateImportPaths"
+      "gomodUpdateImportPaths",
+      "gomodMassage"
     ],
+  "gomod": {
+    "enabled": true
+  },
   "ignorePaths": [
     "docker-compose.yml"
   ],
@@ -53,7 +57,7 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Go dependencies - group minor and patch updates",
+      "description": "Go dependencies - group minor and patch updates with version constraints",
       "matchManagers": [
         "gomod"
       ],
@@ -66,7 +70,127 @@
       "addLabels": [
         "go"
       ],
-      "minimumReleaseAge": "3 days"
+      "minimumReleaseAge": "3 days",
+      "rangeStrategy": "pin",
+      "semanticCommits": "enabled"
+    },
+    {
+      "description": "Go toolchain updates - separate handling",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
+      "groupName": "Go toolchain",
+      "automerge": false,
+      "addLabels": [
+        "go",
+        "toolchain"
+      ],
+      "minimumReleaseAge": "7 days",
+      "prPriority": 5
+    },
+    {
+      "description": "Go direct dependencies - enhanced tracking",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "require"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Go direct dependencies",
+      "automerge": true,
+      "addLabels": [
+        "go",
+        "direct"
+      ],
+      "minimumReleaseAge": "2 days",
+      "prPriority": 8
+    },
+    {
+      "description": "Go indirect dependencies - group all updates",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "groupName": "Go indirect dependencies",
+      "automerge": true,
+      "addLabels": [
+        "go",
+        "indirect"
+      ],
+      "minimumReleaseAge": "5 days",
+      "prPriority": 3,
+      "schedule": [
+        "before 6am on monday"
+      ]
+    },
+    {
+      "description": "Go workspace and tooling dependencies",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "golang.org/x/**",
+        "go.uber.org/**"
+      ],
+      "groupName": "Go tooling and workspace",
+      "automerge": true,
+      "addLabels": [
+        "go",
+        "tooling"
+      ],
+      "minimumReleaseAge": "3 days",
+      "prPriority": 6
+    },
+    {
+      "description": "Testing and development dependencies",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/stretchr/testify",
+        "github.com/golang-migrate/migrate/**",
+        "**/testify",
+        "**/mock*",
+        "**/test*"
+      ],
+      "groupName": "Testing dependencies",
+      "automerge": true,
+      "addLabels": [
+        "go",
+        "testing"
+      ],
+      "minimumReleaseAge": "1 day",
+      "prPriority": 7
+    },
+    {
+      "description": "Database drivers and ORM dependencies",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "gorm.io/**",
+        "github.com/jackc/pgx/**",
+        "github.com/go-sql-driver/mysql",
+        "**/driver/**",
+        "**/gorm*"
+      ],
+      "groupName": "Database dependencies",
+      "automerge": true,
+      "addLabels": [
+        "go",
+        "database"
+      ],
+      "minimumReleaseAge": "4 days",
+      "prPriority": 9
     },
     {
       "description": "GitHub Actions - group all updates with SHA pinning",
