@@ -118,11 +118,14 @@ func (s *CalendarService) generateCalendarEvents(request *models.CalendarRequest
 }
 
 // generateEventsForMovie creates calendar events for a specific movie
-func (s *CalendarService) generateEventsForMovie(movie *models.Movie, request *models.CalendarRequest, now time.Time) []models.CalendarEvent {
+func (s *CalendarService) generateEventsForMovie(
+	movie *models.Movie, request *models.CalendarRequest, now time.Time,
+) []models.CalendarEvent {
 	var events []models.CalendarEvent
 
 	// Cinema release event
-	if movie.InCinemas != nil && s.shouldIncludeEventType(models.CalendarEventCinemaRelease, request) {
+	if movie.InCinemas != nil &&
+		s.shouldIncludeEventType(models.CalendarEventCinemaRelease, request) {
 		if s.isDateInRange(*movie.InCinemas, request) {
 			event := s.createCalendarEvent(movie, models.CalendarEventCinemaRelease, *movie.InCinemas)
 			events = append(events, event)
@@ -130,7 +133,8 @@ func (s *CalendarService) generateEventsForMovie(movie *models.Movie, request *m
 	}
 
 	// Physical release event
-	if movie.PhysicalRelease != nil && s.shouldIncludeEventType(models.CalendarEventPhysicalRelease, request) {
+	if movie.PhysicalRelease != nil &&
+		s.shouldIncludeEventType(models.CalendarEventPhysicalRelease, request) {
 		if s.isDateInRange(*movie.PhysicalRelease, request) {
 			event := s.createCalendarEvent(movie, models.CalendarEventPhysicalRelease, *movie.PhysicalRelease)
 			events = append(events, event)
@@ -138,7 +142,8 @@ func (s *CalendarService) generateEventsForMovie(movie *models.Movie, request *m
 	}
 
 	// Digital release event
-	if movie.DigitalRelease != nil && s.shouldIncludeEventType(models.CalendarEventDigitalRelease, request) {
+	if movie.DigitalRelease != nil &&
+		s.shouldIncludeEventType(models.CalendarEventDigitalRelease, request) {
 		if s.isDateInRange(*movie.DigitalRelease, request) {
 			event := s.createCalendarEvent(movie, models.CalendarEventDigitalRelease, *movie.DigitalRelease)
 			events = append(events, event)
@@ -149,7 +154,9 @@ func (s *CalendarService) generateEventsForMovie(movie *models.Movie, request *m
 	if s.shouldIncludeEventType(models.CalendarEventAvailability, request) {
 		if availabilityDate := s.calculateAvailabilityDate(movie, now); availabilityDate != nil {
 			if s.isDateInRange(*availabilityDate, request) {
-				event := s.createCalendarEvent(movie, models.CalendarEventAvailability, *availabilityDate)
+				event := s.createCalendarEvent(
+					movie, models.CalendarEventAvailability, *availabilityDate,
+				)
 				events = append(events, event)
 			}
 		}
@@ -159,7 +166,9 @@ func (s *CalendarService) generateEventsForMovie(movie *models.Movie, request *m
 }
 
 // createCalendarEvent creates a calendar event from a movie and event type
-func (s *CalendarService) createCalendarEvent(movie *models.Movie, eventType models.CalendarEventType, eventDate time.Time) models.CalendarEvent {
+func (s *CalendarService) createCalendarEvent(
+	movie *models.Movie, eventType models.CalendarEventType, eventDate time.Time,
+) models.CalendarEvent {
 	status := s.determineEventStatus(eventDate, movie)
 
 	event := models.CalendarEvent{
@@ -277,7 +286,9 @@ func (s *CalendarService) calculateAvailabilityDate(movie *models.Movie, now tim
 }
 
 // shouldIncludeEventType checks if the event type should be included based on request filters
-func (s *CalendarService) shouldIncludeEventType(eventType models.CalendarEventType, request *models.CalendarRequest) bool {
+func (s *CalendarService) shouldIncludeEventType(
+	eventType models.CalendarEventType, request *models.CalendarRequest,
+) bool {
 	if len(request.EventTypes) == 0 {
 		return true // Include all event types if none specified
 	}
@@ -304,9 +315,13 @@ func (s *CalendarService) isDateInRange(date time.Time, request *models.Calendar
 // isAllDayEvent determines if an event type should be displayed as all-day
 func (s *CalendarService) isAllDayEvent(eventType models.CalendarEventType) bool {
 	switch eventType {
-	case models.CalendarEventCinemaRelease, models.CalendarEventPhysicalRelease, models.CalendarEventDigitalRelease:
+	case models.CalendarEventCinemaRelease,
+		models.CalendarEventPhysicalRelease,
+		models.CalendarEventDigitalRelease:
 		return true
-	case models.CalendarEventAnnouncement, models.CalendarEventMonitoring, models.CalendarEventAvailability:
+	case models.CalendarEventAnnouncement,
+		models.CalendarEventMonitoring,
+		models.CalendarEventAvailability:
 		return false
 	default:
 		return false
@@ -314,7 +329,9 @@ func (s *CalendarService) isAllDayEvent(eventType models.CalendarEventType) bool
 }
 
 // filterEvents applies additional filters to the events list
-func (s *CalendarService) filterEvents(events []models.CalendarEvent, request *models.CalendarRequest) []models.CalendarEvent {
+func (s *CalendarService) filterEvents(
+	events []models.CalendarEvent, request *models.CalendarRequest,
+) []models.CalendarEvent {
 	if len(events) == 0 {
 		return events
 	}

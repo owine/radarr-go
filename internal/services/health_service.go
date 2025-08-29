@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -514,9 +515,12 @@ func (hs *HealthService) GetSystemResources(ctx context.Context) (*models.System
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
+	// Safely convert uint64 to int64 with overflow check
+	memoryTotal := hs.safeUint64ToInt64(m.Sys)
+
 	resources := &models.SystemResourceInfo{
 		MemoryUsage: float64(m.Alloc) / 1024 / 1024, // MB
-		MemoryTotal: int64(m.Sys) / 1024 / 1024,     // MB
+		MemoryTotal: memoryTotal / 1024 / 1024,      // MB
 	}
 
 	if hs.systemChecker != nil {
@@ -725,6 +729,15 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 }
 
 // Helper functions
+
+// safeUint64ToInt64 safely converts uint64 to int64 with overflow protection
+func (hs *HealthService) safeUint64ToInt64(value uint64) int64 {
+	if value > math.MaxInt64 {
+		return math.MaxInt64
+	}
+	return int64(value)
+}
+
 func boolPtr(b bool) *bool {
 	return &b
 }

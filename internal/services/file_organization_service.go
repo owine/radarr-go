@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -249,6 +250,14 @@ func (s *FileOrganizationService) logOrganizationCompletion(
 
 // moveFile moves a file from source to destination
 func (s *FileOrganizationService) moveFile(sourcePath, destPath string, config *models.NamingConfig) (*models.MovieFile, error) {
+	// Validate file paths for security
+	if err := s.validateFilePath(sourcePath); err != nil {
+		return nil, fmt.Errorf("invalid source path: %w", err)
+	}
+	if err := s.validateFilePath(destPath); err != nil {
+		return nil, fmt.Errorf("invalid destination path: %w", err)
+	}
+
 	// Create backup if configured
 	if config != nil {
 		// Note: backup logic would be implemented based on config
@@ -275,15 +284,57 @@ func (s *FileOrganizationService) moveFile(sourcePath, destPath string, config *
 
 	// Get file info
 	if fileInfo, err := os.Stat(destPath); err == nil {
+		// Safe assignment - both are int64
 		movieFile.Size = fileInfo.Size()
 	}
 
 	return movieFile, nil
 }
 
+// validateFilePath validates that a file path is safe and doesn't contain directory traversal attacks
+func (s *FileOrganizationService) validateFilePath(filePath string) error {
+	// Early validation for empty paths
+	if filePath == "" {
+		return fmt.Errorf("empty file path not allowed")
+	}
+
+	// Check for obvious directory traversal attempts before cleaning
+	if strings.Contains(filePath, "..") {
+		return fmt.Errorf("path contains directory traversal attempt: %s", filePath)
+	}
+
+	// Clean the path to resolve any ".." or "." components - safe after validation
+	cleanPath := filepath.Clean(filePath)
+
+	// Double-check for directory traversal attempts after cleaning
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path contains directory traversal attempt after cleaning: %s", filePath)
+	}
+
+	// Ensure the path is absolute or within expected bounds
+	if filepath.IsAbs(cleanPath) {
+		return nil
+	}
+
+	// For relative paths, ensure they don't escape the working directory
+	if strings.HasPrefix(cleanPath, "../") || cleanPath == ".." {
+		return fmt.Errorf("relative path escapes working directory: %s", filePath)
+	}
+
+	return nil
+}
+
 // copyFile copies a file from source to destination
 func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *models.NamingConfig) (*models.MovieFile, error) {
-	sourceFile, err := os.Open(sourcePath)
+	// Validate file paths for security
+	if err := s.validateFilePath(sourcePath); err != nil {
+		return nil, fmt.Errorf("invalid source path: %w", err)
+	}
+	if err := s.validateFilePath(destPath); err != nil {
+		return nil, fmt.Errorf("invalid destination path: %w", err)
+	}
+
+	sourceFile, err := os.Open(sourcePath) // #nosec G304 - path validated above
 	if err != nil {
 		return nil, fmt.Errorf("failed to open source file: %w", err)
 	}
@@ -294,7 +345,7 @@ func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *
 		}
 	}()
 
-	destFile, err := os.Create(destPath)
+	destFile, err := os.Create(destPath) // #nosec G304 - path validated above
 	if err != nil {
 		return nil, fmt.Errorf("failed to create destination file: %w", err)
 	}
@@ -343,6 +394,7 @@ func (s *FileOrganizationService) copyFile(sourcePath, destPath string, config *
 	}
 
 	if fileInfo, err := os.Stat(destPath); err == nil {
+		// Safe assignment - both are int64
 		movieFile.Size = fileInfo.Size()
 	}
 
@@ -365,6 +417,7 @@ func (s *FileOrganizationService) hardlinkFile(sourcePath, destPath string, conf
 	}
 
 	if fileInfo, err := os.Stat(destPath); err == nil {
+		// Safe assignment - both are int64
 		movieFile.Size = fileInfo.Size()
 	}
 
@@ -406,8 +459,37 @@ func (s *FileOrganizationService) CheckFreeSpace(destPath string, fileSize int64
 		return fmt.Errorf("failed to get disk usage: %w", err)
 	}
 
-	// Calculate available space
-	availableBytes := int64(stat.Bavail) * int64(stat.Bsize)
+	// Calculate available space with overflow protection
+	bavail := stat.Bavail // uint64
+	bsize := stat.Bsize   // uint32
+
+	// Check for overflow in multiplication
+	if bavail > 0 && bsize > 0 && bavail > uint64(math.MaxInt64)/uint64(bsize) {
+		// Handle overflow by using MaxInt64 as available space
+		availableBytes := int64(math.MaxInt64)
+		requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
+
+		if availableBytes < requiredBytes {
+			return fmt.Errorf("insufficient disk space: available %d bytes, required %d bytes",
+				availableBytes, requiredBytes)
+		}
+		return nil
+	}
+
+	// Safe conversion after overflow check
+	product := bavail * uint64(bsize)
+	if product > uint64(math.MaxInt64) {
+		availableBytes := int64(math.MaxInt64)
+		requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
+
+		if availableBytes < requiredBytes {
+			return fmt.Errorf("insufficient disk space: available %d bytes, required %d bytes",
+				availableBytes, requiredBytes)
+		}
+		return nil
+	}
+
+	availableBytes := int64(product)
 	requiredBytes := fileSize + (config.MinimumFreeSpace * 1024 * 1024) // Convert MB to bytes
 
 	if availableBytes < requiredBytes {
