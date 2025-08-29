@@ -1,6 +1,8 @@
 package services
 
 import (
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/radarr/radarr-go/internal/config"
@@ -12,17 +14,47 @@ const ciEnvTrue = "true"
 
 // setupTestDB creates a test database and logger for testing
 func setupTestDB(t *testing.T) (*database.Database, *logger.Logger) {
-	// Create test config - skip tests if no database available
-	t.Skip("Database tests require PostgreSQL or MariaDB setup - skipping")
+	// Check if database environment variables are set (CI environment)
+	dbType := os.Getenv("RADARR_DATABASE_TYPE")
+	dbHost := os.Getenv("RADARR_DATABASE_HOST")
+	dbPortStr := os.Getenv("RADARR_DATABASE_PORT")
+	dbDatabase := os.Getenv("RADARR_DATABASE_DATABASE")
+	dbUsername := os.Getenv("RADARR_DATABASE_USERNAME")
+	dbPassword := os.Getenv("RADARR_DATABASE_PASSWORD")
+
+	// If no database environment variables are set, skip database tests
+	if dbType == "" || dbHost == "" || dbDatabase == "" || dbUsername == "" {
+		t.Skip("Database tests require environment variables (RADARR_DATABASE_TYPE, RADARR_DATABASE_HOST, etc.) - skipping")
+	}
+
+	// Parse database port
+	var dbPort int
+	if dbPortStr != "" {
+		var err error
+		dbPort, err = strconv.Atoi(dbPortStr)
+		if err != nil {
+			t.Fatalf("Invalid database port: %v", err)
+		}
+	} else {
+		// Default ports based on database type
+		switch dbType {
+		case "postgres":
+			dbPort = 5432
+		case "mariadb", "mysql":
+			dbPort = 3306
+		default:
+			t.Fatalf("Unknown database type: %s", dbType)
+		}
+	}
 
 	cfg := &config.Config{
 		Database: config.DatabaseConfig{
-			Type:     "postgres",
-			Host:     "localhost",
-			Port:     5432,
-			Database: "radarr_test",
-			Username: "postgres",
-			Password: "password",
+			Type:     dbType,
+			Host:     dbHost,
+			Port:     dbPort,
+			Database: dbDatabase,
+			Username: dbUsername,
+			Password: dbPassword,
 		},
 		Log: config.LogConfig{
 			Level:  "error", // Reduce log noise during tests
