@@ -310,7 +310,10 @@ func (s *MovieService) AssignToCollection(movieID int, collectionTmdbID int) err
 		Update("collection_tmdb_id", collectionTmdbID).Error
 
 	if err != nil {
-		s.logger.Error("Failed to assign movie to collection", "movieId", movieID, "collectionTmdbId", collectionTmdbID, "error", err)
+		s.logger.Error(
+			"Failed to assign movie to collection",
+			"movieId", movieID, "collectionTmdbId", collectionTmdbID, "error", err,
+		)
 		return fmt.Errorf("failed to assign movie to collection: %w", err)
 	}
 
@@ -366,7 +369,11 @@ func (s *MovieService) AutoAssignToCollections() error {
 	for _, movie := range movies {
 		if movie.Collection != nil && movie.Collection.TmdbID > 0 {
 			if err := s.AssignToCollection(movie.ID, movie.Collection.TmdbID); err != nil {
-				s.logger.Warn("Failed to auto-assign movie to collection", "movieId", movie.ID, "collectionTmdbId", movie.Collection.TmdbID, "error", err)
+				s.logger.Warn(
+					"Failed to auto-assign movie to collection",
+					"movieId", movie.ID, "collectionTmdbId", movie.Collection.TmdbID,
+					"error", err,
+				)
 			} else {
 				assigned++
 			}

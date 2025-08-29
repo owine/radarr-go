@@ -72,10 +72,7 @@ func (s *ImportService) ProcessImport(path string, options *ImportOptions) (*mod
 	s.logger.Info("Found importable files", "count", len(importableFiles), "path", path)
 
 	// Make import decisions for each file
-	importDecisions, err := s.makeImportDecisions(importableFiles, options)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make import decisions: %w", err)
-	}
+	importDecisions := s.makeImportDecisions(importableFiles, options)
 
 	result := &models.FileImportResult{
 		ImportDecisions: importDecisions,
@@ -106,60 +103,35 @@ func (s *ImportService) ProcessImport(path string, options *ImportOptions) (*mod
 }
 
 // makeImportDecisions analyzes files and makes decisions about whether to import them
-func (s *ImportService) makeImportDecisions(files []models.ImportableFile, options *ImportOptions) ([]models.ImportDecision, error) {
+func (s *ImportService) makeImportDecisions(
+	files []models.ImportableFile, options *ImportOptions,
+) []models.ImportDecision {
 	var decisions []models.ImportDecision
 
 	for _, file := range files {
-		decision, err := s.makeImportDecision(file, options)
-		if err != nil {
-			s.logger.Error("Failed to make import decision", "file", file.Path, "error", err)
-			decision = models.ImportDecision{
-				Decision: models.ImportDecisionRejected,
-				Item:     file,
-				Rejections: []models.ImportRejection{
-					{
-						Reason: models.ImportRejectionReason(err.Error()),
-						Type:   models.ImportRejectionTypePermanent,
-					},
-				},
-			}
-		}
-
+		decision := s.makeImportDecision(file, options)
 		decisions = append(decisions, decision)
 	}
 
-	return decisions, nil
+	return decisions
 }
 
 // makeImportDecision makes a decision about whether to import a specific file
-func (s *ImportService) makeImportDecision(file models.ImportableFile, options *ImportOptions) (models.ImportDecision, error) {
+func (s *ImportService) makeImportDecision(file models.ImportableFile, _ *ImportOptions) models.ImportDecision {
 	s.logger.Debug("Making import decision", "file", file.Path)
 
 	decision := models.ImportDecision{
 		Item: file,
 	}
 
-	// Check if it's a sample file
-	if file.IsSample() {
+	// Run basic file validation checks
+	if rejection := s.validateBasicFileRequirements(file); rejection != nil {
 		decision.Decision = models.ImportDecisionRejected
-		decision.Rejections = append(decision.Rejections, models.ImportRejection{
-			Reason: models.ImportRejectionSample,
-			Type:   models.ImportRejectionTypePermanent,
-		})
-		return decision, nil
+		decision.Rejections = append(decision.Rejections, *rejection)
+		return decision
 	}
 
-	// Check if it's a video file
-	if !file.IsVideoFile() {
-		decision.Decision = models.ImportDecisionRejected
-		decision.Rejections = append(decision.Rejections, models.ImportRejection{
-			Reason: models.ImportRejectionReason("Not a video file"),
-			Type:   models.ImportRejectionTypePermanent,
-		})
-		return decision, nil
-	}
-
-	// Attempt to identify the movie from the filename
+	// Identify the movie from filename
 	movie, err := s.identifyMovieFromFilename(file)
 	if err != nil {
 		decision.Decision = models.ImportDecisionRejected
@@ -167,35 +139,27 @@ func (s *ImportService) makeImportDecision(file models.ImportableFile, options *
 			Reason: models.ImportRejectionUnknownMovie,
 			Type:   models.ImportRejectionTypeTemporary,
 		})
-		return decision, nil
+		return decision
 	}
 
 	decision.LocalMovie = movie
 	decision.RemoteMovie = movie
 
-	// Check if movie already has a file
-	if existingFiles, err := s.movieFileService.GetByMovieID(movie.ID); err == nil && len(existingFiles) > 0 {
-		// Check quality comparison
-		isUpgrade, upgradeReason := s.checkQualityUpgrade(file, existingFiles[0])
-		if !isUpgrade {
-			decision.Decision = models.ImportDecisionRejected
-			decision.Rejections = append(decision.Rejections, models.ImportRejection{
-				Reason: models.ImportRejectionReason(upgradeReason),
-				Type:   models.ImportRejectionTypeTemporary,
-			})
-			return decision, nil
-		}
-		decision.IsUpgrade = true
+	// Check for existing files and quality upgrades
+	if rejection := s.validateExistingFileUpgrade(file, movie, &decision); rejection != nil {
+		decision.Decision = models.ImportDecisionRejected
+		decision.Rejections = append(decision.Rejections, *rejection)
+		return decision
 	}
 
-	// Check if file already exists at the destination
+	// Check if file already exists at destination
 	if exists, err := s.checkExistingFile(file, movie); err == nil && exists {
 		decision.Decision = models.ImportDecisionRejected
 		decision.Rejections = append(decision.Rejections, models.ImportRejection{
 			Reason: models.ImportRejectionExistingFile,
 			Type:   models.ImportRejectionTypePermanent,
 		})
-		return decision, nil
+		return decision
 	}
 
 	// All checks passed
@@ -207,7 +171,50 @@ func (s *ImportService) makeImportDecision(file models.ImportableFile, options *
 		"movie", movie.Title,
 		"isUpgrade", decision.IsUpgrade)
 
-	return decision, nil
+	return decision
+}
+
+// validateBasicFileRequirements performs basic file validation checks
+func (s *ImportService) validateBasicFileRequirements(file models.ImportableFile) *models.ImportRejection {
+	// Check if it's a sample file
+	if file.IsSample() {
+		return &models.ImportRejection{
+			Reason: models.ImportRejectionSample,
+			Type:   models.ImportRejectionTypePermanent,
+		}
+	}
+
+	// Check if it's a video file
+	if !file.IsVideoFile() {
+		return &models.ImportRejection{
+			Reason: models.ImportRejectionReason("Not a video file"),
+			Type:   models.ImportRejectionTypePermanent,
+		}
+	}
+
+	return nil
+}
+
+// validateExistingFileUpgrade checks for existing files and quality upgrades
+func (s *ImportService) validateExistingFileUpgrade(
+	file models.ImportableFile, movie *models.Movie, decision *models.ImportDecision,
+) *models.ImportRejection {
+	existingFiles, err := s.movieFileService.GetByMovieID(movie.ID)
+	if err != nil || len(existingFiles) == 0 {
+		return nil
+	}
+
+	// Check quality comparison
+	isUpgrade, upgradeReason := s.checkQualityUpgrade(file, existingFiles[0])
+	if !isUpgrade {
+		return &models.ImportRejection{
+			Reason: models.ImportRejectionReason(upgradeReason),
+			Type:   models.ImportRejectionTypeTemporary,
+		}
+	}
+
+	decision.IsUpgrade = true
+	return nil
 }
 
 // identifyMovieFromFilename attempts to identify a movie from its filename
@@ -313,7 +320,9 @@ func (s *ImportService) calculateMovieMatchScore(movie models.Movie, searchTitle
 }
 
 // checkQualityUpgrade determines if a new file is an upgrade over existing file
-func (s *ImportService) checkQualityUpgrade(newFile models.ImportableFile, existingFile models.MovieFile) (bool, string) {
+func (s *ImportService) checkQualityUpgrade(
+	newFile models.ImportableFile, existingFile models.MovieFile,
+) (bool, string) {
 	// This would implement quality comparison logic
 	// For simplicity, assume new file is always better if it's larger
 
@@ -465,7 +474,9 @@ func (s *ImportService) finalizeImport(
 }
 
 // processRejectedImport processes a rejected import decision
-func (s *ImportService) processRejectedImport(decision *models.ImportDecision, result *models.FileImportResult) {
+func (s *ImportService) processRejectedImport(
+	decision *models.ImportDecision, result *models.FileImportResult,
+) {
 	s.logger.Debug("Processing rejected import", "file", decision.Item.Path)
 
 	result.RejectedFiles = append(result.RejectedFiles, decision.Item)

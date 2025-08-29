@@ -21,10 +21,49 @@ func NewHealthCheckTaskHandler(healthService HealthServiceInterface) *HealthChec
 }
 
 // Execute performs comprehensive health checks
-func (h *HealthCheckTaskHandler) Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error {
+func (h *HealthCheckTaskHandler) Execute(
+	ctx context.Context, task *models.Task,
+	updateProgress func(percent int, message string),
+) error {
 	updateProgress(0, "Starting comprehensive health check")
 
 	// Parse specific check types from task body if provided
+	checkTypes := h.parseCheckTypes(task)
+
+	updateProgress(10, "Running health checks")
+
+	// Run all health checks
+	result := h.healthService.RunAllChecks(ctx, checkTypes)
+
+	updateProgress(50, "Analyzing health check results")
+
+	// Analyze results and generate summary
+	criticalCount, warningCount, errorCount := h.analyzeHealthResults(result.Checks)
+
+	updateProgress(70, "Processing health issues")
+
+	// Record performance metrics if available
+	if err := h.healthService.RecordPerformanceMetrics(ctx); err != nil {
+		// Log but don't fail the task
+		updateProgress(75, fmt.Sprintf("Warning: Failed to record performance metrics: %v", err))
+	}
+
+	updateProgress(90, "Generating health summary")
+
+	// Generate and report final summary
+	summaryMessage := h.generateSummaryMessage(result, criticalCount, errorCount, warningCount)
+	updateProgress(100, summaryMessage)
+
+	// Return error if critical issues found and task should fail
+	if result.OverallStatus == models.HealthStatusCritical {
+		return fmt.Errorf("critical health issues detected: %d checks failed", criticalCount)
+	}
+
+	return nil
+}
+
+// parseCheckTypes parses specific check types from task body
+func (h *HealthCheckTaskHandler) parseCheckTypes(task *models.Task) []models.HealthCheckType {
 	var checkTypes []models.HealthCheckType
 	if typesValue, exists := task.Body["types"]; exists {
 		if types, ok := typesValue.([]interface{}); ok {
@@ -35,20 +74,14 @@ func (h *HealthCheckTaskHandler) Execute(ctx context.Context, task *models.Task,
 			}
 		}
 	}
+	return checkTypes
+}
 
-	updateProgress(10, "Running health checks")
+// analyzeHealthResults analyzes health check results and returns counts
+func (h *HealthCheckTaskHandler) analyzeHealthResults(checks []models.HealthCheckExecution) (int, int, int) {
+	var criticalCount, warningCount, errorCount int
 
-	// Run all health checks
-	result := h.healthService.RunAllChecks(ctx, checkTypes)
-
-	updateProgress(50, "Analyzing health check results")
-
-	// Log results summary
-	criticalCount := 0
-	warningCount := 0
-	errorCount := 0
-
-	for _, check := range result.Checks {
+	for _, check := range checks {
 		switch check.Status {
 		case models.HealthStatusCritical:
 			criticalCount++
@@ -63,34 +96,19 @@ func (h *HealthCheckTaskHandler) Execute(ctx context.Context, task *models.Task,
 		}
 	}
 
-	updateProgress(70, "Processing health issues")
+	return criticalCount, warningCount, errorCount
+}
 
-	// Record performance metrics if available
-	if err := h.healthService.RecordPerformanceMetrics(ctx); err != nil {
-		// Log but don't fail the task
-		updateProgress(75, fmt.Sprintf("Warning: Failed to record performance metrics: %v", err))
-	}
-
-	updateProgress(90, "Generating health summary")
-
-	// Generate summary message
-	var summaryMessage string
+// generateSummaryMessage generates the final health check summary message
+func (h *HealthCheckTaskHandler) generateSummaryMessage(
+	result models.HealthCheckResult, criticalCount, errorCount, warningCount int,
+) string {
 	if result.OverallStatus == models.HealthStatusHealthy || result.OverallStatus == models.HealthStatusOK {
-		summaryMessage = fmt.Sprintf("System is healthy. Completed %d health checks in %v",
+		return fmt.Sprintf("System is healthy. Completed %d health checks in %v",
 			len(result.Checks), result.Duration)
-	} else {
-		summaryMessage = fmt.Sprintf("System health issues detected. Status: %s, Critical: %d, Errors: %d, Warnings: %d",
-			result.OverallStatus, criticalCount, errorCount, warningCount)
 	}
-
-	updateProgress(100, summaryMessage)
-
-	// Return error if critical issues found and task should fail
-	if result.OverallStatus == models.HealthStatusCritical {
-		return fmt.Errorf("critical health issues detected: %d checks failed", criticalCount)
-	}
-
-	return nil
+	return fmt.Sprintf("System health issues detected. Status: %s, Critical: %d, Errors: %d, Warnings: %d",
+		result.OverallStatus, criticalCount, errorCount, warningCount)
 }
 
 // GetName returns the command name this handler processes
@@ -154,7 +172,10 @@ type HealthMaintenanceTaskHandler struct {
 }
 
 // NewHealthMaintenanceTaskHandler creates a new health maintenance task handler
-func NewHealthMaintenanceTaskHandler(healthService HealthServiceInterface, healthIssueService HealthIssueServiceInterface) *HealthMaintenanceTaskHandler {
+func NewHealthMaintenanceTaskHandler(
+	healthService HealthServiceInterface,
+	healthIssueService HealthIssueServiceInterface,
+) *HealthMaintenanceTaskHandler {
 	return &HealthMaintenanceTaskHandler{
 		healthService:      healthService,
 		healthIssueService: healthIssueService,

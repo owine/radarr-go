@@ -125,7 +125,8 @@ func TestICalServiceWrapText(t *testing.T) {
 	}
 
 	// Test text that needs wrapping
-	longText := "This is a very long text that definitely needs to be wrapped at some point because it exceeds the maximum line length"
+	longText := "This is a very long text that definitely needs to be wrapped " +
+		"at some point because it exceeds the maximum line length"
 	wrapped = icalService.wrapText(longText, 75)
 
 	// Should contain line continuation
