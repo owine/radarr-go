@@ -77,67 +77,8 @@ CREATE INDEX IF NOT EXISTS idx_file_operations_type ON file_operations(operation
 CREATE INDEX IF NOT EXISTS idx_file_operations_movie_id ON file_operations(movie_id);
 CREATE INDEX IF NOT EXISTS idx_file_operations_created_at ON file_operations(created_at);
 
--- Create naming_config table
-CREATE TABLE IF NOT EXISTS naming_config (
-    id SERIAL PRIMARY KEY,
-    rename_movies BOOLEAN DEFAULT false,
-    replace_illegal_characters BOOLEAN DEFAULT true,
-    colon_replacement_format VARCHAR(20) DEFAULT 'delete',
-    standard_movie_format TEXT DEFAULT '{Movie Title} ({Release Year}) {Quality Full}',
-    movie_folder_format TEXT DEFAULT '{Movie Title} ({Release Year})',
-    create_empty_folders BOOLEAN DEFAULT false,
-    delete_empty_folders BOOLEAN DEFAULT false,
-    skip_free_space_check BOOLEAN DEFAULT false,
-    minimum_free_space BIGINT DEFAULT 100,
-    use_hardlinks BOOLEAN DEFAULT true,
-    import_extra_files BOOLEAN DEFAULT false,
-    extra_file_extensions TEXT,
-    enable_media_info BOOLEAN DEFAULT true,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert default naming configuration
-INSERT INTO naming_config (
-    id,
-    rename_movies,
-    replace_illegal_characters,
-    colon_replacement_format,
-    standard_movie_format,
-    movie_folder_format,
-    create_empty_folders,
-    delete_empty_folders,
-    skip_free_space_check,
-    minimum_free_space,
-    use_hardlinks,
-    import_extra_files,
-    extra_file_extensions,
-    enable_media_info
-) VALUES (
-    1,
-    false,
-    true,
-    'delete',
-    '{Movie Title} ({Release Year}) {Quality Full}',
-    '{Movie Title} ({Release Year})',
-    false,
-    false,
-    false,
-    100,
-    true,
-    false,
-    '["srt", "nfo"]',
-    true
-) ON CONFLICT (id) DO NOTHING;
-
--- Add triggers for updating the updated_at columns
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Add triggers for updating the updated_at columns on the new tables
+-- Note: update_updated_at_column() function and naming_config table already exist from migration 001
 
 CREATE TRIGGER update_file_organizations_updated_at
     BEFORE UPDATE ON file_organizations
@@ -151,10 +92,5 @@ CREATE TRIGGER update_manual_imports_updated_at
 
 CREATE TRIGGER update_file_operations_updated_at
     BEFORE UPDATE ON file_operations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_naming_config_updated_at
-    BEFORE UPDATE ON naming_config
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
