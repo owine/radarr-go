@@ -57,9 +57,8 @@ CREATE PROCEDURE AddNotificationColumns()
 BEGIN
     DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; -- Ignore duplicate column errors
 
+    -- Only add columns that aren't already in the base table
     ALTER TABLE notifications ADD COLUMN on_movie_added BOOLEAN DEFAULT FALSE;
-    ALTER TABLE notifications ADD COLUMN on_manual_interaction_required BOOLEAN DEFAULT FALSE;
-    ALTER TABLE notifications ADD COLUMN include_health_warnings BOOLEAN DEFAULT FALSE;
     ALTER TABLE notifications ADD COLUMN supports_on_movie_added BOOLEAN DEFAULT TRUE;
     ALTER TABLE notifications ADD COLUMN supports_on_manual_interaction_required BOOLEAN DEFAULT TRUE;
 END //

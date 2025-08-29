@@ -32,6 +32,32 @@ CREATE TABLE IF NOT EXISTS quality_profiles (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    implementation VARCHAR(50) NOT NULL,
+    config_contract VARCHAR(100),
+    settings TEXT DEFAULT '{}',
+    on_grab BOOLEAN DEFAULT FALSE,
+    on_import BOOLEAN DEFAULT FALSE,
+    on_upgrade BOOLEAN DEFAULT TRUE,
+    on_rename BOOLEAN DEFAULT FALSE,
+    on_movie_delete BOOLEAN DEFAULT FALSE,
+    on_movie_file_delete BOOLEAN DEFAULT FALSE,
+    on_movie_file_delete_for_upgrade BOOLEAN DEFAULT TRUE,
+    on_health_issue BOOLEAN DEFAULT FALSE,
+    on_health_restored BOOLEAN DEFAULT FALSE,
+    on_application_update BOOLEAN DEFAULT FALSE,
+    on_manual_interaction_required BOOLEAN DEFAULT FALSE,
+    include_health_warnings BOOLEAN DEFAULT FALSE,
+    enabled BOOLEAN DEFAULT TRUE,
+    tags TEXT DEFAULT '[]',
+    fields TEXT DEFAULT '[]',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Insert default quality profile
 INSERT INTO quality_profiles (id, name, cutoff, items) VALUES
 (1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]')

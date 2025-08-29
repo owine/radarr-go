@@ -71,25 +71,12 @@ END $$;
 -- Add new fields to notifications table if they don't exist
 DO $$
 BEGIN
+    -- Only add columns that aren't already in the base table
     -- Check and add on_movie_added column
     IF NOT EXISTS (SELECT column_name FROM information_schema.columns
                    WHERE table_name = 'notifications'
                    AND column_name = 'on_movie_added') THEN
         ALTER TABLE notifications ADD COLUMN on_movie_added BOOLEAN DEFAULT FALSE;
-    END IF;
-
-    -- Check and add on_manual_interaction_required column
-    IF NOT EXISTS (SELECT column_name FROM information_schema.columns
-                   WHERE table_name = 'notifications'
-                   AND column_name = 'on_manual_interaction_required') THEN
-        ALTER TABLE notifications ADD COLUMN on_manual_interaction_required BOOLEAN DEFAULT FALSE;
-    END IF;
-
-    -- Check and add include_health_warnings column
-    IF NOT EXISTS (SELECT column_name FROM information_schema.columns
-                   WHERE table_name = 'notifications'
-                   AND column_name = 'include_health_warnings') THEN
-        ALTER TABLE notifications ADD COLUMN include_health_warnings BOOLEAN DEFAULT FALSE;
     END IF;
 
     -- Check and add supports_on_movie_added column
