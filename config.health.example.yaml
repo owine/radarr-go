@@ -1,0 +1,61 @@
+# Radarr-Go Configuration Example with Health Monitoring
+# Copy this file to config.yaml and customize for your environment
+
+server:
+  port: 7878
+  host: 0.0.0.0
+  url_base: ""
+  enable_ssl: false
+  ssl_cert_path: ""
+  ssl_key_path: ""
+
+database:
+  type: "postgres"  # or "mariadb"
+  host: "localhost"
+  port: 5432        # 3306 for MariaDB
+  database: "radarr"
+  username: "radarr"
+  password: "password"
+  max_connections: 10
+
+log:
+  level: "info"     # debug, info, warn, error
+  format: "json"    # json, text
+  output: "stdout"  # stdout, stderr, or file path
+
+auth:
+  method: "apikey"  # none, apikey
+  api_key: ""       # Generate a secure API key
+
+storage:
+  data_directory: "/var/lib/radarr-go"
+  movie_directory: "/var/lib/radarr-go/movies"
+  backup_directory: "/var/lib/radarr-go/backups"
+
+tmdb:
+  api_key: "your_tmdb_api_key_here"  # Get from https://www.themoviedb.org/settings/api
+
+# Health Monitoring Configuration
+health:
+  # Enable/disable health monitoring
+  enabled: true
+
+  # How often to run health checks
+  interval: "15m"
+
+  # Disk space thresholds (in bytes)
+  # Warning threshold - show warning when free space is below this
+  disk_space_warning_threshold: 5368709120   # 5GB
+  # Critical threshold - show critical alert when free space is below this
+  disk_space_critical_threshold: 1073741824  # 1GB
+
+  # Database performance thresholds
+  database_timeout_threshold: "5s"     # Consider database slow if queries take longer
+  external_service_timeout: "10s"      # Timeout for external service checks
+
+  # Data retention
+  metrics_retention_days: 30            # Keep performance metrics for 30 days
+
+  # Notifications
+  notify_critical_issues: true          # Send notifications for critical health issues
+  notify_warning_issues: false          # Send notifications for warning health issues
