@@ -72,7 +72,7 @@ database:
   port: 5432
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-your_secure_password_here}"
 
 log:
   level: "info"

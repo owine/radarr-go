@@ -1,0 +1,136 @@
+# GitGuardian Security Configuration
+# This file configures GitGuardian to properly handle legitimate examples and test files
+
+version: v1
+
+# Paths to exclude from scanning
+paths-ignore:
+  # Exclude example files and documentation
+  - "docs/examples/"
+  - "examples/"
+  - "*.example.yaml"
+  - "*.example.yml"
+
+  # Exclude test files with mock data
+  - "*_test.go"
+  - "test/"
+  - "tests/"
+  - "testdata/"
+  - "internal/testhelpers/"
+  - "internal/fixtures/"
+
+  # Exclude third-party source code (Radarr original)
+  - "radarr-source/"
+
+  # Exclude generated files
+  - "internal/database/generated/"
+  - "web/frontend/dist/"
+  - "web/frontend/build/"
+
+# Specific patterns to ignore
+secret:
+  # Ignore documentation examples with clearly marked non-functional credentials
+  - |
+    # Example API keys in documentation that are clearly non-functional
+    your-api-key
+    your_api_key
+    your-secure-api-key
+    your-tmdb-api-key
+    example-api-key
+
+  - |
+    # Example passwords that are clearly placeholders
+    your_secure_password
+    your_password_here
+    your-password
+    your-secure-password
+    example-password
+
+  - |
+    # Test credentials that don't expose real systems
+    test-api-key
+    test_password
+    test_user
+    mock-password
+    mock-api-key
+
+  - |
+    # Build/CI placeholders
+    GITHUB_TOKEN
+    DOCKER_PASSWORD
+
+  - |
+    # Environment variable examples in documentation
+    ${RADARR_DATABASE_PASSWORD:-
+    ${RADARR_API_KEY:-
+    ${RADARR_DEV_
+
+# Specific file patterns with legitimate credentials that should be ignored
+ignore:
+  # Configuration files using environment variable patterns
+  - match: "password.*RADARR_DATABASE_PASSWORD"
+    paths:
+      - "config*.yaml"
+      - "config*.yml"
+
+  # API key examples in documentation
+  - match: "api_key.*your-.*-key"
+    paths:
+      - "docs/"
+      - "README.md"
+      - "*.md"
+
+  # Test files with mock credentials
+  - match: "password.*test.*password"
+    paths:
+      - "*test*"
+
+  # Development setup scripts generating random credentials
+  - match: "generate_password"
+    paths:
+      - "scripts/dev-setup.sh"
+
+  # Environment variable references in code
+  - match: "RADARR_.*_PASSWORD"
+    paths:
+      - "*.go"
+      - "*.sh"
+
+# Custom rules for legitimate use cases
+custom-rules:
+  # Allow environment variable patterns
+  - name: "Environment Variable References"
+    rule: |
+      Not a hardcoded secret if it's an environment variable reference pattern like:
+      - ${VAR_NAME:-default}
+      - $VAR_NAME
+      - os.Getenv("VAR_NAME")
+
+  # Allow documentation examples
+  - name: "Documentation Examples"
+    rule: |
+      Allow clearly marked example credentials in documentation that:
+      - Include "example" or "your-" prefix
+      - Are in documentation files (.md)
+      - Use placeholder patterns like "your_password_here"
+
+# Minimum secret length to avoid false positives
+minimum-occurrence-count: 1
+minimum-secret-length: 8
+
+# Enable specific detectors
+detectors:
+  - api_key
+  - password
+  - private_key
+  - token
+  - secret
+
+# Disable overly sensitive detectors that cause false positives
+disable-detectors:
+  - generic_high_entropy_secret  # Too many false positives with base64 content
+
+# Report settings
+verbose: false
+exit-zero: false  # Exit with error code if secrets found
+json: true       # JSON output for CI/CD integration

@@ -12,7 +12,7 @@ database:
   port: 5432
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-}"
   connection_url: ""  # Optional: Override individual settings with full connection string
   max_connections: 10
 

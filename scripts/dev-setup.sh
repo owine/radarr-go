@@ -27,33 +27,33 @@ command_exists() {
 # Function to install tools on macOS
 install_macos() {
     echo "🍺 Installing tools via Homebrew..."
-    
+
     if ! command_exists brew; then
         echo "Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
-    
+
     # Install required tools
     if ! command_exists go; then
         echo "Installing Go..."
         brew install go
     fi
-    
+
     if ! command_exists docker; then
         echo "Installing Docker..."
         brew install docker
     fi
-    
+
     if ! command_exists docker-compose; then
         echo "Installing Docker Compose..."
         brew install docker-compose
     fi
-    
+
     if ! command_exists node; then
         echo "Installing Node.js..."
         brew install node
     fi
-    
+
     if ! command_exists make; then
         echo "Installing Make..."
         brew install make
@@ -63,16 +63,16 @@ install_macos() {
 # Function to install tools on Linux
 install_linux() {
     echo "🐧 Installing tools for Linux..."
-    
+
     # Update package list
     sudo apt update
-    
+
     # Install Go
     if ! command_exists go; then
         echo "Installing Go..."
         sudo apt install -y golang-go
     fi
-    
+
     # Install Docker
     if ! command_exists docker; then
         echo "Installing Docker..."
@@ -82,26 +82,26 @@ install_linux() {
         rm get-docker.sh
         echo "⚠️  Please log out and back in for Docker group changes to take effect"
     fi
-    
+
     # Install Docker Compose
     if ! command_exists docker-compose; then
         echo "Installing Docker Compose..."
         sudo apt install -y docker-compose
     fi
-    
+
     # Install Node.js
     if ! command_exists node; then
         echo "Installing Node.js..."
         curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
         sudo apt-get install -y nodejs
     fi
-    
+
     # Install Make
     if ! command_exists make; then
         echo "Installing Make..."
         sudo apt install -y make
     fi
-    
+
     # Install curl if not present
     if ! command_exists curl; then
         echo "Installing curl..."
@@ -132,11 +132,29 @@ mkdir -p data movies web/static web/templates tmp
 mkdir -p web/frontend/src/components web/frontend/src/pages web/frontend/src/hooks
 mkdir -p web/frontend/src/services web/frontend/src/utils web/frontend/public
 
+# Function to generate secure random password
+generate_password() {
+    local length=${1:-32}
+    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length 2>/dev/null || \
+    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $length | head -n 1
+}
+
+# Function to generate secure API key
+generate_api_key() {
+    generate_password 64
+}
+
 # Create basic config if it doesn't exist
 if [[ ! -f "config.yaml" ]]; then
     echo "📝 Creating basic development configuration..."
+
+    # Generate secure credentials
+    DEV_PASSWORD=$(generate_password 24)
+    DEV_API_KEY=$(generate_api_key)
+
     cat > config.yaml << EOF
 # Development configuration for Radarr Go
+# IMPORTANT: Change credentials before production use
 server:
   port: 7878
   host: "0.0.0.0"
@@ -148,7 +166,7 @@ database:
   host: "localhost"
   port: 5432
   username: "radarr_dev"
-  password: "dev_password"
+  password: "\${RADARR_DEV_DB_PASSWORD:-$DEV_PASSWORD}"
   name: "radarr_dev"
   ssl_mode: "disable"
   max_open_connections: 25
@@ -161,12 +179,19 @@ log:
 
 auth:
   method: "basic"
-  api_key: "dev-api-key-12345"
+  api_key: "\${RADARR_DEV_API_KEY:-$DEV_API_KEY}"
 
 storage:
   data_directory: "./data"
   movies_directory: "./movies"
 EOF
+
+    echo "🔐 Generated secure development credentials:"
+    echo "   Database Password: $DEV_PASSWORD"
+    echo "   API Key: $DEV_API_KEY"
+    echo "   💡 You can override these with environment variables:"
+    echo "      export RADARR_DEV_DB_PASSWORD='your-password'"
+    echo "      export RADARR_DEV_API_KEY='your-api-key'"
 fi
 
 # Initialize git pre-commit hooks if available

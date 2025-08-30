@@ -44,7 +44,7 @@ database:
   port: 5432  # 3306 for MariaDB
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-your_secure_password_here}"
 
   # Advanced database settings
   max_connections: 10
@@ -441,7 +441,7 @@ database:
   port: 5432
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-your_secure_password_here}"
   max_connections: 10
 
   # PostgreSQL-specific settings
@@ -459,7 +459,7 @@ database:
   port: 3306
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-your_secure_password_here}"
   max_connections: 10
 
   # MariaDB-specific settings

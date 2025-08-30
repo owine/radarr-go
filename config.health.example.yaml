@@ -15,7 +15,7 @@ database:
   port: 5432        # 3306 for MariaDB
   database: "radarr"
   username: "radarr"
-  password: "password"
+  password: "${RADARR_DATABASE_PASSWORD:-your_secure_password_here}"
   max_connections: 10
 
 log:

@@ -7,7 +7,7 @@ database:
   port: 5432
   database: "radarr_test"
   username: "test_user"
-  password: "test_password_123"
+  password: "${RADARR_TEST_DB_PASSWORD:-secure_test_password}"
 
 log:
   level: "debug"
