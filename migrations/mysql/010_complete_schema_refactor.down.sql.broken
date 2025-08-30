@@ -4,9 +4,11 @@
 -- Disable foreign key checks
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Drop the refactored tables
+-- Drop the refactored tables (order matters for foreign key dependencies)
+DROP TABLE IF EXISTS wanted_movies;
 DROP TABLE IF EXISTS movies;
 DROP TABLE IF EXISTS collections;
+DROP TABLE IF EXISTS quality_definitions;
 DROP TABLE IF EXISTS quality_profiles;
 DROP TABLE IF EXISTS health_issues;
 DROP TABLE IF EXISTS tasks;
