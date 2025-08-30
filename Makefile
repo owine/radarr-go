@@ -1,4 +1,6 @@
-.PHONY: build run test clean docker-build docker-run deps fmt lint
+.PHONY: build run test clean docker-build docker-run deps fmt lint \
+	build-frontend dev-frontend clean-frontend install-frontend \
+	build-all-with-frontend dev-full
 
 # Go parameters
 GOCMD=go
@@ -10,6 +12,12 @@ GOMOD=$(GOCMD) mod
 GOFMT=$(GOCMD) fmt
 BINARY_NAME=radarr
 MAIN_PATH=./cmd/radarr
+
+# Frontend parameters
+FRONTEND_DIR=web/frontend
+NODE_CMD=npm
+FRONTEND_BUILD_DIR=$(FRONTEND_DIR)/dist
+STATIC_DIR=web/static
 
 # Build variables
 VERSION ?= dev
@@ -53,6 +61,9 @@ build-freebsd-arm64:
 # Build all platforms (matches CI pipeline)
 build-all: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 build-windows-amd64 build-windows-arm64 build-freebsd-amd64 build-freebsd-arm64
 
+# Build all platforms with frontend
+build-all-with-frontend: build-frontend build-all
+
 # Run the application
 run: build
 	./$(BINARY_NAME)
@@ -61,22 +72,121 @@ run: build
 dev:
 	air
 
-# Run tests
-test:
+# Frontend Development Commands
+# ===========================================
+
+# Install frontend dependencies
+install-frontend:
+	@echo "Installing frontend dependencies..."
+	@if [ -d "$(FRONTEND_DIR)" ]; then \
+		cd $(FRONTEND_DIR) && $(NODE_CMD) install; \
+	else \
+		echo "Frontend directory $(FRONTEND_DIR) not found. Creating placeholder structure..."; \
+		mkdir -p $(FRONTEND_DIR)/src $(FRONTEND_DIR)/public $(STATIC_DIR); \
+		echo "Frontend will be implemented in Phase 2"; \
+	fi
+
+# Build frontend for production
+build-frontend:
+	@echo "Building frontend..."
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		cd $(FRONTEND_DIR) && $(NODE_CMD) run build; \
+		echo "Copying frontend build to static directory..."; \
+		mkdir -p $(STATIC_DIR); \
+		cp -r $(FRONTEND_BUILD_DIR)/* $(STATIC_DIR)/; \
+	else \
+		echo "Frontend not yet implemented. Creating placeholder static files..."; \
+		mkdir -p $(STATIC_DIR); \
+		echo "<!DOCTYPE html><html><head><title>Radarr Go</title></head><body><h1>Radarr Go - Frontend Coming Soon</h1><p>The React frontend will be available in Phase 2.</p></body></html>" > $(STATIC_DIR)/index.html; \
+		echo "Frontend placeholder created in $(STATIC_DIR)/"; \
+	fi
+
+# Start frontend development server
+dev-frontend:
+	@echo "Starting frontend development server..."
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		cd $(FRONTEND_DIR) && $(NODE_CMD) run dev; \
+	else \
+		echo "Frontend not yet implemented. Use 'make setup-frontend' to create initial structure."; \
+		echo "For now, you can develop the backend with 'make dev'"; \
+	fi
+
+# Clean frontend build artifacts
+clean-frontend:
+	@echo "Cleaning frontend build artifacts..."
+	@if [ -d "$(FRONTEND_BUILD_DIR)" ]; then rm -rf $(FRONTEND_BUILD_DIR); fi
+	@if [ -d "$(STATIC_DIR)" ]; then rm -rf $(STATIC_DIR); fi
+	@if [ -d "$(FRONTEND_DIR)/node_modules" ]; then rm -rf $(FRONTEND_DIR)/node_modules; fi
+
+# Setup initial frontend structure (for Phase 2 preparation)
+setup-frontend:
+	@echo "Setting up frontend structure for React development..."
+	mkdir -p $(FRONTEND_DIR)/src/components $(FRONTEND_DIR)/src/pages $(FRONTEND_DIR)/src/hooks
+	mkdir -p $(FRONTEND_DIR)/src/services $(FRONTEND_DIR)/src/utils $(FRONTEND_DIR)/public
+	mkdir -p $(STATIC_DIR)
+	@echo "Frontend structure created. Ready for React implementation in Phase 2."
+
+# Full Development Environment
+# ===========================================
+
+# Start full development environment (backend + frontend + databases)
+dev-full:
+	@echo "Starting full development environment..."
+	@echo "This will start all services in development mode"
+	docker-compose -f docker-compose.dev.yml up --build
+
+# Test Database Management
+test-db-up:
+	docker-compose -f docker-compose.test.yml up -d postgres-test mariadb-test
+	@echo "Waiting for test databases to be ready..."
+	@sleep 10
+	@echo "Test databases should be ready!"
+
+test-db-down:
+	docker-compose -f docker-compose.test.yml down -v
+
+test-db-logs:
+	docker-compose -f docker-compose.test.yml logs -f
+
+test-db-clean:
+	docker-compose -f docker-compose.test.yml down -v --remove-orphans
+	docker volume prune -f
+
+# Run tests (will automatically start test databases if not running)
+test: test-db-up
 	$(GOTEST) -v ./...
 
 # Run tests with coverage
-test-coverage:
+test-coverage: test-db-up
 	$(GOTEST) -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out
 
 # Run benchmark tests
-test-bench:
+test-bench: test-db-up
 	$(GOTEST) -bench=. -benchmem ./...
 
 # Run example tests
-test-examples:
+test-examples: test-db-up
 	$(GOTEST) -run Example ./...
+
+# Run tests with PostgreSQL only
+test-postgres: test-db-up
+	RADARR_TEST_DATABASE_TYPE=postgres $(GOTEST) -v ./...
+
+# Run tests with MariaDB only
+test-mariadb: test-db-up
+	RADARR_TEST_DATABASE_TYPE=mariadb $(GOTEST) -v ./...
+
+# Run integration tests (same as test but explicit)
+test-integration: test
+
+# Run tests in Docker container (full isolation)
+test-docker:
+	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit test-runner
+
+# Run tests without database (unit tests only)
+test-unit:
+	$(GOTEST) -v -short ./...
 
 # Clean build artifacts
 clean:
@@ -84,6 +194,9 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_NAME)-*
 	rm -f coverage.out
+
+# Clean everything including frontend and test databases
+clean-all: clean clean-frontend test-db-clean
 
 # Download dependencies
 deps:
@@ -132,9 +245,27 @@ all: deps fmt lint test test-bench build
 # Development workflow
 dev-all: deps fmt lint test test-examples test-bench test-coverage build
 
+# CI/CD workflow (includes database testing)
+ci: deps fmt lint test-postgres test-mariadb test-bench build-all
+
 # Development setup
-setup:
+setup: setup-backend setup-frontend
+
+# Backend development setup
+setup-backend:
 	$(GOGET) github.com/cosmtrek/air@latest
 	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	$(GOGET) github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	mkdir -p data movies web/static web/templates
+
+# Check development environment
+check-env:
+	@echo "Checking development environment..."
+	@echo "Go version: $(shell go version)"
+	@which air > /dev/null && echo "Air (hot reload): ✓ Installed" || echo "Air (hot reload): ✗ Not installed (run 'make setup-backend')"
+	@which golangci-lint > /dev/null && echo "golangci-lint: ✓ Installed" || echo "golangci-lint: ✗ Not installed (run 'make setup-backend')"
+	@which migrate > /dev/null && echo "migrate: ✓ Installed" || echo "migrate: ✗ Not installed (run 'make setup-backend')"
+	@which node > /dev/null && echo "Node.js: ✓ Installed ($(shell node --version))" || echo "Node.js: ✗ Not installed (required for frontend)"
+	@which npm > /dev/null && echo "npm: ✓ Installed ($(shell npm --version))" || echo "npm: ✗ Not installed (required for frontend)"
+	@which docker > /dev/null && echo "Docker: ✓ Installed" || echo "Docker: ✗ Not installed (required for development databases)"
+	@which docker-compose > /dev/null && echo "Docker Compose: ✓ Installed" || echo "Docker Compose: ✗ Not installed (required for development databases)"

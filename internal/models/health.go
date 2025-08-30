@@ -5,10 +5,15 @@ import (
 	"time"
 )
 
-// Extended health status constants (adding to existing ones in notification.go)
+// HealthStatus represents the health status of the system
+type HealthStatus string
+
+// Health status constants
 const (
 	HealthStatusHealthy  HealthStatus = "healthy"  // For consistency, maps to "ok"
-	HealthStatusCritical HealthStatus = "critical" // New critical level
+	HealthStatusWarning  HealthStatus = "warning"  // Warning status
+	HealthStatusError    HealthStatus = "error"    // Error status
+	HealthStatusCritical HealthStatus = "critical" // Critical level
 	HealthStatusUnknown  HealthStatus = "unknown"  // For uncertain states
 )
 
@@ -288,8 +293,6 @@ func GetWorstStatus(statuses ...HealthStatus) HealthStatus {
 			}
 		case HealthStatusHealthy:
 			// Healthy status doesn't change the worst status
-		case HealthStatusOK:
-			// OK status doesn't change the worst status (equivalent to healthy)
 		}
 	}
 	return worst

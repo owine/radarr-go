@@ -6,22 +6,136 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is **Radarr Go**, a complete rewrite of the Radarr movie collection manager from C#/.NET to Go. It maintains 100% API compatibility with Radarr's v3 API while providing significant performance improvements and simplified deployment.
 
+**Current Status: v0.9.0-alpha** - Near production-ready with 95% feature parity to original Radarr.
+
+## Comprehensive Feature Set
+
+### Core Movie Management
+- **Movie Library**: Complete CRUD operations for movie management
+- **Movie Discovery**: TMDB integration for popular/trending movie discovery
+- **Movie Metadata**: Automatic metadata refresh and TMDB lookup
+- **Movie Files**: File management with media info extraction and organization
+- **Movie Collections**: Support for managing movie collections with TMDB sync
+- **Quality Management**: Quality profiles, definitions, and custom formats
+- **Root Folder Management**: Multi-folder support with statistics
+
+### Advanced Search and Acquisition
+- **Indexer Management**: Support for multiple search providers with testing capabilities
+- **Release Management**: Release searching, filtering, and statistics
+- **Interactive Search**: Manual search with release selection
+- **Download Client Integration**: Support for multiple download clients with statistics
+- **Queue Management**: Download queue monitoring and management
+- **Wanted Movies Tracking**: Missing and cutoff unmet movie management with priority system
+
+### File Organization and Management
+- **File Organization System**: Automated file processing and organization
+- **Manual Import Processing**: Manual import with override capabilities
+- **Rename Operations**: File and folder renaming with preview functionality
+- **Media Info Extraction**: Automatic media information detection
+- **File Operation Tracking**: Comprehensive file operation monitoring
+- **Parse Service**: Release name parsing with caching
+
+### Notification System (11 Providers)
+- **Discord**: Rich embed notifications
+- **Slack**: Channel-based notifications
+- **Email**: SMTP email notifications
+- **Webhook**: Custom HTTP webhook integration
+- **Pushover**: Mobile push notifications
+- **Telegram**: Bot-based messaging
+- **Pushbullet**: Cross-device notifications
+- **Gotify**: Self-hosted push notifications
+- **Mailgun**: Transactional email service
+- **SendGrid**: Cloud email delivery
+- **Custom Script**: Custom notification scripts
+
+### Task Scheduling and Automation
+- **Task Management**: Complete task scheduling system with status tracking
+- **System Commands**: Health checks, cleanup operations
+- **Movie Commands**: Refresh operations for individual or all movies
+- **Import List Sync**: Automated list synchronization
+- **Scheduled Tasks**: Background task execution with monitoring
+- **Queue Status**: Real-time task queue monitoring
+
+### Health Monitoring and Diagnostics
+- **Health Dashboard**: Comprehensive system health overview
+- **Health Issue Management**: Issue tracking, dismissal, and resolution
+- **System Resource Monitoring**: CPU, memory, and disk space tracking
+- **Performance Metrics**: Performance monitoring with time-based metrics
+- **Health Checkers**: Multiple built-in health verification systems
+- **Disk Space Monitoring**: Configurable thresholds and alerts
+
+### Calendar and Event Tracking
+- **Calendar Events**: Movie release date tracking with filtering
+- **iCal Feed**: RFC 5545 compliant calendar feeds for external applications
+- **Calendar Configuration**: Customizable calendar settings
+- **Calendar Statistics**: Event statistics and metrics
+- **Feed URL Generation**: Shareable calendar feed URLs
+
+### Import and List Management
+- **Import Lists**: Multiple import list provider support
+- **List Synchronization**: Automated and manual list sync operations
+- **Import List Statistics**: Provider performance metrics
+- **Import List Movies**: Dedicated import candidate management
+- **Bulk Operations**: Mass operations on import lists
+
+### Configuration and Settings
+- **Host Configuration**: Server and application settings management
+- **Naming Configuration**: File naming patterns with token support
+- **Media Management**: File handling and organization settings
+- **Configuration Statistics**: System configuration metrics
+- **Environment Integration**: Comprehensive environment variable support
+
+### API and Integration
+- **150+ API Endpoints**: Complete REST API with Radarr v3 compatibility
+- **Authentication**: API key-based authentication with header/query support
+- **CORS Support**: Configurable cross-origin resource sharing
+- **Activity Tracking**: API activity logging and monitoring
+- **History Management**: Comprehensive history tracking and statistics
+
+### Database and Performance
+- **Multi-Database Support**: PostgreSQL (default) and MariaDB with optimizations
+- **GORM Integration**: Advanced ORM with prepared statements and transactions
+- **Migration System**: Database schema management with rollback support
+- **Performance Benchmarks**: Automated benchmark testing for regression monitoring
+- **Connection Pooling**: Configurable database connection management
+
 ## Development Commands
+
+### Quick Start (New Developers)
+```bash
+# Automated setup script (macOS/Linux)
+./scripts/dev-setup.sh       # Complete environment setup with tool installation
+
+# Manual setup
+make check-env               # Check development environment prerequisites
+make setup                   # Install dev tools (air, golangci-lint, migrate)
+make dev-full               # Start complete development environment (Docker)
+```
 
 ### Core Development
 ```bash
 # Install dependencies and setup
 make deps                    # Download Go modules
-make setup                   # Install dev tools (air, golangci-lint, migrate)
+make setup                   # Install both backend and frontend development tools
+make setup-backend           # Install only backend tools (air, golangci-lint, migrate)
+make setup-frontend          # Prepare frontend structure for React (Phase 2)
 
 # Pre-commit hooks setup (recommended for development)
 pip install pre-commit       # Install pre-commit (requires Python)
 pre-commit install          # Install git hooks
 pre-commit run --all-files  # Run hooks on all files (initial setup)
 
+# Development Environment Options
+make dev                     # Backend with hot reload (local)
+make dev-full               # Complete environment: backend + databases + monitoring (Docker)
+make dev-frontend           # Frontend development server (Phase 2)
+
 # Building
 make build                   # Build binary for current platform
 make build-linux            # Build for Linux (production)
+make build-frontend         # Build React frontend for production (Phase 2)
+make build-all              # Build all platforms (backend only)
+make build-all-with-frontend # Build all platforms + frontend (Phase 2)
 
 # Multi-platform building (matches CI and Makefile)
 make build-all               # Build for all platforms (recommended)
@@ -89,10 +203,42 @@ RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL (default)
 
 ### Docker Operations
 ```bash
+# Production Docker
 make docker-build           # Build Docker image
 make docker-run             # Start with docker-compose
 make docker-stop            # Stop docker-compose
 make docker-logs            # View container logs
+
+# Development Docker Environment
+make dev-full               # Start complete development environment
+docker-compose -f docker-compose.dev.yml up -d  # Start all development services
+docker-compose -f docker-compose.dev.yml --profile monitoring up -d  # Include monitoring
+docker-compose -f docker-compose.dev.yml --profile mariadb up -d     # Use MariaDB instead
+docker-compose -f docker-compose.dev.yml --profile frontend up -d    # Include frontend (Phase 2)
+
+# Development Services (when running make dev-full)
+# - Backend API: http://localhost:7878 (with hot reload)
+# - Database Admin (Adminer): http://localhost:8081
+# - Prometheus Metrics: http://localhost:9090
+# - Grafana Dashboard: http://localhost:3001 (admin/admin)
+# - Jaeger Tracing: http://localhost:16686
+# - MailHog (Email Testing): http://localhost:8025
+# - Frontend Dev Server: http://localhost:3000 (Phase 2)
+```
+
+### Frontend Development (Phase 2 Preparation)
+```bash
+# Frontend structure setup
+make setup-frontend         # Create React project structure
+make install-frontend       # Install npm dependencies (when package.json exists)
+make build-frontend         # Build React frontend for production
+make dev-frontend           # Start React development server
+make clean-frontend         # Clean frontend build artifacts
+
+# Full-stack development workflow
+make dev-full               # Start backend + databases + monitoring in Docker
+# In another terminal:
+make dev-frontend           # Start frontend development server (when React is ready)
 ```
 
 ## Architecture Overview
@@ -112,12 +258,44 @@ main() → config → logger → database → services → api server
 ```
 
 ### Service Container Pattern
-All services are managed through a `services.Container` that provides dependency injection:
-- `MovieService`: Movie CRUD operations and search
-- `MovieFileService`: File management and metadata
-- `QualityService`, `IndexerService`, etc.: Domain-specific operations
+All services are managed through a `services.Container` that provides comprehensive dependency injection:
+
+#### Core Business Services
+- `MovieService`: Movie CRUD operations, search, discovery, and metadata management
+- `MovieFileService`: File management, metadata extraction, and organization
+- `QualityService`: Quality profiles, definitions, and custom format management
+- `IndexerService`: Search provider management and configuration
+- `ImportListService`: Import list management and synchronization
+- `DownloadService`: Download client integration and queue management
+- `SearchService`: Release search and interactive search capabilities
+
+#### Task and Workflow Services
+- `TaskService`: Task scheduling, execution, and status tracking
+- `TaskHandlerService`: Specialized task handlers for different operations
+- `FileOrganizationService`: Automated file processing and organization
+- `RenameService`: File and folder renaming operations
+- `ImportService`: Manual and automatic import processing
+- `ParseService`: Release name parsing with intelligent caching
+
+#### Monitoring and Health Services
+- `HealthService`: Comprehensive health monitoring and issue management
+- `HealthIssueService`: Health issue tracking, resolution, and notifications
+- `PerformanceMonitor`: System performance metrics and monitoring
 - `CalendarService`: Movie release date tracking and calendar event generation
 - `ICalService`: RFC 5545 compliant iCal feed generation for external calendar integration
+
+#### Notification and Communication
+- `NotificationService`: Multi-provider notification system with 11+ providers
+- `NotificationFactory`: Provider instantiation and management
+- `TemplateService`: Notification template processing and customization
+
+#### Specialized Services
+- `WantedService`: Missing and cutoff unmet movie management
+- `CollectionService`: Movie collection management with TMDB integration
+- `MediaInfoService`: Media file information extraction and analysis
+- `ConfigService`: Dynamic configuration management and validation
+- `HistoryService`: Activity tracking and historical data management
+- `MetadataService`: Movie metadata management and TMDB integration
 
 ### Database Architecture
 - **GORM Optimized**: Enhanced with prepared statements, transactions, and validation hooks
@@ -446,8 +624,13 @@ type Movie struct {
 - Update documentation immediately when making code changes
 
 ### Development Workflow
+- **Quick Setup**: Use `./scripts/dev-setup.sh` for automated environment setup on new machines
+- **Environment Check**: Run `make check-env` to verify all required tools are installed
+- **Full Development**: Use `make dev-full` for complete development environment with monitoring
+- **Frontend Preparation**: Use `make setup-frontend` to prepare structure for React (Phase 2)
 - **Use pre-commit hooks**: Install and use pre-commit hooks for automatic quality checks (`pre-commit install`)
 - **Alternative manual checks**: Run `make lint` before committing to ensure code quality
 - Use `make all` for comprehensive quality checks (format, lint, test, build)
 - Test both database backends (PostgreSQL and MariaDB) during development
 - Maintain backwards compatibility with Radarr v3 API at all times
+- **Documentation**: See `DEVELOPMENT.md` for comprehensive setup and troubleshooting guide

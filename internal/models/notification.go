@@ -368,18 +368,6 @@ func (NotificationHistory) TableName() string {
 	return "notification_history"
 }
 
-// HealthStatus represents the health status of the system
-type HealthStatus string
-
-const (
-	// HealthStatusOK represents a healthy system
-	HealthStatusOK HealthStatus = "ok"
-	// HealthStatusWarning represents a system with warnings
-	HealthStatusWarning HealthStatus = "warning"
-	// HealthStatusError represents a system with errors
-	HealthStatusError HealthStatus = "error"
-)
-
 // HealthCheck represents a system health check
 type HealthCheck struct {
 	ID        int          `json:"id" gorm:"primaryKey;autoIncrement"`
@@ -408,5 +396,5 @@ func (hc *HealthCheck) IsError() bool {
 
 // IsOK returns true if this health check is OK
 func (hc *HealthCheck) IsOK() bool {
-	return hc.Status == HealthStatusOK
+	return hc.Status == HealthStatusHealthy
 }

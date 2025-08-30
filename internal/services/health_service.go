@@ -466,7 +466,7 @@ func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) 
 
 	for _, check := range checks {
 		switch check.Status {
-		case models.HealthStatusHealthy, models.HealthStatusOK:
+		case models.HealthStatusHealthy:
 			summary.Healthy++
 		case models.HealthStatusWarning:
 			summary.Warning++

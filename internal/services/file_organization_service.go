@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -392,7 +393,7 @@ func (s *FileOrganizationService) copyFileContents(sourceFile, destFile *os.File
 			}
 		}
 		if err != nil {
-			if err.Error() == "EOF" {
+			if err == io.EOF {
 				break
 			}
 			return fmt.Errorf("failed to read source file: %w", err)
