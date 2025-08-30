@@ -21,7 +21,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
       "matchStrings": [
         "GO_VERSION:\\s*['\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\"]?"
       ],
@@ -129,7 +131,7 @@
     {
       "description": "Go version updates in GitHub Actions - auto-merge patch updates",
       "matchManagers": [
-        "regex"
+        "custom.regex"
       ],
       "matchDepNames": [
         "golang"
@@ -146,7 +148,7 @@
     {
       "description": "Go version updates in GitHub Actions - manual review for minor/major",
       "matchManagers": [
-        "regex"
+        "custom.regex"
       ],
       "matchDepNames": [
         "golang"
