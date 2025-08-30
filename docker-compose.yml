@@ -24,7 +24,7 @@ services:
 
   # Optional: PostgreSQL database
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-postgres
     restart: unless-stopped
     environment:

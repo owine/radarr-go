@@ -3,7 +3,7 @@
 services:
   # PostgreSQL test database
   postgres-test:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-postgres-test
     environment:
       - POSTGRES_DB=radarr_test
@@ -27,7 +27,7 @@ services:
 
   # MariaDB test database
   mariadb-test:
-    image: mariadb:11.4
+    image: mariadb:11.4@sha256:6906213af4d460c98a3a66f5f6228e7a62932d382e9fee170d29f967c3146c25
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test
