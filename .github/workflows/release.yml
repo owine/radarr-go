@@ -258,7 +258,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # v4.4.1
+      uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
       with:
         name: release-archives-all
         path: archives/
@@ -374,7 +374,7 @@ jobs:
         echo "✅ Release preparation completed"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@7b4da11513bf3f43f9999e90eabced41ab8bb048 # v2.2.0
+      uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
       with:
         files: release-artifacts/*
         name: "Radarr Go v${{ needs.validate.outputs.version }}"
@@ -423,7 +423,7 @@ jobs:
 
     # Docker build in parallel with integration test prep
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
+      uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
     - name: Log in to registries in parallel
       run: |
@@ -439,7 +439,7 @@ jobs:
         wait
 
     - name: Build and push Docker images with enhanced caching
-      uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+      uses: docker/build-push-action@32945a339266b759abcbdc89316275140b0fc960 # v6.8.0
       with:
         context: .
         platforms: linux/amd64,linux/arm64
