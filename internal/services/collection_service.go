@@ -156,6 +156,7 @@ func (s *CollectionService) Delete(ctx context.Context, id int, deleteMovies boo
 		if err := s.db.GORM.WithContext(ctx).
 			Model(&models.Movie{}).
 			Where("collection_tmdb_id = ?", collection.TmdbID).
+			Select("collection_tmdb_id").
 			Update("collection_tmdb_id", nil).Error; err != nil {
 			s.logger.Error("Failed to remove collection reference from movies", "id", id, "error", err)
 			return fmt.Errorf("failed to update movies: %w", err)

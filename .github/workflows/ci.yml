@@ -169,7 +169,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
+        image: ${{ matrix.db == 'postgres' && 'postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c' || '' }}
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
@@ -180,10 +180,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - ${{ matrix.db == 'postgres' && '5432:5432' || '' }}
 
       mariadb:
-        image: mariadb:12@sha256:b30cc65b57a11a2e791ad5c06284e599fe9f1bf3fe9081a88d85bcf36389be4a
+        image: ${{ matrix.db == 'mariadb' && 'mariadb:12@sha256:b30cc65b57a11a2e791ad5c06284e599fe9f1bf3fe9081a88d85bcf36389be4a' || '' }}
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
@@ -195,7 +195,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
         ports:
-          - 3306:3306
+          - ${{ matrix.db == 'mariadb' && '3306:3306' || '' }}
 
     steps:
     - name: Checkout code

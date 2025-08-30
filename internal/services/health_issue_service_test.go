@@ -11,6 +11,11 @@ import (
 
 func TestHealthIssueService_CreateIssue(t *testing.T) {
 	db, log := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	// Clear any existing health issues from previous tests
+	db.GORM.Exec("DELETE FROM health_issues")
+
 	service := NewHealthIssueService(db, log)
 
 	// Create a test health issue
@@ -42,6 +47,11 @@ func TestHealthIssueService_CreateIssue(t *testing.T) {
 
 func TestHealthIssueService_CreateDuplicateIssue(t *testing.T) {
 	db, log := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	// Clear any existing health issues from previous tests
+	db.GORM.Exec("DELETE FROM health_issues")
+
 	service := NewHealthIssueService(db, log)
 
 	// Create initial issue
@@ -85,6 +95,11 @@ func TestHealthIssueService_CreateDuplicateIssue(t *testing.T) {
 
 func TestHealthIssueService_GetIssues(t *testing.T) {
 	db, log := setupTestDB(t)
+	defer cleanupTestDB(db)
+
+	// Clear any existing health issues from previous tests
+	db.GORM.Exec("DELETE FROM health_issues")
+
 	service := NewHealthIssueService(db, log)
 
 	// Create test issues and run tests
