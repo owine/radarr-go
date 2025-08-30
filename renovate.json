@@ -18,9 +18,12 @@
     "gomodTidy",
     "gomodUpdateImportPaths"
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
       "matchStrings": [
         "GO_VERSION:\\s*['\"]?(?<currentValue>[^'\"\\s]+)['\"]?"
       ],
