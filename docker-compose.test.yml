@@ -27,7 +27,7 @@ services:
 
   # MariaDB test database
   mariadb-test:
-    image: mariadb:11.4
+    image: mariadb:11.5@sha256:2d50fe0f77dac919396091e527e5e148a9de690e58f32875f113bef6506a17f5
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test
