@@ -159,6 +159,9 @@
     },
     {
       "description": "Security updates - immediate processing with highest priority",
+      "matchPackageNames": [
+        "*"
+      ],
       "isVulnerabilityAlert": true,
       "addLabels": [
         "security"
