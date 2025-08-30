@@ -1,0 +1,2169 @@
+openapi: 3.0.3
+info:
+  title: Radarr Go API
+  description: |
+    Complete REST API for Radarr Go - A high-performance movie collection manager built in Go.
+
+    ## Features
+    - **100% Radarr v3 API Compatibility** - Drop-in replacement for existing Radarr installations
+    - **150+ Endpoints** - Comprehensive movie management, quality profiles, download clients, and more
+    - **Real-time Updates** - WebSocket support for live status updates
+    - **High Performance** - Go-based implementation with optimized database operations
+    - **Multi-Database Support** - PostgreSQL and MariaDB supported
+
+    ## Authentication
+    All API endpoints (except `/ping`) require authentication via API key:
+    - **Header**: `X-API-Key: your-api-key-here`
+    - **Query Parameter**: `?apikey=your-api-key-here`
+
+    ## Base URL
+    All API endpoints are prefixed with `/api/v3/`
+
+    ## Response Format
+    - All responses are in JSON format
+    - Success responses include data and optional metadata
+    - Error responses include error details and codes
+    - Pagination is supported on list endpoints
+
+    ## Rate Limiting
+    - Default: 100 requests per minute per API key
+    - Health check endpoint is not rate limited
+    - Rate limit headers are included in responses
+
+  version: "1.0.0-go"
+  contact:
+    name: Radarr Go Project
+    url: https://github.com/radarr/radarr-go
+  license:
+    name: GPL-3.0
+    url: https://github.com/radarr/radarr-go/blob/main/LICENSE
+servers:
+  - url: http://localhost:7878/api/v3
+    description: Local development server
+  - url: https://your-radarr-instance.com/api/v3
+    description: Production server
+paths:
+  # Health and System
+  /ping:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      description: Simple health check that returns "pong" - does not require authentication
+      operationId: ping
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "pong"
+
+  /system/status:
+    get:
+      tags:
+        - System
+      summary: Get system status and information
+      description: Returns comprehensive system information including version, database type, authentication method, and runtime details
+      operationId: getSystemStatus
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      responses:
+        '200':
+          description: System status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Movies
+  /movie:
+    get:
+      tags:
+        - Movies
+      summary: List all movies
+      description: |
+        Retrieve all movies in the collection with optional filtering, sorting, and pagination.
+
+        ## Filtering Options
+        - `title` - Filter by movie title (partial match)
+        - `year` - Filter by release year
+        - `tmdbId` - Filter by TMDB ID
+        - `status` - Filter by movie status (tba, announced, inCinemas, released, deleted)
+        - `monitored` - Filter by monitored status (true/false)
+        - `hasFile` - Filter by file availability (true/false)
+        - `qualityProfileId` - Filter by quality profile ID
+        - `minimumAvailability` - Filter by minimum availability (tba, announced, inCinemas, released, preDB)
+
+        ## Sorting Options
+        - `title` - Sort by title
+        - `year` - Sort by release year
+        - `added` - Sort by date added
+        - `sortTitle` - Sort by sort title
+        - `status` - Sort by status
+        - `runtime` - Sort by runtime
+        - `popularity` - Sort by popularity score
+      operationId: getMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - name: title
+          in: query
+          description: Filter by movie title (partial match)
+          schema:
+            type: string
+        - name: year
+          in: query
+          description: Filter by release year
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2100
+        - name: tmdbId
+          in: query
+          description: Filter by TMDB ID
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: Filter by movie status
+          schema:
+            $ref: '#/components/schemas/MovieStatus'
+        - name: monitored
+          in: query
+          description: Filter by monitored status
+          schema:
+            type: boolean
+        - name: hasFile
+          in: query
+          description: Filter by file availability
+          schema:
+            type: boolean
+        - name: qualityProfileId
+          in: query
+          description: Filter by quality profile ID
+          schema:
+            type: integer
+        - name: minimumAvailability
+          in: query
+          description: Filter by minimum availability
+          schema:
+            $ref: '#/components/schemas/Availability'
+      responses:
+        '200':
+          description: List of movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Movies
+      summary: Add new movie to collection
+      description: Add a new movie to the collection with specified configuration
+      operationId: createMovie
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieCreateRequest'
+            examples:
+              basic_movie:
+                summary: Add basic movie
+                value:
+                  title: "Inception"
+                  tmdbId: 27205
+                  year: 2010
+                  qualityProfileId: 1
+                  rootFolderPath: "/movies"
+                  monitored: true
+                  minimumAvailability: "released"
+                  addOptions:
+                    monitor: true
+                    searchForMovie: true
+      responses:
+        '201':
+          description: Movie created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /movie/{id}:
+    get:
+      tags:
+        - Movies
+      summary: Get specific movie
+      description: Retrieve detailed information about a specific movie by ID
+      operationId: getMovie
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Movies
+      summary: Update existing movie
+      description: Update configuration and metadata for an existing movie
+      operationId: updateMovie
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieUpdateRequest'
+      responses:
+        '200':
+          description: Movie updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Movies
+      summary: Remove movie from collection
+      description: Remove a movie from the collection, optionally deleting associated files
+      operationId: deleteMovie
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie ID
+          schema:
+            type: integer
+        - name: deleteFiles
+          in: query
+          description: Whether to delete associated files
+          schema:
+            type: boolean
+            default: false
+        - name: addExclusion
+          in: query
+          description: Whether to add movie to exclusion list
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Movie deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /movie/lookup:
+    get:
+      tags:
+        - Movies
+      summary: Search for movies
+      description: Search external sources (TMDB) for movies to add to collection
+      operationId: searchMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: term
+          in: query
+          required: true
+          description: Search term (movie title, TMDB ID, or IMDB ID)
+          schema:
+            type: string
+            minLength: 1
+          example: "inception"
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /movie/lookup/tmdb:
+    get:
+      tags:
+        - Movies
+      summary: Get movie by TMDB ID
+      description: Retrieve movie information directly from TMDB by ID
+      operationId: getMovieByTmdbId
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: tmdbId
+          in: query
+          required: true
+          description: TMDB ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSearchResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /movie/popular:
+    get:
+      tags:
+        - Movies
+      summary: Get popular movies
+      description: Retrieve currently popular movies from TMDB for discovery
+      operationId: getPopularMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Popular movies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /movie/trending:
+    get:
+      tags:
+        - Movies
+      summary: Get trending movies
+      description: Retrieve currently trending movies from TMDB for discovery
+      operationId: getTrendingMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Trending movies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /movie/{id}/refresh:
+    put:
+      tags:
+        - Movies
+      summary: Refresh movie metadata
+      description: Trigger a refresh of movie metadata and images from TMDB
+      operationId: refreshMovie
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie ID
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: Refresh task queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Movie Files
+  /moviefile:
+    get:
+      tags:
+        - Movie Files
+      summary: List all movie files
+      description: Retrieve all movie files with metadata and quality information
+      operationId: getMovieFiles
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: movieId
+          in: query
+          description: Filter by movie ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of movie files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieFile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /moviefile/{id}:
+    get:
+      tags:
+        - Movie Files
+      summary: Get specific movie file
+      description: Retrieve detailed information about a specific movie file
+      operationId: getMovieFile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie file ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie file details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieFile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Movie Files
+      summary: Delete movie file
+      description: Delete a movie file from disk and remove from database
+      operationId: deleteMovieFile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Movie file ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie file deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Quality Profiles
+  /qualityprofile:
+    get:
+      tags:
+        - Quality
+      summary: List quality profiles
+      description: Retrieve all configured quality profiles
+      operationId: getQualityProfiles
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      responses:
+        '200':
+          description: List of quality profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QualityProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Quality
+      summary: Create quality profile
+      description: Create a new quality profile with specified settings
+      operationId: createQualityProfile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityProfileRequest'
+      responses:
+        '201':
+          description: Quality profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /qualityprofile/{id}:
+    get:
+      tags:
+        - Quality
+      summary: Get quality profile
+      description: Retrieve a specific quality profile by ID
+      operationId: getQualityProfile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quality profile ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Quality profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Quality
+      summary: Update quality profile
+      description: Update an existing quality profile
+      operationId: updateQualityProfile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quality profile ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityProfileRequest'
+      responses:
+        '200':
+          description: Quality profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Quality
+      summary: Delete quality profile
+      description: Delete a quality profile (cannot delete if in use by movies)
+      operationId: deleteQualityProfile
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Quality profile ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Quality profile deleted
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Collections
+  /collection:
+    get:
+      tags:
+        - Collections
+      summary: List movie collections
+      description: Retrieve all movie collections with optional filtering
+      operationId: getCollections
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: monitored
+          in: query
+          description: Filter by monitored status
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of collections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Collections
+      summary: Create movie collection
+      description: Create a new movie collection
+      operationId: createCollection
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionRequest'
+      responses:
+        '201':
+          description: Collection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /collection/{id}:
+    get:
+      tags:
+        - Collections
+      summary: Get specific collection
+      description: Retrieve detailed information about a specific collection
+      operationId: getCollection
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Collection ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Health Monitoring
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Get overall health status
+      description: Retrieve overall health status summary with key metrics
+      operationId: getHealth
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      responses:
+        '200':
+          description: Health status summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /health/dashboard:
+    get:
+      tags:
+        - Health
+      summary: Get complete health dashboard
+      description: Retrieve comprehensive health dashboard with all metrics and system information
+      operationId: getHealthDashboard
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      responses:
+        '200':
+          description: Complete health dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDashboard'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Calendar
+  /calendar:
+    get:
+      tags:
+        - Calendar
+      summary: Get calendar events
+      description: |
+        Retrieve calendar events for movies with release dates.
+
+        ## Date Filtering
+        - `start` - Start date for event range (ISO 8601)
+        - `end` - End date for event range (ISO 8601)
+        - `unmonitored` - Include unmonitored movies (default: false)
+
+        ## Event Types
+        Events are returned for:
+        - Movies in cinemas
+        - Physical releases
+        - Digital releases
+      operationId: getCalendar
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: start
+          in: query
+          description: Start date (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-01-01T00:00:00Z"
+        - name: end
+          in: query
+          description: End date (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-12-31T23:59:59Z"
+        - name: unmonitored
+          in: query
+          description: Include unmonitored movies
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarEvent'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /calendar/feed.ics:
+    get:
+      tags:
+        - Calendar
+      summary: Get iCal feed
+      description: |
+        Download RFC 5545 compliant iCal feed for external calendar applications.
+
+        ## Features
+        - RFC 5545 compliant format
+        - Supports all major calendar applications (Google Calendar, Outlook, Apple Calendar)
+        - Includes movie titles, release dates, and descriptions
+        - Updates automatically when movies are added/changed
+      operationId: getCalendarFeed
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: pastDays
+          in: query
+          description: Number of past days to include
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 365
+            default: 7
+        - name: futureDays
+          in: query
+          description: Number of future days to include
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 365
+            default: 28
+        - name: unmonitored
+          in: query
+          description: Include unmonitored movies
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: iCal feed
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+              example: |
+                BEGIN:VCALENDAR
+                VERSION:2.0
+                PRODID:-//Radarr Go//Radarr Go//EN
+                BEGIN:VEVENT
+                UID:movie-123-in-cinemas@radarr-go
+                DTSTART:20240301T000000Z
+                SUMMARY:Dune: Part Two - In Cinemas
+                DESCRIPTION:Science fiction epic sequel
+                END:VEVENT
+                END:VCALENDAR
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Wanted Movies
+  /wanted/missing:
+    get:
+      tags:
+        - Wanted
+      summary: Get missing movies
+      description: Retrieve list of monitored movies that are missing files
+      operationId: getMissingMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - name: includeAvailable
+          in: query
+          description: Include movies that are available but not downloaded
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Missing movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /wanted/cutoff:
+    get:
+      tags:
+        - Wanted
+      summary: Get cutoff unmet movies
+      description: Retrieve list of movies that haven't met their quality profile cutoff
+      operationId: getCutoffUnmetMovies
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+      responses:
+        '200':
+          description: Cutoff unmet movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: apikey
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    SortByParam:
+      name: sortBy
+      in: query
+      description: Field to sort by
+      schema:
+        type: string
+    SortDirectionParam:
+      name: sortDirection
+      in: query
+      description: Sort direction
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required - invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid API key"
+            code: "UNAUTHORIZED"
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Resource not found"
+            code: "NOT_FOUND"
+    BadRequestError:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid request data"
+            code: "BAD_REQUEST"
+            details: "Missing required field: title"
+    ConflictError:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Movie already exists"
+            code: "CONFLICT"
+
+  schemas:
+    # Core Models
+    Movie:
+      type: object
+      required:
+        - id
+        - title
+        - tmdbId
+        - titleSlug
+        - year
+        - qualityProfileId
+        - monitored
+        - minimumAvailability
+      properties:
+        id:
+          type: integer
+          description: Unique movie identifier
+          example: 123
+        title:
+          type: string
+          description: Movie title
+          example: "Inception"
+        originalTitle:
+          type: string
+          description: Original movie title
+          example: "Inception"
+        originalLanguage:
+          $ref: '#/components/schemas/Language'
+        alternateTitles:
+          type: array
+          items:
+            type: string
+          description: Alternative titles
+        year:
+          type: integer
+          description: Release year
+          example: 2010
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+          example: 27205
+        imdbId:
+          type: string
+          description: IMDB identifier
+          example: "tt1375666"
+        titleSlug:
+          type: string
+          description: URL-safe title slug
+          example: "inception-2010"
+        status:
+          $ref: '#/components/schemas/MovieStatus'
+        overview:
+          type: string
+          description: Movie plot summary
+        inCinemas:
+          type: string
+          format: date-time
+          description: Cinema release date
+          nullable: true
+        physicalRelease:
+          type: string
+          format: date-time
+          description: Physical media release date
+          nullable: true
+        digitalRelease:
+          type: string
+          format: date-time
+          description: Digital release date
+          nullable: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaImage'
+          description: Movie images and posters
+        website:
+          type: string
+          format: uri
+          description: Official movie website
+        youTubeTrailerId:
+          type: string
+          description: YouTube trailer ID
+        studio:
+          type: string
+          description: Production studio
+        path:
+          type: string
+          description: Local filesystem path
+        rootFolderPath:
+          type: string
+          description: Root folder path
+        qualityProfileId:
+          type: integer
+          description: Associated quality profile ID
+        hasFile:
+          type: boolean
+          description: Whether movie has downloaded file
+        movieFileId:
+          type: integer
+          description: Associated movie file ID
+          nullable: true
+        monitored:
+          type: boolean
+          description: Whether movie is monitored for downloads
+        minimumAvailability:
+          $ref: '#/components/schemas/Availability'
+        isAvailable:
+          type: boolean
+          description: Whether movie is currently available
+          readOnly: true
+        runtime:
+          type: integer
+          description: Runtime in minutes
+        certification:
+          type: string
+          description: Age rating/certification
+        genres:
+          type: array
+          items:
+            type: string
+          description: Movie genres
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tag IDs
+        ratings:
+          $ref: '#/components/schemas/Ratings'
+        popularity:
+          type: number
+          format: float
+          description: Popularity score
+        collection:
+          $ref: '#/components/schemas/Collection'
+        collectionTmdbId:
+          type: integer
+          nullable: true
+          description: Collection TMDB ID
+        movieFile:
+          $ref: '#/components/schemas/MovieFile'
+        added:
+          type: string
+          format: date-time
+          description: Date added to collection
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+
+    MovieCreateRequest:
+      type: object
+      required:
+        - title
+        - tmdbId
+        - year
+        - qualityProfileId
+        - rootFolderPath
+        - monitored
+        - minimumAvailability
+      properties:
+        title:
+          type: string
+          description: Movie title
+          minLength: 1
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+          minimum: 1
+        year:
+          type: integer
+          description: Release year
+          minimum: 1900
+          maximum: 2100
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+          minimum: 1
+        rootFolderPath:
+          type: string
+          description: Root folder path
+          minLength: 1
+        monitored:
+          type: boolean
+          description: Monitor for downloads
+          default: true
+        minimumAvailability:
+          $ref: '#/components/schemas/Availability'
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Tag IDs to apply
+        addOptions:
+          $ref: '#/components/schemas/AddOptions'
+
+    MovieUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Movie title
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+        monitored:
+          type: boolean
+          description: Monitor for downloads
+        minimumAvailability:
+          $ref: '#/components/schemas/Availability'
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Tag IDs
+        path:
+          type: string
+          description: Custom movie path
+
+    MovieSearchResult:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Movie title
+        originalTitle:
+          type: string
+          description: Original movie title
+        year:
+          type: integer
+          description: Release year
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+        imdbId:
+          type: string
+          description: IMDB identifier
+        titleSlug:
+          type: string
+          description: URL-safe title slug
+        overview:
+          type: string
+          description: Movie plot summary
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaImage'
+        genres:
+          type: array
+          items:
+            type: string
+        ratings:
+          $ref: '#/components/schemas/Ratings'
+        popularity:
+          type: number
+          format: float
+        inCinemas:
+          type: string
+          format: date-time
+          nullable: true
+        physicalRelease:
+          type: string
+          format: date-time
+          nullable: true
+        digitalRelease:
+          type: string
+          format: date-time
+          nullable: true
+        runtime:
+          type: integer
+        certification:
+          type: string
+        studio:
+          type: string
+
+    MovieList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    MovieFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Movie file ID
+        movieId:
+          type: integer
+          description: Associated movie ID
+        relativePath:
+          type: string
+          description: File path relative to root folder
+        path:
+          type: string
+          description: Full file path
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        dateAdded:
+          type: string
+          format: date-time
+          description: Date file was added
+        sceneName:
+          type: string
+          description: Scene release name
+        releaseGroup:
+          type: string
+          description: Release group
+        quality:
+          $ref: '#/components/schemas/QualityRevision'
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+        originalFilePath:
+          type: string
+          description: Original file path before import
+        qualityCutoffNotMet:
+          type: boolean
+          description: Whether quality cutoff is met
+
+    # Quality Management
+    QualityProfile:
+      type: object
+      required:
+        - id
+        - name
+        - cutoff
+        - items
+      properties:
+        id:
+          type: integer
+          description: Quality profile ID
+        name:
+          type: string
+          description: Profile name
+          minLength: 1
+          maxLength: 255
+        cutoff:
+          type: integer
+          description: Quality cutoff level
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+          description: Quality levels and groups
+        language:
+          type: string
+          description: Preferred language
+          default: "english"
+        upgradeAllowed:
+          type: boolean
+          description: Allow quality upgrades
+          default: true
+        minFormatScore:
+          type: integer
+          description: Minimum custom format score
+          default: 0
+        cutoffFormatScore:
+          type: integer
+          description: Custom format score cutoff
+          default: 0
+        formatItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFormatItem'
+          description: Custom format scoring
+
+    QualityProfileRequest:
+      type: object
+      required:
+        - name
+        - cutoff
+        - items
+      properties:
+        name:
+          type: string
+          description: Profile name
+          minLength: 1
+          maxLength: 255
+        cutoff:
+          type: integer
+          description: Quality cutoff level
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+        language:
+          type: string
+          description: Preferred language
+          default: "english"
+        upgradeAllowed:
+          type: boolean
+          description: Allow quality upgrades
+          default: true
+
+    QualityProfileItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Quality or group ID
+        name:
+          type: string
+          description: Quality or group name
+        allowed:
+          type: boolean
+          description: Whether this quality is allowed
+        quality:
+          $ref: '#/components/schemas/Quality'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+          description: Nested quality items (for groups)
+
+    Quality:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Quality ID
+        name:
+          type: string
+          description: Quality name
+        source:
+          type: string
+          description: Source type
+        resolution:
+          type: string
+          description: Resolution
+
+    QualityRevision:
+      type: object
+      properties:
+        quality:
+          $ref: '#/components/schemas/Quality'
+        revision:
+          $ref: '#/components/schemas/Revision'
+        customFormats:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFormat'
+
+    Revision:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: Revision version
+        real:
+          type: integer
+          description: Real revision number
+
+    CustomFormat:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Custom format ID
+        name:
+          type: string
+          description: Custom format name
+        includeCustomFormatWhenRenaming:
+          type: boolean
+          description: Include in file names
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFormatSpecification'
+
+    CustomFormatSpecification:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Specification name
+        implementation:
+          type: string
+          description: Implementation type
+        negate:
+          type: boolean
+          description: Negate the condition
+        required:
+          type: boolean
+          description: Required specification
+        fields:
+          type: object
+          description: Specification fields
+          additionalProperties: true
+
+    CustomFormatItem:
+      type: object
+      properties:
+        format:
+          type: integer
+          description: Custom format ID
+        name:
+          type: string
+          description: Custom format name
+        score:
+          type: integer
+          description: Score for this format
+
+    # Collections
+    Collection:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Collection ID
+        name:
+          type: string
+          description: Collection name
+        tmdbId:
+          type: integer
+          description: TMDB collection ID
+        overview:
+          type: string
+          description: Collection description
+        monitored:
+          type: boolean
+          description: Whether collection is monitored
+        qualityProfileId:
+          type: integer
+          description: Quality profile for new movies
+        rootFolderPath:
+          type: string
+          description: Root folder for collection movies
+        searchOnAdd:
+          type: boolean
+          description: Search when adding movies
+        minimumAvailability:
+          $ref: '#/components/schemas/Availability'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaImage'
+        movies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+        missingMovies:
+          type: integer
+          description: Number of missing movies
+          readOnly: true
+        totalMovies:
+          type: integer
+          description: Total movies in collection
+          readOnly: true
+
+    CollectionRequest:
+      type: object
+      required:
+        - name
+        - tmdbId
+        - qualityProfileId
+        - rootFolderPath
+        - monitored
+      properties:
+        name:
+          type: string
+          description: Collection name
+        tmdbId:
+          type: integer
+          description: TMDB collection ID
+        monitored:
+          type: boolean
+          description: Monitor collection
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+        rootFolderPath:
+          type: string
+          description: Root folder path
+        searchOnAdd:
+          type: boolean
+          default: false
+        minimumAvailability:
+          $ref: '#/components/schemas/Availability'
+
+    # Health Monitoring
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, warning, error]
+          description: Overall health status
+        version:
+          type: string
+          description: Application version
+        uptime:
+          type: integer
+          description: Uptime in seconds
+        timestamp:
+          type: string
+          format: date-time
+          description: Status check timestamp
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthIssue'
+        warnings:
+          type: integer
+          description: Number of warnings
+        errors:
+          type: integer
+          description: Number of errors
+
+    HealthDashboard:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStatus'
+        systemResources:
+          $ref: '#/components/schemas/SystemResources'
+        diskSpace:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiskSpace'
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceStatus'
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+
+    HealthIssue:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Issue identifier
+        type:
+          type: string
+          enum: [error, warning, info]
+        source:
+          type: string
+          description: Issue source component
+        message:
+          type: string
+          description: Issue description
+        details:
+          type: string
+          description: Detailed issue information
+        wikiUrl:
+          type: string
+          format: uri
+          description: Help documentation URL
+        timestamp:
+          type: string
+          format: date-time
+          description: Issue occurrence time
+
+    SystemResources:
+      type: object
+      properties:
+        cpuUsage:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memoryUsage:
+          type: integer
+          format: int64
+          description: Memory usage in bytes
+        memoryTotal:
+          type: integer
+          format: int64
+          description: Total memory in bytes
+        diskSpace:
+          type: integer
+          format: int64
+          description: Available disk space in bytes
+        diskTotal:
+          type: integer
+          format: int64
+          description: Total disk space in bytes
+        goroutines:
+          type: integer
+          description: Number of active goroutines
+        timestamp:
+          type: string
+          format: date-time
+
+    DiskSpace:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Disk path
+        label:
+          type: string
+          description: Disk label
+        freeSpace:
+          type: integer
+          format: int64
+          description: Free space in bytes
+        totalSpace:
+          type: integer
+          format: int64
+          description: Total space in bytes
+        percentUsed:
+          type: number
+          format: float
+          description: Percentage used
+
+    ServiceStatus:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Service name
+        status:
+          type: string
+          enum: [running, stopped, error]
+        message:
+          type: string
+          description: Status message
+        lastCheck:
+          type: string
+          format: date-time
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        responseTime:
+          type: object
+          properties:
+            min:
+              type: number
+              format: float
+            max:
+              type: number
+              format: float
+            avg:
+              type: number
+              format: float
+        throughput:
+          type: object
+          properties:
+            requestsPerSecond:
+              type: number
+              format: float
+        errorRate:
+          type: number
+          format: float
+        databaseConnections:
+          type: object
+          properties:
+            active:
+              type: integer
+            idle:
+              type: integer
+            total:
+              type: integer
+
+    # Calendar
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Event identifier
+        movieId:
+          type: integer
+          description: Associated movie ID
+        title:
+          type: string
+          description: Event title
+        start:
+          type: string
+          format: date-time
+          description: Event start time
+        end:
+          type: string
+          format: date-time
+          description: Event end time
+        eventType:
+          type: string
+          enum: [inCinemas, physicalRelease, digitalRelease]
+          description: Type of release event
+        movie:
+          $ref: '#/components/schemas/Movie'
+
+    # System
+    SystemStatus:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Application version
+          example: "1.0.0-go"
+        buildTime:
+          type: string
+          format: date-time
+          description: Build timestamp
+        isDebug:
+          type: boolean
+          description: Debug mode status
+        isProduction:
+          type: boolean
+          description: Production mode status
+        startupPath:
+          type: string
+          description: Application startup path
+        appData:
+          type: string
+          description: Application data directory
+        osName:
+          type: string
+          description: Operating system name
+        osVersion:
+          type: string
+          description: Operating system version
+        isLinux:
+          type: boolean
+          description: Linux platform indicator
+        isOsx:
+          type: boolean
+          description: macOS platform indicator
+        isWindows:
+          type: boolean
+          description: Windows platform indicator
+        mode:
+          type: string
+          description: Application mode
+        branch:
+          type: string
+          description: Git branch
+        authentication:
+          type: string
+          description: Authentication method
+        urlBase:
+          type: string
+          description: URL base path
+        runtimeVersion:
+          type: string
+          description: Go runtime version
+        databaseType:
+          type: string
+          description: Database type
+          enum: [postgres, mariadb]
+        databaseVersion:
+          type: string
+          description: Database version
+        migrationVersion:
+          type: integer
+          description: Current database migration version
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Task ID
+        name:
+          type: string
+          description: Task name
+        commandName:
+          type: string
+          description: Command name
+        message:
+          type: string
+          description: Task message
+        body:
+          type: object
+          description: Task parameters
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [low, normal, high]
+          description: Task priority
+        status:
+          type: string
+          enum: [queued, started, completed, failed, cancelled]
+          description: Task status
+        queued:
+          type: string
+          format: date-time
+          description: Queue timestamp
+        started:
+          type: string
+          format: date-time
+          description: Start timestamp
+          nullable: true
+        ended:
+          type: string
+          format: date-time
+          description: End timestamp
+          nullable: true
+        duration:
+          type: string
+          description: Task duration
+          nullable: true
+        exception:
+          type: string
+          description: Error message if failed
+          nullable: true
+
+    # Common Types
+    Language:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Language ID
+        name:
+          type: string
+          description: Language name
+          example: "English"
+
+    MediaImage:
+      type: object
+      properties:
+        coverType:
+          type: string
+          enum: [poster, fanart, banner, clearlogo, landscape, clearart, disc, screenshot]
+          description: Image type
+        url:
+          type: string
+          format: uri
+          description: Image URL
+        remoteUrl:
+          type: string
+          format: uri
+          description: Remote image URL
+
+    MediaInfo:
+      type: object
+      properties:
+        videoCodec:
+          type: string
+          description: Video codec
+        videoBitrate:
+          type: integer
+          description: Video bitrate
+        videoBitDepth:
+          type: integer
+          description: Video bit depth
+        width:
+          type: integer
+          description: Video width
+        height:
+          type: integer
+          description: Video height
+        audioFormat:
+          type: string
+          description: Audio format
+        audioCodec:
+          type: string
+          description: Audio codec
+        audioBitrate:
+          type: integer
+          description: Audio bitrate
+        audioChannels:
+          type: number
+          format: float
+          description: Audio channels
+        audioLanguages:
+          type: string
+          description: Audio languages
+        subtitles:
+          type: string
+          description: Subtitle languages
+        scanType:
+          type: string
+          description: Scan type (progressive/interlaced)
+        runTime:
+          type: string
+          description: Runtime formatted string
+
+    Ratings:
+      type: object
+      properties:
+        imdb:
+          $ref: '#/components/schemas/Rating'
+        tmdb:
+          $ref: '#/components/schemas/Rating'
+        metacritic:
+          $ref: '#/components/schemas/Rating'
+        rottenTomatoes:
+          $ref: '#/components/schemas/Rating'
+
+    Rating:
+      type: object
+      properties:
+        votes:
+          type: integer
+          description: Number of votes
+        value:
+          type: number
+          format: float
+          description: Rating value
+        type:
+          type: string
+          description: Rating type
+
+    AddOptions:
+      type: object
+      properties:
+        monitor:
+          type: boolean
+          description: Monitor movie after adding
+          default: true
+        searchForMovie:
+          type: boolean
+          description: Search for movie after adding
+          default: false
+        addMethod:
+          type: string
+          enum: [manual, list, collection]
+          description: Method used to add movie
+          default: "manual"
+
+    # Enums
+    MovieStatus:
+      type: string
+      enum: [tba, announced, inCinemas, released, deleted]
+      description: |
+        Movie status:
+        * `tba` - To be announced
+        * `announced` - Announced but not in cinemas
+        * `inCinemas` - Currently in theaters
+        * `released` - Released for home viewing
+        * `deleted` - Removed from collection
+
+    Availability:
+      type: string
+      enum: [tba, announced, inCinemas, released, preDB]
+      description: |
+        Minimum availability requirement:
+        * `tba` - To be announced
+        * `announced` - When announced
+        * `inCinemas` - When in cinemas
+        * `released` - When officially released
+        * `preDB` - Before database listing
+
+    # Common Response Types
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        page:
+          type: integer
+          description: Current page number
+        pageSize:
+          type: integer
+          description: Items per page
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: string
+          description: Detailed error information
+
+security:
+  - ApiKeyAuth: []
+  - ApiKeyQuery: []
+
+tags:
+  - name: System
+    description: System information and health checks
+  - name: Movies
+    description: Movie collection management
+  - name: Movie Files
+    description: Movie file operations
+  - name: Quality
+    description: Quality profiles and definitions
+  - name: Collections
+    description: Movie collection management
+  - name: Health
+    description: Health monitoring and diagnostics
+  - name: Calendar
+    description: Calendar events and iCal feeds
+  - name: Wanted
+    description: Wanted and missing movies tracking
