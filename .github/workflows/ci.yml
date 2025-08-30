@@ -25,7 +25,7 @@ jobs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -36,7 +36,7 @@ jobs:
     # Enhanced dependency caching
     - name: Cache Go modules and tools
       id: cache
-      uses: actions/cache@2cdf405574d6ef1f33a1d12acccd3ae82f47b3f2 # v4.1.0
+      uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
       with:
         path: |
           ~/.cache/go-build
@@ -87,7 +87,7 @@ jobs:
 
     - name: Upload SARIF file
       if: always()
-      uses: github/codeql-action/upload-sarif@e5f05b81d5b6ff8cfa111c80c22c5fd02a384118 # v3.23.0
+      uses: github/codeql-action/upload-sarif@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
       with:
         sarif_file: gosec.sarif
       continue-on-error: true
@@ -147,7 +147,7 @@ jobs:
         ls -la artifacts/
 
     - name: Store build artifacts
-      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
       with:
         name: build-artifacts
         path: artifacts/
@@ -203,7 +203,7 @@ jobs:
 
     # Reuse enhanced caching from previous job
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -212,7 +212,7 @@ jobs:
           go.work.sum
 
     - name: Restore Go modules and tools cache
-      uses: actions/cache@2cdf405574d6ef1f33a1d12acccd3ae82f47b3f2 # v4.1.0
+      uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
       with:
         path: |
           ~/.cache/go-build
@@ -258,7 +258,7 @@ jobs:
         RADARR_DATABASE_PASSWORD: test_password_123
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@05f5a9cfad807516dbbef9929c4a42df3eb78766 # v5.0.3
+      uses: codecov/codecov-action@985343d70564a82044c1b7fcb84c2fa05405c1a2 # v5.0.4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage-${{ matrix.db }}.out
@@ -314,10 +314,10 @@ jobs:
         path: ./artifacts
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      uses: docker/setup-buildx-action@4fd812986e6c8c2a69e18311145f9371337f27d4 # v3.4.0
 
     - name: Log in to Container Registry
-      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -325,7 +325,7 @@ jobs:
 
     - name: Extract metadata
       id: meta
-      uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4 # v5.3.0
+      uses: docker/metadata-action@9dc751fe249ad99385a2583ee0d084c400eee04e # v5.4.0
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
@@ -334,7 +334,7 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@31159d49c0d4756269a0940a750801a1ea5d7003 # v6.1.0
+      uses: docker/build-push-action@15560696de535e4014efeff63c48f16952e52dd1 # v6.2.0
       with:
         context: .
         platforms: linux/amd64,linux/arm64
@@ -349,7 +349,7 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Publish artifacts
-      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
       with:
         name: published-artifacts-${{ github.ref_name }}
         path: artifacts/
