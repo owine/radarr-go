@@ -17,6 +17,10 @@ jobs:
     name: Quality & Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     outputs:
       cache-key: ${{ steps.cache.outputs.cache-hit }}
 
