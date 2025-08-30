@@ -258,7 +258,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
+      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d562f3c9d8c71 # v4.6.2
       with:
         name: release-archives-all
         path: archives/
@@ -423,7 +423,7 @@ jobs:
 
     # Docker build in parallel with integration test prep
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+      uses: docker/setup-buildx-action@8026d2bc0a64ea1817870b0d7c7676a2806bbdc2 # v3.11.1
 
     - name: Log in to registries in parallel
       run: |
@@ -439,7 +439,7 @@ jobs:
         wait
 
     - name: Build and push Docker images with enhanced caching
-      uses: docker/build-push-action@32945a339266b759abcbdc89316275140b0fc960 # v6.8.0
+      uses: docker/build-push-action@63e08a77d6e6bd7e8a4fc7ae26da8e85ca95c1a0 # v6.18.0
       with:
         context: .
         platforms: linux/amd64,linux/arm64
