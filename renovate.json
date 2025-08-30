@@ -31,8 +31,12 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^(\\.github\\/workflows)\\/[^/]+\\.ya?ml$"],
-      "matchStrings": ["image: (?<depName>.*):(?<currentValue>.*)"],
+      "managerFilePatterns": [
+        "/^(\\.github\\/workflows)\\/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>.*):(?<currentValue>.*)"
+      ],
       "datasourceTemplate": "docker"
     }
   ],
