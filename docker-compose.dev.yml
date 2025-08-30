@@ -183,7 +183,7 @@ services:
 
   # Development monitoring and debugging
   adminer:
-    image: adminer:4.8.1
+    image: adminer:latest
     container_name: radarr-dev-adminer
     restart: unless-stopped
     ports:
@@ -213,7 +213,7 @@ services:
 
   # Development log aggregation
   jaeger:
-    image: jaegertracing/all-in-one:1.59
+    image: jaegertracing/all-in-one:1.60
     container_name: radarr-dev-jaeger
     restart: unless-stopped
     ports:
@@ -228,7 +228,7 @@ services:
 
   # Prometheus for metrics (development)
   prometheus:
-    image: prom/prometheus:v2.51.1
+    image: prom/prometheus:v2.54.1
     container_name: radarr-dev-prometheus
     restart: unless-stopped
     ports:
@@ -250,7 +250,7 @@ services:
 
   # Grafana for visualization (development)
   grafana:
-    image: grafana/grafana:10.2.9
+    image: grafana/grafana:11.2.0
     container_name: radarr-dev-grafana
     restart: unless-stopped
     ports:
@@ -277,7 +277,7 @@ volumes:
     driver: local
   redis_dev_data:
     driver: local
-  
+
   # Build cache volumes
   go_mod_cache:
     driver: local
@@ -285,7 +285,7 @@ volumes:
     driver: local
   frontend_node_modules:
     driver: local
-  
+
   # Monitoring volumes
   prometheus_dev_data:
     driver: local

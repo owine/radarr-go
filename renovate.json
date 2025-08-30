@@ -122,7 +122,7 @@
         "minor",
         "patch"
       ],
-      "groupName": "Docker dependencies",
+      "groupName": "Dockerfile dependencies",
       "automerge": true,
       "addLabels": [
         "docker"
@@ -139,7 +139,7 @@
         "minor",
         "patch"
       ],
-      "groupName": "Docker dependencies",
+      "groupName": "Docker Compose dependencies",
       "automerge": true,
       "addLabels": [
         "docker"
