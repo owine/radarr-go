@@ -228,7 +228,7 @@ services:
 
   # Prometheus for metrics (development)
   prometheus:
-    image: prom/prometheus:v2.55.0
+    image: prom/prometheus:v3.5.0
     container_name: radarr-dev-prometheus
     restart: unless-stopped
     ports:
@@ -250,7 +250,7 @@ services:
 
   # Grafana for visualization (development)
   grafana:
-    image: grafana/grafana:11.2.1
+    image: grafana/grafana:12.1.1
     container_name: radarr-dev-grafana
     restart: unless-stopped
     ports:
