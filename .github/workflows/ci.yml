@@ -7,8 +7,7 @@ on:
     branches: [ main, develop ]
 
 env:
-  # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.24' # renovate: datasource=golang-version depName=golang
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
