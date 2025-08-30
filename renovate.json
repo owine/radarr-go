@@ -93,10 +93,9 @@
       "pinDigests": true
     },
     {
-      "description": "Docker images - group minor and patch updates",
+      "description": "Dockerfile images - group minor and patch updates with SHA pinning",
       "matchManagers": [
-        "dockerfile",
-        "docker-compose"
+        "dockerfile"
       ],
       "matchUpdateTypes": [
         "minor",
@@ -105,9 +104,27 @@
       "groupName": "Docker images",
       "automerge": true,
       "addLabels": [
-        "docker"
+        "docker",
+        "dockerfile"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "Docker compose - group minor and patch updates without SHA pinning",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Docker compose",
+      "automerge": true,
+      "addLabels": [
+        "docker",
+        "compose"
+      ],
+      "pinDigests": false
     },
     {
       "description": "Docker major updates - separate PRs",
@@ -124,26 +141,6 @@
         "major"
       ],
       "pinDigests": true
-    },
-    {
-      "description": "All docker-compose files - patch updates without SHA pinning",
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "matchFileNames": [
-        "docker-compose.yml",
-        "docker-compose.dev.yml",
-        "docker-compose.test.yml"
-      ],
-      "matchUpdateTypes": [
-        "patch"
-      ],
-      "automerge": true,
-      "addLabels": [
-        "docker",
-        "compose"
-      ],
-      "pinDigests": false
     },
     {
       "description": "Go version updates in GitHub Actions - auto-merge patch updates",
