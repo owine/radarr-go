@@ -1,0 +1,20 @@
+-- Rollback Complete Database Schema Refactor for MySQL/MariaDB
+-- This migration rollback drops the refactored schema
+
+-- Disable foreign key checks
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Drop the refactored tables
+DROP TABLE IF EXISTS movies;
+DROP TABLE IF EXISTS collections;
+DROP TABLE IF EXISTS quality_profiles;
+DROP TABLE IF EXISTS health_issues;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS scheduled_tasks;
+DROP TABLE IF EXISTS app_config;
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- Note: Original schema restoration would need to be done manually
+-- or by running previous migration files in sequence

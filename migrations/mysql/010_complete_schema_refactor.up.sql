@@ -1,0 +1,279 @@
+-- Complete Database Schema Refactor for MySQL/MariaDB
+-- This migration completely rebuilds the database with simplified, clean architecture
+-- Backwards compatibility is NOT maintained - this is a fresh start
+
+-- Disable foreign key checks temporarily
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- Drop existing tables to start clean
+DROP TABLE IF EXISTS movies;
+DROP TABLE IF EXISTS movie_files;
+DROP TABLE IF EXISTS collections;
+DROP TABLE IF EXISTS health_issues;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS scheduled_tasks;
+DROP TABLE IF EXISTS quality_profiles;
+DROP TABLE IF EXISTS quality_definitions;
+DROP TABLE IF EXISTS releases;
+DROP TABLE IF EXISTS queue_items;
+DROP TABLE IF EXISTS download_clients;
+DROP TABLE IF EXISTS download_history;
+DROP TABLE IF EXISTS indexers;
+DROP TABLE IF EXISTS import_lists;
+DROP TABLE IF EXISTS import_list_movies;
+DROP TABLE IF EXISTS import_list_exclusions;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS history;
+DROP TABLE IF EXISTS activity;
+DROP TABLE IF EXISTS host_config;
+DROP TABLE IF EXISTS naming_config;
+DROP TABLE IF EXISTS media_management_config;
+DROP TABLE IF EXISTS root_folders;
+DROP TABLE IF EXISTS task_queues;
+DROP TABLE IF EXISTS parse_cache;
+DROP TABLE IF EXISTS performance_metrics;
+
+-- ============================================================================
+-- CORE SIMPLIFIED SCHEMA FOR MYSQL/MARIADB
+-- ============================================================================
+
+-- Movies table (simplified, minimal validation)
+CREATE TABLE movies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tmdb_id INT NOT NULL,
+    imdb_id VARCHAR(20),
+    title VARCHAR(500) NOT NULL,
+    title_slug VARCHAR(500) NOT NULL,
+    original_title VARCHAR(500),
+    overview TEXT,
+    year INT,
+    runtime INT,
+    status VARCHAR(20) DEFAULT 'tba',
+
+    -- File information
+    has_file BOOLEAN DEFAULT FALSE,
+    file_path VARCHAR(1000),
+    file_size BIGINT DEFAULT 0,
+
+    -- Configuration
+    monitored BOOLEAN DEFAULT TRUE,
+    quality_profile_id INT NOT NULL DEFAULT 1,
+    minimum_availability VARCHAR(20) DEFAULT 'announced',
+
+    -- Collection relationship (simple integer reference)
+    collection_id INT,
+
+    -- Metadata (JSON for flexibility)
+    images JSON,
+    genres JSON,
+    tags JSON,
+    ratings JSON,
+
+    -- Dates
+    in_cinemas TIMESTAMP NULL,
+    physical_release TIMESTAMP NULL,
+    digital_release TIMESTAMP NULL,
+    added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    UNIQUE KEY idx_movies_tmdb_id (tmdb_id),
+    UNIQUE KEY idx_movies_title_slug (title_slug),
+    KEY idx_movies_monitored (monitored),
+    KEY idx_movies_has_file (has_file),
+    KEY idx_movies_collection_id (collection_id),
+    KEY idx_movies_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Collections table (drastically simplified)
+CREATE TABLE collections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tmdb_id INT NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    overview TEXT,
+
+    -- Configuration
+    monitored BOOLEAN DEFAULT TRUE,
+    quality_profile_id INT NOT NULL DEFAULT 1,
+    minimum_availability VARCHAR(20) DEFAULT 'announced',
+
+    -- Metadata
+    images JSON,
+    tags JSON,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    UNIQUE KEY idx_collections_tmdb_id (tmdb_id),
+    KEY idx_collections_monitored (monitored)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Quality profiles table (simplified)
+CREATE TABLE quality_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    cutoff INT NOT NULL DEFAULT 1,
+    items JSON NOT NULL,
+    language VARCHAR(50) DEFAULT 'english',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    UNIQUE KEY idx_quality_profiles_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Health issues table (simplified)
+CREATE TABLE health_issues (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    severity ENUM('info', 'warning', 'error', 'critical') NOT NULL,
+    message TEXT NOT NULL,
+
+    -- Status
+    is_resolved BOOLEAN DEFAULT FALSE,
+    is_dismissed BOOLEAN DEFAULT FALSE,
+
+    -- Metadata
+    details JSON,
+
+    -- Timestamps
+    first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    KEY idx_health_issues_type (type),
+    KEY idx_health_issues_severity (severity),
+    KEY idx_health_issues_resolved (is_resolved),
+    KEY idx_health_issues_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tasks table (simplified)
+CREATE TABLE tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    command_name VARCHAR(255) NOT NULL,
+
+    -- Status and execution
+    status ENUM('queued', 'started', 'completed', 'failed', 'aborted') NOT NULL DEFAULT 'queued',
+    priority ENUM('high', 'normal', 'low') NOT NULL DEFAULT 'normal',
+
+    -- Timing
+    queued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP NULL,
+    ended_at TIMESTAMP NULL,
+    duration_ms BIGINT,
+
+    -- Data and results
+    body JSON,
+    result JSON,
+    error_message TEXT,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    KEY idx_tasks_status (status),
+    KEY idx_tasks_priority (priority),
+    KEY idx_tasks_queued_at (queued_at),
+    KEY idx_tasks_command_name (command_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Scheduled tasks table (simplified)
+CREATE TABLE scheduled_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    command_name VARCHAR(255) NOT NULL,
+
+    -- Configuration
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    interval_ms BIGINT NOT NULL,
+    priority ENUM('high', 'normal', 'low') NOT NULL DEFAULT 'normal',
+
+    -- Scheduling
+    last_run TIMESTAMP NULL,
+    next_run TIMESTAMP NOT NULL,
+
+    -- Data
+    body JSON,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    UNIQUE KEY idx_scheduled_tasks_name (name),
+    KEY idx_scheduled_tasks_enabled (enabled),
+    KEY idx_scheduled_tasks_next_run (next_run)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- App configuration table
+CREATE TABLE app_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL,
+    config_value JSON,
+    description TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Indexes
+    UNIQUE KEY idx_app_config_key (config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- SIMPLE FOREIGN KEY RELATIONSHIPS
+-- ============================================================================
+
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- Movie to collection relationship (soft reference)
+ALTER TABLE movies
+ADD CONSTRAINT fk_movies_collection
+FOREIGN KEY (collection_id) REFERENCES collections(id)
+ON DELETE SET NULL;
+
+-- Movie to quality profile
+ALTER TABLE movies
+ADD CONSTRAINT fk_movies_quality_profile
+FOREIGN KEY (quality_profile_id) REFERENCES quality_profiles(id)
+ON DELETE RESTRICT;
+
+-- Collection to quality profile
+ALTER TABLE collections
+ADD CONSTRAINT fk_collections_quality_profile
+FOREIGN KEY (quality_profile_id) REFERENCES quality_profiles(id)
+ON DELETE RESTRICT;
+
+-- ============================================================================
+-- DEFAULT DATA
+-- ============================================================================
+
+-- Insert default quality profile
+INSERT INTO quality_profiles (id, name, cutoff, items, language) VALUES
+(1, 'Any', 1, '[{"quality": {"id": 1, "name": "Unknown"}, "allowed": true}]', 'english')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- Insert default scheduled tasks
+INSERT INTO scheduled_tasks (name, command_name, interval_ms, priority, enabled, next_run) VALUES
+    ('Health Check', 'HealthCheck', 1800000, 'low', true, DATE_ADD(NOW(), INTERVAL 30 MINUTE)),
+    ('Cleanup Tasks', 'Cleanup', 86400000, 'low', true, DATE_ADD(NOW(), INTERVAL 1 DAY))
+ON DUPLICATE KEY UPDATE enabled = VALUES(enabled);
+
+-- Insert default configuration
+INSERT INTO app_config (config_key, config_value, description) VALUES
+    ('database.version', '"10"', 'Database schema version'),
+    ('server.port', '7878', 'Default server port'),
+    ('health.check_interval', '1800000', 'Health check interval in milliseconds')
+ON DUPLICATE KEY UPDATE config_value = VALUES(config_value);
