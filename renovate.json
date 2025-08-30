@@ -30,6 +30,18 @@
       "depNameTemplate": "golang",
       "datasourceTemplate": "golang-version",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/"
+      ],
+      "matchStrings": [
+        "ARG GO_VERSION=(?<currentValue>\\d+\\.\\d+(?:\\.\\d+)?)"
+      ],
+      "depNameTemplate": "golang",
+      "datasourceTemplate": "golang-version",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
