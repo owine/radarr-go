@@ -1,3 +1,5 @@
+// Package testhelpers provides utilities for setting up and managing test databases,
+// including containerized PostgreSQL and MariaDB instances for integration testing.
 package testhelpers
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/radarr/radarr-go/internal/database"
 	"github.com/radarr/radarr-go/internal/logger"
 
+	// Database drivers required for test database connections
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -23,6 +26,11 @@ const (
 	defaultConnectionTimeout  = 30 * time.Second
 	defaultHealthCheckRetries = 30
 	healthCheckInterval       = 1 * time.Second
+
+	// Database type constants
+	dbTypePostgres = "postgres"
+	dbTypeMariaDB  = "mariadb"
+	dbTypeMySQL    = "mysql"
 )
 
 // TestDatabase represents a test database configuration
@@ -55,7 +63,7 @@ func GetTestDatabases() []TestDatabase {
 		}
 
 		databases = append(databases, TestDatabase{
-			Type:     "postgres",
+			Type:     dbTypePostgres,
 			Host:     host,
 			Port:     port,
 			Database: "radarr_test",
@@ -80,13 +88,16 @@ func GetTestDatabases() []TestDatabase {
 		}
 
 		databases = append(databases, TestDatabase{
-			Type:     "mariadb",
+			Type:     dbTypeMariaDB,
 			Host:     host,
 			Port:     port,
 			Database: "radarr_test",
 			Username: "radarr_test",
 			Password: "test_password",
-			DSN:      fmt.Sprintf("radarr_test:test_password@tcp(%s:%d)/radarr_test?charset=utf8mb4&parseTime=True&loc=Local", host, port),
+			DSN: fmt.Sprintf(
+				"radarr_test:test_password@tcp(%s:%d)/radarr_test?charset=utf8mb4&parseTime=True&loc=Local",
+				host, port,
+			),
 		})
 	}
 
@@ -173,11 +184,11 @@ func waitForDatabase(t *testing.T, testDB TestDatabase) bool {
 
 	var driverName, dsn string
 	switch testDB.Type {
-	case "postgres":
+	case dbTypePostgres:
 		driverName = "pgx"
 		dsn = testDB.DSN
-	case "mariadb", "mysql":
-		driverName = "mysql"
+	case dbTypeMariaDB, dbTypeMySQL:
+		driverName = dbTypeMySQL
 		dsn = testDB.DSN
 	default:
 		t.Fatalf("Unsupported database type: %s", testDB.Type)
@@ -193,12 +204,16 @@ func waitForDatabase(t *testing.T, testDB TestDatabase) bool {
 
 		db, err := sql.Open(driverName, dsn)
 		if err == nil {
-			if err := db.Ping(); err == nil {
-				db.Close()
+			if err := db.PingContext(ctx); err == nil {
+				if closeErr := db.Close(); closeErr != nil {
+					t.Logf("Warning: failed to close database connection: %v", closeErr)
+				}
 				t.Logf("Test database %s is ready", testDB.Type)
 				return true
 			}
-			db.Close()
+			if closeErr := db.Close(); closeErr != nil {
+				t.Logf("Warning: failed to close database connection: %v", closeErr)
+			}
 		}
 
 		t.Logf("Waiting for test database %s to be ready (attempt %d/%d)...", testDB.Type, i+1, defaultHealthCheckRetries)
@@ -231,9 +246,9 @@ func cleanupTestData(t *testing.T, db *database.Database, dbType string) {
 	for _, table := range tables {
 		var query string
 		switch dbType {
-		case "postgres":
+		case dbTypePostgres:
 			query = fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", table)
-		case "mariadb", "mysql":
+		case dbTypeMariaDB, dbTypeMySQL:
 			query = fmt.Sprintf("TRUNCATE TABLE %s", table)
 		}
 
@@ -259,11 +274,17 @@ func isTestContainerRunning(containerName string) bool {
 
 // isPortOpen checks if a TCP port is open
 func isPortOpen(host string, port int) bool {
-	timeout := 1 * time.Second
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(port)), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(port)))
 	if err != nil {
 		return false
 	}
-	defer conn.Close()
+	if closeErr := conn.Close(); closeErr != nil {
+		// Log error but still return true since we successfully connected
+		return true
+	}
 	return true
 }

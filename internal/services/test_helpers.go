@@ -10,7 +10,14 @@ import (
 	"github.com/radarr/radarr-go/internal/testhelpers"
 )
 
-const ciEnvTrue = "true"
+const (
+	ciEnvTrue = "true"
+
+	// Database type constants for services package
+	serviceDbTypePostgres = "postgres"
+	serviceDbTypeMariaDB  = "mariadb"
+	serviceDbTypeMySQL    = "mysql"
+)
 
 // setupTestDB creates a test database and logger for testing
 // It now uses containerized test databases instead of requiring manual setup
@@ -21,7 +28,7 @@ func setupTestDB(t *testing.T) (*database.Database, *logger.Logger) {
 	dbType := os.Getenv("RADARR_TEST_DATABASE_TYPE")
 	if dbType == "" {
 		// Default to PostgreSQL for tests
-		dbType = "postgres"
+		dbType = serviceDbTypePostgres
 	}
 
 	// Try to set up the requested database type first
@@ -33,12 +40,12 @@ func setupTestDB(t *testing.T) (*database.Database, *logger.Logger) {
 	// If the requested type failed, try the other database type
 	var fallbackType string
 	switch dbType {
-	case "postgres":
-		fallbackType = "mariadb"
-	case "mariadb", "mysql":
-		fallbackType = "postgres"
+	case serviceDbTypePostgres:
+		fallbackType = serviceDbTypeMariaDB
+	case serviceDbTypeMariaDB, serviceDbTypeMySQL:
+		fallbackType = serviceDbTypePostgres
 	default:
-		fallbackType = "postgres"
+		fallbackType = serviceDbTypePostgres
 	}
 
 	db, log = testhelpers.SetupTestDatabase(t, fallbackType)
@@ -67,7 +74,7 @@ func setupTestDBForBenchmark(b *testing.B) (*database.Database, *logger.Logger) 
 	dbType := os.Getenv("RADARR_TEST_DATABASE_TYPE")
 	if dbType == "" {
 		// Default to PostgreSQL for benchmarks
-		dbType = "postgres"
+		dbType = serviceDbTypePostgres
 	}
 
 	// Try to set up the requested database type first
@@ -79,12 +86,12 @@ func setupTestDBForBenchmark(b *testing.B) (*database.Database, *logger.Logger) 
 	// If the requested type failed, try the other database type
 	var fallbackType string
 	switch dbType {
-	case "postgres":
-		fallbackType = "mariadb"
-	case "mariadb", "mysql":
-		fallbackType = "postgres"
+	case serviceDbTypePostgres:
+		fallbackType = serviceDbTypeMariaDB
+	case serviceDbTypeMariaDB, serviceDbTypeMySQL:
+		fallbackType = serviceDbTypePostgres
 	default:
-		fallbackType = "postgres"
+		fallbackType = serviceDbTypePostgres
 	}
 
 	db, log = setupTestDatabaseForBenchmark(b, fallbackType)
@@ -118,7 +125,7 @@ func setupTestDatabaseForBenchmark(b *testing.B, dbType string) (*database.Datab
 	}
 
 	// Simple wait approach for benchmarks
-	if !waitForDatabaseSimple(testDB) {
+	if !waitForDatabaseSimple() {
 		b.Fatalf("Test database %s not ready after timeout", dbType)
 	}
 
@@ -156,7 +163,7 @@ func setupTestDatabaseForBenchmark(b *testing.B, dbType string) (*database.Datab
 }
 
 // waitForDatabaseSimple is a simple database ready check without fancy interfaces
-func waitForDatabaseSimple(testDB *testhelpers.TestDatabase) bool {
+func waitForDatabaseSimple() bool {
 	// For benchmarks, just assume databases are ready after starting containers
 	return true
 }
