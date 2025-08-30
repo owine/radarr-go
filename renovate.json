@@ -93,23 +93,6 @@
       "pinDigests": true
     },
     {
-      "description": "Dockerfile images - group minor and patch updates with SHA pinning",
-      "matchManagers": [
-        "dockerfile"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Docker images",
-      "automerge": true,
-      "addLabels": [
-        "docker",
-        "dockerfile"
-      ],
-      "pinDigests": true
-    },
-    {
       "description": "Docker compose - group minor and patch updates without SHA pinning",
       "matchManagers": [
         "docker-compose"
@@ -125,6 +108,23 @@
         "compose"
       ],
       "pinDigests": false
+    },
+    {
+      "description": "Dockerfile images - group minor and patch updates with SHA pinning",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Docker images",
+      "automerge": true,
+      "addLabels": [
+        "docker",
+        "dockerfile"
+      ],
+      "pinDigests": true
     },
     {
       "description": "Docker major updates - separate PRs",
