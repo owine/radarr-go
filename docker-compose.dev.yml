@@ -115,7 +115,7 @@ services:
 
   # MariaDB development database (alternative)
   mariadb-dev:
-    image: mariadb:11.5
+    image: mariadb:11.6
     container_name: radarr-dev-mariadb
     restart: unless-stopped
     environment:
@@ -213,7 +213,7 @@ services:
 
   # Development log aggregation
   jaeger:
-    image: jaegertracing/all-in-one:1.54
+    image: jaegertracing/all-in-one:1.55
     container_name: radarr-dev-jaeger
     restart: unless-stopped
     ports:
@@ -228,7 +228,7 @@ services:
 
   # Prometheus for metrics (development)
   prometheus:
-    image: prom/prometheus:v2.49.0
+    image: prom/prometheus:v2.49.1
     container_name: radarr-dev-prometheus
     restart: unless-stopped
     ports:
@@ -250,7 +250,7 @@ services:
 
   # Grafana for visualization (development)
   grafana:
-    image: grafana/grafana:10.2.4
+    image: grafana/grafana:10.2.5
     container_name: radarr-dev-grafana
     restart: unless-stopped
     ports:
