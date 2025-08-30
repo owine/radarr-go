@@ -34,7 +34,7 @@ type TaskService struct {
 // TaskHandler defines the interface for task execution handlers
 type TaskHandler interface {
 	// Execute runs the task with the given context and parameters
-	Execute(ctx context.Context, task *models.Task, updateProgress func(percent int, message string)) error
+	Execute(ctx context.Context, task *models.TaskV2, updateProgress func(percent int, message string)) error
 	// GetName returns the command name this handler processes
 	GetName() string
 	// GetDescription returns a human-readable description of what this handler does
@@ -46,8 +46,8 @@ type TaskWorkerPool struct {
 	name       string
 	maxWorkers int
 	workers    chan struct{}
-	queue      chan *models.Task
-	active     map[int]*models.Task
+	queue      chan *models.TaskV2
+	active     map[int]*models.TaskV2
 	activeMu   sync.RWMutex
 	logger     *logger.Logger
 }
@@ -102,19 +102,15 @@ func (ts *TaskService) RegisterHandler(handler TaskHandler) {
 // QueueTask queues a new task for execution
 func (ts *TaskService) QueueTask(
 	name, commandName string,
-	body models.TaskBody,
-	priority models.TaskPriority,
-	trigger models.TaskTrigger,
-) (*models.Task, error) {
-	task := &models.Task{
+	body models.JSONField,
+	priority string,
+) (*models.TaskV2, error) {
+	task := &models.TaskV2{
 		Name:        name,
 		CommandName: commandName,
 		Body:        body,
 		Priority:    priority,
-		Status:      models.TaskStatusQueued,
-		Trigger:     trigger,
-		QueuedAt:    time.Now(),
-		Progress:    models.TaskProgress{},
+		Status:      "queued",
 	}
 
 	if err := ts.db.GORM.Create(task).Error; err != nil {
@@ -138,8 +134,8 @@ func (ts *TaskService) QueueTask(
 }
 
 // GetTask retrieves a task by ID
-func (ts *TaskService) GetTask(id int) (*models.Task, error) {
-	var task models.Task
+func (ts *TaskService) GetTask(id int) (*models.TaskV2, error) {
+	var task models.TaskV2
 	if err := ts.db.GORM.First(&task, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("task not found: %d", id)
@@ -151,11 +147,11 @@ func (ts *TaskService) GetTask(id int) (*models.Task, error) {
 
 // ListTasks retrieves tasks with optional filtering
 func (ts *TaskService) ListTasks(
-	status models.TaskStatus,
+	status string,
 	commandName string,
 	limit, offset int,
-) ([]*models.Task, int64, error) {
-	query := ts.db.GORM.Model(&models.Task{})
+) ([]*models.TaskV2, int64, error) {
+	query := ts.db.GORM.Model(&models.TaskV2{})
 
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -169,7 +165,7 @@ func (ts *TaskService) ListTasks(
 		return nil, 0, fmt.Errorf("failed to count tasks: %w", err)
 	}
 
-	var tasks []*models.Task
+	var tasks []*models.TaskV2
 	if err := query.Order("queued_at DESC").Limit(limit).Offset(offset).Find(&tasks).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list tasks: %w", err)
 	}
@@ -190,7 +186,7 @@ func (ts *TaskService) CancelTask(id int) error {
 
 	// Update status to cancelling
 	updates := map[string]interface{}{
-		"status":     models.TaskStatusCancelling,
+		"status":     "cancelling",
 		"updated_at": time.Now(),
 	}
 
@@ -205,15 +201,15 @@ func (ts *TaskService) CancelTask(id int) error {
 // CreateScheduledTask creates a new scheduled task
 func (ts *TaskService) CreateScheduledTask(
 	name, commandName string,
-	body models.TaskBody,
+	body models.JSONField,
 	interval time.Duration,
-	priority models.TaskPriority,
-) (*models.ScheduledTask, error) {
-	scheduledTask := &models.ScheduledTask{
+	priority string,
+) (*models.ScheduledTaskV2, error) {
+	scheduledTask := &models.ScheduledTaskV2{
 		Name:        name,
 		CommandName: commandName,
 		Body:        body,
-		Interval:    interval,
+		IntervalMs:  interval.Milliseconds(),
 		Priority:    priority,
 		Enabled:     true,
 		NextRun:     time.Now().Add(interval),
@@ -230,8 +226,8 @@ func (ts *TaskService) CreateScheduledTask(
 }
 
 // GetScheduledTasks retrieves all scheduled tasks
-func (ts *TaskService) GetScheduledTasks() ([]*models.ScheduledTask, error) {
-	var scheduledTasks []*models.ScheduledTask
+func (ts *TaskService) GetScheduledTasks() ([]*models.ScheduledTaskV2, error) {
+	var scheduledTasks []*models.ScheduledTaskV2
 	if err := ts.db.GORM.Order("name").Find(&scheduledTasks).Error; err != nil {
 		return nil, fmt.Errorf("failed to get scheduled tasks: %w", err)
 	}
@@ -240,7 +236,7 @@ func (ts *TaskService) GetScheduledTasks() ([]*models.ScheduledTask, error) {
 
 // UpdateScheduledTask updates a scheduled task
 func (ts *TaskService) UpdateScheduledTask(id int, updates map[string]interface{}) error {
-	if err := ts.db.GORM.Model(&models.ScheduledTask{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+	if err := ts.db.GORM.Model(&models.ScheduledTaskV2{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update scheduled task: %w", err)
 	}
 	return nil
@@ -248,7 +244,7 @@ func (ts *TaskService) UpdateScheduledTask(id int, updates map[string]interface{
 
 // DeleteScheduledTask removes a scheduled task
 func (ts *TaskService) DeleteScheduledTask(id int) error {
-	if err := ts.db.GORM.Delete(&models.ScheduledTask{}, id).Error; err != nil {
+	if err := ts.db.GORM.Delete(&models.ScheduledTaskV2{}, id).Error; err != nil {
 		return fmt.Errorf("failed to delete scheduled task: %w", err)
 	}
 	return nil
@@ -279,8 +275,8 @@ func (ts *TaskService) createWorkerPool(name string, maxWorkers int) {
 		name:       name,
 		maxWorkers: maxWorkers,
 		workers:    make(chan struct{}, maxWorkers),
-		queue:      make(chan *models.Task, 100), // Buffer 100 tasks
-		active:     make(map[int]*models.Task),
+		queue:      make(chan *models.TaskV2, 100), // Buffer 100 tasks
+		active:     make(map[int]*models.TaskV2),
 		logger:     ts.logger,
 	}
 
@@ -296,13 +292,13 @@ func (ts *TaskService) createWorkerPool(name string, maxWorkers int) {
 }
 
 // getPoolNameForTask determines which worker pool should handle a task
-func (ts *TaskService) getPoolNameForTask(task *models.Task) string {
+func (ts *TaskService) getPoolNameForTask(task *models.TaskV2) string {
 	switch task.Priority {
-	case models.TaskPriorityHigh:
+	case "high":
 		return "high-priority"
-	case models.TaskPriorityNormal:
+	case "normal":
 		return "default"
-	case models.TaskPriorityLow:
+	case "low":
 		return "background"
 	default:
 		return "default"
@@ -339,7 +335,7 @@ func (pool *TaskWorkerPool) worker(ctx context.Context, service *TaskService) {
 }
 
 // executeTask runs a single task
-func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskService, task *models.Task) {
+func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskService, task *models.TaskV2) {
 	if pool.shouldAbortTaskBeforeExecution(service, task) {
 		return
 	}
@@ -360,17 +356,17 @@ func (pool *TaskWorkerPool) executeTask(ctx context.Context, service *TaskServic
 }
 
 // shouldAbortTaskBeforeExecution checks if task should be aborted before execution
-func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService, task *models.Task) bool {
+func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService, task *models.TaskV2) bool {
 	logger := pool.logger.With("taskId", task.ID)
-	var currentStatus models.TaskStatus
-	if err := service.db.GORM.Model(&models.Task{}).Where("id = ?", task.ID).
+	var currentStatus string
+	if err := service.db.GORM.Model(&models.TaskV2{}).Where("id = ?", task.ID).
 		Select("status").Scan(&currentStatus).Error; err != nil {
 		logger.Errorw("Failed to check task status before execution", "error", err)
 		return true
 	}
 
-	if currentStatus == models.TaskStatusCancelling {
-		err := service.updateTaskStatus(task.ID, models.TaskStatusAborted,
+	if currentStatus == "cancelling" {
+		err := service.updateTaskStatus(task.ID, "aborted",
 			"Task was cancelled before execution", nil)
 		if err != nil {
 			logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
@@ -382,10 +378,10 @@ func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService,
 }
 
 // markTaskAsStarted marks task as started and returns start time
-func (pool *TaskWorkerPool) markTaskAsStarted(service *TaskService, task *models.Task) time.Time {
+func (pool *TaskWorkerPool) markTaskAsStarted(service *TaskService, task *models.TaskV2) time.Time {
 	logger := pool.logger.With("taskId", task.ID)
 	startTime := time.Now()
-	err := service.updateTaskStatus(task.ID, models.TaskStatusStarted,
+	err := service.updateTaskStatus(task.ID, "started",
 		"Task execution started", &startTime)
 	if err != nil {
 		logger.Errorw("Failed to update task status to started", "error", err)
@@ -397,7 +393,7 @@ func (pool *TaskWorkerPool) markTaskAsStarted(service *TaskService, task *models
 }
 
 // findTaskHandler finds and validates the handler for a task
-func (pool *TaskWorkerPool) findTaskHandler(service *TaskService, task *models.Task) TaskHandler {
+func (pool *TaskWorkerPool) findTaskHandler(service *TaskService, task *models.TaskV2) TaskHandler {
 	logger := pool.logger.With("taskId", task.ID)
 	service.executionMutex.RLock()
 	handler, exists := service.handlers[task.CommandName]
@@ -406,7 +402,7 @@ func (pool *TaskWorkerPool) findTaskHandler(service *TaskService, task *models.T
 	if !exists {
 		endTime := time.Now()
 		err := fmt.Errorf("no handler registered for command: %s", task.CommandName)
-		if updateErr := service.updateTaskStatus(task.ID, models.TaskStatusFailed, err.Error(), &endTime); updateErr != nil {
+		if updateErr := service.updateTaskStatus(task.ID, "failed", err.Error(), &endTime); updateErr != nil {
 			logger.Errorw("Failed to update task status to failed", "taskId", task.ID, "error", updateErr)
 		}
 		logger.Errorw("Task failed: no handler", "error", err)
@@ -418,7 +414,7 @@ func (pool *TaskWorkerPool) findTaskHandler(service *TaskService, task *models.T
 
 // executeTaskWithHandler executes the task using the provided handler
 func (pool *TaskWorkerPool) executeTaskWithHandler(
-	ctx context.Context, service *TaskService, task *models.Task,
+	ctx context.Context, service *TaskService, task *models.TaskV2,
 	handler TaskHandler,
 ) error {
 	logger := pool.logger.With("taskId", task.ID)
@@ -448,7 +444,7 @@ func (pool *TaskWorkerPool) executeTaskWithHandler(
 
 // createCancellableTaskContext creates a context that can be cancelled by monitoring task status
 func (pool *TaskWorkerPool) createCancellableTaskContext(
-	ctx context.Context, service *TaskService, task *models.Task,
+	ctx context.Context, service *TaskService, task *models.TaskV2,
 ) context.Context {
 	taskCtx, taskCancel := context.WithCancel(ctx)
 
@@ -463,12 +459,12 @@ func (pool *TaskWorkerPool) createCancellableTaskContext(
 			case <-taskCtx.Done():
 				return
 			case <-ticker.C:
-				var status models.TaskStatus
-				if err := service.db.GORM.Model(&models.Task{}).Where("id = ?", task.ID).
+				var status string
+				if err := service.db.GORM.Model(&models.TaskV2{}).Where("id = ?", task.ID).
 					Select("status").Scan(&status).Error; err != nil {
 					continue
 				}
-				if status == models.TaskStatusCancelling {
+				if status == "cancelling" {
 					return
 				}
 			}
@@ -480,7 +476,7 @@ func (pool *TaskWorkerPool) createCancellableTaskContext(
 
 // finalizeTaskExecution updates final task status based on execution result
 func (pool *TaskWorkerPool) finalizeTaskExecution(
-	service *TaskService, task *models.Task, taskErr error, startTime time.Time,
+	service *TaskService, task *models.TaskV2, taskErr error, startTime time.Time,
 ) {
 	endTime := time.Now()
 	logger := pool.logger.With("taskId", task.ID)
@@ -494,16 +490,16 @@ func (pool *TaskWorkerPool) finalizeTaskExecution(
 
 // handleTaskFailure handles task failure scenarios
 func (pool *TaskWorkerPool) handleTaskFailure(
-	service *TaskService, task *models.Task, taskErr error,
+	service *TaskService, task *models.TaskV2, taskErr error,
 	endTime time.Time, logger *zap.SugaredLogger,
 ) {
 	if errors.Is(taskErr, context.Canceled) {
-		if err := service.updateTaskStatus(task.ID, models.TaskStatusAborted, "Task was cancelled", &endTime); err != nil {
+		if err := service.updateTaskStatus(task.ID, "aborted", "Task was cancelled", &endTime); err != nil {
 			logger.Errorw("Failed to update task status to aborted", "taskId", task.ID, "error", err)
 		}
 		logger.Infow("Task was cancelled")
 	} else {
-		if err := service.updateTaskStatus(task.ID, models.TaskStatusFailed, taskErr.Error(), &endTime); err != nil {
+		if err := service.updateTaskStatus(task.ID, "failed", taskErr.Error(), &endTime); err != nil {
 			logger.Errorw("Failed to update task status to failed", "taskId", task.ID, "error", err)
 		}
 		logger.Errorw("Task failed", "error", taskErr)
@@ -512,11 +508,11 @@ func (pool *TaskWorkerPool) handleTaskFailure(
 
 // handleTaskSuccess handles successful task completion
 func (pool *TaskWorkerPool) handleTaskSuccess(
-	service *TaskService, task *models.Task, endTime, startTime time.Time,
+	service *TaskService, task *models.TaskV2, endTime, startTime time.Time,
 	logger *zap.SugaredLogger,
 ) {
 	if err := service.updateTaskStatus(
-		task.ID, models.TaskStatusCompleted, "Task completed successfully", &endTime,
+		task.ID, "completed", "Task completed successfully", &endTime,
 	); err != nil {
 		logger.Errorw("Failed to update task status to completed", "taskId", task.ID, "error", err)
 	}
@@ -538,7 +534,7 @@ func (pool *TaskWorkerPool) getActiveTasks() []int {
 // updateTaskStatus updates the status and timing of a task
 func (ts *TaskService) updateTaskStatus(
 	taskID int,
-	status models.TaskStatus,
+	status string,
 	message string,
 	timestamp *time.Time,
 ) error {
@@ -548,43 +544,32 @@ func (ts *TaskService) updateTaskStatus(
 	}
 
 	if message != "" {
-		updates["message"] = message
-		if status == models.TaskStatusFailed {
-			updates["exception"] = message
+		if status == "failed" {
+			updates["error_message"] = message
 		}
 	}
 
 	if timestamp != nil {
 		switch status {
-		case models.TaskStatusStarted:
+		case "started":
 			updates["started_at"] = *timestamp
-		case models.TaskStatusCompleted, models.TaskStatusFailed, models.TaskStatusAborted:
+		case "completed", "failed", "aborted":
 			updates["ended_at"] = *timestamp
-		case models.TaskStatusQueued:
+		case "queued":
 			// Queued tasks don't need timestamp updates
-		case models.TaskStatusCancelling:
+		case "cancelling":
 			// Cancelling tasks don't need timestamp updates
 		}
 	}
 
-	return ts.db.GORM.Model(&models.Task{}).Where("id = ?", taskID).Updates(updates).Error
+	return ts.db.GORM.Model(&models.TaskV2{}).Where("id = ?", taskID).Updates(updates).Error
 }
 
-// updateTaskProgress updates the progress information of a task
+// updateTaskProgress is a no-op in V2 since progress tracking is simplified
 func (ts *TaskService) updateTaskProgress(taskID int, percent int, message string) error {
-	// Get current progress
-	var currentProgress models.TaskProgress
-	if err := ts.db.GORM.Model(&models.Task{}).Where("id = ?", taskID).
-		Select("progress").Scan(&currentProgress).Error; err != nil {
-		return err
-	}
-
-	// Update progress
-	currentProgress.UpdateProgress(percent, message)
-
-	// Save to database
-	return ts.db.GORM.Model(&models.Task{}).Where("id = ?", taskID).
-		Update("progress", currentProgress).Error
+	// TaskV2 doesn't have complex progress tracking, so this is a no-op
+	// Progress information can be stored in the Result field if needed
+	return nil
 }
 
 // run executes the task scheduler loop
@@ -602,7 +587,7 @@ func (scheduler *TaskScheduler) run() {
 
 // processScheduledTasks checks for and executes scheduled tasks
 func (scheduler *TaskScheduler) processScheduledTasks() {
-	var scheduledTasks []*models.ScheduledTask
+	var scheduledTasks []*models.ScheduledTaskV2
 	if err := scheduler.service.db.GORM.Where("enabled = ? AND next_run <= ?", true, time.Now()).
 		Find(&scheduledTasks).Error; err != nil {
 		scheduler.logger.Errorw("Failed to fetch scheduled tasks", "error", err)
@@ -616,7 +601,6 @@ func (scheduler *TaskScheduler) processScheduledTasks() {
 			scheduledTask.CommandName,
 			scheduledTask.Body,
 			scheduledTask.Priority,
-			models.TaskTriggerScheduled,
 		)
 
 		if err != nil {

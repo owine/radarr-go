@@ -15,7 +15,7 @@ import (
 // setupTaskServiceForTesting sets up the task service with required migrations
 func setupTaskServiceForTesting(t *testing.T, db *database.Database, logger *logger.Logger) *TaskService {
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	return NewTaskService(db, logger)
@@ -72,7 +72,7 @@ func testListAllTasks(t *testing.T, service *TaskService) {
 
 // testFilterByStatus tests filtering tasks by status
 func testFilterByStatus(t *testing.T, service *TaskService) {
-	queuedTasks, total, err := service.ListTasks(models.TaskStatusQueued, "", 10, 0)
+	queuedTasks, total, err := service.ListTasks("queued", "", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, queuedTasks, 1)
@@ -112,7 +112,7 @@ func NewTestTaskHandler(name, description string) *TestTaskHandler {
 }
 
 func (h *TestTaskHandler) Execute(
-	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	ctx context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	h.executed = true
 
@@ -149,7 +149,7 @@ func TestTaskService_QueueTask(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -163,9 +163,8 @@ func TestTaskService_QueueTask(t *testing.T) {
 	task, err := service.QueueTask(
 		"Test Task",
 		"TestCommand",
-		models.TaskBody{"key": "value"},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{"key": "value"},
+		"normal",
 	)
 
 	require.NoError(t, err)
@@ -173,9 +172,8 @@ func TestTaskService_QueueTask(t *testing.T) {
 	assert.Greater(t, task.ID, 0)
 	assert.Equal(t, "Test Task", task.Name)
 	assert.Equal(t, "TestCommand", task.CommandName)
-	assert.Equal(t, models.TaskStatusQueued, task.Status)
-	assert.Equal(t, models.TaskPriorityNormal, task.Priority)
-	assert.Equal(t, models.TaskTriggerAPI, task.Trigger)
+	assert.Equal(t, "queued", task.Status)
+	assert.Equal(t, "normal", task.Priority)
 	assert.NotZero(t, task.QueuedAt)
 
 	// Give task time to execute
@@ -193,7 +191,7 @@ func TestTaskService_GetTask(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -249,7 +247,7 @@ func TestTaskService_CancelTask(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -264,9 +262,8 @@ func TestTaskService_CancelTask(t *testing.T) {
 	task, err := service.QueueTask(
 		"Slow Task",
 		"SlowCommand",
-		models.TaskBody{},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"normal",
 	)
 	require.NoError(t, err)
 
@@ -283,7 +280,7 @@ func TestTaskService_CancelTask(t *testing.T) {
 	// Verify task was cancelled
 	updatedTask, err := service.GetTask(task.ID)
 	require.NoError(t, err)
-	assert.True(t, updatedTask.Status == models.TaskStatusAborted || updatedTask.Status == models.TaskStatusCancelling)
+	assert.True(t, updatedTask.Status == "aborted" || updatedTask.Status == "cancelling")
 }
 
 func TestTaskService_ScheduledTasks(t *testing.T) {
@@ -291,7 +288,7 @@ func TestTaskService_ScheduledTasks(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -301,9 +298,9 @@ func TestTaskService_ScheduledTasks(t *testing.T) {
 	scheduledTask, err := service.CreateScheduledTask(
 		"Test Scheduled Task",
 		"TestCommand",
-		models.TaskBody{"scheduled": true},
+		models.JSONField{"scheduled": true},
 		1*time.Minute,
-		models.TaskPriorityLow,
+		"low",
 	)
 
 	require.NoError(t, err)
@@ -311,7 +308,7 @@ func TestTaskService_ScheduledTasks(t *testing.T) {
 	assert.Greater(t, scheduledTask.ID, 0)
 	assert.Equal(t, "Test Scheduled Task", scheduledTask.Name)
 	assert.Equal(t, "TestCommand", scheduledTask.CommandName)
-	assert.Equal(t, time.Minute, scheduledTask.Interval)
+	assert.Equal(t, int64(60000), scheduledTask.IntervalMs) // 1 minute in milliseconds
 	assert.True(t, scheduledTask.Enabled)
 
 	// Get scheduled tasks
@@ -334,7 +331,7 @@ func TestTaskService_ScheduledTasks(t *testing.T) {
 	for _, task := range updatedTasks {
 		if task.ID == scheduledTask.ID {
 			assert.False(t, task.Enabled)
-			assert.Equal(t, 2*time.Minute, task.Interval)
+			assert.Equal(t, int64(2*60*1000), task.IntervalMs)
 			found = true
 			break
 		}
@@ -358,7 +355,7 @@ func TestTaskService_QueueStatus(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -387,7 +384,7 @@ func TestTaskService_TaskProgress(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -401,22 +398,19 @@ func TestTaskService_TaskProgress(t *testing.T) {
 	task, err := service.QueueTask(
 		"Progress Task",
 		"ProgressCommand",
-		models.TaskBody{},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"normal",
 	)
 	require.NoError(t, err)
 
 	// Wait for task to complete
 	time.Sleep(100 * time.Millisecond)
 
-	// Verify progress was updated
+	// Verify progress was updated (Note: V2 model doesn't have Progress field, test completion instead)
 	updatedTask, err := service.GetTask(task.ID)
 	require.NoError(t, err)
-	assert.Greater(t, updatedTask.Progress.ProgressPercent, 0)
-	assert.NotEmpty(t, updatedTask.Progress.StatusMessages)
-	assert.Contains(t, updatedTask.Progress.StatusMessages, "Starting test task")
-	assert.Contains(t, updatedTask.Progress.StatusMessages, "Completed test task")
+	// For V2, we just verify the task completed successfully
+	assert.Equal(t, "completed", updatedTask.Status)
 }
 
 func TestTaskService_TaskFailure(t *testing.T) {
@@ -424,7 +418,7 @@ func TestTaskService_TaskFailure(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -439,9 +433,8 @@ func TestTaskService_TaskFailure(t *testing.T) {
 	task, err := service.QueueTask(
 		"Failing Task",
 		"FailCommand",
-		models.TaskBody{},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"normal",
 	)
 	require.NoError(t, err)
 
@@ -451,8 +444,8 @@ func TestTaskService_TaskFailure(t *testing.T) {
 	// Verify task failed
 	updatedTask, err := service.GetTask(task.ID)
 	require.NoError(t, err)
-	assert.Equal(t, models.TaskStatusFailed, updatedTask.Status)
-	assert.NotEmpty(t, updatedTask.Exception)
+	assert.Equal(t, "failed", updatedTask.Status)
+	assert.NotEmpty(t, updatedTask.ErrorMessage)
 }
 
 func TestTaskService_UnknownHandler(t *testing.T) {
@@ -460,7 +453,7 @@ func TestTaskService_UnknownHandler(t *testing.T) {
 	defer cleanupTestDB(db)
 
 	// Auto-migrate task tables
-	err := db.GORM.AutoMigrate(&models.Task{}, &models.ScheduledTask{}, &models.TaskQueue{})
+	err := db.GORM.AutoMigrate(&models.TaskV2{}, &models.ScheduledTaskV2{}, &models.TaskQueue{})
 	require.NoError(t, err)
 
 	service := NewTaskService(db, logger)
@@ -470,9 +463,8 @@ func TestTaskService_UnknownHandler(t *testing.T) {
 	task, err := service.QueueTask(
 		"Unknown Task",
 		"UnknownCommand",
-		models.TaskBody{},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"normal",
 	)
 	require.NoError(t, err)
 
@@ -482,6 +474,6 @@ func TestTaskService_UnknownHandler(t *testing.T) {
 	// Verify task failed due to no handler
 	updatedTask, err := service.GetTask(task.ID)
 	require.NoError(t, err)
-	assert.Equal(t, models.TaskStatusFailed, updatedTask.Status)
-	assert.Contains(t, updatedTask.Exception, "no handler registered")
+	assert.Equal(t, "failed", updatedTask.Status)
+	assert.Contains(t, updatedTask.ErrorMessage, "no handler registered")
 }

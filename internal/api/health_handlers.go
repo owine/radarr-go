@@ -23,11 +23,11 @@ func (s *Server) handleGetHealth(c *gin.Context) {
 	forceRefresh := c.DefaultQuery("forceRefresh", falseBoolString) == trueBoolString
 	includeIssues := c.DefaultQuery("includeIssues", trueBoolString) == trueBoolString
 
-	var types []models.HealthCheckType
+	var types []string
 	if typeParam := c.Query("types"); typeParam != "" {
 		// Parse comma-separated list of types
 		// This would need proper parsing logic
-		types = []models.HealthCheckType{models.HealthCheckType(typeParam)}
+		types = []string{typeParam}
 	}
 
 	if forceRefresh || s.services.HealthService == nil {
@@ -94,14 +94,17 @@ func (s *Server) handleGetHealthDashboard(c *gin.Context) {
 // handleGetHealthIssues returns health issues with filtering and pagination
 func (s *Server) handleGetHealthIssues(c *gin.Context) {
 	page, pageSize := s.parseHealthIssuesPagination(c)
-	filter := s.parseHealthIssuesFilter(c)
+	filterV2 := s.parseHealthIssuesFilter(c)
 
-	issues, total, err := s.services.HealthService.GetHealthIssues(filter, pageSize, (page-1)*pageSize)
+	issuesV2, total, err := s.services.HealthService.GetHealthIssues(filterV2, pageSize, (page-1)*pageSize)
 	if err != nil {
 		s.logger.Errorw("Failed to get health issues", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve health issues"})
 		return
 	}
+
+	// Convert V2 issues to V1 for API response
+	issues := models.ConvertHealthIssueV2SliceToV1(issuesV2)
 
 	response := s.buildHealthIssuesPaginatedResponse(issues, total, page, pageSize)
 	c.JSON(http.StatusOK, response)
@@ -115,8 +118,8 @@ func (s *Server) parseHealthIssuesPagination(c *gin.Context) (page, pageSize int
 }
 
 // parseHealthIssuesFilter parses filter parameters from request
-func (s *Server) parseHealthIssuesFilter(c *gin.Context) models.HealthIssueFilter {
-	filter := models.HealthIssueFilter{}
+func (s *Server) parseHealthIssuesFilter(c *gin.Context) models.HealthIssueFilterV2 {
+	filter := models.HealthIssueFilterV2{}
 
 	s.parseHealthIssueTypes(c, &filter)
 	s.parseHealthIssueSeverities(c, &filter)
@@ -128,32 +131,28 @@ func (s *Server) parseHealthIssuesFilter(c *gin.Context) models.HealthIssueFilte
 }
 
 // parseHealthIssueTypes parses type filters
-func (s *Server) parseHealthIssueTypes(c *gin.Context, filter *models.HealthIssueFilter) {
+func (s *Server) parseHealthIssueTypes(c *gin.Context, filter *models.HealthIssueFilterV2) {
 	if types := c.QueryArray("types"); len(types) > 0 {
-		for _, t := range types {
-			filter.Types = append(filter.Types, models.HealthCheckType(t))
-		}
+		filter.Types = types
 	}
 }
 
 // parseHealthIssueSeverities parses severity filters
-func (s *Server) parseHealthIssueSeverities(c *gin.Context, filter *models.HealthIssueFilter) {
+func (s *Server) parseHealthIssueSeverities(c *gin.Context, filter *models.HealthIssueFilterV2) {
 	if severities := c.QueryArray("severities"); len(severities) > 0 {
-		for _, s := range severities {
-			filter.Severities = append(filter.Severities, models.HealthSeverity(s))
-		}
+		filter.Severities = severities
 	}
 }
 
 // parseHealthIssueSources parses source filters
-func (s *Server) parseHealthIssueSources(c *gin.Context, filter *models.HealthIssueFilter) {
+func (s *Server) parseHealthIssueSources(c *gin.Context, filter *models.HealthIssueFilterV2) {
 	if sources := c.QueryArray("sources"); len(sources) > 0 {
 		filter.Sources = sources
 	}
 }
 
 // parseHealthIssueBooleanFilters parses resolved and dismissed boolean filters
-func (s *Server) parseHealthIssueBooleanFilters(c *gin.Context, filter *models.HealthIssueFilter) {
+func (s *Server) parseHealthIssueBooleanFilters(c *gin.Context, filter *models.HealthIssueFilterV2) {
 	if resolved := c.Query("resolved"); resolved != "" {
 		if r := resolved == trueBoolString; resolved == trueBoolString || resolved == falseBoolString {
 			filter.Resolved = &r
@@ -168,7 +167,7 @@ func (s *Server) parseHealthIssueBooleanFilters(c *gin.Context, filter *models.H
 }
 
 // parseHealthIssueTimeFilters parses time-based filters
-func (s *Server) parseHealthIssueTimeFilters(c *gin.Context, filter *models.HealthIssueFilter) {
+func (s *Server) parseHealthIssueTimeFilters(c *gin.Context, filter *models.HealthIssueFilterV2) {
 	if since := c.Query("since"); since != "" {
 		if t, err := time.Parse(time.RFC3339, since); err == nil {
 			filter.Since = &t

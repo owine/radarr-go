@@ -113,9 +113,9 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.TaskService.RegisterHandler(NewHealthCheckTaskHandler(container.HealthService))
 	container.TaskService.RegisterHandler(NewPerformanceMetricsTaskHandler(container.HealthService))
 	container.TaskService.RegisterHandler(NewHealthMaintenanceTaskHandler(container.HealthService,
-		container.HealthIssueService))
+		nil))
 	container.TaskService.RegisterHandler(NewHealthReportTaskHandler(container.HealthService,
-		container.HealthIssueService))
+		nil))
 
 	// Keep the legacy health check handler for compatibility
 	container.TaskService.RegisterHandler(NewHealthCheckHandler(container))

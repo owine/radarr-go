@@ -1611,7 +1611,7 @@ func (s *Server) handleGetTasks(c *gin.Context) {
 		return
 	}
 
-	tasks, total, err := s.services.TaskService.ListTasks(models.TaskStatus(status), commandName, limit, offset)
+	tasks, total, err := s.services.TaskService.ListTasks(status, commandName, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to get tasks", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tasks"})
@@ -1650,10 +1650,10 @@ func (s *Server) handleGetTask(c *gin.Context) {
 // handleQueueTask queues a new task for execution
 func (s *Server) handleQueueTask(c *gin.Context) {
 	var request struct {
-		Name        string              `json:"name" binding:"required"`
-		CommandName string              `json:"commandName" binding:"required"`
-		Body        models.TaskBody     `json:"body"`
-		Priority    models.TaskPriority `json:"priority"`
+		Name        string           `json:"name" binding:"required"`
+		CommandName string           `json:"commandName" binding:"required"`
+		Body        models.JSONField `json:"body"`
+		Priority    string           `json:"priority"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -1663,7 +1663,7 @@ func (s *Server) handleQueueTask(c *gin.Context) {
 
 	// Set default priority if not specified
 	if request.Priority == "" {
-		request.Priority = models.TaskPriorityNormal
+		request.Priority = "normal"
 	}
 
 	task, err := s.services.TaskService.QueueTask(
@@ -1671,7 +1671,6 @@ func (s *Server) handleQueueTask(c *gin.Context) {
 		request.CommandName,
 		request.Body,
 		request.Priority,
-		models.TaskTriggerAPI,
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue task", "command", request.CommandName, "error", err)
@@ -1720,11 +1719,11 @@ func (s *Server) handleGetScheduledTasks(c *gin.Context) {
 // handleCreateScheduledTask creates a new scheduled task
 func (s *Server) handleCreateScheduledTask(c *gin.Context) {
 	var request struct {
-		Name        string              `json:"name" binding:"required"`
-		CommandName string              `json:"commandName" binding:"required"`
-		Body        models.TaskBody     `json:"body"`
-		Interval    int64               `json:"interval" binding:"required"` // milliseconds
-		Priority    models.TaskPriority `json:"priority"`
+		Name        string           `json:"name" binding:"required"`
+		CommandName string           `json:"commandName" binding:"required"`
+		Body        models.JSONField `json:"body"`
+		Interval    int64            `json:"interval" binding:"required"` // milliseconds
+		Priority    string           `json:"priority"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -1734,7 +1733,7 @@ func (s *Server) handleCreateScheduledTask(c *gin.Context) {
 
 	// Set default priority if not specified
 	if request.Priority == "" {
-		request.Priority = models.TaskPriorityNormal
+		request.Priority = "normal"
 	}
 
 	interval := time.Duration(request.Interval) * time.Millisecond
@@ -1828,7 +1827,7 @@ func (s *Server) handleRefreshMovie(c *gin.Context) {
 		return
 	}
 
-	body := models.TaskBody{
+	body := models.JSONField{
 		"movieId": id,
 	}
 
@@ -1836,8 +1835,7 @@ func (s *Server) handleRefreshMovie(c *gin.Context) {
 		fmt.Sprintf("Refresh Movie - ID %d", id),
 		"RefreshMovie",
 		body,
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		"normal",
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue movie refresh task", "movieId", id, "error", err)
@@ -1853,9 +1851,8 @@ func (s *Server) handleRefreshAllMovies(c *gin.Context) {
 	task, err := s.services.TaskService.QueueTask(
 		"Refresh All Movies",
 		"RefreshAllMovies",
-		models.TaskBody{},
-		models.TaskPriorityNormal,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"normal",
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue refresh all movies task", "error", err)
@@ -1871,9 +1868,8 @@ func (s *Server) handleRunHealthCheck(c *gin.Context) {
 	task, err := s.services.TaskService.QueueTask(
 		"System Health Check",
 		"HealthCheck",
-		models.TaskBody{},
-		models.TaskPriorityHigh,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"high",
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue health check task", "error", err)
@@ -1889,9 +1885,8 @@ func (s *Server) handleRunCleanup(c *gin.Context) {
 	task, err := s.services.TaskService.QueueTask(
 		"System Cleanup",
 		"Cleanup",
-		models.TaskBody{},
-		models.TaskPriorityLow,
-		models.TaskTriggerAPI,
+		models.JSONField{},
+		"low",
 	)
 	if err != nil {
 		s.logger.Error("Failed to queue cleanup task", "error", err)

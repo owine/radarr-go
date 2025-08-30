@@ -60,7 +60,7 @@ func TestHealthService_RegisterChecker(t *testing.T) {
 
 	// Verify it was registered
 	assert.Contains(t, healthService.checkers, mockChecker.Name())
-	assert.Contains(t, healthService.checkerTypes[models.HealthCheckTypeSystem], mockChecker.Name())
+	assert.Contains(t, healthService.checkerTypes[string(models.HealthCheckTypeSystem)], mockChecker.Name())
 }
 
 func TestHealthService_UnregisterChecker(t *testing.T) {
@@ -85,7 +85,7 @@ func TestHealthService_UnregisterChecker(t *testing.T) {
 
 	// Verify it was removed
 	assert.NotContains(t, healthService.checkers, mockChecker.Name())
-	assert.NotContains(t, healthService.checkerTypes[models.HealthCheckTypeSystem], mockChecker.Name())
+	assert.NotContains(t, healthService.checkerTypes[string(models.HealthCheckTypeSystem)], mockChecker.Name())
 }
 
 func TestHealthService_RunAllChecks(t *testing.T) {
@@ -139,7 +139,7 @@ func TestHealthService_RunAllChecks(t *testing.T) {
 
 	// Verify results
 	assert.Equal(t, models.HealthStatusWarning, result.OverallStatus) // Worst status
-	assert.Len(t, result.Checks, 2)
+	assert.Len(t, result.Issues, 2)
 	assert.Equal(t, 2, result.Summary.Total)
 	assert.Equal(t, 1, result.Summary.Healthy)
 	assert.Equal(t, 1, result.Summary.Warning)

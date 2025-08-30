@@ -3,7 +3,6 @@ package services
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/radarr/radarr-go/internal/models"
@@ -39,22 +38,22 @@ func TestCollectionService_Update(t *testing.T) {
 	ctx := context.Background()
 
 	collection := createTestCollection("Original Title", 54321)
-	collection.MinimumAvailability = models.AvailabilityAnnounced
+	collection.MinimumAvailability = "announced"
 
 	created, err := service.Create(ctx, collection)
 	require.NoError(t, err)
 
 	// Update collection
-	updates := &models.MovieCollection{
+	updates := &models.MovieCollectionV2{
 		TmdbID:              54321,
 		Monitored:           false,
-		MinimumAvailability: models.AvailabilityReleased,
+		MinimumAvailability: "released",
 	}
 
 	updated, err := service.Update(ctx, created.ID, updates)
 	require.NoError(t, err)
 	assert.False(t, updated.Monitored)
-	assert.Equal(t, models.AvailabilityReleased, updated.MinimumAvailability)
+	assert.Equal(t, "released", updated.MinimumAvailability)
 }
 
 func TestCollectionService_Delete(t *testing.T) {
@@ -117,23 +116,21 @@ func TestCollectionService_Statistics(t *testing.T) {
 }
 
 // createTestCollection creates a basic test collection
-func createTestCollection(title string, tmdbID int) *models.MovieCollection {
-	return &models.MovieCollection{
+func createTestCollection(title string, tmdbID int) *models.MovieCollectionV2 {
+	return &models.MovieCollectionV2{
 		Title:               title,
-		CleanTitle:          strings.ToLower(strings.ReplaceAll(title, " ", "")),
 		TmdbID:              tmdbID,
 		Overview:            "A test movie collection",
 		Monitored:           true,
 		QualityProfileID:    1,
-		MinimumAvailability: models.AvailabilityReleased,
-		SearchOnAdd:         true,
+		MinimumAvailability: "released",
 	}
 }
 
 // testCollectionRetrieval tests various collection retrieval methods
 func testCollectionRetrieval(
 	ctx context.Context, t *testing.T, service *CollectionService,
-	created *models.MovieCollection,
+	created *models.MovieCollectionV2,
 ) {
 	// Get by ID
 	retrieved, err := service.GetByID(ctx, created.ID)
@@ -148,10 +145,10 @@ func testCollectionRetrieval(
 }
 
 // createMultipleTestCollections creates multiple test collections
-func createMultipleTestCollections() []*models.MovieCollection {
-	return []*models.MovieCollection{
-		{Title: "Collection 1", TmdbID: 11111, QualityProfileID: 1, Monitored: true},
-		{Title: "Collection 2", TmdbID: 22222, QualityProfileID: 1, Monitored: false},
+func createMultipleTestCollections() []*models.MovieCollectionV2 {
+	return []*models.MovieCollectionV2{
+		{Title: "Collection 1", TmdbID: 11111, QualityProfileID: 1, Monitored: true, MinimumAvailability: "announced"},
+		{Title: "Collection 2", TmdbID: 22222, QualityProfileID: 1, Monitored: false, MinimumAvailability: "announced"},
 	}
 }
 

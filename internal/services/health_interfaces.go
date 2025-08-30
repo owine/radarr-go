@@ -34,7 +34,7 @@ type HealthServiceInterface interface {
 	UnregisterChecker(name string)
 
 	// RunAllChecks runs all registered health checks
-	RunAllChecks(ctx context.Context, types []models.HealthCheckType) models.HealthCheckResult
+	RunAllChecks(ctx context.Context, types []string) models.HealthCheckResultV2
 
 	// RunCheck runs a specific health check by name
 	RunCheck(ctx context.Context, name string) (*models.HealthCheckExecution, error)
@@ -43,10 +43,10 @@ type HealthServiceInterface interface {
 	GetHealthStatus(ctx context.Context) models.HealthStatus
 
 	// GetHealthIssues returns current health issues with optional filtering
-	GetHealthIssues(filter models.HealthIssueFilter, limit, offset int) ([]models.HealthIssue, int64, error)
+	GetHealthIssues(filter models.HealthIssueFilterV2, limit, offset int) ([]models.HealthIssueV2, int64, error)
 
 	// GetHealthIssueByID returns a specific health issue
-	GetHealthIssueByID(id int) (*models.HealthIssue, error)
+	GetHealthIssueByID(id int) (*models.HealthIssueV2, error)
 
 	// DismissHealthIssue dismisses a health issue
 	DismissHealthIssue(id int) error
@@ -82,16 +82,16 @@ type HealthServiceInterface interface {
 // HealthIssueServiceInterface defines the interface for health issue management
 type HealthIssueServiceInterface interface {
 	// CreateIssue creates a new health issue
-	CreateIssue(issue *models.HealthIssue) error
+	CreateIssue(issue *models.HealthIssueV2) error
 
 	// UpdateIssue updates an existing health issue
-	UpdateIssue(issue *models.HealthIssue) error
+	UpdateIssue(issue *models.HealthIssueV2) error
 
 	// GetIssues returns health issues with filtering
-	GetIssues(filter models.HealthIssueFilter, limit, offset int) ([]models.HealthIssue, int64, error)
+	GetIssues(filter models.HealthIssueFilterV2, limit, offset int) ([]models.HealthIssueV2, int64, error)
 
 	// GetIssueByID returns a specific health issue
-	GetIssueByID(id int) (*models.HealthIssue, error)
+	GetIssueByID(id int) (*models.HealthIssueV2, error)
 
 	// ResolveIssue marks an issue as resolved
 	ResolveIssue(id int) error
@@ -100,7 +100,7 @@ type HealthIssueServiceInterface interface {
 	DismissIssue(id int) error
 
 	// CheckForDuplicates checks if a similar issue already exists
-	CheckForDuplicates(issue *models.HealthIssue) (*models.HealthIssue, error)
+	CheckForDuplicates(issue *models.HealthIssueV2) (*models.HealthIssueV2, error)
 
 	// CleanupResolvedIssues removes old resolved issues
 	CleanupResolvedIssues(olderThan time.Time) error
@@ -124,7 +124,7 @@ type PerformanceMonitorInterface interface {
 	GetAverageMetrics(since, until time.Time) (*models.PerformanceMetrics, error)
 
 	// DetectPerformanceIssues analyzes metrics to detect performance issues
-	DetectPerformanceIssues(ctx context.Context) ([]models.HealthIssue, error)
+	DetectPerformanceIssues(ctx context.Context) ([]models.HealthIssueV2, error)
 
 	// CleanupOldMetrics removes old metrics based on retention policy
 	CleanupOldMetrics(olderThan time.Time) error

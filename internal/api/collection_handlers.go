@@ -23,11 +23,17 @@ func (s *Server) handleGetCollections(c *gin.Context) {
 		}
 	}
 
-	collections, err := s.services.CollectionService.GetAll(c.Request.Context(), monitored)
+	collectionsV2, err := s.services.CollectionService.GetAll(c.Request.Context(), monitored)
 	if err != nil {
 		s.logger.Error("Failed to fetch collections", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch collections"})
 		return
+	}
+
+	// Convert V2 to V1 for API response
+	collections := make([]*models.MovieCollection, 0, len(collectionsV2))
+	for _, collectionV2 := range collectionsV2 {
+		collections = append(collections, collectionV2.ToV1())
 	}
 
 	c.JSON(http.StatusOK, collections)
@@ -41,7 +47,7 @@ func (s *Server) handleGetCollection(c *gin.Context) {
 		return
 	}
 
-	collection, err := s.services.CollectionService.GetByID(c.Request.Context(), id)
+	collectionV2, err := s.services.CollectionService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Collection not found"})
@@ -52,6 +58,8 @@ func (s *Server) handleGetCollection(c *gin.Context) {
 		return
 	}
 
+	// Convert V2 to V1 for API response
+	collection := collectionV2.ToV1()
 	c.JSON(http.StatusOK, collection)
 }
 
@@ -63,7 +71,10 @@ func (s *Server) handleCreateCollection(c *gin.Context) {
 		return
 	}
 
-	createdCollection, err := s.services.CollectionService.Create(c.Request.Context(), &collection)
+	// Convert V1 to V2 for service layer
+	collectionV2 := models.NewMovieCollectionV2FromV1(&collection)
+
+	createdCollectionV2, err := s.services.CollectionService.Create(c.Request.Context(), collectionV2)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -74,6 +85,8 @@ func (s *Server) handleCreateCollection(c *gin.Context) {
 		return
 	}
 
+	// Convert V2 back to V1 for API response
+	createdCollection := createdCollectionV2.ToV1()
 	c.JSON(http.StatusCreated, createdCollection)
 }
 
@@ -91,7 +104,10 @@ func (s *Server) handleUpdateCollection(c *gin.Context) {
 		return
 	}
 
-	updatedCollection, err := s.services.CollectionService.Update(c.Request.Context(), id, &updates)
+	// Convert V1 to V2 for service layer
+	updatesV2 := models.NewMovieCollectionV2FromV1(&updates)
+
+	updatedCollectionV2, err := s.services.CollectionService.Update(c.Request.Context(), id, updatesV2)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Collection not found"})
@@ -102,6 +118,8 @@ func (s *Server) handleUpdateCollection(c *gin.Context) {
 		return
 	}
 
+	// Convert V2 back to V1 for API response
+	updatedCollection := updatedCollectionV2.ToV1()
 	c.JSON(http.StatusOK, updatedCollection)
 }
 

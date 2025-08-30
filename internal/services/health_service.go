@@ -23,7 +23,7 @@ type HealthService struct {
 
 	// Health check registry
 	checkers     map[string]HealthChecker
-	checkerTypes map[models.HealthCheckType][]string
+	checkerTypes map[string][]string
 	mu           sync.RWMutex
 
 	// Background monitoring
@@ -31,7 +31,7 @@ type HealthService struct {
 	cancel     context.CancelFunc
 	running    bool
 	lastCheck  time.Time
-	lastResult *models.HealthCheckResult
+	lastResult *models.HealthCheckResultV2
 
 	// Dependencies
 	systemChecker           SystemResourceCheckerInterface
@@ -77,7 +77,7 @@ func NewHealthService(db *database.Database, cfg *config.Config, logger *logger.
 		config:       cfg,
 		logger:       logger,
 		checkers:     make(map[string]HealthChecker),
-		checkerTypes: make(map[models.HealthCheckType][]string),
+		checkerTypes: make(map[string][]string),
 		healthConfig: healthConfig,
 	}
 
@@ -124,7 +124,7 @@ func (hs *HealthService) RegisterChecker(checker HealthChecker) {
 	defer hs.mu.Unlock()
 
 	name := checker.Name()
-	checkType := checker.Type()
+	checkType := string(checker.Type())
 
 	hs.checkers[name] = checker
 
@@ -142,7 +142,7 @@ func (hs *HealthService) UnregisterChecker(name string) {
 	defer hs.mu.Unlock()
 
 	if checker, exists := hs.checkers[name]; exists {
-		checkType := checker.Type()
+		checkType := string(checker.Type())
 		delete(hs.checkers, name)
 
 		// Remove from type mapping
@@ -160,7 +160,7 @@ func (hs *HealthService) UnregisterChecker(name string) {
 }
 
 // RunAllChecks implements HealthServiceInterface
-func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.HealthCheckType) models.HealthCheckResult {
+func (hs *HealthService) RunAllChecks(ctx context.Context, types []string) models.HealthCheckResultV2 {
 	startTime := time.Now()
 
 	hs.mu.RLock()
@@ -176,7 +176,7 @@ func (hs *HealthService) RunAllChecks(ctx context.Context, types []models.Health
 }
 
 // determineCheckersToRun determines which health checkers should be executed
-func (hs *HealthService) determineCheckersToRun(types []models.HealthCheckType) map[string]HealthChecker {
+func (hs *HealthService) determineCheckersToRun(types []string) map[string]HealthChecker {
 	checkersToRun := make(map[string]HealthChecker)
 
 	if len(types) == 0 {
@@ -201,7 +201,7 @@ func (hs *HealthService) determineCheckersToRun(types []models.HealthCheckType) 
 // executeHealthChecks runs health checks concurrently and collects results
 func (hs *HealthService) executeHealthChecks(
 	ctx context.Context, checkersToRun map[string]HealthChecker,
-) ([]models.HealthCheckExecution, []models.HealthIssue) {
+) ([]models.HealthCheckExecution, []models.HealthIssueV2) {
 	checkResults := make(chan models.HealthCheckExecution, len(checkersToRun))
 	var wg sync.WaitGroup
 
@@ -250,13 +250,28 @@ func (hs *HealthService) runCheckersAsync(
 // collectHealthCheckResults collects and processes health check results
 func (hs *HealthService) collectHealthCheckResults(
 	checkResults <-chan models.HealthCheckExecution,
-) ([]models.HealthCheckExecution, []models.HealthIssue) {
+) ([]models.HealthCheckExecution, []models.HealthIssueV2) {
 	var checks []models.HealthCheckExecution
-	var allIssues []models.HealthIssue
+	var allIssues []models.HealthIssueV2
 
 	for result := range checkResults {
 		checks = append(checks, result)
-		allIssues = append(allIssues, result.Issues...)
+		// Convert HealthIssue to HealthIssueV2
+		for _, issue := range result.Issues {
+			issueV2 := models.HealthIssueV2{
+				Type:        string(issue.Type),
+				Source:      issue.Source,
+				Severity:    string(issue.Severity),
+				Message:     issue.Message,
+				Details:     models.JSONField{}, // Convert later if needed
+				FirstSeen:   issue.FirstSeen,
+				LastSeen:    issue.LastSeen,
+				IsResolved:  issue.IsResolved,
+				IsDismissed: issue.IsDismissed,
+				ResolvedAt:  issue.ResolvedAt,
+			}
+			allIssues = append(allIssues, issueV2)
+		}
 
 		// Log significant issues
 		if result.Status == models.HealthStatusError || result.Status == models.HealthStatusCritical {
@@ -273,15 +288,14 @@ func (hs *HealthService) collectHealthCheckResults(
 
 // buildHealthCheckResult creates the final health check result
 func (hs *HealthService) buildHealthCheckResult(
-	checks []models.HealthCheckExecution, allIssues []models.HealthIssue,
+	checks []models.HealthCheckExecution, allIssues []models.HealthIssueV2,
 	startTime time.Time,
-) models.HealthCheckResult {
+) models.HealthCheckResultV2 {
 	overallStatus := hs.calculateOverallStatus(checks)
 	summary := hs.calculateSummary(checks)
 
-	return models.HealthCheckResult{
-		OverallStatus: overallStatus,
-		Checks:        checks,
+	return models.HealthCheckResultV2{
+		OverallStatus: string(overallStatus),
 		Issues:        allIssues,
 		Summary:       summary,
 		Timestamp:     startTime,
@@ -291,7 +305,7 @@ func (hs *HealthService) buildHealthCheckResult(
 
 // finalizeHealthCheckResult handles post-processing of health check results
 func (hs *HealthService) finalizeHealthCheckResult(
-	result models.HealthCheckResult, allIssues []models.HealthIssue,
+	result models.HealthCheckResultV2, allIssues []models.HealthIssueV2,
 	startTime time.Time,
 ) {
 	// Store issues in database
@@ -304,7 +318,7 @@ func (hs *HealthService) finalizeHealthCheckResult(
 	hs.logger.Infow("Health check completed",
 		"duration", result.Duration,
 		"overall_status", result.OverallStatus,
-		"total_checks", len(result.Checks),
+		"total_checks", len(allIssues),
 		"issues", len(allIssues))
 }
 
@@ -334,19 +348,19 @@ func (hs *HealthService) RunCheck(ctx context.Context, name string) (*models.Hea
 func (hs *HealthService) GetHealthStatus(ctx context.Context) models.HealthStatus {
 	// Return cached status if recent
 	if hs.lastResult != nil && time.Since(hs.lastCheck) < time.Minute {
-		return hs.lastResult.OverallStatus
+		return models.HealthStatus(hs.lastResult.OverallStatus)
 	}
 
 	// Run quick health check
 	result := hs.RunAllChecks(ctx, nil)
-	return result.OverallStatus
+	return models.HealthStatus(result.OverallStatus)
 }
 
 // GetHealthIssues implements HealthServiceInterface
 func (hs *HealthService) GetHealthIssues(
-	filter models.HealthIssueFilter, limit, offset int,
-) ([]models.HealthIssue, int64, error) {
-	query := hs.db.GORM.Model(&models.HealthIssue{})
+	filter models.HealthIssueFilterV2, limit, offset int,
+) ([]models.HealthIssueV2, int64, error) {
+	query := hs.db.GORM.Model(&models.HealthIssueV2{})
 
 	// Apply filters
 	if len(filter.Types) > 0 {
@@ -378,7 +392,7 @@ func (hs *HealthService) GetHealthIssues(
 	}
 
 	// Get paginated results
-	var issues []models.HealthIssue
+	var issues []models.HealthIssueV2
 	if err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&issues).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch health issues: %w", err)
 	}
@@ -387,8 +401,8 @@ func (hs *HealthService) GetHealthIssues(
 }
 
 // GetHealthIssueByID implements HealthServiceInterface
-func (hs *HealthService) GetHealthIssueByID(id int) (*models.HealthIssue, error) {
-	var issue models.HealthIssue
+func (hs *HealthService) GetHealthIssueByID(id int) (*models.HealthIssueV2, error) {
+	var issue models.HealthIssueV2
 	if err := hs.db.GORM.First(&issue, id).Error; err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("health issue not found")
@@ -400,7 +414,7 @@ func (hs *HealthService) GetHealthIssueByID(id int) (*models.HealthIssue, error)
 
 // DismissHealthIssue implements HealthServiceInterface
 func (hs *HealthService) DismissHealthIssue(id int) error {
-	result := hs.db.GORM.Model(&models.HealthIssue{}).Where("id = ?", id).Update("is_dismissed", true)
+	result := hs.db.GORM.Model(&models.HealthIssueV2{}).Where("id = ?", id).Update("is_dismissed", true)
 	if result.Error != nil {
 		return fmt.Errorf("failed to dismiss health issue: %w", result.Error)
 	}
@@ -415,7 +429,7 @@ func (hs *HealthService) DismissHealthIssue(id int) error {
 // ResolveHealthIssue implements HealthServiceInterface
 func (hs *HealthService) ResolveHealthIssue(id int) error {
 	now := time.Now()
-	result := hs.db.GORM.Model(&models.HealthIssue{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := hs.db.GORM.Model(&models.HealthIssueV2{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"is_resolved": true,
 		"resolved_at": now,
 	})
@@ -445,8 +459,8 @@ func (hs *HealthService) calculateOverallStatus(checks []models.HealthCheckExecu
 }
 
 // calculateSummary calculates summary statistics for health checks
-func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) models.HealthCheckSummary {
-	summary := models.HealthCheckSummary{
+func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) models.HealthCheckSummaryV2 {
+	summary := models.HealthCheckSummaryV2{
 		Total: len(checks),
 	}
 
@@ -460,10 +474,6 @@ func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) 
 			summary.Error++
 		case models.HealthStatusCritical:
 			summary.Critical++
-		case models.HealthStatusUnknown:
-			summary.Unknown++
-		default:
-			summary.Unknown++
 		}
 	}
 
@@ -471,16 +481,16 @@ func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) 
 }
 
 // storeHealthIssues stores health issues in the database
-func (hs *HealthService) storeHealthIssues(issues []models.HealthIssue) {
+func (hs *HealthService) storeHealthIssues(issues []models.HealthIssueV2) {
 	for _, issue := range issues {
 		// Check for existing similar issue
-		var existing models.HealthIssue
+		var existing models.HealthIssueV2
 		result := hs.db.GORM.Where("type = ? AND source = ? AND message = ? AND is_resolved = false",
 			issue.Type, issue.Source, issue.Message).First(&existing)
 
 		if result.Error == nil {
 			// Update existing issue
-			existing.LastSeen = time.Now()
+			existing.UpdateLastSeen()
 			existing.Severity = issue.Severity // Update severity if changed
 			if err := hs.db.GORM.Save(&existing).Error; err != nil {
 				hs.logger.Errorw("Failed to update existing health issue", "error", err)
@@ -499,10 +509,12 @@ func (hs *HealthService) storeHealthIssues(issues []models.HealthIssue) {
 
 				// Send notification for critical issues
 				if hs.notificationIntegration != nil &&
-					(issue.Severity == models.HealthSeverityCritical ||
-						(issue.Severity == models.HealthSeverityWarning && hs.healthConfig.NotifyWarningIssues)) {
-					go func(issue models.HealthIssue) {
-						if err := hs.notificationIntegration.NotifyHealthIssue(&issue); err != nil {
+					(issue.IsCritical() ||
+						(issue.IsWarning() && hs.healthConfig.NotifyWarningIssues)) {
+					go func(issueToNotify models.HealthIssueV2) {
+						// Convert V2 to V1 for notification compatibility
+						v1Issue := hs.convertV2ToV1Issue(issueToNotify)
+						if err := hs.notificationIntegration.NotifyHealthIssue(&v1Issue); err != nil {
 							hs.logger.Errorw("Failed to send health issue notification", "error", err)
 						}
 					}(issue)
@@ -673,8 +685,8 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 	result := hs.RunAllChecks(ctx, nil)
 
 	// Get critical issues
-	criticalIssues, _, err := hs.GetHealthIssues(models.HealthIssueFilter{
-		Severities: []models.HealthSeverity{models.HealthSeverityCritical},
+	criticalIssues, _, err := hs.GetHealthIssues(models.HealthIssueFilterV2{
+		Severities: []string{"critical"},
 		Resolved:   boolPtr(false),
 	}, 10, 0)
 	if err != nil {
@@ -682,7 +694,7 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 	}
 
 	// Get recent issues
-	recentIssues, _, err := hs.GetHealthIssues(models.HealthIssueFilter{
+	recentIssues, _, err := hs.GetHealthIssues(models.HealthIssueFilterV2{
 		Since: timePtr(time.Now().Add(-24 * time.Hour)),
 	}, 20, 0)
 	if err != nil {
@@ -713,11 +725,18 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 		hs.logger.Errorw("Failed to get performance trend", "error", err)
 	}
 
+	// Convert V2 issues to V1 for dashboard compatibility
+	criticalIssuesV1 := hs.convertV2ToV1Issues(criticalIssues)
+	recentIssuesV1 := hs.convertV2ToV1Issues(recentIssues)
+
+	// Convert V2 summary to V1
+	summaryV1 := hs.convertV2ToV1Summary(result.Summary)
+
 	dashboard := &models.HealthDashboard{
-		OverallStatus:    result.OverallStatus,
-		Summary:          result.Summary,
-		CriticalIssues:   criticalIssues,
-		RecentIssues:     recentIssues,
+		OverallStatus:    models.HealthStatus(result.OverallStatus),
+		Summary:          summaryV1,
+		CriticalIssues:   criticalIssuesV1,
+		RecentIssues:     recentIssuesV1,
 		SystemResources:  *systemResources,
 		ServiceHealth:    serviceHealth,
 		DiskSpaceInfo:    diskSpaceInfo,
@@ -729,6 +748,45 @@ func (hs *HealthService) GetHealthDashboard(ctx context.Context) (*models.Health
 }
 
 // Helper functions
+
+// convertV2ToV1Issue converts a HealthIssueV2 to HealthIssue for API compatibility
+func (hs *HealthService) convertV2ToV1Issue(issue models.HealthIssueV2) models.HealthIssue {
+	return models.HealthIssue{
+		ID:          issue.ID,
+		Type:        models.HealthCheckType(issue.Type),
+		Source:      issue.Source,
+		Severity:    models.HealthSeverity(issue.Severity),
+		Message:     issue.Message,
+		FirstSeen:   issue.FirstSeen,
+		LastSeen:    issue.LastSeen,
+		IsResolved:  issue.IsResolved,
+		IsDismissed: issue.IsDismissed,
+		ResolvedAt:  issue.ResolvedAt,
+		CreatedAt:   issue.CreatedAt,
+		UpdatedAt:   issue.UpdatedAt,
+	}
+}
+
+// convertV2ToV1Issues converts a slice of HealthIssueV2 to HealthIssue for API compatibility
+func (hs *HealthService) convertV2ToV1Issues(issues []models.HealthIssueV2) []models.HealthIssue {
+	result := make([]models.HealthIssue, len(issues))
+	for i, issue := range issues {
+		result[i] = hs.convertV2ToV1Issue(issue)
+	}
+	return result
+}
+
+// convertV2ToV1Summary converts a HealthCheckSummaryV2 to HealthCheckSummary for API compatibility
+func (hs *HealthService) convertV2ToV1Summary(summary models.HealthCheckSummaryV2) models.HealthCheckSummary {
+	return models.HealthCheckSummary{
+		Total:    summary.Total,
+		Healthy:  summary.Healthy,
+		Warning:  summary.Warning,
+		Error:    summary.Error,
+		Critical: summary.Critical,
+		Unknown:  0, // V2 doesn't track unknown status
+	}
+}
 
 // safeUint64ToInt64 safely converts uint64 to int64 with overflow protection
 func (hs *HealthService) safeUint64ToInt64(value uint64) int64 {

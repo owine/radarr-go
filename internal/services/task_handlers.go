@@ -30,7 +30,7 @@ func NewRefreshMovieHandler(
 // Execute refreshes metadata for a specific movie
 func (h *RefreshMovieHandler) Execute(
 	ctx context.Context,
-	task *models.Task,
+	task *models.TaskV2,
 	updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting movie refresh")
@@ -76,7 +76,7 @@ func (h *RefreshMovieHandler) Execute(
 }
 
 // extractMovieID extracts the movie ID from the task body
-func (h *RefreshMovieHandler) extractMovieID(task *models.Task) (int, error) {
+func (h *RefreshMovieHandler) extractMovieID(task *models.TaskV2) (int, error) {
 	movieIDValue, exists := task.Body["movieId"]
 	if !exists {
 		return 0, fmt.Errorf("movieId not found in task body")
@@ -137,7 +137,7 @@ func NewRefreshAllMoviesHandler(
 
 // Execute refreshes metadata for all movies
 func (h *RefreshAllMoviesHandler) Execute(
-	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	ctx context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting bulk movie refresh")
 
@@ -267,7 +267,7 @@ func NewSyncImportListHandler(
 // Execute syncs movies from import lists
 func (h *SyncImportListHandler) Execute(
 	ctx context.Context,
-	task *models.Task,
+	task *models.TaskV2,
 	updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting import list sync")
@@ -294,7 +294,7 @@ func (h *SyncImportListHandler) Execute(
 }
 
 // extractImportListID extracts the import list ID from task body
-func (h *SyncImportListHandler) extractImportListID(task *models.Task) *int {
+func (h *SyncImportListHandler) extractImportListID(task *models.TaskV2) *int {
 	if listIDValue, exists := task.Body["importListId"]; exists {
 		switch v := listIDValue.(type) {
 		case int:
@@ -397,7 +397,7 @@ func NewHealthCheckHandler(container *Container) *HealthCheckHandler {
 
 // Execute performs system health checks
 func (h *HealthCheckHandler) Execute(
-	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	ctx context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting health check")
 
@@ -556,7 +556,7 @@ func NewCleanupHandler(container *Container) *CleanupHandler {
 
 // Execute performs cleanup tasks
 func (h *CleanupHandler) Execute(
-	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	ctx context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting cleanup")
 
@@ -611,8 +611,8 @@ func (h *CleanupHandler) cleanupCompletedTasks(_ context.Context) error {
 	cutoff := time.Now().AddDate(0, 0, -7)
 
 	result := h.container.DB.GORM.Where("status IN (?, ?, ?) AND ended_at < ?",
-		models.TaskStatusCompleted, models.TaskStatusFailed, models.TaskStatusAborted, cutoff).
-		Delete(&models.Task{})
+		"completed", "failed", "aborted", cutoff).
+		Delete(&models.TaskV2{})
 
 	if result.Error != nil {
 		return fmt.Errorf("failed to cleanup completed tasks: %w", result.Error)
@@ -667,7 +667,7 @@ func NewRefreshWantedMoviesHandler(wantedService WantedMoviesServiceInterface) *
 
 // Execute refreshes the wanted movies list
 func (h *RefreshWantedMoviesHandler) Execute(
-	_ context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	_ context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Starting wanted movies refresh")
 
@@ -725,7 +725,7 @@ func NewAutoWantedSearchHandler(
 
 // Execute performs automatic searching for eligible wanted movies
 func (h *AutoWantedSearchHandler) Execute(
-	ctx context.Context, _ *models.Task, updateProgress func(percent int, message string),
+	ctx context.Context, _ *models.TaskV2, updateProgress func(percent int, message string),
 ) error {
 	updateProgress(0, "Getting eligible wanted movies")
 

@@ -95,9 +95,9 @@ func TestRefreshMovieHandler(t *testing.T) {
 	movieService.On("Update", testMovie).Return(nil)
 
 	// Create task
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{"movieId": 1},
+		Body: models.JSONField{"movieId": 1},
 	}
 
 	// Track progress updates
@@ -134,9 +134,9 @@ func TestRefreshMovieHandler_InvalidMovieID(t *testing.T) {
 	handler := NewRefreshMovieHandler(movieService, metadataService)
 
 	// Test with missing movieId
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{},
+		Body: models.JSONField{},
 	}
 
 	updateProgress := func(_ int, _ string) {}
@@ -147,7 +147,7 @@ func TestRefreshMovieHandler_InvalidMovieID(t *testing.T) {
 	assert.Contains(t, err.Error(), "movieId not found")
 
 	// Test with invalid movieId type
-	task.Body = models.TaskBody{"movieId": "invalid"}
+	task.Body = models.JSONField{"movieId": "invalid"}
 	err = handler.Execute(ctx, task, updateProgress)
 
 	require.Error(t, err)
@@ -179,9 +179,9 @@ func TestRefreshAllMoviesHandler(t *testing.T) {
 	movieService.On("Update", mock.AnythingOfType("*models.Movie")).Return(nil).Times(2)
 
 	// Create task
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{},
+		Body: models.JSONField{},
 	}
 
 	// Track progress updates
@@ -220,7 +220,7 @@ func TestRefreshAllMoviesHandler_NoMovies(t *testing.T) {
 	// Setup mock - no movies
 	movieService.On("GetAll").Return([]models.Movie{}, nil)
 
-	task := &models.Task{ID: 1, Body: models.TaskBody{}}
+	task := &models.TaskV2{ID: 1, Body: models.JSONField{}}
 	updateProgress := func(_ int, _ string) {}
 
 	ctx := context.Background()
@@ -262,9 +262,9 @@ func TestSyncImportListHandler(t *testing.T) {
 	importListService.On("SyncImportList", 2).Return(syncResult, nil)
 
 	// Create task without specific import list ID
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{},
+		Body: models.JSONField{},
 	}
 
 	// Track progress updates
@@ -317,9 +317,9 @@ func TestSyncImportListHandler_SpecificList(t *testing.T) {
 	importListService.On("SyncImportList", 1).Return(syncResult, nil)
 
 	// Create task with specific import list ID
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{"importListId": 1},
+		Body: models.JSONField{"importListId": 1},
 	}
 
 	updateProgress := func(_ int, _ string) {}
@@ -344,9 +344,9 @@ func testTaskHandler(
 	assert.Equal(t, expectedDescription, handler.GetDescription())
 
 	// Create task
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{},
+		Body: models.JSONField{},
 	}
 
 	// Track progress updates
@@ -406,9 +406,9 @@ func TestTaskHandlerCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	task := &models.Task{
+	task := &models.TaskV2{
 		ID:   1,
-		Body: models.TaskBody{"movieId": 1},
+		Body: models.JSONField{"movieId": 1},
 	}
 
 	updateProgress := func(_ int, _ string) {
