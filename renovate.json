@@ -32,9 +32,6 @@
       "versioningTemplate": "semver"
     }
   ],
-  "ignorePaths": [
-    "docker-compose.yml"
-  ],
   "packageRules": [
     {
       "description": "Security updates - immediate processing",
@@ -127,6 +124,26 @@
         "major"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "All docker-compose files - patch updates without SHA pinning",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchFileNames": [
+        "docker-compose.yml",
+        "docker-compose.dev.yml",
+        "docker-compose.test.yml"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "addLabels": [
+        "docker",
+        "compose"
+      ],
+      "pinDigests": false
     },
     {
       "description": "Go version updates in GitHub Actions - auto-merge patch updates",
