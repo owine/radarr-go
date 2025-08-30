@@ -180,6 +180,13 @@
       "minimumReleaseAge": "7 days"
     },
     {
+      "description": "Docker-compose - force disable digest pinning for all updates",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "pinDigests": false
+    },
+    {
       "description": "Security updates - immediate processing with highest priority",
       "matchPackageNames": [
         "*"
