@@ -97,7 +97,7 @@ jobs:
         echo "📝 Commit: ${COMMIT_SHA}"
 
     - name: Set up Go
-      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: false  # Disable cache for validation to ensure clean state
@@ -132,7 +132,7 @@ jobs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -142,7 +142,7 @@ jobs:
 
     # Enhanced caching similar to CI workflow
     - name: Cache Go modules and tools
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       with:
         path: |
           ~/.cache/go-build
@@ -258,7 +258,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with:
         name: release-archives-all
         path: archives/
@@ -374,7 +374,7 @@ jobs:
         echo "✅ Release preparation completed"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@69320dbe05506a9a39fc8ae11030b214ec2d1f87 # v2.0.5
+      uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0 # v2.0.6
       with:
         files: release-artifacts/*
         name: "Radarr Go v${{ needs.validate.outputs.version }}"
@@ -423,7 +423,7 @@ jobs:
 
     # Docker build in parallel with integration test prep
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@aa33708b10e362ff993539393ff100fa93ed6a27 # v3.5.0
+      uses: docker/setup-buildx-action@3d68780484996aa9d417bb9016193885cdf1f299 # v3.6.0
 
     - name: Log in to registries in parallel
       run: |
@@ -439,7 +439,7 @@ jobs:
         wait
 
     - name: Build and push Docker images with enhanced caching
-      uses: docker/build-push-action@1a162644f9a7e87d8f4b053101d1d9a712edc18c # v6.3.0
+      uses: docker/build-push-action@a254f8ca60a858f3136a2f1f23a60969f2c402dd # v6.4.0
       with:
         context: .
         platforms: linux/amd64,linux/arm64
