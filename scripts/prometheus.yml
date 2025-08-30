@@ -1,0 +1,43 @@
+# Prometheus configuration for development environment
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Radarr Go application metrics (when implemented)
+  - job_name: 'radarr-go'
+    static_configs:
+      - targets: ['radarr-backend:8080']
+    scrape_interval: 10s
+    metrics_path: /metrics
+    scheme: http
+
+  # PostgreSQL metrics (if pg_exporter is added)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-dev:5432']
+    scrape_interval: 30s
+    # Note: This requires postgres_exporter to be added to the stack
+
+  # Node.js/React metrics (when frontend is implemented)
+  - job_name: 'frontend'
+    static_configs:
+      - targets: ['radarr-frontend:3000']
+    scrape_interval: 30s
+    # Note: This will be configured when React frontend is implemented
+
+# Alerting configuration (for development)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093

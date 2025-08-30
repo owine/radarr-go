@@ -1,0 +1,57 @@
+# Development Dockerfile with hot reload support
+ARG GO_VERSION=1.23
+FROM golang:${GO_VERSION}-alpine AS dev
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    curl \
+    bash \
+    make \
+    gcc \
+    musl-dev \
+    ca-certificates \
+    tzdata
+
+# Set timezone
+ENV TZ=UTC
+
+# Install air for hot reload
+RUN go install github.com/cosmtrek/air@latest
+
+# Install other development tools
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Create app directory
+WORKDIR /workspace
+
+# Create non-root user for security
+RUN adduser -D -s /bin/bash -u 1000 developer && \
+    chown -R developer:developer /workspace && \
+    chown -R developer:developer /go
+
+# Switch to non-root user
+USER developer
+
+# Copy go mod files first for better layer caching
+COPY --chown=developer:developer go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY --chown=developer:developer . .
+
+# Create necessary directories
+RUN mkdir -p data movies web/static web/templates
+
+# Expose ports
+EXPOSE 7878 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:7878/ping || exit 1
+
+# Default command (can be overridden)
+CMD ["air"]

@@ -1,0 +1,301 @@
+# Development Docker Compose
+# Complete development environment with hot reload, databases, and monitoring
+version: '3.8'
+
+services:
+  # Backend service with hot reload
+  radarr-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - GO_VERSION=1.23
+    container_name: radarr-dev-backend
+    restart: unless-stopped
+    ports:
+      - "7878:7878"  # Main API port
+      - "8080:8080"  # Debug/profiling port
+    volumes:
+      - .:/workspace
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      - ./data:/data
+      - ./movies:/movies
+    environment:
+      - RADARR_LOG_LEVEL=debug
+      - RADARR_SERVER_PORT=7878
+      - RADARR_DATABASE_TYPE=postgres
+      - RADARR_DATABASE_HOST=postgres-dev
+      - RADARR_DATABASE_PORT=5432
+      - RADARR_DATABASE_USERNAME=radarr_dev
+      - RADARR_DATABASE_PASSWORD=dev_password
+      - RADARR_DATABASE_NAME=radarr_dev
+      - CGO_ENABLED=0
+      - GOOS=linux
+      - GOARCH=amd64
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    working_dir: /workspace
+    command: air
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - radarr-dev
+
+  # Frontend development server (placeholder for React)
+  radarr-frontend:
+    image: node:20-alpine
+    container_name: radarr-dev-frontend
+    ports:
+      - "3000:3000"  # React dev server
+      - "3001:3001"  # Storybook (if used)
+    volumes:
+      - ./web/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_BASE_URL=http://localhost:7878
+      - WDS_SOCKET_HOST=localhost
+      - CHOKIDAR_USEPOLLING=true
+    command: >
+      sh -c "
+      if [ -f package.json ]; then
+        npm install && npm run dev;
+      else
+        echo 'Frontend not yet implemented. Creating placeholder...';
+        mkdir -p src public;
+        echo '{\"name\":\"radarr-frontend\",\"version\":\"0.1.0\",\"scripts\":{\"dev\":\"echo Frontend dev server would start here\"}}' > package.json;
+        echo '<!DOCTYPE html><html><head><title>Radarr Frontend Dev</title></head><body><h1>Frontend Development Server</h1><p>React frontend coming in Phase 2</p><p>Backend API: <a href=\"http://localhost:7878\">http://localhost:7878</a></p></body></html>' > public/index.html;
+        python3 -m http.server 3000;
+      fi
+      "
+    profiles:
+      - frontend
+    networks:
+      - radarr-dev
+
+  # PostgreSQL development database
+  postgres-dev:
+    image: postgres:17-alpine
+    container_name: radarr-dev-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=radarr_dev
+      - POSTGRES_USER=radarr_dev
+      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radarr_dev -d radarr_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_min_duration_statement=0
+      -c log_connections=on
+      -c log_disconnections=on
+      -c max_connections=200
+      -c shared_buffers=128MB
+      -c effective_cache_size=512MB
+    networks:
+      - radarr-dev
+
+  # MariaDB development database (alternative)
+  mariadb-dev:
+    image: mariadb:11.4
+    container_name: radarr-dev-mariadb
+    restart: unless-stopped
+    environment:
+      - MARIADB_DATABASE=radarr_dev
+      - MARIADB_USER=radarr_dev
+      - MARIADB_PASSWORD=dev_password
+      - MARIADB_ROOT_PASSWORD=root_dev_password
+      - MARIADB_INITDB_SKIP_TZINFO=1
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_dev_data:/var/lib/mysql
+      - ./scripts/mariadb-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=256M
+      --innodb-log-file-size=64M
+      --innodb-flush-log-at-trx-commit=2
+      --sync-binlog=0
+      --general-log=1
+      --general-log-file=/var/lib/mysql/general.log
+      --slow-query-log=1
+      --slow-query-log-file=/var/lib/mysql/slow.log
+      --long_query_time=1
+      --max-connections=200
+    profiles:
+      - mariadb
+    networks:
+      - radarr-dev
+
+  # Redis for caching (development)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: radarr-dev-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    profiles:
+      - redis
+    networks:
+      - radarr-dev
+
+  # Development monitoring and debugging
+  adminer:
+    image: adminer:4.8.1
+    container_name: radarr-dev-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres-dev
+      - ADMINER_DESIGN=nette
+    depends_on:
+      - postgres-dev
+    profiles:
+      - monitoring
+    networks:
+      - radarr-dev
+
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: radarr-dev-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    profiles:
+      - monitoring
+    networks:
+      - radarr-dev
+
+  # Development log aggregation
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    container_name: radarr-dev-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger HTTP endpoint
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    profiles:
+      - monitoring
+    networks:
+      - radarr-dev
+
+  # Prometheus for metrics (development)
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: radarr-dev-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_dev_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring
+    networks:
+      - radarr-dev
+
+  # Grafana for visualization (development)
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: radarr-dev-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - grafana_dev_data:/var/lib/grafana
+      - ./scripts/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+    networks:
+      - radarr-dev
+
+volumes:
+  # Database volumes
+  postgres_dev_data:
+    driver: local
+  mariadb_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  
+  # Build cache volumes
+  go_mod_cache:
+    driver: local
+  go_build_cache:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  
+  # Monitoring volumes
+  prometheus_dev_data:
+    driver: local
+  grafana_dev_data:
+    driver: local
+
+networks:
+  radarr-dev:
+    name: radarr-dev-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
