@@ -115,7 +115,7 @@ services:
 
   # MariaDB development database (alternative)
   mariadb-dev:
-    image: mariadb:11.8
+    image: mariadb:12.0
     container_name: radarr-dev-mariadb
     restart: unless-stopped
     environment:
