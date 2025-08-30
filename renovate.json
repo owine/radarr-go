@@ -114,9 +114,25 @@
       "pinDigests": true
     },
     {
-      "description": "Docker minor/patch updates - grouped with selective SHA pinning",
+      "description": "Dockerfile minor/patch updates - grouped with digest pinning",
       "matchManagers": [
-        "dockerfile",
+        "dockerfile"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Docker dependencies",
+      "automerge": true,
+      "addLabels": [
+        "docker"
+      ],
+      "pinDigests": true,
+      "minimumReleaseAge": "2 days"
+    },
+    {
+      "description": "Docker-compose minor/patch updates - grouped without digest pinning",
+      "matchManagers": [
         "docker-compose"
       ],
       "matchUpdateTypes": [
@@ -128,23 +144,28 @@
       "addLabels": [
         "docker"
       ],
-      "pinDigests": true
+      "pinDigests": false,
+      "minimumReleaseAge": "2 days"
     },
     {
-      "description": "Docker compose - disable SHA pinning for minor/patch",
+      "description": "Dockerfile major updates - separate PRs with digest pinning",
       "matchManagers": [
-        "docker-compose"
+        "dockerfile"
       ],
       "matchUpdateTypes": [
-        "minor",
-        "patch"
+        "major"
       ],
-      "pinDigests": false
+      "automerge": false,
+      "addLabels": [
+        "docker",
+        "major"
+      ],
+      "pinDigests": true,
+      "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Docker major updates - separate PRs with SHA pinning",
+      "description": "Docker-compose major updates - separate PRs without digest pinning",
       "matchManagers": [
-        "dockerfile",
         "docker-compose"
       ],
       "matchUpdateTypes": [
@@ -155,7 +176,8 @@
         "docker",
         "major"
       ],
-      "pinDigests": true
+      "pinDigests": false,
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Security updates - immediate processing with highest priority",
