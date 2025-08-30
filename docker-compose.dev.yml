@@ -115,7 +115,7 @@ services:
 
   # MariaDB development database (alternative)
   mariadb-dev:
-    image: mariadb:11.4
+    image: mariadb:11.5@sha256:2d50fe0f77dac919396091e527e5e148a9de690e58f32875f113bef6506a17f5
     container_name: radarr-dev-mariadb
     restart: unless-stopped
     environment:
@@ -183,7 +183,7 @@ services:
 
   # Development monitoring and debugging
   adminer:
-    image: adminer:4.8.1
+    image: adminer:4.17.1@sha256:558ffdb97e8df0331503fd89cc34d23d69921b9896df14a45210e0c61251dbc7
     container_name: radarr-dev-adminer
     restart: unless-stopped
     ports:
@@ -213,7 +213,7 @@ services:
 
   # Development log aggregation
   jaeger:
-    image: jaegertracing/all-in-one:1.53
+    image: jaegertracing/all-in-one:1.54@sha256:f4044964505c81bf12131c2dfd1f4ddf1d1421bbbd9d79f691221cac077599a8
     container_name: radarr-dev-jaeger
     restart: unless-stopped
     ports:
@@ -228,7 +228,7 @@ services:
 
   # Prometheus for metrics (development)
   prometheus:
-    image: prom/prometheus:v2.48.1
+    image: prom/prometheus:v2.49.0@sha256:682a8500cb481ef780a4d60f6f1b273aae552063de02326f9f4645e395a18efc
     container_name: radarr-dev-prometheus
     restart: unless-stopped
     ports:
@@ -250,7 +250,7 @@ services:
 
   # Grafana for visualization (development)
   grafana:
-    image: grafana/grafana:10.2.3
+    image: grafana/grafana:10.2.4@sha256:433f02541b4e48c799bec3b36b083e3bc5b50983e76cb9c5aaa8713b694da665
     container_name: radarr-dev-grafana
     restart: unless-stopped
     ports:
