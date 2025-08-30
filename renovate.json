@@ -21,14 +21,13 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": [
-        "/^\\.github/workflows/.+\\.ya?ml$/"
-      ],
+      "fileMatch": ["^\\.github/workflows/.+\\.ya?ml$"],
       "matchStrings": [
-        "GO_VERSION:\\s*['\"]?(?<currentValue>[^'\"\\s]+)['\"]?"
+        "GO_VERSION:\\s*['\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\"]?"
       ],
       "depNameTemplate": "golang",
-      "datasourceTemplate": "golang-version"
+      "datasourceTemplate": "golang-version",
+      "versioningTemplate": "semver"
     }
   ],
   "ignorePaths": [
@@ -126,6 +125,42 @@
         "major"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "Go version updates in GitHub Actions - auto-merge patch updates",
+      "matchManagers": [
+        "regex"
+      ],
+      "matchDepNames": [
+        "golang"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "addLabels": [
+        "go-version"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Go version updates in GitHub Actions - manual review for minor/major",
+      "matchManagers": [
+        "regex"
+      ],
+      "matchDepNames": [
+        "golang"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "go-version",
+        "manual-review"
+      ],
+      "minimumReleaseAge": "7 days"
     }
   ]
 }
