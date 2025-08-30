@@ -474,6 +474,8 @@ func (hs *HealthService) calculateSummary(checks []models.HealthCheckExecution) 
 			summary.Error++
 		case models.HealthStatusCritical:
 			summary.Critical++
+		case models.HealthStatusUnknown:
+			// Unknown status doesn't count toward any category
 		}
 	}
 

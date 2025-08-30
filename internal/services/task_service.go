@@ -15,6 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// Task status constants
+const (
+	taskStatusCancelling = "cancelling"
+)
+
 // TaskService provides task scheduling and management functionality
 type TaskService struct {
 	db     *database.Database
@@ -186,7 +191,7 @@ func (ts *TaskService) CancelTask(id int) error {
 
 	// Update status to cancelling
 	updates := map[string]interface{}{
-		"status":     "cancelling",
+		"status":     taskStatusCancelling,
 		"updated_at": time.Now(),
 	}
 
@@ -365,7 +370,7 @@ func (pool *TaskWorkerPool) shouldAbortTaskBeforeExecution(service *TaskService,
 		return true
 	}
 
-	if currentStatus == "cancelling" {
+	if currentStatus == taskStatusCancelling {
 		err := service.updateTaskStatus(task.ID, "aborted",
 			"Task was cancelled before execution", nil)
 		if err != nil {
@@ -464,7 +469,7 @@ func (pool *TaskWorkerPool) createCancellableTaskContext(
 					Select("status").Scan(&status).Error; err != nil {
 					continue
 				}
-				if status == "cancelling" {
+				if status == taskStatusCancelling {
 					return
 				}
 			}
@@ -557,7 +562,7 @@ func (ts *TaskService) updateTaskStatus(
 			updates["ended_at"] = *timestamp
 		case "queued":
 			// Queued tasks don't need timestamp updates
-		case "cancelling":
+		case taskStatusCancelling:
 			// Cancelling tasks don't need timestamp updates
 		}
 	}
@@ -566,7 +571,7 @@ func (ts *TaskService) updateTaskStatus(
 }
 
 // updateTaskProgress is a no-op in V2 since progress tracking is simplified
-func (ts *TaskService) updateTaskProgress(taskID int, percent int, message string) error {
+func (ts *TaskService) updateTaskProgress(_ int, _ int, _ string) error {
 	// TaskV2 doesn't have complex progress tracking, so this is a no-op
 	// Progress information can be stored in the Result field if needed
 	return nil
