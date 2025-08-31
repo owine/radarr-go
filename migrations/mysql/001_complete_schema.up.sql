@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS movies (
     status VARCHAR(20) DEFAULT 'tba',
     sort_title VARCHAR(500),
     folder_name VARCHAR(255),
-    path VARCHAR(500)
+    path VARCHAR(500),
+    popularity DOUBLE DEFAULT 0.0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS quality_definitions (
