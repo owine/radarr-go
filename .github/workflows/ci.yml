@@ -422,8 +422,12 @@ jobs:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha,prefix={{branch}}-,format=short
+          type=raw,value=nightly,enable={{is_default_branch}}
+          type=raw,value=dev-latest,enable={{is_default_branch}}
+          type=raw,value=commit-{{sha}},enable={{is_default_branch}}
+          type=raw,value={{date 'YYYY.MM.DD'}}-nightly,enable={{is_default_branch}}
+          type=raw,value=pr-{{.Number}},enable=${{ github.event_name == 'pull_request' }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -473,7 +477,37 @@ jobs:
         ls -la artifacts/ >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🐳 Docker Usage" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-        echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "**Development Build (Latest from main):**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Latest nightly build" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Specific commit build" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "**Pull Request Build:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🏷️ Available Tags" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "- \`:nightly\` - Latest development build" >> $GITHUB_STEP_SUMMARY
+          echo "- \`:dev-latest\` - Alias for latest development build" >> $GITHUB_STEP_SUMMARY
+          echo "- \`:commit-${{ github.sha }}\` - This specific commit" >> $GITHUB_STEP_SUMMARY
+          echo "- \`:$(date +%Y.%m.%d)-nightly\` - Dated nightly build" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "- \`:pr-${{ github.event.number }}\` - Pull request build" >> $GITHUB_STEP_SUMMARY
+        fi

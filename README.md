@@ -34,6 +34,58 @@ docker run -d \
   ghcr.io/radarr/radarr-go:latest
 ```
 
+### Docker Image Tags
+
+Our Docker images use a comprehensive tagging strategy to support different use cases:
+
+#### **Production Tags** (Stable)
+- `:latest` - **Latest stable release** (widely used, recommended for production)
+- `:release` - Alias for latest stable release
+- `:stable-v1.0.0` - **Immutable stable release** (never changes, safest for production)
+- `:stable` - Current stable pointer (may update with new releases)
+- `:2024.12` - Calendar-based stable release (December 2024)
+
+#### **Testing Tags** (Pre-releases)
+- `:testing` - Latest prerelease/beta version
+- `:testing-v1.0.0-rc1` - Specific prerelease version
+- `:prerelease` - Alias for latest prerelease
+
+#### **Development Tags** (Bleeding Edge)
+- `:nightly` - **Latest development build** from main branch
+- `:dev-latest` - Alias for latest development build
+- `:commit-abc1234` - Specific commit build
+- `:2024.12.31-nightly` - Dated nightly build
+
+#### **Database Compatibility Tags**
+- `:v1.0.0-multi-db` - Supports all database backends
+- `:v1.0.0-postgres` - PostgreSQL optimized
+- `:v1.0.0-mariadb` - MariaDB/MySQL optimized
+- `:multi-db`, `:postgres`, `:mariadb` - Latest with database focus
+
+#### **Pull Request Tags** (Development)
+- `:pr-123` - Pull request #123 build (for testing contributions)
+
+#### **Usage Examples**
+
+```bash
+# Production deployment (recommended)
+docker run -d ghcr.io/owine/radarr-go:latest
+
+# Immutable production (safest)
+docker run -d ghcr.io/owine/radarr-go:stable-v1.0.0
+
+# Testing new features
+docker run -d ghcr.io/owine/radarr-go:testing
+
+# Development/bleeding edge
+docker run -d ghcr.io/owine/radarr-go:nightly
+
+# Database-specific optimization
+docker run -d ghcr.io/owine/radarr-go:postgres
+```
+
+**🔒 Production Recommendation**: Use `:latest` for general use or `:stable-v1.0.0` for immutable deployments where you need guaranteed consistency.
+
 ### Binary
 
 Download the latest release for your platform from the [releases page](https://github.com/radarr/radarr-go/releases).

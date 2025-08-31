@@ -440,15 +440,68 @@ jobs:
         # Wait for logins
         wait
 
+    - name: Generate Docker tags based on release type
+      id: docker_tags
+      run: |
+        BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        VERSION="${{ needs.validate.outputs.version }}"
+        IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
+        CURRENT_DATE=$(date +%Y.%m)
+
+        # Always include version tag and database compatibility tags
+        TAGS="${BASE_IMAGE}:v${VERSION}
+        ${BASE_IMAGE}:v${VERSION}-multi-db
+        ${BASE_IMAGE}:v${VERSION}-postgres
+        ${BASE_IMAGE}:v${VERSION}-mariadb"
+
+        # Add conditional tags based on release type
+        if [[ "${IS_PRERELEASE}" == "false" ]]; then
+          # Full release - add comprehensive production tags
+          TAGS="${TAGS}
+          ${BASE_IMAGE}:latest
+          ${BASE_IMAGE}:release
+          ${BASE_IMAGE}:stable-v${VERSION}
+          ${BASE_IMAGE}:stable
+          ${BASE_IMAGE}:${CURRENT_DATE}
+          ${BASE_IMAGE}:multi-db
+          ${BASE_IMAGE}:postgres
+          ${BASE_IMAGE}:mariadb"
+
+          echo "🏷️ FULL RELEASE tags generated"
+        else
+          # Prerelease - add testing and prerelease tags
+          TAGS="${TAGS}
+          ${BASE_IMAGE}:testing
+          ${BASE_IMAGE}:testing-v${VERSION}
+          ${BASE_IMAGE}:prerelease"
+
+          echo "🏷️ PRERELEASE tags generated"
+        fi
+
+        # Convert to proper format (remove extra newlines and spaces)
+        FORMATTED_TAGS=$(echo "${TAGS}" | sed '/^$/d' | tr '\n' ',' | sed 's/,$//')
+
+        echo "docker_tags=${FORMATTED_TAGS}" >> $GITHUB_OUTPUT
+        echo "🏷️ Docker tags for ${IS_PRERELEASE == 'false' && 'FULL RELEASE' || 'PRERELEASE'}:"
+        echo "${TAGS}"
+        echo ""
+        echo "📋 Tag breakdown:"
+        echo "- Version: v${VERSION}"
+        echo "- Database compatibility: multi-db, postgres, mariadb"
+        if [[ "${IS_PRERELEASE}" == "false" ]]; then
+          echo "- Production: latest, release, stable-v${VERSION}, stable"
+          echo "- Calendar: ${CURRENT_DATE}"
+        else
+          echo "- Testing: testing, testing-v${VERSION}, prerelease"
+        fi
+
     - name: Build and push Docker images with enhanced caching
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.validate.outputs.version }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.is_prerelease == 'false' && 'latest' || 'pre' }}
+        tags: ${{ steps.docker_tags.outputs.docker_tags }}
         build-args: |
           VERSION=${{ needs.validate.outputs.version }}
           COMMIT=${{ needs.validate.outputs.commit_sha }}
@@ -524,7 +577,11 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
         echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Latest Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\` (if stable release)" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ needs.validate.outputs.is_prerelease }}" == "false" ]]; then
+          echo "- **Release Tags**: \`:latest\`, \`:release\` (full release)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Prerelease Tag**: \`:testing\` (prerelease)" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🚀 Release Assets" >> $GITHUB_STEP_SUMMARY
         echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
