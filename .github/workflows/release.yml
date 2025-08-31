@@ -15,6 +15,11 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: write  # Required to create/update releases and upload assets
+  packages: write  # Required for Docker image publishing
+  actions: read    # Required to download artifacts
+
 env:
   GO_VERSION: '1.25.0'
   REGISTRY: ghcr.io
@@ -413,9 +418,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate, release-assets]
     timeout-minutes: 25
-    permissions:
-      contents: read
-      packages: write
 
     steps:
     - name: Checkout code
