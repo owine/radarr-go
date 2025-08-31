@@ -9,9 +9,6 @@
   "labels": [
     "dependencies"
   ],
-  "prHourlyLimit": 10,
-  "prConcurrentLimit": 10,
-  "branchConcurrentLimit": 10,
   "platformAutomerge": true,
   "dependencyDashboard": true,
   "postUpdateOptions": [
