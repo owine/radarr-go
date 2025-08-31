@@ -1,6 +1,5 @@
 # Development Dockerfile with hot reload support
-ARG GO_VERSION=1.23
-FROM golang:${GO_VERSION}-alpine AS dev
+FROM golang:1.23-alpine AS dev
 
 # Install development tools
 RUN apk add --no-cache \
