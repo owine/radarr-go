@@ -482,7 +482,11 @@ jobs:
         FORMATTED_TAGS=$(echo "${TAGS}" | sed '/^$/d' | tr '\n' ',' | sed 's/,$//')
 
         echo "docker_tags=${FORMATTED_TAGS}" >> $GITHUB_OUTPUT
-        echo "🏷️ Docker tags for ${IS_PRERELEASE == 'false' && 'FULL RELEASE' || 'PRERELEASE'}:"
+        if [[ "${IS_PRERELEASE}" == "false" ]]; then
+          echo "🏷️ Docker tags for FULL RELEASE:"
+        else
+          echo "🏷️ Docker tags for PRERELEASE:"
+        fi
         echo "${TAGS}"
         echo ""
         echo "📋 Tag breakdown:"
