@@ -520,16 +520,31 @@ jobs:
         sleep 30
 
         # Download and verify release binary
-        ARCHIVE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/radarr-v${VERSION}-linux-amd64.tar.gz"
+        ARCHIVE_NAME="radarr-v${VERSION}-linux-amd64.tar.gz"
+        ARCHIVE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG_NAME}/${ARCHIVE_NAME}"
         CHECKSUM_URL="${ARCHIVE_URL}.sha256"
 
         echo "📥 Downloading and verifying release binary..."
-        curl -fL -o radarr-archive.tar.gz "${ARCHIVE_URL}"
-        curl -fL -o radarr-archive.tar.gz.sha256 "${CHECKSUM_URL}"
-        sha256sum -c radarr-archive.tar.gz.sha256
+        echo "Archive URL: ${ARCHIVE_URL}"
+        echo "Checksum URL: ${CHECKSUM_URL}"
+
+        # Download with retry logic
+        curl -fL --retry 3 --retry-delay 10 -o "${ARCHIVE_NAME}" "${ARCHIVE_URL}"
+        curl -fL --retry 3 --retry-delay 10 -o "${ARCHIVE_NAME}.sha256" "${CHECKSUM_URL}"
+
+        # Verify files were downloaded
+        ls -la "${ARCHIVE_NAME}" "${ARCHIVE_NAME}.sha256"
+
+        # Show checksum file content for debugging
+        echo "📋 Checksum file contents:"
+        cat "${ARCHIVE_NAME}.sha256"
+
+        # Verify checksum
+        echo "🔍 Verifying checksum..."
+        sha256sum -c "${ARCHIVE_NAME}.sha256"
 
         # Extract and test
-        tar -xzf radarr-archive.tar.gz
+        tar -xzf "${ARCHIVE_NAME}"
         chmod +x radarr-linux-amd64
 
         # Quick smoke test
