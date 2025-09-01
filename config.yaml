@@ -1,3 +1,4 @@
+---
 server:
   port: 7878
   host: "0.0.0.0"
@@ -13,7 +14,8 @@ database:
   database: "radarr"
   username: "radarr"
   password: "${RADARR_DATABASE_PASSWORD:-}"
-  connection_url: ""  # Optional: Override individual settings with full connection string
+  # Optional: Override individual settings with full connection string
+  connection_url: ""
   max_connections: 10
 
 log:

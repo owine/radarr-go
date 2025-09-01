@@ -1,3 +1,4 @@
+---
 # Development Docker Compose
 # Complete development environment with hot reload, databases, and monitoring
 version: '3.8'
@@ -70,8 +71,13 @@ services:
       else
         echo 'Frontend not yet implemented. Creating placeholder...';
         mkdir -p src public;
-        echo '{\"name\":\"radarr-frontend\",\"version\":\"0.1.0\",\"scripts\":{\"dev\":\"echo Frontend dev server would start here\"}}' > package.json;
-        echo '<!DOCTYPE html><html><head><title>Radarr Frontend Dev</title></head><body><h1>Frontend Development Server</h1><p>React frontend coming in Phase 2</p><p>Backend API: <a href=\"http://localhost:7878\">http://localhost:7878</a></p></body></html>' > public/index.html;
+        echo '{\"name\":\"radarr-frontend\",\"version\":\"0.1.0\",' \
+             '\"scripts\":{\"dev\":\"echo Frontend dev server would start here\"}}' > package.json;
+        echo '<!DOCTYPE html><html><head><title>Radarr Frontend Dev</title></head>' \
+             '<body><h1>Frontend Development Server</h1>' \
+             '<p>React frontend coming in Phase 2</p>' \
+             '<p>Backend API: <a href=\"http://localhost:7878\">http://localhost:7878</a></p>' \
+             '</body></html>' > public/index.html;
         python3 -m http.server 3000;
       fi
       "
