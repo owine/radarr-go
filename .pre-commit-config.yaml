@@ -1,3 +1,4 @@
+---
 repos:
   # Go formatting
   - repo: https://github.com/dnephin/pre-commit-golang

@@ -1,3 +1,4 @@
+---
 name: Release
 
 on:
@@ -32,7 +33,7 @@ jobs:
   # Validate and prepare release
   validate:
     name: Validate Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -128,7 +129,7 @@ jobs:
   # Optimized unified build (major cost savings)
   build:
     name: Build All Platforms
-    runs-on: ubuntu-latest  # Single Linux runner instead of 7 different runners
+    runs-on: ubuntu-24.04  # Single Linux runner instead of 7 different runners
     needs: validate
     timeout-minutes: 25
 
@@ -274,7 +275,7 @@ jobs:
   # Optimized release publishing (consolidated steps)
   release-assets:
     name: Publish Release Assets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, build]
     timeout-minutes: 10
 
@@ -317,30 +318,30 @@ jobs:
         echo "artifact_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
         echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
 
-        # Create release manifest
-        cat > ../RELEASE_NOTES.md << EOF
-        # Radarr Go v${{ needs.validate.outputs.version }}
-
-        ## 🚀 Optimized Release Pipeline
-
-        This release was built using our cost-optimized CI/CD pipeline:
-        - **85% cost reduction** by consolidating 7 platform-specific runners into 1 Linux runner
-        - **60% speed improvement** through parallel cross-compilation
-        - **Enhanced caching** for faster subsequent builds
-
-        ## 📦 Release Statistics
-
-        - **Version**: ${{ needs.validate.outputs.version }}
-        - **Build Date**: ${{ needs.validate.outputs.build_date }}
-        - **Commit**: ${{ needs.validate.outputs.commit_sha }}
-        - **Total Artifacts**: $TOTAL_COUNT
-        - **Total Size**: $TOTAL_SIZE
-
-        ## 🗂️ Download Links
-
-        | Platform | Architecture | Download |
-        |----------|--------------|----------|
-        EOF
+        # Create release manifest using safe method (avoid YAML parsing issues)
+        {
+          echo "# Radarr Go v${{ needs.validate.outputs.version }}"
+          echo ""
+          echo "## 🚀 Optimized Release Pipeline"
+          echo ""
+          echo "This release was built using our cost-optimized CI/CD pipeline:"
+          echo "- **85% cost reduction** by consolidating 7 platform-specific runners into 1 Linux runner"
+          echo "- **60% speed improvement** through parallel cross-compilation"
+          echo "- **Enhanced caching** for faster subsequent builds"
+          echo ""
+          echo "## 📦 Release Statistics"
+          echo ""
+          echo "- **Version**: ${{ needs.validate.outputs.version }}"
+          echo "- **Build Date**: ${{ needs.validate.outputs.build_date }}"
+          echo "- **Commit**: ${{ needs.validate.outputs.commit_sha }}"
+          echo "- **Total Artifacts**: $TOTAL_COUNT"
+          echo "- **Total Size**: $TOTAL_SIZE"
+          echo ""
+          echo "## 🗂️ Download Links"
+          echo ""
+          echo "| Platform | Architecture | Download |"
+          echo "|----------|--------------|----------|"
+        } > ../RELEASE_NOTES.md
 
         # Add download links
         for archive in *.tar.gz *.zip; do
@@ -355,26 +356,27 @@ jobs:
           fi
         done
 
-        cat >> ../RELEASE_NOTES.md << EOF
-
-        ## 🔐 Verification
-
-        All binaries include SHA256 checksums for verification:
-
-        \`\`\`bash
-        # Download and verify (example for Linux amd64)
-        wget https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz
-        wget https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz.sha256
-        sha256sum -c radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz.sha256
-        \`\`\`
-
-        ## 🐳 Docker Images
-
-        Docker images are available in the Docker workflow.
-
-        ---
-        **Built with optimized GitHub Actions** - 85% cost reduction, 60% speed improvement
-        EOF
+        # Append verification section using safe method (avoid YAML parsing issues)
+        {
+          echo ""
+          echo "## 🔐 Verification"
+          echo ""
+          echo "All binaries include SHA256 checksums for verification:"
+          echo ""
+          echo '```bash'
+          echo "# Download and verify (example for Linux amd64)"
+          echo "wget https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz"
+          echo "wget https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz.sha256"
+          echo "sha256sum -c radarr-v${{ needs.validate.outputs.version }}-linux-amd64.tar.gz.sha256"
+          echo '```'
+          echo ""
+          echo "## 🐳 Docker Images"
+          echo ""
+          echo "Docker images are available in the Docker workflow."
+          echo ""
+          echo "---"
+          echo "**Built with optimized GitHub Actions** - 85% cost reduction, 60% speed improvement"
+        } >> ../RELEASE_NOTES.md
 
         echo "✅ Release preparation completed"
 
@@ -415,7 +417,7 @@ jobs:
   # Integration testing (runs before Docker publishing)
   integration-test:
     name: Integration Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, release-assets]
     timeout-minutes: 15
 
@@ -540,7 +542,7 @@ jobs:
   # Docker publishing (only runs after successful integration test)
   docker-publish:
     name: Publish Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, integration-test]
     timeout-minutes: 20
 
@@ -674,3 +676,126 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "---" >> $GITHUB_STEP_SUMMARY
         echo "**🔒 Security**: Images built with SBOM and provenance attestation" >> $GITHUB_STEP_SUMMARY
+
+  # Update release description with Docker image details
+  update-release-description:
+    name: Update Release with Docker Details
+    runs-on: ubuntu-24.04
+    needs: [validate, docker-publish]
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Get Docker image information
+      id: docker_info
+      run: |
+        BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        VERSION="${{ needs.validate.outputs.version }}"
+        IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
+        BUILD_DATE="${{ needs.validate.outputs.build_date }}"
+        COMMIT_SHA="${{ needs.validate.outputs.commit_sha }}"
+
+        # Get image digest from registry
+        echo "🔍 Fetching Docker image digest..."
+
+        # Login to get image info
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+        # Get the manifest digest for the versioned tag
+        IMAGE_TAG="${BASE_IMAGE}:v${VERSION}"
+        DIGEST=$(docker buildx imagetools inspect "$IMAGE_TAG" --format "{{.Manifest.Digest}}")
+
+        if [[ -z "$DIGEST" ]]; then
+          echo "⚠️ Could not fetch digest, using commit SHA as fallback"
+          DIGEST="sha256:${COMMIT_SHA}"
+        fi
+
+        echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        echo "base_image=${BASE_IMAGE}" >> $GITHUB_OUTPUT
+
+        # Generate all available tags based on release type
+        if [[ "${IS_PRERELEASE}" == "false" ]]; then
+          AVAILABLE_TAGS="latest, release, stable, v${VERSION}, v${VERSION}-multi-db, v${VERSION}-postgres, v${VERSION}-mariadb, multi-db, postgres, mariadb"
+        else
+          AVAILABLE_TAGS="testing, prerelease, v${VERSION}, v${VERSION}-multi-db, v${VERSION}-postgres, v${VERSION}-mariadb"
+        fi
+
+        echo "available_tags=${AVAILABLE_TAGS}" >> $GITHUB_OUTPUT
+        echo "📋 Digest: ${DIGEST}"
+        echo "🏷️ Available tags: ${AVAILABLE_TAGS}"
+
+    - name: Create enhanced release notes with Docker details
+      run: |
+        VERSION="${{ needs.validate.outputs.version }}"
+        TAG_NAME="${{ needs.validate.outputs.tag_name }}"
+        BUILD_DATE="${{ needs.validate.outputs.build_date }}"
+        COMMIT_SHA="${{ needs.validate.outputs.commit_sha }}"
+        DIGEST="${{ steps.docker_info.outputs.digest }}"
+        BASE_IMAGE="${{ steps.docker_info.outputs.base_image }}"
+        AVAILABLE_TAGS="${{ steps.docker_info.outputs.available_tags }}"
+        IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
+
+        # Determine release type
+        if [[ "${IS_PRERELEASE}" == "false" ]]; then
+          RELEASE_TYPE="**Production Release**"
+        else
+          RELEASE_TYPE="**Pre-release**"
+        fi
+
+        # Use dedicated script to generate release notes (avoids YAML parsing issues)
+        chmod +x ./.github/scripts/generate-release-notes.sh
+        ./.github/scripts/generate-release-notes.sh \
+          "${VERSION}" \
+          "${BUILD_DATE}" \
+          "${COMMIT_SHA}" \
+          "${TAG_NAME}" \
+          "${DIGEST}" \
+          "${BASE_IMAGE}" \
+          "${AVAILABLE_TAGS}" \
+          "${RELEASE_TYPE}" \
+          "${{ github.repository }}" \
+          "${{ env.REGISTRY }}" \
+          "${{ env.IMAGE_NAME }}"
+
+    - name: Update GitHub release with Docker information
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG_NAME="${{ needs.validate.outputs.tag_name }}"
+
+        echo "📝 Updating GitHub release with Docker image details..."
+
+        # Update the release description
+        gh release edit "${TAG_NAME}" \
+          --notes-file RELEASE_NOTES_UPDATED.md \
+          --title "Radarr Go v${{ needs.validate.outputs.version }}" \
+          --verify-tag
+
+        echo "✅ Release description updated with comprehensive Docker information"
+
+    - name: Create final summary
+      run: |
+        DIGEST="${{ steps.docker_info.outputs.digest }}"
+        BASE_IMAGE="${{ steps.docker_info.outputs.base_image }}"
+        VERSION="${{ needs.validate.outputs.version }}"
+
+        echo "## 🎉 Release Updated with Docker Details" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🐳 Docker Information Added" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image**: \`${BASE_IMAGE}:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Digest**: \`${DIGEST}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Pinned Reference**: \`${BASE_IMAGE}@${DIGEST}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Release Enhanced With" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Complete Docker tag listing" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Image digest for secure pinning" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Production deployment examples" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Security verification commands" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Docker Compose and Kubernetes examples" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Quick Access" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry URL**: https://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
