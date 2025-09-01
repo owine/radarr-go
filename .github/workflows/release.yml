@@ -419,6 +419,21 @@ jobs:
     needs: [validate, release-assets]
     timeout-minutes: 25
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: radarr_test
+          POSTGRES_USER: radarr_test
+          POSTGRES_DB: radarr_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - name: Checkout code
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -558,8 +573,13 @@ jobs:
         server:
           port: 7878
         database:
-          type: sqlite
-          database: data/radarr.db
+          type: postgres
+          host: localhost
+          port: 5432
+          username: radarr_test
+          password: radarr_test
+          database: radarr_test
+          sslmode: disable
         log:
           level: info
         EOF
