@@ -52,23 +52,23 @@ parse_version() {
 compare_versions() {
   local ver1="$1"
   local ver2="$2"
-  
+
   # Remove prerelease suffixes for base version comparison
   local base1=$(echo "$ver1" | sed 's/-.*$//')
   local base2=$(echo "$ver2" | sed 's/-.*$//')
-  
+
   read -r maj1 min1 pat1 <<< "$(parse_version "$base1")"
   read -r maj2 min2 pat2 <<< "$(parse_version "$base2")"
-  
+
   if [[ $maj1 -gt $maj2 ]]; then echo 1; return; fi
   if [[ $maj1 -lt $maj2 ]]; then echo -1; return; fi
-  
+
   if [[ $min1 -gt $min2 ]]; then echo 1; return; fi
   if [[ $min1 -lt $min2 ]]; then echo -1; return; fi
-  
+
   if [[ $pat1 -gt $pat2 ]]; then echo 1; return; fi
   if [[ $pat1 -lt $pat2 ]]; then echo -1; return; fi
-  
+
   echo 0
 }
 
@@ -79,22 +79,22 @@ VALIDATION_WARNINGS=()
 # Check if new version is greater than latest
 if [[ -n "$LATEST_ANY" ]]; then
   COMPARISON=$(compare_versions "$VERSION" "$LATEST_ANY")
-  
+
   if [[ $COMPARISON -lt 0 ]]; then
     VALIDATION_ERRORS+=("Version $VERSION is older than existing version $LATEST_ANY")
   elif [[ $COMPARISON -eq 0 ]]; then
     # Same base version - check prerelease progression
     NEW_PRERELEASE=""
     LATEST_PRERELEASE=""
-    
+
     if [[ $VERSION =~ -(.+)$ ]]; then
       NEW_PRERELEASE="${BASH_REMATCH[1]}"
     fi
-    
+
     if [[ $LATEST_ANY =~ -(.+)$ ]]; then
       LATEST_PRERELEASE="${BASH_REMATCH[1]}"
     fi
-    
+
     # Both have same base version
     if [[ -n "$NEW_PRERELEASE" && -n "$LATEST_PRERELEASE" ]]; then
       # Both are prereleases - validate progression (alpha < beta < rc)
@@ -151,23 +151,23 @@ if [[ -n "$LATEST_STABLE" ]]; then
   # Parse versions
   read -r latest_maj latest_min latest_pat <<< "$(parse_version "$LATEST_STABLE")"
   read -r new_maj new_min new_pat <<< "$(parse_version "$VERSION")"
-  
+
   # Remove prerelease for increment validation
   VERSION_BASE=$(echo "$VERSION" | sed 's/-.*$//')
   read -r new_maj new_min new_pat <<< "$(parse_version "$VERSION_BASE")"
-  
+
   echo ""
   echo "🔢 Version increment analysis:"
   echo "   Previous: $latest_maj.$latest_min.$latest_pat"
   echo "   New base: $new_maj.$new_min.$new_pat"
-  
+
   # Major version increment
   if [[ $new_maj -gt $latest_maj ]]; then
     if [[ $new_min -ne 0 || $new_pat -ne 0 ]]; then
       VALIDATION_WARNINGS+=("Major version bump should reset minor and patch to 0")
     fi
     echo "   → Major version increment detected"
-  # Minor version increment  
+  # Minor version increment
   elif [[ $new_maj -eq $latest_maj && $new_min -gt $latest_min ]]; then
     if [[ $new_pat -ne 0 ]]; then
       VALIDATION_WARNINGS+=("Minor version bump should reset patch to 0")

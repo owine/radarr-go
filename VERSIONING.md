@@ -498,8 +498,8 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 
 ---
 
-**Last Updated**: September 2025  
-**Document Version**: 1.0  
+**Last Updated**: September 2025
+**Document Version**: 1.0
 **Applies to**: Radarr Go v0.9.0-alpha and later
 
 For questions or suggestions regarding this versioning strategy, please create an issue in the [Radarr Go repository](https://github.com/radarr/radarr-go/issues).

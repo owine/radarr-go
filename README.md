@@ -87,7 +87,7 @@ docker run -d ghcr.io/radarr/radarr-go@sha256:abc1234...
 
 Download the latest release for your platform from the [releases page](https://github.com/radarr/radarr-go/releases).
 
-**Current Release**: v0.9.0-alpha (95% feature parity, near production-ready)  
+**Current Release**: v0.9.0-alpha (95% feature parity, near production-ready)
 **Next Milestone**: v1.0.0 (Q2 2025) - Full production release with API stability guarantee
 
 **Supported Platforms:**

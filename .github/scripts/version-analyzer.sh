@@ -51,7 +51,7 @@ PRERELEASE_TYPE=""
 
 if [[ -n "$PRERELEASE" ]]; then
   IS_PRERELEASE=true
-  
+
   # Determine prerelease type
   if [[ $PRERELEASE =~ ^alpha ]]; then
     PRERELEASE_TYPE="alpha"
@@ -98,7 +98,7 @@ fi
 generate_docker_tags() {
   local base_image="${1:-ghcr.io/owner/repo}"
   local current_date=$(date +%Y.%m)
-  
+
   # Always include version-specific tags
   local tags=(
     "v${VERSION}"
@@ -106,7 +106,7 @@ generate_docker_tags() {
     "v${VERSION}-postgres"
     "v${VERSION}-mariadb"
   )
-  
+
   if [[ "$IS_PRERELEASE" == "false" ]]; then
     # Production release tags (VERSIONING.md strategy)
     if [[ "$IS_PRE_1_0" == "false" ]]; then
@@ -129,7 +129,7 @@ generate_docker_tags() {
         "${current_date}"
       )
     fi
-    
+
     # Special handling for 1.0.0 milestone
     if [[ "$VERSION" == "1.0.0" ]]; then
       tags+=(
@@ -144,7 +144,7 @@ generate_docker_tags() {
       "testing-v${VERSION}"
       "prerelease"
     )
-    
+
     # Type-specific prerelease tags
     case "$PRERELEASE_TYPE" in
       alpha)
@@ -158,7 +158,7 @@ generate_docker_tags() {
         ;;
     esac
   fi
-  
+
   # Convert array to comma-separated string
   local IFS=','
   echo "${tags[*]}"
@@ -168,10 +168,10 @@ generate_docker_tags() {
 validate_version_progression() {
   # This would ideally check against the latest Git tags
   # For now, provide basic validation rules
-  
+
   local validation_result="valid"
   local warnings=()
-  
+
   # Pre-1.0 specific validations
   if [[ "$IS_PRE_1_0" == "true" ]]; then
     # In pre-1.0, minor versions can introduce breaking changes
@@ -179,7 +179,7 @@ validate_version_progression() {
       warnings+=("High patch version ($PATCH) - consider bumping minor version")
     fi
   fi
-  
+
   # Prerelease validation
   if [[ "$IS_PRERELEASE" == "true" ]]; then
     # Validate prerelease ordering (alpha -> beta -> rc)
@@ -197,7 +197,7 @@ validate_version_progression() {
         ;;
     esac
   fi
-  
+
   echo "$validation_result"
   if [[ ${#warnings[@]} -gt 0 ]]; then
     printf "Warning: %s\n" "${warnings[@]}" >&2
@@ -209,14 +209,14 @@ generate_compatibility_info() {
   local api_compatibility="radarr-v3"
   local go_module_compatibility="compatible"
   local breaking_changes="none"
-  
+
   if [[ "$IS_PRE_1_0" == "true" ]]; then
     go_module_compatibility="pre-1.0-unstable"
     if [[ "$PRERELEASE_TYPE" == "alpha" ]]; then
       breaking_changes="possible"
     fi
   fi
-  
+
   echo "api_compatibility=${api_compatibility}"
   echo "go_module_compatibility=${go_module_compatibility}"
   echo "breaking_changes=${breaking_changes}"
@@ -242,11 +242,11 @@ case "$OUTPUT_FORMAT" in
 }
 EOF
     ;;
-    
+
   --docker-tags)
     generate_docker_tags "${3:-ghcr.io/owner/repo}"
     ;;
-    
+
   --env|*)
     # GitHub Actions environment format
     echo "VERSION=${VERSION}"

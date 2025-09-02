@@ -3,7 +3,7 @@
 ## Current Docker Tag Issues
 
 Based on your description, there are inconsistent Docker tags that need cleanup:
-- `mariadb`, `postgres`, `multi-db` - unclear versioning  
+- `mariadb`, `postgres`, `multi-db` - unclear versioning
 - `stable` - may not reflect actual stable status
 - `v0.0.10-*` - deprecated experimental tags
 - Various inconsistent tags
@@ -54,7 +54,7 @@ ghcr.io/OWNER/radarr-go:v0.9.0-alpha
 
 # Database-specific variants
 ghcr.io/OWNER/radarr-go:v0.9.0-alpha-postgres
-ghcr.io/OWNER/radarr-go:v0.9.0-alpha-mariadb  
+ghcr.io/OWNER/radarr-go:v0.9.0-alpha-mariadb
 ghcr.io/OWNER/radarr-go:v0.9.0-alpha-multi-db
 
 # Testing tags (auto-updating)
@@ -89,13 +89,13 @@ Update your release workflow to implement the new tagging strategy:
     tags: |
       # Version-specific tag
       type=semver,pattern=v{{version}}
-      
+
       # Pre-release tags
       type=raw,value=testing,enable={{is_default_branch}}
       type=raw,value=prerelease,enable=${{ github.event.release.prerelease }}
       type=raw,value=alpha,enable=${{ contains(github.ref_name, 'alpha') }}
       type=raw,value=beta,enable=${{ contains(github.ref_name, 'beta') }}
-      
+
       # Production tags (only for non-prerelease)
       type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
       type=raw,value=stable,enable=${{ !github.event.release.prerelease }}
@@ -107,7 +107,7 @@ Update your release workflow to implement the new tagging strategy:
     push: true
     tags: ${{ steps.meta.outputs.tags }}
     labels: ${{ steps.meta.outputs.labels }}
-    
+
     # Build database-specific variants
     targets: |
       base
@@ -137,7 +137,7 @@ LABEL org.opencontainers.image.description="Radarr Go - PostgreSQL optimized"
 ENV RADARR_DATABASE_TYPE=postgres
 ENV RADARR_DATABASE_PORT=5432
 
-# MariaDB optimized  
+# MariaDB optimized
 FROM base AS mariadb
 LABEL org.opencontainers.image.description="Radarr Go - MariaDB optimized"
 ENV RADARR_DATABASE_TYPE=mariadb
@@ -279,7 +279,7 @@ gh api "repos/OWNER/REPO/packages/container/radarr-go/versions" \
 
 **Implementation Priority**:
 1. Create v0.9.0-alpha tags immediately
-2. Update CI/CD for future releases  
+2. Update CI/CD for future releases
 3. Communicate changes to users
 4. Clean up confusing tags after grace period
 5. Implement automated cleanup for pre-releases

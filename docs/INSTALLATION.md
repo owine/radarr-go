@@ -245,7 +245,7 @@ Radarr Go follows a comprehensive [versioning strategy](../VERSIONING.md) with a
 
 **Database-Optimized Tags**:
 - `:v0.9.0-alpha-postgres` - PostgreSQL optimized (recommended)
-- `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized  
+- `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized
 - `:postgres` - Latest with PostgreSQL optimizations
 - `:mariadb` - Latest with MariaDB optimizations
 

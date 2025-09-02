@@ -255,7 +255,7 @@ docker-compose -f docker-compose.dev.yml --profile frontend up -d    # Include f
 git tag v1.2.3                 # Create release tag (triggers automated workflow)
 git push origin v1.2.3         # Push tag to trigger CI/CD pipeline
 
-# Pre-release Process  
+# Pre-release Process
 git tag v1.2.3-alpha.1         # Create pre-release tag
 git push origin v1.2.3-alpha.1 # Push pre-release tag
 ```

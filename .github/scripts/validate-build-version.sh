@@ -28,7 +28,7 @@ if ! grep -qE "(var\s+version|version\s*=)" "$MAIN_FILE"; then
 fi
 
 if ! grep -qE "(var\s+commit|commit\s*=)" "$MAIN_FILE"; then
-  echo "❌ Commit variable not found in $MAIN_FILE"  
+  echo "❌ Commit variable not found in $MAIN_FILE"
   echo "Expected to find: var commit = ... or commit = ..."
   exit 1
 fi
@@ -45,19 +45,19 @@ echo "✅ Version variables found in $MAIN_FILE"
 if [[ $# -gt 0 && -f "$1" ]]; then
   BINARY="$1"
   echo "🧪 Testing version command with binary: $BINARY"
-  
+
   # Test --version flag
   if timeout 10s "$BINARY" --version 2>/dev/null; then
     echo "✅ Version command works"
   else
     echo "⚠️ Version command failed or timed out"
   fi
-  
+
   # Test version output format
   VERSION_OUTPUT=$("$BINARY" --version 2>/dev/null || echo "")
   if [[ -n "$VERSION_OUTPUT" ]]; then
     echo "📋 Version output: $VERSION_OUTPUT"
-    
+
     # Basic validation of version format
     if [[ "$VERSION_OUTPUT" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
       echo "✅ Version output contains semantic version"
@@ -84,12 +84,12 @@ LDFLAGS="-X 'main.version=${TEST_VERSION}' -X 'main.commit=${TEST_COMMIT}' -X 'm
 echo "   Building test binary..."
 if go build -ldflags="${LDFLAGS}" -o test-version-binary ./cmd/radarr 2>/dev/null; then
   echo "✅ Build with version injection successful"
-  
+
   # Test the binary
   if timeout 5s ./test-version-binary --version 2>/dev/null; then
     VERSION_OUTPUT=$(timeout 5s ./test-version-binary --version 2>/dev/null || echo "")
     echo "   Output: $VERSION_OUTPUT"
-    
+
     # Validate injected values appear in output
     if [[ "$VERSION_OUTPUT" == *"$TEST_VERSION"* ]]; then
       echo "✅ Version injection working correctly"
@@ -99,7 +99,7 @@ if go build -ldflags="${LDFLAGS}" -o test-version-binary ./cmd/radarr 2>/dev/nul
   else
     echo "⚠️ Test binary version command failed"
   fi
-  
+
   # Cleanup
   rm -f test-version-binary
 else

@@ -40,7 +40,7 @@ The v0.0.x series was experimental and the architecture has significantly evolve
    ```bash
    # Backup your current data directory
    cp -r ./data ./data-v0.0.x-backup
-   
+
    # Export any custom configurations
    cp config.yaml config-v0.0.x-backup.yaml
    ```
@@ -49,10 +49,10 @@ The v0.0.x series was experimental and the architecture has significantly evolve
    ```bash
    # Stop old version
    docker-compose down  # or stop your binary
-   
+
    # Remove old containers/images (optional)
    docker system prune -a
-   
+
    # Install v0.9.0-alpha
    docker pull ghcr.io/radarr/radarr-go:v0.9.0-alpha
    ```
@@ -111,7 +111,7 @@ docker run --name radarr-postgres \
 
 #### MariaDB Setup:
 ```bash
-# Using Docker  
+# Using Docker
 docker run --name radarr-mariadb \
   -e MYSQL_DATABASE=radarr \
   -e MYSQL_USER=radarr \
@@ -126,15 +126,15 @@ docker run --name radarr-mariadb \
 server:
   port: 7878
   host: "0.0.0.0"
-  
+
 database:
   type: "postgres"  # or "mariadb"
-  host: "localhost"  
+  host: "localhost"
   port: 5432         # or 3306 for mariadb
   username: "radarr"
   password: "password"
   name: "radarr"
-  
+
 log:
   level: "info"
   format: "json"
@@ -147,7 +147,7 @@ Understanding the new Docker tagging strategy:
 
 #### Production Tags (Future):
 - `latest`: Latest stable release
-- `stable`: Alias for latest stable  
+- `stable`: Alias for latest stable
 - `v1.2.3`: Specific version pinning
 
 #### Testing Tags (Current):
@@ -157,7 +157,7 @@ Understanding the new Docker tagging strategy:
 
 #### Database-Specific Tags:
 - `postgres`: Latest with PostgreSQL optimizations
-- `mariadb`: Latest with MariaDB optimizations  
+- `mariadb`: Latest with MariaDB optimizations
 - `multi-db`: Supports both databases
 
 ### Docker Upgrade Process:
@@ -189,7 +189,7 @@ RADARR_DATABASE_USERNAME=radarr
 RADARR_DATABASE_PASSWORD=password
 RADARR_DATABASE_NAME=radarr
 
-# Server configuration  
+# Server configuration
 RADARR_SERVER_PORT=7878
 RADARR_SERVER_HOST=0.0.0.0
 
@@ -207,7 +207,7 @@ server:
   port: 7878
   host: "0.0.0.0"
   url_base: ""
-  
+
 database:
   type: "postgres"
   host: "localhost"
@@ -216,7 +216,7 @@ database:
   password: "password"
   name: "radarr"
   max_connections: 10
-  
+
 log:
   level: "info"
   format: "json"
@@ -237,7 +237,7 @@ v0.9.0-alpha has significantly improved performance:
 
 ### Recommended Resources:
 - **CPU**: 1-2 cores minimum
-- **RAM**: 512MB minimum, 1GB recommended  
+- **RAM**: 512MB minimum, 1GB recommended
 - **Storage**: 10GB minimum for database and logs
 - **Database**: PostgreSQL recommended for best performance
 
@@ -297,7 +297,7 @@ docker-compose down && docker-compose up -d
 ```
 
 ### When v1.0.0 Releases:
-```bash  
+```bash
 # Upgrade to stable
 docker pull ghcr.io/radarr/radarr-go:latest
 docker-compose down && docker-compose up -d
@@ -328,7 +328,7 @@ docker pull ghcr.io/radarr/radarr-go:v0.0.10
 
 ### Getting Help:
 - **GitHub Issues**: Report bugs and request features
-- **Documentation**: Check README.md and VERSIONING.md  
+- **Documentation**: Check README.md and VERSIONING.md
 - **Discord/Community**: Links in main repository
 
 ### Before Reporting Issues:
@@ -356,7 +356,7 @@ A: Direct migration from original Radarr is not currently supported. This is a r
 
 ---
 
-**Last Updated**: September 2025  
+**Last Updated**: September 2025
 **Applies to**: Radarr Go v0.9.0-alpha and later
 
 For the most current information, check the [GitHub repository](https://github.com/radarr/radarr-go).

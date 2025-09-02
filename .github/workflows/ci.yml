@@ -166,11 +166,11 @@ jobs:
       - name: Validate build version handling
         run: |
           echo "🔍 Validating build version injection system..."
-          
+
           # Use build version validation script
           chmod +x ./.github/scripts/validate-build-version.sh
           ./.github/scripts/validate-build-version.sh artifacts/radarr-test
-          
+
           echo "✅ Build version validation completed"
 
       - name: Store build artifacts
