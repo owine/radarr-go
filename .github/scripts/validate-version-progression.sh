@@ -20,7 +20,8 @@ echo "🔍 Validating version progression for: v$VERSION"
 
 # Get all existing tags and extract version numbers
 echo "📋 Fetching existing version tags..."
-EXISTING_TAGS=$(git tag -l "v*" | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | sort -V || echo "")
+# Exclude the current version being validated from the comparison
+EXISTING_TAGS=$(git tag -l "v*" | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | grep -v "^v${VERSION}$" | sort -V || echo "")
 
 if [[ -z "$EXISTING_TAGS" ]]; then
   echo "ℹ️ No existing version tags found - this appears to be the first release"
@@ -102,8 +103,8 @@ if [[ -n "$LATEST_ANY" ]]; then
         alpha*)
           if [[ $NEW_PRERELEASE =~ ^alpha ]]; then
             # Compare alpha numbers
-            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/alpha\.*//' | grep -o '[0-9]*$' || echo "0")
-            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/alpha\.*//' | grep -o '[0-9]*$' || echo "0")
+            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/alpha\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
+            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/alpha\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
             if [[ ${NEW_NUM:-0} -le ${LATEST_NUM:-0} ]]; then
               VALIDATION_ERRORS+=("Alpha version $NEW_PRERELEASE is not greater than existing $LATEST_PRERELEASE")
             fi
@@ -114,8 +115,8 @@ if [[ -n "$LATEST_ANY" ]]; then
           if [[ $NEW_PRERELEASE =~ ^alpha ]]; then
             VALIDATION_ERRORS+=("Cannot release alpha after beta")
           elif [[ $NEW_PRERELEASE =~ ^beta ]]; then
-            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/beta\.*//' | grep -o '[0-9]*$' || echo "0")
-            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/beta\.*//' | grep -o '[0-9]*$' || echo "0")
+            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/beta\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
+            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/beta\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
             if [[ ${NEW_NUM:-0} -le ${LATEST_NUM:-0} ]]; then
               VALIDATION_ERRORS+=("Beta version $NEW_PRERELEASE is not greater than existing $LATEST_PRERELEASE")
             fi
@@ -126,8 +127,8 @@ if [[ -n "$LATEST_ANY" ]]; then
           if [[ $NEW_PRERELEASE =~ ^(alpha|beta) ]]; then
             VALIDATION_ERRORS+=("Cannot release alpha/beta after rc")
           elif [[ $NEW_PRERELEASE =~ ^rc ]]; then
-            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/rc\.*//' | grep -o '[0-9]*$' || echo "0")
-            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/rc\.*//' | grep -o '[0-9]*$' || echo "0")
+            LATEST_NUM=$(echo "$LATEST_PRERELEASE" | sed 's/rc\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
+            NEW_NUM=$(echo "$NEW_PRERELEASE" | sed 's/rc\.*//' | sed 's/.*\([0-9][0-9]*\)$/\1/' || echo "0")
             if [[ ${NEW_NUM:-0} -le ${LATEST_NUM:-0} ]]; then
               VALIDATION_ERRORS+=("RC version $NEW_PRERELEASE is not greater than existing $LATEST_PRERELEASE")
             fi
