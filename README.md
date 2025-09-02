@@ -196,25 +196,40 @@ make dev
 
 ### Testing
 
-The project uses a comprehensive testing matrix covering multiple platforms and databases:
+The project uses a comprehensive testing infrastructure with containerized databases and automated test management:
 
 ```bash
-# Run all tests
+# Run comprehensive tests (with containerized databases)
 make test
 
-# Run with coverage
-make test-coverage
+# Run specific test types
+make test-unit          # Unit tests only (no database)
+make test-integration   # Integration tests with database
+make test-bench         # Benchmark/performance tests
 
-# Run benchmark tests
-make test-bench
+# Database-specific testing
+make test-postgres      # Test with PostgreSQL
+make test-mariadb       # Test with MariaDB
 
-# Run example tests
-make test-examples
+# Advanced testing options
+make test-coverage      # Tests with coverage report
+make test-ci            # CI mode (parallel, coverage)
+make test-quick         # Quick unit tests only
 
-# Test specific database
-RADARR_DATABASE_TYPE=postgres go test -v ./...
-RADARR_DATABASE_TYPE=mariadb go test -v ./...
+# Using the test runner directly
+./scripts/test-runner.sh --mode all --coverage --parallel
+```
 
+**Key Testing Features:**
+- ✅ **Containerized Databases**: Automated PostgreSQL and MariaDB test containers
+- ✅ **Test Isolation**: Schema-level isolation for parallel testing
+- ✅ **Performance Testing**: Comprehensive benchmark suite
+- ✅ **Test Data Factories**: Consistent, reusable test data generation
+- ✅ **CI/CD Integration**: Automated testing across multiple platforms
+
+**📖 See [TESTING.md](TESTING.md) for comprehensive testing documentation**
+
+```bash
 # Run linting
 make lint
 
