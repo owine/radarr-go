@@ -2,35 +2,42 @@ openapi: 3.0.3
 info:
   title: Radarr Go API
   description: |
-    Complete REST API for Radarr Go - A high-performance movie collection manager built in Go.
+    Radarr Go API - A complete rewrite of Radarr movie collection manager from C#/.NET to Go, maintaining 100% compatibility with Radarr v3 API.
 
     ## Features
-    - **100% Radarr v3 API Compatibility** - Drop-in replacement for existing Radarr installations
-    - **150+ Endpoints** - Comprehensive movie management, quality profiles, download clients, and more
-    - **Real-time Updates** - WebSocket support for live status updates
-    - **High Performance** - Go-based implementation with optimized database operations
-    - **Multi-Database Support** - PostgreSQL and MariaDB supported
+
+    - **Complete Radarr v3 API Compatibility**: All 150+ endpoints match original Radarr API
+    - **High Performance**: Significant performance improvements over .NET version
+    - **Multi-Database Support**: PostgreSQL (default) and MariaDB
+    - **Comprehensive Movie Management**: Full CRUD operations, metadata, files, and collections
+    - **Advanced Search**: Multiple indexer support, interactive search, and release management
+    - **Quality Management**: Profiles, definitions, and custom formats
+    - **Download Management**: Multiple client support with queue management
+    - **Notification System**: 11+ notification providers including Discord, Slack, Email
+    - **Health Monitoring**: Comprehensive system health and diagnostics
+    - **Task Scheduling**: Background task management and monitoring
+    - **Calendar Integration**: RFC 5545 compliant iCal feeds
+    - **Import Management**: Automated and manual import processing
 
     ## Authentication
-    All API endpoints (except `/ping`) require authentication via API key:
-    - **Header**: `X-API-Key: your-api-key-here`
-    - **Query Parameter**: `?apikey=your-api-key-here`
 
-    ## Base URL
-    All API endpoints are prefixed with `/api/v3/`
-
-    ## Response Format
-    - All responses are in JSON format
-    - Success responses include data and optional metadata
-    - Error responses include error details and codes
-    - Pagination is supported on list endpoints
+    The API supports API key authentication via:
+    - `X-API-Key` header (recommended)
+    - `apikey` query parameter
 
     ## Rate Limiting
-    - Default: 100 requests per minute per API key
-    - Health check endpoint is not rate limited
-    - Rate limit headers are included in responses
 
-  version: "1.0.0-go"
+    The API implements standard rate limiting based on client IP address.
+
+    ## Pagination
+
+    List endpoints support pagination with the following parameters:
+    - `page`: Page number (default: 1)
+    - `pageSize`: Number of items per page (default: 50, max: 250)
+    - `sortKey`: Field to sort by
+    - `sortDirection`: Sort direction ('asc' or 'desc')
+
+  version: 0.9.0-alpha
   contact:
     name: Radarr Go Project
     url: https://github.com/radarr/radarr-go

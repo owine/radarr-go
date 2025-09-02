@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Radarr Go API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.10.3/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.10.3/favicon-16x16.png" sizes="16x16" />
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
+    body {
+      margin:0;
+      background: #fafafa;
+    }
+
+    /* Custom styling for Radarr */
+    .topbar {
+      background: #2c3e50;
+    }
+
+    .swagger-ui .topbar .topbar-wrapper {
+      max-width: none;
+    }
+
+    .swagger-ui .topbar .topbar-wrapper::before {
+      content: "🎬";
+      font-size: 24px;
+      margin-right: 10px;
+    }
+
+    /* Custom API key input styling */
+    .api-key-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border: 1px solid #e3e3e3;
+      min-width: 300px;
+    }
+
+    .api-key-container h4 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .api-key-container input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    .api-key-container input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    }
+
+    .api-key-container .help-text {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+
+    .api-key-container button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .api-key-container button:hover {
+      background: #2980b9;
+    }
+
+    /* Status indicator */
+    .auth-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+
+    .auth-status.authenticated {
+      background: #27ae60;
+      color: white;
+    }
+
+    .auth-status.unauthenticated {
+      background: #e74c3c;
+      color: white;
+    }
+
+    /* Override Swagger UI default colors */
+    .swagger-ui .info .title {
+      color: #2c3e50;
+    }
+
+    .swagger-ui .scheme-container {
+      background: #ecf0f1;
+      border: 1px solid #bdc3c7;
+    }
+
+    .swagger-ui .btn.execute {
+      background: #27ae60;
+      border-color: #27ae60;
+    }
+
+    .swagger-ui .btn.execute:hover {
+      background: #229954;
+      border-color: #229954;
+    }
+
+    /* Hide the authorize button since we handle auth custom */
+    .swagger-ui .auth-wrapper {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="swagger-ui"></div>
+
+  <!-- Custom API Key Input -->
+  <div class="api-key-container">
+    <h4>🔑 API Authentication <span id="auth-status" class="auth-status unauthenticated">Not Authenticated</span></h4>
+    <input type="password" id="api-key-input" placeholder="Enter your API key here..." />
+    <div class="help-text">
+      Enter your Radarr API key to authenticate requests. You can find this in Radarr Settings → General → Security.
+      <br><br>
+      <strong>Example:</strong> abc123def456ghi789jkl012mno345pqr678
+    </div>
+    <button onclick="updateApiKey()">Apply API Key</button>
+    <button onclick="testConnection()" style="margin-left: 8px; background: #f39c12;">Test Connection</button>
+  </div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js"></script>
+  <script>
+    let swaggerUI;
+    let currentApiKey = localStorage.getItem('radarr_api_key') || '';
+
+    function initializeSwaggerUI() {
+      // Determine the OpenAPI spec URL based on current location
+      const currentPath = window.location.pathname;
+      const basePath = currentPath.replace(/\/[^\/]*$/, '');
+      const specUrl = `${window.location.origin}${basePath}/openapi-complete.yaml`;
+
+      swaggerUI = SwaggerUIBundle({
+        url: specUrl,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 1,
+        docExpansion: "list",
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        tryItOutEnabled: true,
+        requestInterceptor: (req) => {
+          // Add API key to all requests
+          if (currentApiKey) {
+            req.headers['X-API-Key'] = currentApiKey;
+          }
+          return req;
+        },
+        responseInterceptor: (res) => {
+          // Update auth status based on response
+          updateAuthStatus(res.status !== 401);
+          return res;
+        },
+        onComplete: () => {
+          // Initialize API key input with stored value
+          if (currentApiKey) {
+            document.getElementById('api-key-input').value = currentApiKey;
+            updateAuthStatus(true);
+          }
+
+          // Add custom header to the page
+          const infoContainer = document.querySelector('.swagger-ui .info');
+          if (infoContainer) {
+            const customHeader = document.createElement('div');
+            customHeader.innerHTML = `
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 24px;">🎬 Radarr Go API</h2>
+                <p style="margin: 0; opacity: 0.9; font-size: 16px;">
+                  Complete REST API for Radarr Go - High-performance movie collection management
+                </p>
+                <div style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+                  <strong>Version:</strong> 0.9.0-alpha |
+                  <strong>Endpoints:</strong> 150+ |
+                  <strong>Database:</strong> PostgreSQL/MariaDB
+                </div>
+              </div>
+            `;
+            infoContainer.parentNode.insertBefore(customHeader, infoContainer);
+          }
+        }
+      });
+    }
+
+    function updateApiKey() {
+      const apiKeyInput = document.getElementById('api-key-input');
+      const newApiKey = apiKeyInput.value.trim();
+
+      if (!newApiKey) {
+        alert('Please enter a valid API key');
+        return;
+      }
+
+      currentApiKey = newApiKey;
+      localStorage.setItem('radarr_api_key', currentApiKey);
+
+      // Update Swagger UI configuration
+      if (swaggerUI) {
+        swaggerUI.preauthorizeApiKey('ApiKeyAuth', currentApiKey);
+      }
+
+      updateAuthStatus(true);
+
+      // Show success message
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = '✓ Applied';
+      button.style.background = '#27ae60';
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = '#3498db';
+      }, 2000);
+    }
+
+    function testConnection() {
+      if (!currentApiKey) {
+        alert('Please enter an API key first');
+        return;
+      }
+
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = 'Testing...';
+      button.disabled = true;
+
+      fetch('/api/v3/system/status', {
+        method: 'GET',
+        headers: {
+          'X-API-Key': currentApiKey,
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          updateAuthStatus(true);
+          button.textContent = '✓ Success';
+          button.style.background = '#27ae60';
+          return response.json().then(data => {
+            alert(`Connection successful! 🎉\n\nRadarr Go ${data.version}\nRuntime: ${data.runtimeName} ${data.runtimeVersion}\nAuthentication: ${data.authentication}`);
+          });
+        } else if (response.status === 401) {
+          updateAuthStatus(false);
+          alert('Authentication failed. Please check your API key.');
+          button.textContent = '✗ Failed';
+          button.style.background = '#e74c3c';
+        } else {
+          alert(`Connection failed with status: ${response.status}`);
+          button.textContent = '✗ Error';
+          button.style.background = '#e74c3c';
+        }
+      })
+      .catch(error => {
+        console.error('Connection test error:', error);
+        alert(`Connection error: ${error.message}\n\nMake sure Radarr Go is running and accessible.`);
+        button.textContent = '✗ Error';
+        button.style.background = '#e74c3c';
+      })
+      .finally(() => {
+        button.disabled = false;
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '#f39c12';
+        }, 3000);
+      });
+    }
+
+    function updateAuthStatus(isAuthenticated) {
+      const statusElement = document.getElementById('auth-status');
+      if (isAuthenticated) {
+        statusElement.textContent = 'Authenticated';
+        statusElement.className = 'auth-status authenticated';
+      } else {
+        statusElement.textContent = 'Not Authenticated';
+        statusElement.className = 'auth-status unauthenticated';
+      }
+    }
+
+    // Handle Enter key in API key input
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('api-key-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          updateApiKey();
+        }
+      });
+    });
+
+    // Initialize Swagger UI when page loads
+    window.addEventListener('load', function () {
+      initializeSwaggerUI();
+    });
+  </script>
+</body>
+</html>

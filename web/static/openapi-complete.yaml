@@ -1,0 +1,4081 @@
+openapi: 3.0.3
+info:
+  title: Radarr Go API
+  description: |
+    Radarr Go API - A complete rewrite of Radarr movie collection manager from C#/.NET to Go, maintaining 100% compatibility with Radarr v3 API.
+
+    ## Features
+
+    - **Complete Radarr v3 API Compatibility**: All 150+ endpoints match original Radarr API
+    - **High Performance**: Significant performance improvements over .NET version
+    - **Multi-Database Support**: PostgreSQL (default) and MariaDB
+    - **Comprehensive Movie Management**: Full CRUD operations, metadata, files, and collections
+    - **Advanced Search**: Multiple indexer support, interactive search, and release management
+    - **Quality Management**: Profiles, definitions, and custom formats
+    - **Download Management**: Multiple client support with queue management
+    - **Notification System**: 11+ notification providers including Discord, Slack, Email
+    - **Health Monitoring**: Comprehensive system health and diagnostics
+    - **Task Scheduling**: Background task management and monitoring
+    - **Calendar Integration**: RFC 5545 compliant iCal feeds
+    - **Import Management**: Automated and manual import processing
+
+    ## Authentication
+
+    The API supports API key authentication via:
+    - `X-API-Key` header (recommended)
+    - `apikey` query parameter
+
+    ## Rate Limiting
+
+    The API implements standard rate limiting based on client IP address.
+
+    ## Pagination
+
+    List endpoints support pagination with the following parameters:
+    - `page`: Page number (default: 1)
+    - `pageSize`: Number of items per page (default: 50, max: 250)
+    - `sortKey`: Field to sort by
+    - `sortDirection`: Sort direction ('asc' or 'desc')
+
+  version: 0.9.0-alpha
+  contact:
+    name: Radarr Go API Support
+    url: https://github.com/radarr/radarr-go
+  license:
+    name: GPL-3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+
+servers:
+  - url: http://localhost:7878/api/v3
+    description: Local development server
+  - url: https://radarr.example.com/api/v3
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+  - ApiKeyQueryAuth: []
+
+paths:
+  # System Information
+  /system/status:
+    get:
+      tags:
+        - System
+      summary: Get system status
+      description: Returns basic system information including version, startup time, and authentication method
+      responses:
+        '200':
+          description: System status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  /ping:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      description: Simple health check that returns pong - no authentication required
+      security: []
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "pong"
+
+  # Movies
+  /movie:
+    get:
+      tags:
+        - Movies
+      summary: List movies
+      description: Get a list of all movies in the collection with optional filtering and pagination
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortKeyParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - name: tmdbId
+          in: query
+          schema:
+            type: integer
+          description: Filter by TMDB ID
+        - name: monitored
+          in: query
+          schema:
+            type: boolean
+          description: Filter by monitored status
+        - name: hasFile
+          in: query
+          schema:
+            type: boolean
+          description: Filter by file availability
+        - name: qualityProfileId
+          in: query
+          schema:
+            type: integer
+          description: Filter by quality profile ID
+      responses:
+        '200':
+          description: List of movies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+    post:
+      tags:
+        - Movies
+      summary: Add a movie
+      description: Add a new movie to the collection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieCreate'
+      responses:
+        '201':
+          description: Movie added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /movie/{id}:
+    get:
+      tags:
+        - Movies
+      summary: Get movie by ID
+      description: Get detailed information about a specific movie
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie ID
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Movies
+      summary: Update movie
+      description: Update an existing movie's details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Movie'
+      responses:
+        '200':
+          description: Movie updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Movies
+      summary: Delete movie
+      description: Remove a movie from the collection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie ID
+        - name: deleteFiles
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to delete associated files
+        - name: addImportListExclusion
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Add to import list exclusions
+      responses:
+        '204':
+          description: Movie deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /movie/lookup:
+    get:
+      tags:
+        - Movies
+      summary: Search for movies
+      description: Search for movies using various criteria (title, IMDb ID, TMDB ID)
+      parameters:
+        - name: term
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search term (movie title, IMDb ID, or TMDB ID)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 250
+          description: Maximum number of results to return
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResult'
+
+  /movie/lookup/tmdb:
+    get:
+      tags:
+        - Movies
+      summary: Get movie by TMDB ID
+      description: Retrieve movie information directly from TMDB
+      parameters:
+        - name: tmdbId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: TMDB movie ID
+      responses:
+        '200':
+          description: Movie information from TMDB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSearchResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /movie/popular:
+    get:
+      tags:
+        - Movies
+      summary: Get popular movies
+      description: Discover popular movies from TMDB
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Popular movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieDiscoveryResult'
+
+  /movie/trending:
+    get:
+      tags:
+        - Movies
+      summary: Get trending movies
+      description: Discover trending movies from TMDB
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: timeWindow
+          in: query
+          schema:
+            type: string
+            enum: [day, week]
+            default: week
+          description: Time window for trending calculation
+      responses:
+        '200':
+          description: Trending movies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieDiscoveryResult'
+
+  /movie/{id}/refresh:
+    put:
+      tags:
+        - Movies
+      summary: Refresh movie metadata
+      description: Refresh movie metadata from TMDB
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie ID
+      responses:
+        '202':
+          description: Refresh task queued
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /movie/refresh:
+    post:
+      tags:
+        - Movies
+      summary: Refresh all movies
+      description: Refresh metadata for all movies in the collection
+      responses:
+        '202':
+          description: Refresh all movies task queued
+
+  # Movie Files
+  /moviefile:
+    get:
+      tags:
+        - Movie Files
+      summary: List movie files
+      description: Get all movie files with optional filtering
+      parameters:
+        - name: movieId
+          in: query
+          schema:
+            type: integer
+          description: Filter by movie ID
+        - name: movieFileIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Filter by specific movie file IDs
+      responses:
+        '200':
+          description: List of movie files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieFile'
+
+  /moviefile/{id}:
+    get:
+      tags:
+        - Movie Files
+      summary: Get movie file by ID
+      description: Get detailed information about a specific movie file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie file ID
+      responses:
+        '200':
+          description: Movie file details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieFile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Movie Files
+      summary: Delete movie file
+      description: Delete a movie file and optionally the physical file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie file ID
+      responses:
+        '204':
+          description: Movie file deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Quality Profiles
+  /qualityprofile:
+    get:
+      tags:
+        - Quality Management
+      summary: List quality profiles
+      description: Get all quality profiles
+      responses:
+        '200':
+          description: List of quality profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QualityProfile'
+    post:
+      tags:
+        - Quality Management
+      summary: Create quality profile
+      description: Create a new quality profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityProfileCreate'
+      responses:
+        '201':
+          description: Quality profile created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /qualityprofile/{id}:
+    get:
+      tags:
+        - Quality Management
+      summary: Get quality profile by ID
+      description: Get detailed information about a specific quality profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Quality profile ID
+      responses:
+        '200':
+          description: Quality profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Quality Management
+      summary: Update quality profile
+      description: Update an existing quality profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Quality profile ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityProfile'
+      responses:
+        '200':
+          description: Quality profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Quality Management
+      summary: Delete quality profile
+      description: Delete a quality profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Quality profile ID
+      responses:
+        '204':
+          description: Quality profile deleted successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Quality Definitions
+  /qualitydefinition:
+    get:
+      tags:
+        - Quality Management
+      summary: List quality definitions
+      description: Get all quality definitions
+      responses:
+        '200':
+          description: List of quality definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QualityDefinition'
+
+  /qualitydefinition/{id}:
+    get:
+      tags:
+        - Quality Management
+      summary: Get quality definition by ID
+      description: Get detailed information about a specific quality definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Quality definition ID
+      responses:
+        '200':
+          description: Quality definition details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityDefinition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Quality Management
+      summary: Update quality definition
+      description: Update an existing quality definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Quality definition ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityDefinition'
+      responses:
+        '200':
+          description: Quality definition updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityDefinition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Custom Formats
+  /customformat:
+    get:
+      tags:
+        - Quality Management
+      summary: List custom formats
+      description: Get all custom formats
+      responses:
+        '200':
+          description: List of custom formats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomFormat'
+    post:
+      tags:
+        - Quality Management
+      summary: Create custom format
+      description: Create a new custom format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFormatCreate'
+      responses:
+        '201':
+          description: Custom format created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFormat'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /customformat/{id}:
+    get:
+      tags:
+        - Quality Management
+      summary: Get custom format by ID
+      description: Get detailed information about a specific custom format
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Custom format ID
+      responses:
+        '200':
+          description: Custom format details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFormat'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Quality Management
+      summary: Update custom format
+      description: Update an existing custom format
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Custom format ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFormat'
+      responses:
+        '200':
+          description: Custom format updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomFormat'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Quality Management
+      summary: Delete custom format
+      description: Delete a custom format
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Custom format ID
+      responses:
+        '204':
+          description: Custom format deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Indexers
+  /indexer:
+    get:
+      tags:
+        - Indexers
+      summary: List indexers
+      description: Get all configured indexers
+      responses:
+        '200':
+          description: List of indexers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Indexer'
+    post:
+      tags:
+        - Indexers
+      summary: Create indexer
+      description: Add a new indexer configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndexerCreate'
+      responses:
+        '201':
+          description: Indexer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indexer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /indexer/{id}:
+    get:
+      tags:
+        - Indexers
+      summary: Get indexer by ID
+      description: Get detailed information about a specific indexer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Indexer ID
+      responses:
+        '200':
+          description: Indexer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indexer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Indexers
+      summary: Update indexer
+      description: Update an existing indexer configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Indexer ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Indexer'
+      responses:
+        '200':
+          description: Indexer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Indexer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Indexers
+      summary: Delete indexer
+      description: Delete an indexer configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Indexer ID
+      responses:
+        '204':
+          description: Indexer deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /indexer/{id}/test:
+    post:
+      tags:
+        - Indexers
+      summary: Test indexer
+      description: Test the connectivity and configuration of an indexer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Indexer ID
+      responses:
+        '200':
+          description: Test successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexerTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Download Clients
+  /downloadclient:
+    get:
+      tags:
+        - Download Clients
+      summary: List download clients
+      description: Get all configured download clients
+      responses:
+        '200':
+          description: List of download clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DownloadClient'
+    post:
+      tags:
+        - Download Clients
+      summary: Create download client
+      description: Add a new download client configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadClientCreate'
+      responses:
+        '201':
+          description: Download client created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadClient'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /downloadclient/{id}:
+    get:
+      tags:
+        - Download Clients
+      summary: Get download client by ID
+      description: Get detailed information about a specific download client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Download client ID
+      responses:
+        '200':
+          description: Download client details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadClient'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Download Clients
+      summary: Update download client
+      description: Update an existing download client configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Download client ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadClient'
+      responses:
+        '200':
+          description: Download client updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadClient'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Download Clients
+      summary: Delete download client
+      description: Delete a download client configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Download client ID
+      responses:
+        '204':
+          description: Download client deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /downloadclient/test:
+    post:
+      tags:
+        - Download Clients
+      summary: Test download client
+      description: Test the connectivity and configuration of a download client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadClient'
+      responses:
+        '200':
+          description: Test successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadClientTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /downloadclient/stats:
+    get:
+      tags:
+        - Download Clients
+      summary: Get download client statistics
+      description: Get statistics from all configured download clients
+      responses:
+        '200':
+          description: Download client statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DownloadClientStats'
+
+  /downloadhistory:
+    get:
+      tags:
+        - Download Clients
+      summary: Get download history
+      description: Get download history from all configured download clients
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: movieId
+          in: query
+          schema:
+            type: integer
+          description: Filter by movie ID
+      responses:
+        '200':
+          description: Download history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DownloadHistoryItem'
+
+  # Import Lists
+  /importlist:
+    get:
+      tags:
+        - Import Lists
+      summary: List import lists
+      description: Get all configured import lists
+      responses:
+        '200':
+          description: List of import lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImportList'
+    post:
+      tags:
+        - Import Lists
+      summary: Create import list
+      description: Add a new import list configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportListCreate'
+      responses:
+        '201':
+          description: Import list created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /importlist/{id}:
+    get:
+      tags:
+        - Import Lists
+      summary: Get import list by ID
+      description: Get detailed information about a specific import list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Import list ID
+      responses:
+        '200':
+          description: Import list details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Import Lists
+      summary: Update import list
+      description: Update an existing import list configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Import list ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportList'
+      responses:
+        '200':
+          description: Import list updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Import Lists
+      summary: Delete import list
+      description: Delete an import list configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Import list ID
+      responses:
+        '204':
+          description: Import list deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /importlist/test:
+    post:
+      tags:
+        - Import Lists
+      summary: Test import list
+      description: Test the connectivity and configuration of an import list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportList'
+      responses:
+        '200':
+          description: Test successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportListTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /importlist/{id}/sync:
+    post:
+      tags:
+        - Import Lists
+      summary: Sync specific import list
+      description: Synchronize a specific import list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Import list ID
+      responses:
+        '202':
+          description: Sync task queued
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /importlist/sync:
+    post:
+      tags:
+        - Import Lists
+      summary: Sync all import lists
+      description: Synchronize all configured import lists
+      responses:
+        '202':
+          description: Sync all import lists task queued
+
+  /importlist/stats:
+    get:
+      tags:
+        - Import Lists
+      summary: Get import list statistics
+      description: Get statistics from all configured import lists
+      responses:
+        '200':
+          description: Import list statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImportListStats'
+
+  /importlistmovies:
+    get:
+      tags:
+        - Import Lists
+      summary: Get import list movies
+      description: Get movies from import lists (import candidates)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: importListId
+          in: query
+          schema:
+            type: integer
+          description: Filter by import list ID
+      responses:
+        '200':
+          description: Import list movies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImportListMovie'
+
+  # Queue Management
+  /queue:
+    get:
+      tags:
+        - Queue Management
+      summary: Get download queue
+      description: Get the current download queue with optional filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SortKeyParam'
+        - $ref: '#/components/parameters/SortDirectionParam'
+        - name: includeUnknownMovieItems
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include items with unknown movies
+      responses:
+        '200':
+          description: Download queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuePage'
+
+  /queue/{id}:
+    get:
+      tags:
+        - Queue Management
+      summary: Get queue item by ID
+      description: Get detailed information about a specific queue item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Queue item ID
+      responses:
+        '200':
+          description: Queue item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Queue Management
+      summary: Remove queue item
+      description: Remove an item from the download queue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Queue item ID
+        - name: removeFromClient
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Remove from download client as well
+        - name: blocklist
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Add to blocklist
+      responses:
+        '204':
+          description: Queue item removed successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /queue/bulk:
+    delete:
+      tags:
+        - Queue Management
+      summary: Remove multiple queue items
+      description: Remove multiple items from the download queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                removeFromClient:
+                  type: boolean
+                  default: true
+                blocklist:
+                  type: boolean
+                  default: false
+      responses:
+        '204':
+          description: Queue items removed successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /queue/stats:
+    get:
+      tags:
+        - Queue Management
+      summary: Get queue statistics
+      description: Get statistics about the download queue
+      responses:
+        '200':
+          description: Queue statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStats'
+
+  # Search and Releases
+  /search:
+    get:
+      tags:
+        - Search & Releases
+      summary: Search for releases
+      description: Search all configured indexers for movie releases
+      parameters:
+        - name: term
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search term
+        - name: categories
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Newznab categories to search
+        - name: indexerIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Specific indexer IDs to search
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+          description: Maximum number of results
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Release'
+
+  /search/movie:
+    get:
+      tags:
+        - Movies
+      summary: Search TMDB for movies
+      description: Search The Movie Database for movies to add
+      parameters:
+        - name: term
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Movie title to search for
+        - name: year
+          in: query
+          schema:
+            type: integer
+          description: Release year (optional, improves accuracy)
+      responses:
+        '200':
+          description: Movie search results from TMDB
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResult'
+
+  /search/movie/{id}:
+    get:
+      tags:
+        - Search & Releases
+      summary: Search releases for specific movie
+      description: Search for releases of a specific movie
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Movie ID
+        - name: indexerIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Specific indexer IDs to search
+      responses:
+        '200':
+          description: Movie release search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Release'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /search/interactive:
+    get:
+      tags:
+        - Search & Releases
+      summary: Interactive search
+      description: Perform an interactive search with manual release selection
+      parameters:
+        - name: movieId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Movie ID to search for
+        - name: indexerIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Specific indexer IDs to search
+      responses:
+        '200':
+          description: Interactive search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InteractiveSearchResult'
+
+  # Releases
+  /release:
+    get:
+      tags:
+        - Search & Releases
+      summary: List releases
+      description: Get cached releases with optional filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: movieId
+          in: query
+          schema:
+            type: integer
+          description: Filter by movie ID
+      responses:
+        '200':
+          description: List of releases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Release'
+
+  /release/{id}:
+    get:
+      tags:
+        - Search & Releases
+      summary: Get release by ID
+      description: Get detailed information about a specific release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Release ID
+      responses:
+        '200':
+          description: Release details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Release'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Search & Releases
+      summary: Delete release
+      description: Delete a cached release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Release ID
+      responses:
+        '204':
+          description: Release deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /release/stats:
+    get:
+      tags:
+        - Search & Releases
+      summary: Get release statistics
+      description: Get statistics about cached releases
+      responses:
+        '200':
+          description: Release statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseStats'
+
+  /release/grab:
+    post:
+      tags:
+        - Search & Releases
+      summary: Grab release
+      description: Grab a specific release for download
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guid:
+                  type: string
+                  description: Release GUID
+                indexerId:
+                  type: integer
+                  description: Indexer ID
+                movieId:
+                  type: integer
+                  description: Movie ID
+              required:
+                - guid
+                - indexerId
+                - movieId
+      responses:
+        '200':
+          description: Release grabbed successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Task Management
+  /command:
+    get:
+      tags:
+        - Task Management
+      summary: List tasks
+      description: Get all tasks (commands) with optional filtering
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, started, completed, failed, cancelled]
+          description: Filter by task status
+        - name: commandType
+          in: query
+          schema:
+            type: string
+          description: Filter by command type
+        - name: includeCompletedCommands
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include completed tasks
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    post:
+      tags:
+        - Task Management
+      summary: Queue task
+      description: Queue a new task for execution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /command/{id}:
+    get:
+      tags:
+        - Task Management
+      summary: Get task by ID
+      description: Get detailed information about a specific task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Task ID
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Task Management
+      summary: Cancel task
+      description: Cancel a running or queued task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Task ID
+      responses:
+        '204':
+          description: Task cancelled successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # System Tasks
+  /system/task:
+    get:
+      tags:
+        - Task Management
+      summary: Get scheduled tasks
+      description: Get all scheduled background tasks
+      responses:
+        '200':
+          description: List of scheduled tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScheduledTask'
+    post:
+      tags:
+        - Task Management
+      summary: Create scheduled task
+      description: Create a new scheduled background task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledTaskCreate'
+      responses:
+        '201':
+          description: Scheduled task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledTask'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /system/task/{id}:
+    put:
+      tags:
+        - Task Management
+      summary: Update scheduled task
+      description: Update an existing scheduled task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Scheduled task ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledTask'
+      responses:
+        '200':
+          description: Scheduled task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledTask'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Task Management
+      summary: Delete scheduled task
+      description: Delete a scheduled task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Scheduled task ID
+      responses:
+        '204':
+          description: Scheduled task deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /system/task/status:
+    get:
+      tags:
+        - Task Management
+      summary: Get queue status
+      description: Get the status of the task queue
+      responses:
+        '200':
+          description: Queue status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStatus'
+
+  # System Commands
+  /system/health:
+    post:
+      tags:
+        - System
+      summary: Run health check
+      description: Trigger a manual system health check
+      responses:
+        '202':
+          description: Health check task queued
+
+  /system/cleanup:
+    post:
+      tags:
+        - System
+      summary: Run cleanup
+      description: Trigger system cleanup operations
+      responses:
+        '202':
+          description: Cleanup task queued
+
+  # Health Monitoring
+  /health:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get health status
+      description: Get overall system health status
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthCheck'
+
+  /health/dashboard:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get health dashboard
+      description: Get comprehensive health dashboard information
+      responses:
+        '200':
+          description: Health dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDashboard'
+
+  /health/check/{name}:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Run specific health check
+      description: Run a specific health check by name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Health check name
+      responses:
+        '200':
+          description: Health check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health/issue:
+    get:
+      tags:
+        - Health Monitoring
+      summary: List health issues
+      description: Get all health issues with optional filtering
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, dismissed, resolved]
+          description: Filter by issue status
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by issue type
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [info, warning, error, critical]
+          description: Filter by severity level
+      responses:
+        '200':
+          description: List of health issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthIssue'
+
+  /health/issue/{id}:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get health issue by ID
+      description: Get detailed information about a specific health issue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Health issue ID
+      responses:
+        '200':
+          description: Health issue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthIssue'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health/issue/{id}/dismiss:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Dismiss health issue
+      description: Dismiss a health issue (mark as acknowledged)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Health issue ID
+      responses:
+        '200':
+          description: Health issue dismissed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthIssue'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health/issue/{id}/resolve:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Resolve health issue
+      description: Mark a health issue as resolved
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Health issue ID
+      responses:
+        '200':
+          description: Health issue resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthIssue'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # System Resources
+  /health/system/resources:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get system resources
+      description: Get current system resource usage
+      responses:
+        '200':
+          description: System resources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemResources'
+
+  /health/system/diskspace:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get disk space information
+      description: Get disk space information for all configured paths
+      responses:
+        '200':
+          description: Disk space information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiskSpaceInfo'
+
+  # Performance Metrics
+  /health/metrics:
+    get:
+      tags:
+        - Health Monitoring
+      summary: Get performance metrics
+      description: Get performance metrics with optional time range filtering
+      parameters:
+        - name: startTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start time for metrics
+        - name: endTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End time for metrics
+        - name: interval
+          in: query
+          schema:
+            type: string
+            enum: [minute, hour, day]
+            default: minute
+          description: Aggregation interval
+      responses:
+        '200':
+          description: Performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceMetrics'
+
+  /health/metrics/record:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Record performance metrics
+      description: Manually record performance metrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceMetricsRecord'
+      responses:
+        '201':
+          description: Metrics recorded successfully
+
+  # Health Monitoring Control
+  /health/monitoring/start:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Start health monitoring
+      description: Start background health monitoring
+      responses:
+        '200':
+          description: Health monitoring started
+
+  /health/monitoring/stop:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Stop health monitoring
+      description: Stop background health monitoring
+      responses:
+        '200':
+          description: Health monitoring stopped
+
+  /health/monitoring/cleanup:
+    post:
+      tags:
+        - Health Monitoring
+      summary: Cleanup health data
+      description: Clean up old health monitoring data
+      parameters:
+        - name: olderThanDays
+          in: query
+          schema:
+            type: integer
+            default: 30
+          description: Remove data older than specified days
+      responses:
+        '200':
+          description: Cleanup completed
+
+  # Calendar
+  /calendar:
+    get:
+      tags:
+        - Calendar
+      summary: Get calendar events
+      description: Get movie release calendar events with filtering
+      parameters:
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date for calendar events (YYYY-MM-DD)
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date for calendar events (YYYY-MM-DD)
+        - name: unmonitored
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include unmonitored movies
+        - name: premieresOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Only include premieres
+        - name: asAllDay
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Return events as all-day events
+      responses:
+        '200':
+          description: Calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarEvent'
+
+  /calendar/feed.ics:
+    get:
+      tags:
+        - Calendar
+      summary: Get iCal calendar feed
+      description: Get RFC 5545 compliant iCal feed for external calendar applications
+      parameters:
+        - name: pastDays
+          in: query
+          schema:
+            type: integer
+            default: 7
+          description: Number of past days to include
+        - name: futureDays
+          in: query
+          schema:
+            type: integer
+            default: 28
+          description: Number of future days to include
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: false
+          description: Filter by tag IDs
+        - name: unmonitored
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include unmonitored movies
+      responses:
+        '200':
+          description: iCal calendar feed
+          content:
+            text/calendar:
+              schema:
+                type: string
+              example: |
+                BEGIN:VCALENDAR
+                VERSION:2.0
+                PRODID:-//Radarr Go//Radarr Go//EN
+                METHOD:PUBLISH
+                X-WR-CALNAME:Radarr Go Movies
+                X-WR-CALDESC:Movie release calendar from Radarr Go
+                BEGIN:VEVENT
+                UID:movie-123-release@radarr-go
+                DTSTART:20250315T000000Z
+                DTEND:20250315T235959Z
+                SUMMARY:The Matrix Resurrections
+                DESCRIPTION:The return of the world of two realities...
+                END:VEVENT
+                END:VCALENDAR
+
+  /calendar/feed/url:
+    get:
+      tags:
+        - Calendar
+      summary: Generate calendar feed URL
+      description: Generate a shareable URL for the iCal calendar feed
+      responses:
+        '200':
+          description: Calendar feed URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: iCal feed URL
+                  expires:
+                    type: string
+                    format: date-time
+                    description: URL expiration time
+
+  /calendar/refresh:
+    post:
+      tags:
+        - Calendar
+      summary: Refresh calendar
+      description: Force refresh calendar events from metadata
+      responses:
+        '202':
+          description: Calendar refresh task queued
+
+  /calendar/stats:
+    get:
+      tags:
+        - Calendar
+      summary: Get calendar statistics
+      description: Get statistics about calendar events
+      responses:
+        '200':
+          description: Calendar statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarStats'
+
+  # Calendar Configuration
+  /calendar/config:
+    get:
+      tags:
+        - Calendar
+      summary: Get calendar configuration
+      description: Get calendar configuration settings
+      responses:
+        '200':
+          description: Calendar configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarConfig'
+    put:
+      tags:
+        - Calendar
+      summary: Update calendar configuration
+      description: Update calendar configuration settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarConfig'
+      responses:
+        '200':
+          description: Calendar configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key authentication using the X-API-Key header.
+
+        Example: `X-API-Key: your_api_key_here`
+    ApiKeyQueryAuth:
+      type: apiKey
+      in: query
+      name: apikey
+      description: |
+        API key authentication using the apikey query parameter.
+
+        Example: `GET /api/v3/movie?apikey=your_api_key_here`
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 250
+        default: 50
+      description: Number of items per page
+    SortKeyParam:
+      name: sortKey
+      in: query
+      schema:
+        type: string
+      description: Field to sort by
+    SortDirectionParam:
+      name: sortDirection
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+      description: Sort direction
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid input: title is required"
+            details: "The title field cannot be empty when adding a movie"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Movie not found"
+            details: "No movie exists with ID 12345"
+    Conflict:
+      description: Conflict - resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Movie already exists"
+            details: "A movie with TMDB ID 550 is already in the collection"
+    Unauthorized:
+      description: Unauthorized - invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Invalid API key"
+            details: "The provided API key is not valid"
+
+  schemas:
+    SystemStatus:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Application version
+          example: "0.9.0-alpha"
+        buildTime:
+          type: string
+          format: date-time
+          description: Build timestamp
+        isDebug:
+          type: boolean
+          description: Whether running in debug mode
+        isProduction:
+          type: boolean
+          description: Whether running in production mode
+        isUserInteractive:
+          type: boolean
+          description: Whether running interactively
+        startupPath:
+          type: string
+          description: Application startup path
+        appData:
+          type: string
+          description: Application data directory
+        osName:
+          type: string
+          description: Operating system name
+        osVersion:
+          type: string
+          description: Operating system version
+        isLinux:
+          type: boolean
+          description: Whether running on Linux
+        isOsx:
+          type: boolean
+          description: Whether running on macOS
+        isWindows:
+          type: boolean
+          description: Whether running on Windows
+        mode:
+          type: string
+          description: Application mode
+        branch:
+          type: string
+          description: Git branch
+        authentication:
+          type: string
+          enum: [none, apikey, basic]
+          description: Authentication method
+        migrationVersion:
+          type: integer
+          description: Current database migration version
+        urlBase:
+          type: string
+          description: URL base path
+        runtimeVersion:
+          type: string
+          description: Go runtime version
+        runtimeName:
+          type: string
+          description: Runtime name
+        startTime:
+          type: string
+          format: date-time
+          description: Application start time
+
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique movie identifier
+        title:
+          type: string
+          description: Movie title
+        originalTitle:
+          type: string
+          description: Original movie title
+        sortTitle:
+          type: string
+          description: Title used for sorting
+        sizeOnDisk:
+          type: integer
+          format: int64
+          description: Total size of movie files in bytes
+        status:
+          type: string
+          enum: [tba, announced, inCinemas, released, deleted]
+          description: Current movie status
+        overview:
+          type: string
+          description: Movie plot summary
+        inCinemas:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cinema release date
+        physicalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Physical media release date
+        digitalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Digital release date
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaCoverImage'
+          description: Movie poster and fanart images
+        website:
+          type: string
+          description: Official movie website
+        year:
+          type: integer
+          description: Release year
+        youTubeTrailerId:
+          type: string
+          description: YouTube trailer ID
+        studio:
+          type: string
+          description: Production studio
+        path:
+          type: string
+          description: Movie folder path
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+        hasFile:
+          type: boolean
+          description: Whether movie has associated files
+        movieFileId:
+          type: integer
+          description: Associated movie file ID
+        monitored:
+          type: boolean
+          description: Whether movie is monitored for new releases
+        minimumAvailability:
+          type: string
+          enum: [tba, announced, inCinemas, released, preDB]
+          description: Minimum availability for download
+        isAvailable:
+          type: boolean
+          description: Whether movie is currently available
+        folderName:
+          type: string
+          description: Folder name for the movie
+        runtime:
+          type: integer
+          description: Runtime in minutes
+        cleanTitle:
+          type: string
+          description: Cleaned title for searching
+        imdbId:
+          type: string
+          description: IMDb identifier
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+        titleSlug:
+          type: string
+          description: URL-friendly title slug
+        rootFolderPath:
+          type: string
+          description: Root folder path
+        certification:
+          type: string
+          description: Content rating/certification
+        genres:
+          type: array
+          items:
+            type: string
+          description: Movie genres
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Tag IDs associated with the movie
+        added:
+          type: string
+          format: date-time
+          description: Date movie was added to collection
+        movieFile:
+          $ref: '#/components/schemas/MovieFile'
+          nullable: true
+        collection:
+          $ref: '#/components/schemas/Collection'
+          nullable: true
+        popularity:
+          type: number
+          format: float
+          description: TMDB popularity score
+        createdAt:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Record last update timestamp
+      required:
+        - id
+        - title
+        - year
+        - tmdbId
+        - titleSlug
+        - qualityProfileId
+        - monitored
+        - minimumAvailability
+
+    MovieCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Movie title
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+        monitored:
+          type: boolean
+          description: Whether to monitor the movie
+        minimumAvailability:
+          type: string
+          enum: [tba, announced, inCinemas, released, preDB]
+          description: Minimum availability for download
+        rootFolderPath:
+          type: string
+          description: Root folder path
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Tag IDs to associate with the movie
+      required:
+        - tmdbId
+        - qualityProfileId
+        - monitored
+        - minimumAvailability
+        - rootFolderPath
+
+    MovieSearchResult:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Movie title
+        originalTitle:
+          type: string
+          description: Original movie title
+        overview:
+          type: string
+          description: Movie plot summary
+        year:
+          type: integer
+          description: Release year
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+        imdbId:
+          type: string
+          description: IMDb identifier
+        titleSlug:
+          type: string
+          description: URL-friendly title slug
+        status:
+          type: string
+          enum: [tba, announced, inCinemas, released, deleted]
+          description: Movie status
+        inCinemas:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cinema release date
+        physicalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Physical release date
+        digitalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Digital release date
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaCoverImage'
+          description: Movie images
+        genres:
+          type: array
+          items:
+            type: string
+          description: Movie genres
+        studio:
+          type: string
+          description: Production studio
+        website:
+          type: string
+          description: Official website
+        youTubeTrailerId:
+          type: string
+          description: YouTube trailer ID
+        runtime:
+          type: integer
+          description: Runtime in minutes
+        collection:
+          $ref: '#/components/schemas/Collection'
+          nullable: true
+        popularity:
+          type: number
+          format: float
+          description: TMDB popularity score
+
+    MovieDiscoveryResult:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+        totalPages:
+          type: integer
+          description: Total number of pages
+        totalResults:
+          type: integer
+          description: Total number of results
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieSearchResult'
+          description: Discovery results
+
+    MovieFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Movie file ID
+        movieId:
+          type: integer
+          description: Associated movie ID
+        relativePath:
+          type: string
+          description: File path relative to movie folder
+        path:
+          type: string
+          description: Full file path
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        dateAdded:
+          type: string
+          format: date-time
+          description: Date file was added
+        sceneName:
+          type: string
+          description: Original scene release name
+        releaseGroup:
+          type: string
+          description: Release group name
+        mediaInfo:
+          $ref: '#/components/schemas/MediaInfo'
+          nullable: true
+        originalFilePath:
+          type: string
+          description: Original file path before processing
+
+    MediaInfo:
+      type: object
+      properties:
+        audioChannels:
+          type: number
+          format: float
+          description: Number of audio channels
+        audioCodec:
+          type: string
+          description: Audio codec
+        audioLanguages:
+          type: string
+          description: Audio languages
+        height:
+          type: integer
+          description: Video height in pixels
+        width:
+          type: integer
+          description: Video width in pixels
+        runTime:
+          type: string
+          description: Runtime as time string
+        scanType:
+          type: string
+          description: Video scan type
+        subtitles:
+          type: string
+          description: Available subtitles
+        videoCodec:
+          type: string
+          description: Video codec
+        videoDynamicRange:
+          type: string
+          description: Dynamic range type
+        videoDynamicRangeType:
+          type: string
+          description: Specific HDR type
+
+    MediaCoverImage:
+      type: object
+      properties:
+        coverType:
+          type: string
+          enum: [poster, fanart, banner, clearlogo, disc, landscape]
+          description: Type of cover image
+        url:
+          type: string
+          format: uri
+          description: Image URL
+        remoteUrl:
+          type: string
+          format: uri
+          description: Remote image URL
+        id:
+          type: integer
+          description: Image ID
+
+    Collection:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Collection name
+        tmdbId:
+          type: integer
+          description: TMDB collection ID
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaCoverImage'
+          description: Collection images
+
+    QualityProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Quality profile ID
+        name:
+          type: string
+          description: Profile name
+        upgradeAllowed:
+          type: boolean
+          description: Whether upgrades are allowed
+        cutoff:
+          type: integer
+          description: Cutoff quality ID
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+          description: Quality items in profile
+        minFormatScore:
+          type: integer
+          description: Minimum custom format score
+        cutoffFormatScore:
+          type: integer
+          description: Cutoff custom format score
+
+    QualityProfileCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Profile name
+        upgradeAllowed:
+          type: boolean
+          description: Whether upgrades are allowed
+        cutoff:
+          type: integer
+          description: Cutoff quality ID
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+          description: Quality items in profile
+        minFormatScore:
+          type: integer
+          description: Minimum custom format score
+        cutoffFormatScore:
+          type: integer
+          description: Cutoff custom format score
+      required:
+        - name
+        - cutoff
+        - items
+
+    QualityProfileItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Item ID
+        name:
+          type: string
+          description: Item name
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityProfileItem'
+          description: Nested quality items
+        allowed:
+          type: boolean
+          description: Whether this quality is allowed
+
+    QualityDefinition:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Quality definition ID
+        name:
+          type: string
+          description: Quality name
+        source:
+          type: string
+          description: Quality source
+        resolution:
+          type: integer
+          description: Resolution identifier
+        modifier:
+          type: string
+          description: Quality modifier
+
+    CustomFormat:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Custom format ID
+        name:
+          type: string
+          description: Custom format name
+        includeCustomFormatWhenRenaming:
+          type: boolean
+          description: Include in file naming
+
+    CustomFormatCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Custom format name
+        includeCustomFormatWhenRenaming:
+          type: boolean
+          description: Include in file naming
+      required:
+        - name
+
+    Indexer:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Indexer ID
+        name:
+          type: string
+          description: Indexer name
+        implementation:
+          type: string
+          description: Indexer implementation type
+        implementationName:
+          type: string
+          description: Human-readable implementation name
+        infoLink:
+          type: string
+          format: uri
+          description: Information link
+        settings:
+          type: object
+          description: Indexer-specific settings
+        configContract:
+          type: string
+          description: Configuration contract name
+        enableRss:
+          type: boolean
+          description: Enable RSS feeds
+        enableAutomaticSearch:
+          type: boolean
+          description: Enable automatic search
+        enableInteractiveSearch:
+          type: boolean
+          description: Enable interactive search
+        supportsRss:
+          type: boolean
+          description: Whether RSS is supported
+        supportsSearch:
+          type: boolean
+          description: Whether search is supported
+        protocol:
+          type: string
+          enum: [usenet, torrent]
+          description: Protocol type
+        priority:
+          type: integer
+          description: Indexer priority
+        downloadClientId:
+          type: integer
+          description: Associated download client ID
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+
+    IndexerCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Indexer name
+        implementation:
+          type: string
+          description: Indexer implementation type
+        settings:
+          type: object
+          description: Indexer-specific settings
+        enableRss:
+          type: boolean
+          description: Enable RSS feeds
+        enableAutomaticSearch:
+          type: boolean
+          description: Enable automatic search
+        enableInteractiveSearch:
+          type: boolean
+          description: Enable interactive search
+        priority:
+          type: integer
+          description: Indexer priority
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+      required:
+        - name
+        - implementation
+        - settings
+
+    IndexerTestResult:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+          description: Whether the test passed
+        validationFailures:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationFailure'
+          description: Validation errors if test failed
+
+    ValidationFailure:
+      type: object
+      properties:
+        propertyName:
+          type: string
+          description: Property that failed validation
+        errorMessage:
+          type: string
+          description: Error message
+        attemptedValue:
+          type: object
+          description: Value that was attempted
+
+    DownloadClient:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Download client ID
+        name:
+          type: string
+          description: Client name
+        implementation:
+          type: string
+          description: Client implementation type
+        implementationName:
+          type: string
+          description: Human-readable implementation name
+        settings:
+          type: object
+          description: Client-specific settings
+        configContract:
+          type: string
+          description: Configuration contract name
+        enable:
+          type: boolean
+          description: Whether client is enabled
+        protocol:
+          type: string
+          enum: [usenet, torrent]
+          description: Protocol type
+        priority:
+          type: integer
+          description: Client priority
+        removeCompletedDownloads:
+          type: boolean
+          description: Remove completed downloads
+        removeFailedDownloads:
+          type: boolean
+          description: Remove failed downloads
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+
+    DownloadClientCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Client name
+        implementation:
+          type: string
+          description: Client implementation type
+        settings:
+          type: object
+          description: Client-specific settings
+        enable:
+          type: boolean
+          description: Whether client is enabled
+        priority:
+          type: integer
+          description: Client priority
+        removeCompletedDownloads:
+          type: boolean
+          description: Remove completed downloads
+        removeFailedDownloads:
+          type: boolean
+          description: Remove failed downloads
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+      required:
+        - name
+        - implementation
+        - settings
+
+    DownloadClientTestResult:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+          description: Whether the test passed
+        validationFailures:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationFailure'
+          description: Validation errors if test failed
+
+    DownloadClientStats:
+      type: object
+      properties:
+        downloadClientId:
+          type: integer
+          description: Download client ID
+        downloadClientName:
+          type: string
+          description: Download client name
+        status:
+          type: string
+          enum: [available, unavailable, unknown]
+          description: Client status
+        isLocalhost:
+          type: boolean
+          description: Whether client is on localhost
+        outputRootFolders:
+          type: array
+          items:
+            type: string
+          description: Output root folder paths
+
+    DownloadHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Download history item ID
+        movieId:
+          type: integer
+          description: Associated movie ID
+        downloadClient:
+          type: string
+          description: Download client name
+        title:
+          type: string
+          description: Download title
+        status:
+          type: string
+          description: Download status
+        startTime:
+          type: string
+          format: date-time
+          description: Download start time
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Download end time
+
+    ImportList:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Import list ID
+        name:
+          type: string
+          description: Import list name
+        implementation:
+          type: string
+          description: Implementation type
+        implementationName:
+          type: string
+          description: Human-readable implementation name
+        settings:
+          type: object
+          description: Import list specific settings
+        configContract:
+          type: string
+          description: Configuration contract name
+        enable:
+          type: boolean
+          description: Whether import list is enabled
+        enableAuto:
+          type: boolean
+          description: Enable automatic importing
+        searchOnAdd:
+          type: boolean
+          description: Search for movies when added
+        qualityProfileId:
+          type: integer
+          description: Default quality profile ID
+        rootFolderPath:
+          type: string
+          description: Default root folder path
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+
+    ImportListCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Import list name
+        implementation:
+          type: string
+          description: Implementation type
+        settings:
+          type: object
+          description: Import list specific settings
+        enable:
+          type: boolean
+          description: Whether import list is enabled
+        enableAuto:
+          type: boolean
+          description: Enable automatic importing
+        searchOnAdd:
+          type: boolean
+          description: Search for movies when added
+        qualityProfileId:
+          type: integer
+          description: Default quality profile ID
+        rootFolderPath:
+          type: string
+          description: Default root folder path
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+      required:
+        - name
+        - implementation
+        - settings
+
+    ImportListTestResult:
+      type: object
+      properties:
+        isValid:
+          type: boolean
+          description: Whether the test passed
+        validationFailures:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationFailure'
+          description: Validation errors if test failed
+
+    ImportListStats:
+      type: object
+      properties:
+        importListId:
+          type: integer
+          description: Import list ID
+        importListName:
+          type: string
+          description: Import list name
+        movieCount:
+          type: integer
+          description: Number of movies from this list
+        lastSync:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last sync time
+        status:
+          type: string
+          enum: [available, unavailable, unknown]
+          description: Import list status
+
+    ImportListMovie:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Import list movie ID
+        importListId:
+          type: integer
+          description: Source import list ID
+        tmdbId:
+          type: integer
+          description: TMDB identifier
+        title:
+          type: string
+          description: Movie title
+        year:
+          type: integer
+          description: Release year
+        status:
+          type: string
+          enum: [pending, imported, excluded, failed]
+          description: Import status
+        addedDate:
+          type: string
+          format: date-time
+          description: Date added to import list
+
+    QueuePage:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+        pageSize:
+          type: integer
+          description: Items per page
+        sortKey:
+          type: string
+          description: Sort field
+        sortDirection:
+          type: string
+          enum: [ascending, descending]
+          description: Sort direction
+        totalRecords:
+          type: integer
+          description: Total number of records
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueItem'
+          description: Queue items
+
+    QueueItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Queue item ID
+        movieId:
+          type: integer
+          description: Associated movie ID
+        movie:
+          $ref: '#/components/schemas/Movie'
+          nullable: true
+        size:
+          type: number
+          format: float
+          description: Download size in bytes
+        title:
+          type: string
+          description: Release title
+        sizeleft:
+          type: number
+          format: float
+          description: Remaining download size
+        timeleft:
+          type: string
+          description: Estimated time remaining
+        estimatedCompletionTime:
+          type: string
+          format: date-time
+          description: Estimated completion time
+        added:
+          type: string
+          format: date-time
+          description: Date added to queue
+        status:
+          type: string
+          description: Current status
+        trackedDownloadStatus:
+          type: string
+          description: Tracked download status
+        trackedDownloadState:
+          type: string
+          description: Tracked download state
+        errorMessage:
+          type: string
+          description: Error message if failed
+        downloadId:
+          type: string
+          description: Download client ID
+        protocol:
+          type: string
+          enum: [usenet, torrent]
+          description: Download protocol
+        downloadClient:
+          type: string
+          description: Download client name
+        indexer:
+          type: string
+          description: Indexer name
+        outputPath:
+          type: string
+          description: Output path
+
+    QueueStats:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: Total items in queue
+        count:
+          type: integer
+          description: Active items count
+        unknownCount:
+          type: integer
+          description: Unknown items count
+        errors:
+          type: boolean
+          description: Whether there are errors
+        warnings:
+          type: boolean
+          description: Whether there are warnings
+        unknownErrors:
+          type: boolean
+          description: Whether there are unknown errors
+        unknownWarnings:
+          type: boolean
+          description: Whether there are unknown warnings
+
+    Release:
+      type: object
+      properties:
+        guid:
+          type: string
+          description: Release GUID
+        age:
+          type: integer
+          description: Release age in days
+        ageHours:
+          type: number
+          format: float
+          description: Release age in hours
+        ageMinutes:
+          type: number
+          format: float
+          description: Release age in minutes
+        size:
+          type: integer
+          format: int64
+          description: Release size in bytes
+        indexerId:
+          type: integer
+          description: Indexer ID
+        indexer:
+          type: string
+          description: Indexer name
+        releaseGroup:
+          type: string
+          description: Release group
+        subGroup:
+          type: string
+          description: Sub group
+        releaseHash:
+          type: string
+          description: Release hash
+        title:
+          type: string
+          description: Release title
+        sceneSource:
+          type: boolean
+          description: Whether from scene
+        movieTitle:
+          type: string
+          description: Parsed movie title
+        approved:
+          type: boolean
+          description: Whether release is approved
+        temporarilyRejected:
+          type: boolean
+          description: Whether temporarily rejected
+        rejected:
+          type: boolean
+          description: Whether rejected
+        rejections:
+          type: array
+          items:
+            type: string
+          description: Rejection reasons
+        publishDate:
+          type: string
+          format: date-time
+          description: Publication date
+        commentUrl:
+          type: string
+          format: uri
+          description: Comment URL
+        downloadUrl:
+          type: string
+          format: uri
+          description: Download URL
+        infoUrl:
+          type: string
+          format: uri
+          description: Info URL
+        downloadAllowed:
+          type: boolean
+          description: Whether download is allowed
+        releaseWeight:
+          type: integer
+          description: Total release weight
+        customFormatScore:
+          type: integer
+          description: Custom format score
+        movieId:
+          type: integer
+          description: Associated movie ID
+
+    InteractiveSearchResult:
+      allOf:
+        - $ref: '#/components/schemas/Release'
+        - type: object
+          properties:
+            interactive:
+              type: boolean
+              description: Whether this is an interactive search result
+            protocol:
+              type: string
+              enum: [usenet, torrent]
+              description: Download protocol
+
+    ReleaseStats:
+      type: object
+      properties:
+        totalReleases:
+          type: integer
+          description: Total number of cached releases
+        approvedReleases:
+          type: integer
+          description: Number of approved releases
+        rejectedReleases:
+          type: integer
+          description: Number of rejected releases
+        oldestRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Oldest cached release date
+        newestRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Newest cached release date
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Task ID
+        name:
+          type: string
+          description: Task name
+        commandName:
+          type: string
+          description: Command name
+        message:
+          type: string
+          description: Current task message
+        body:
+          type: object
+          description: Task body/parameters
+        priority:
+          type: string
+          enum: [low, normal, high]
+          description: Task priority
+        status:
+          type: string
+          enum: [queued, started, completed, failed, cancelled]
+          description: Task status
+        queued:
+          type: string
+          format: date-time
+          description: When task was queued
+        started:
+          type: string
+          format: date-time
+          nullable: true
+          description: When task started
+        ended:
+          type: string
+          format: date-time
+          nullable: true
+          description: When task ended
+        duration:
+          type: string
+          nullable: true
+          description: Task duration
+        exception:
+          type: string
+          nullable: true
+          description: Exception message if failed
+        trigger:
+          type: string
+          enum: [manual, scheduled, automatic]
+          description: What triggered the task
+        clientUserAgent:
+          type: string
+          description: Client user agent
+        stateChangeTime:
+          type: string
+          format: date-time
+          description: Last state change time
+        sendUpdatesToClient:
+          type: boolean
+          description: Whether to send updates to client
+        updateScheduledTask:
+          type: boolean
+          description: Whether to update scheduled task
+        lastExecutionTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last execution time
+
+    TaskCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Task/command name
+        movieId:
+          type: integer
+          description: Movie ID (for movie-specific tasks)
+        movieIds:
+          type: array
+          items:
+            type: integer
+          description: Movie IDs (for bulk operations)
+        sendUpdatesToClient:
+          type: boolean
+          description: Whether to send updates to client
+      required:
+        - name
+
+    ScheduledTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Scheduled task ID
+        name:
+          type: string
+          description: Task name
+        taskName:
+          type: string
+          description: Task type name
+        interval:
+          type: integer
+          description: Interval in minutes
+        lastExecution:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last execution time
+        lastStartTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last start time
+        nextExecution:
+          type: string
+          format: date-time
+          description: Next execution time
+        enabled:
+          type: boolean
+          description: Whether task is enabled
+
+    ScheduledTaskCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Task name
+        taskName:
+          type: string
+          description: Task type name
+        interval:
+          type: integer
+          description: Interval in minutes
+        enabled:
+          type: boolean
+          description: Whether task is enabled
+      required:
+        - name
+        - taskName
+        - interval
+
+    QueueStatus:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: Total tasks in queue
+        runningCount:
+          type: integer
+          description: Currently running tasks
+        pendingCount:
+          type: integer
+          description: Pending tasks
+        isIdle:
+          type: boolean
+          description: Whether queue is idle
+        nextScheduledTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Next scheduled task time
+
+    HealthCheck:
+      type: object
+      properties:
+        source:
+          type: string
+          description: Health check source
+        type:
+          type: string
+          enum: [ok, notice, warning, error]
+          description: Health check type
+        message:
+          type: string
+          description: Health check message
+        wikiUrl:
+          type: string
+          format: uri
+          description: Documentation URL
+          nullable: true
+
+    HealthDashboard:
+      type: object
+      properties:
+        healthChecks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthCheck'
+          description: Current health checks
+        systemResources:
+          $ref: '#/components/schemas/SystemResources'
+        diskSpace:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiskSpaceInfo'
+        performanceMetrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        healthIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthIssue'
+          description: Active health issues
+
+    SystemResources:
+      type: object
+      properties:
+        cpuUsage:
+          type: number
+          format: float
+          description: CPU usage percentage
+        memoryUsage:
+          type: number
+          format: float
+          description: Memory usage percentage
+        totalMemory:
+          type: integer
+          format: int64
+          description: Total memory in bytes
+        usedMemory:
+          type: integer
+          format: int64
+          description: Used memory in bytes
+        freeMemory:
+          type: integer
+          format: int64
+          description: Free memory in bytes
+        uptime:
+          type: string
+          description: System uptime
+
+    DiskSpaceInfo:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Disk path
+        label:
+          type: string
+          description: Disk label
+        freeSpace:
+          type: integer
+          format: int64
+          description: Free space in bytes
+        totalSpace:
+          type: integer
+          format: int64
+          description: Total space in bytes
+        freeSpacePercentage:
+          type: number
+          format: float
+          description: Free space percentage
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        averageResponseTime:
+          type: number
+          format: float
+          description: Average API response time in ms
+        requestsPerSecond:
+          type: number
+          format: float
+          description: Requests per second
+        errorRate:
+          type: number
+          format: float
+          description: Error rate percentage
+        databaseConnectionTime:
+          type: number
+          format: float
+          description: Database connection time in ms
+
+    PerformanceMetricsRecord:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Metrics timestamp
+        responseTime:
+          type: number
+          format: float
+          description: Response time in ms
+        endpoint:
+          type: string
+          description: API endpoint
+        method:
+          type: string
+          description: HTTP method
+        statusCode:
+          type: integer
+          description: HTTP status code
+
+    HealthIssue:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Health issue ID
+        type:
+          type: string
+          description: Issue type
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+          description: Issue severity
+        message:
+          type: string
+          description: Issue message
+        details:
+          type: string
+          description: Detailed issue description
+        source:
+          type: string
+          description: Issue source
+        status:
+          type: string
+          enum: [active, dismissed, resolved]
+          description: Issue status
+        firstOccurrence:
+          type: string
+          format: date-time
+          description: When issue first occurred
+        lastOccurrence:
+          type: string
+          format: date-time
+          description: When issue last occurred
+        occurrenceCount:
+          type: integer
+          description: Number of times issue occurred
+        resolutionSteps:
+          type: array
+          items:
+            type: string
+          description: Suggested resolution steps
+        wikiUrl:
+          type: string
+          format: uri
+          description: Documentation URL
+          nullable: true
+
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Event ID (movie ID)
+        movieId:
+          type: integer
+          description: Associated movie ID
+        title:
+          type: string
+          description: Movie title
+        sortTitle:
+          type: string
+          description: Sort title
+        status:
+          type: string
+          enum: [tba, announced, inCinemas, released, deleted]
+          description: Movie status
+        overview:
+          type: string
+          description: Movie overview
+        inCinemas:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cinema release date
+        physicalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Physical release date
+        digitalRelease:
+          type: string
+          format: date-time
+          nullable: true
+          description: Digital release date
+        releaseDate:
+          type: string
+          format: date-time
+          description: Primary release date for calendar
+        year:
+          type: integer
+          description: Release year
+        hasFile:
+          type: boolean
+          description: Whether movie has files
+        monitored:
+          type: boolean
+          description: Whether movie is monitored
+        isAvailable:
+          type: boolean
+          description: Whether movie is available
+        folderName:
+          type: string
+          description: Movie folder name
+        runtime:
+          type: integer
+          description: Runtime in minutes
+        tmdbId:
+          type: integer
+          description: TMDB ID
+        imdbId:
+          type: string
+          description: IMDb ID
+        titleSlug:
+          type: string
+          description: Title slug
+        genres:
+          type: array
+          items:
+            type: string
+          description: Movie genres
+        certification:
+          type: string
+          description: Content rating
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaCoverImage'
+        website:
+          type: string
+          description: Official website
+        remotePoster:
+          type: string
+          format: uri
+          description: Remote poster URL
+        studio:
+          type: string
+          description: Production studio
+        qualityProfileId:
+          type: integer
+          description: Quality profile ID
+        tags:
+          type: array
+          items:
+            type: integer
+          description: Associated tags
+
+    CalendarStats:
+      type: object
+      properties:
+        totalEvents:
+          type: integer
+          description: Total calendar events
+        upcomingEvents:
+          type: integer
+          description: Upcoming events (next 30 days)
+        pastEvents:
+          type: integer
+          description: Past events (last 30 days)
+        todayEvents:
+          type: integer
+          description: Events today
+
+    CalendarConfig:
+      type: object
+      properties:
+        firstDayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: First day of week (0 = Sunday, 1 = Monday, etc.)
+        calendarWeekColumnHeader:
+          type: string
+          description: Week column header format
+        shortDateFormat:
+          type: string
+          description: Short date format
+        longDateFormat:
+          type: string
+          description: Long date format
+        timeFormat:
+          type: string
+          description: Time format
+        showRelativeDates:
+          type: boolean
+          description: Show relative dates
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Detailed error information
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path that caused the error
+
+tags:
+  - name: System
+    description: System information and status
+  - name: Movies
+    description: Movie management and metadata operations
+  - name: Movie Files
+    description: Movie file management and media information
+  - name: Quality Management
+    description: Quality profiles, definitions, and custom formats
+  - name: Indexers
+    description: Search provider configuration and management
+  - name: Download Clients
+    description: Download client configuration and monitoring
+  - name: Import Lists
+    description: Import list configuration and synchronization
+  - name: Queue Management
+    description: Download queue monitoring and control
+  - name: Search & Releases
+    description: Release searching and grabbing
+  - name: Task Management
+    description: Background task scheduling and monitoring
+  - name: Health Monitoring
+    description: System health checks and diagnostics
+  - name: Calendar
+    description: Movie release calendar and iCal feeds
+
+externalDocs:
+  description: Radarr Go Documentation
+  url: https://github.com/radarr/radarr-go/wiki
