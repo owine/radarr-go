@@ -649,10 +649,39 @@ jobs:
           echo "   - No production tags assigned"
         fi
 
-    - name: Build and push Docker images with enhanced caching
+    - name: Download build artifacts
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      with:
+        name: release-archives-all
+        path: ./artifacts
+
+    - name: Extract Linux binaries for Docker build
+      run: |
+        echo "🔍 Extracting Linux binaries from archives..."
+
+        # Create artifacts directory if it doesn't exist
+        mkdir -p artifacts
+
+        # Extract Linux binaries from archives
+        cd artifacts
+        find . -name "*linux-amd64.tar.gz" -exec tar -xzf {} \;
+        find . -name "*linux-arm64.tar.gz" -exec tar -xzf {} \;
+
+        # Rename binaries to match Dockerfile.artifacts expectations
+        find . -name "radarr-linux-amd64" -exec mv {} radarr-linux-amd64 \;
+        find . -name "radarr-linux-arm64" -exec mv {} radarr-linux-arm64 \;
+
+        echo "✅ Available binaries:"
+        ls -la radarr-linux-*
+
+        # Verify binaries are executable
+        chmod +x radarr-linux-*
+
+    - name: Build and push Docker images with enhanced caching (using pre-built binaries)
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         context: .
+        file: ./Dockerfile.artifacts
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ needs.validate.outputs.docker_tags }}
