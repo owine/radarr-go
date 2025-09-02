@@ -172,24 +172,29 @@ This release was built using our optimized CI/CD pipeline:
 RELEASE_EOF
 
 # Replace placeholders with actual values (compatible with both GNU and BSD sed)
-if sed --version >/dev/null 2>&1; then
-  # GNU sed (Linux)
-  SED_INPLACE="-i"
-else
-  # BSD sed (macOS)
-  SED_INPLACE="-i ''"
-fi
+# Function to handle sed in-place editing across platforms
+sed_inplace() {
+  local pattern="$1"
+  local file="$2"
+  if sed --version >/dev/null 2>&1; then
+    # GNU sed (Linux)
+    sed -i "$pattern" "$file"
+  else
+    # BSD sed (macOS) - requires backup extension
+    sed -i '' "$pattern" "$file"
+  fi
+}
 
-sed $SED_INPLACE "s|RELEASE_VERSION|${VERSION}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|RELEASE_BUILD_DATE|${BUILD_DATE}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|RELEASE_COMMIT_SHA|${COMMIT_SHA}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|RELEASE_TYPE_PLACEHOLDER|${RELEASE_TYPE}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|REGISTRY_PLACEHOLDER|${REGISTRY}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|IMAGE_NAME_PLACEHOLDER|${IMAGE_NAME}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|DIGEST_PLACEHOLDER|${DIGEST}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|BASE_IMAGE_PLACEHOLDER|${BASE_IMAGE}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|GITHUB_REPO|${GITHUB_REPO}|g" RELEASE_NOTES_UPDATED.md
-sed $SED_INPLACE "s|TAG_NAME_PLACEHOLDER|${TAG_NAME}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|RELEASE_VERSION|${VERSION}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|RELEASE_BUILD_DATE|${BUILD_DATE}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|RELEASE_COMMIT_SHA|${COMMIT_SHA}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|RELEASE_TYPE_PLACEHOLDER|${RELEASE_TYPE}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|REGISTRY_PLACEHOLDER|${REGISTRY}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|IMAGE_NAME_PLACEHOLDER|${IMAGE_NAME}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|DIGEST_PLACEHOLDER|${DIGEST}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|BASE_IMAGE_PLACEHOLDER|${BASE_IMAGE}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|GITHUB_REPO|${GITHUB_REPO}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|TAG_NAME_PLACEHOLDER|${TAG_NAME}|g" RELEASE_NOTES_UPDATED.md
 
 # Generate versioning strategy description
 VERSIONING_STRATEGY="Semantic Versioning 2.0.0"
@@ -220,7 +225,7 @@ else
   fi
 fi
 
-sed $SED_INPLACE "s|VERSIONING_STRATEGY_PLACEHOLDER|${VERSIONING_STRATEGY}|g" RELEASE_NOTES_UPDATED.md
+sed_inplace "s|VERSIONING_STRATEGY_PLACEHOLDER|${VERSIONING_STRATEGY}|g" RELEASE_NOTES_UPDATED.md
 
 # Add available tags (use a temporary file to avoid sed complexity with newlines)
 TAGS_LIST=""
