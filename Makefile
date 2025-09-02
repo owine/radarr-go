@@ -1,6 +1,7 @@
 .PHONY: build run test clean docker-build docker-run deps fmt lint \
 	build-frontend dev-frontend clean-frontend install-frontend \
-	build-all-with-frontend dev-full
+	build-all-with-frontend dev-full dev-env-start dev-env-stop \
+	dev-env-restart dev-env-status dev-env-info dev-monitor dev-logs dev-perf
 
 # Go parameters
 GOCMD=go
@@ -152,33 +153,56 @@ test-db-clean:
 	docker-compose -f docker-compose.test.yml down -v --remove-orphans
 	docker volume prune -f
 
-# Run tests (will automatically start test databases if not running)
-test: test-db-up
-	$(GOTEST) -v ./...
+# Run all tests using the comprehensive test runner
+test:
+	./scripts/test-runner.sh --mode all
 
 # Run tests with coverage
-test-coverage: test-db-up
-	$(GOTEST) -coverprofile=coverage.out ./...
-	$(GOCMD) tool cover -html=coverage.out
+test-coverage:
+	./scripts/test-runner.sh --mode all --coverage
 
 # Run benchmark tests
-test-bench: test-db-up
-	$(GOTEST) -bench=. -benchmem ./...
+test-bench:
+	./scripts/test-runner.sh --mode benchmark --benchmarks
 
 # Run example tests
-test-examples: test-db-up
+test-examples:
 	$(GOTEST) -run Example ./...
 
 # Run tests with PostgreSQL only
-test-postgres: test-db-up
-	RADARR_TEST_DATABASE_TYPE=postgres $(GOTEST) -v ./...
+test-postgres:
+	./scripts/test-runner.sh --mode all --database postgres
 
 # Run tests with MariaDB only
-test-mariadb: test-db-up
-	RADARR_TEST_DATABASE_TYPE=mariadb $(GOTEST) -v ./...
+test-mariadb:
+	./scripts/test-runner.sh --mode all --database mariadb
 
-# Run integration tests (same as test but explicit)
-test-integration: test
+# Run integration tests only
+test-integration:
+	./scripts/test-runner.sh --mode integration
+
+# Run unit tests only (no database required)
+test-unit:
+	./scripts/test-runner.sh --mode unit
+
+# Run tests in CI mode (parallel, with coverage)
+test-ci:
+	./scripts/test-runner.sh --ci
+
+# Run quick tests (short mode)
+test-quick:
+	./scripts/test-runner.sh --mode unit --short
+
+# Legacy test targets (for compatibility)
+test-legacy: test-db-up
+	$(GOTEST) -v ./...
+
+test-coverage-legacy: test-db-up
+	$(GOTEST) -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out
+
+test-bench-legacy: test-db-up
+	$(GOTEST) -bench=. -benchmem ./...
 
 # Run tests in Docker container (full isolation)
 test-docker:
@@ -245,8 +269,34 @@ all: deps fmt lint test test-bench build
 # Development workflow
 dev-all: deps fmt lint test test-examples test-bench test-coverage build
 
+# Enhanced Development Environment Management
+dev-env-start:
+	./scripts/dev-environment.sh start
+
+dev-env-stop:
+	./scripts/dev-environment.sh stop
+
+dev-env-restart:
+	./scripts/dev-environment.sh restart
+
+dev-env-status:
+	./scripts/dev-environment.sh status
+
+dev-env-info:
+	./scripts/dev-environment.sh info
+
+# Development monitoring and debugging
+dev-monitor:
+	./scripts/dev-monitor.sh status
+
+dev-logs:
+	./scripts/dev-monitor.sh logs
+
+dev-perf:
+	./scripts/dev-monitor.sh perf
+
 # CI/CD workflow (includes database testing)
-ci: deps fmt lint test-postgres test-mariadb test-bench build-all
+ci: deps fmt lint test-ci build-all
 
 # Development setup
 setup: setup-backend setup-frontend
