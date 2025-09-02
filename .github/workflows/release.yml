@@ -178,19 +178,6 @@ jobs:
           go.sum
           go.work.sum
 
-    # Enhanced caching similar to CI workflow
-    - name: Cache Go modules and tools
-      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-          ~/go/bin
-        key: go-release-${{ runner.os }}-${{ hashFiles('**/go.sum', '**/go.work.sum') }}-${{ env.GO_VERSION }}
-        restore-keys: |
-          go-release-${{ runner.os }}-${{ hashFiles('**/go.sum', '**/go.work.sum') }}-
-          go-release-${{ runner.os }}-
-
     - name: Install dependencies
       run: |
         echo "📦 Installing Go dependencies..."
