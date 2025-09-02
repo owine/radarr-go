@@ -204,6 +204,50 @@ validate_version_progression() {
   fi
 }
 
+# Generate Docker tags based on version and strategy
+generate_docker_tags() {
+  local base_image="${1:-ghcr.io/owner/repo}"
+  local tags=()
+
+  # Always include version-specific tags
+  tags+=("${base_image}:v${VERSION}")
+
+  # Database compatibility tags (always available)
+  tags+=("${base_image}:v${VERSION}-multi-db")
+  tags+=("${base_image}:v${VERSION}-postgres")
+  tags+=("${base_image}:v${VERSION}-mariadb")
+
+  if [[ "$IS_PRERELEASE" == "false" ]]; then
+    # Production release tags
+    if [[ "$IS_PRE_1_0" == "false" ]]; then
+      # Post-1.0: Full production tagging
+      tags+=("${base_image}:latest")
+      tags+=("${base_image}:stable")
+      tags+=("${base_image}:release")
+      tags+=("${base_image}:stable-v${VERSION}")
+    else
+      # Pre-1.0: Limited production tagging (no 'latest')
+      tags+=("${base_image}:release")
+      tags+=("${base_image}:stable-v${VERSION}")
+    fi
+  else
+    # Prerelease tags
+    tags+=("${base_image}:testing")
+    tags+=("${base_image}:testing-v${VERSION}")
+    tags+=("${base_image}:prerelease")
+
+    # Type-specific prerelease tags
+    if [[ -n "$PRERELEASE_TYPE" && "$PRERELEASE_TYPE" != "custom" ]]; then
+      tags+=("${base_image}:${PRERELEASE_TYPE}")
+      tags+=("${base_image}:testing-${PRERELEASE_TYPE}")
+    fi
+  fi
+
+  # Join tags with commas for GitHub Actions
+  local IFS=','
+  echo "${tags[*]}"
+}
+
 # Generate version compatibility information
 generate_compatibility_info() {
   local api_compatibility="radarr-v3"
