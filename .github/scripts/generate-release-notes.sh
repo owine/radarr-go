@@ -16,6 +16,18 @@ GITHUB_REPO="${9}"
 REGISTRY="${10}"
 IMAGE_NAME="${11}"
 
+# Extract prerelease type for better categorization
+PRERELEASE_TYPE=""
+if [[ $VERSION =~ -([^.]+) ]]; then
+  PRERELEASE_TYPE="${BASH_REMATCH[1]}"
+fi
+
+# Determine if this is pre-1.0
+IS_PRE_1_0="false"
+if [[ $VERSION =~ ^0\. ]]; then
+  IS_PRE_1_0="true"
+fi
+
 # Create comprehensive release notes with Docker details
 cat > RELEASE_NOTES_UPDATED.md << 'RELEASE_EOF'
 # Radarr Go vRELEASE_VERSION
@@ -26,6 +38,8 @@ cat > RELEASE_NOTES_UPDATED.md << 'RELEASE_EOF'
 - **Build Date**: `RELEASE_BUILD_DATE`
 - **Commit SHA**: [`RELEASE_COMMIT_SHA`](https://github.com/GITHUB_REPO/commit/GITHUB_COMMIT)
 - **Release Type**: RELEASE_TYPE_PLACEHOLDER
+- **Versioning Strategy**: VERSIONING_STRATEGY_PLACEHOLDER
+- **API Compatibility**: Radarr v3 (100% compatible)
 
 ## 🐳 Docker Images
 
@@ -176,6 +190,37 @@ sed $SED_INPLACE "s|DIGEST_PLACEHOLDER|${DIGEST}|g" RELEASE_NOTES_UPDATED.md
 sed $SED_INPLACE "s|BASE_IMAGE_PLACEHOLDER|${BASE_IMAGE}|g" RELEASE_NOTES_UPDATED.md
 sed $SED_INPLACE "s|GITHUB_REPO|${GITHUB_REPO}|g" RELEASE_NOTES_UPDATED.md
 sed $SED_INPLACE "s|TAG_NAME_PLACEHOLDER|${TAG_NAME}|g" RELEASE_NOTES_UPDATED.md
+
+# Generate versioning strategy description
+VERSIONING_STRATEGY="Semantic Versioning 2.0.0"
+if [[ "$IS_PRE_1_0" == "true" ]]; then
+  VERSIONING_STRATEGY="${VERSIONING_STRATEGY} (Pre-1.0 phase: breaking changes allowed in minor versions)"
+fi
+
+if [[ -n "$PRERELEASE_TYPE" ]]; then
+  case "$PRERELEASE_TYPE" in
+    alpha)
+      VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Alpha release (early development, significant bugs expected)"
+      ;;
+    beta)
+      VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Beta release (feature-complete, focused on stability)"
+      ;;
+    rc)
+      VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Release Candidate (production-ready candidate)"
+      ;;
+    *)
+      VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Prerelease (${PRERELEASE_TYPE})"
+      ;;
+  esac
+else
+  if [[ "$IS_PRE_1_0" == "true" ]]; then
+    VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Pre-1.0 production release"
+  else
+    VERSIONING_STRATEGY="${VERSIONING_STRATEGY} - Stable production release"
+  fi
+fi
+
+sed $SED_INPLACE "s|VERSIONING_STRATEGY_PLACEHOLDER|${VERSIONING_STRATEGY}|g" RELEASE_NOTES_UPDATED.md
 
 # Add available tags (use a temporary file to avoid sed complexity with newlines)
 TAGS_LIST=""

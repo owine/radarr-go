@@ -2,6 +2,8 @@
 
 A high-performance Go implementation of Radarr movie collection manager with 100% API compatibility.
 
+**Current Version**: v0.9.0-alpha (95% feature parity, near production-ready) | **Target**: v1.0.0 Q2 2025
+
 ## Features
 
 - 🚀 **High Performance**: Significantly faster than the original .NET implementation
@@ -36,59 +38,57 @@ docker run -d \
 
 ### Docker Image Tags
 
-Our Docker images use a comprehensive tagging strategy to support different use cases:
+Our Docker images follow the comprehensive [versioning strategy](VERSIONING.md) with automated tag management:
 
-#### **Production Tags** (Stable)
-- `:latest` - **Latest stable release** (widely used, recommended for production)
-- `:release` - Alias for latest stable release
-- `:stable-v1.0.0` - **Immutable stable release** (never changes, safest for production)
-- `:stable` - Current stable pointer (may update with new releases)
-- `:2024.12` - Calendar-based stable release (December 2024)
+#### **Current Status** (Pre-1.0 Phase)
+**Note**: `:latest` tag is reserved for v1.0.0+. Current releases use targeted tags.
 
-#### **Testing Tags** (Pre-releases)
-- `:testing` - Latest prerelease/beta version
-- `:testing-v1.0.0-rc1` - Specific prerelease version
-- `:prerelease` - Alias for latest prerelease
+#### **Alpha/Beta Tags** (Current Development)
+- `:testing` - **Latest pre-release** (current: v0.9.0-alpha)
+- `:v0.9.0-alpha` - **Specific alpha version** (recommended for current use)
+- `:prerelease` - Alias for latest pre-release
+- `:alpha` - Latest alpha version
 
-#### **Development Tags** (Bleeding Edge)
-- `:nightly` - **Latest development build** from main branch
-- `:dev-latest` - Alias for latest development build
-- `:commit-abc1234` - Specific commit build
-- `:2024.12.31-nightly` - Dated nightly build
+#### **Database-Specific Tags**
+- `:v0.9.0-alpha-postgres` - PostgreSQL optimized (recommended)
+- `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized
+- `:v0.9.0-alpha-multi-db` - Supports both databases
+- `:postgres` - Latest with PostgreSQL focus
+- `:mariadb` - Latest with MariaDB focus
 
-#### **Database Compatibility Tags**
-- `:v1.0.0-multi-db` - Supports all database backends
-- `:v1.0.0-postgres` - PostgreSQL optimized
-- `:v1.0.0-mariadb` - MariaDB/MySQL optimized
-- `:multi-db`, `:postgres`, `:mariadb` - Latest with database focus
-
-#### **Pull Request Tags** (Development)
-- `:pr-123` - Pull request #123 build (for testing contributions)
+#### **Future Production Tags** (v1.0.0+)
+- `:latest` - Latest stable release (assigned at v1.0.0)
+- `:stable` - Stable release pointer
+- `:v1.0.0` - Immutable version pinning
+- `:2025.04` - Calendar-based releases
 
 #### **Usage Examples**
 
 ```bash
-# Production deployment (recommended)
-docker run -d ghcr.io/owine/radarr-go:latest
+# Current recommended (alpha testing)
+docker run -d ghcr.io/radarr/radarr-go:v0.9.0-alpha
 
-# Immutable production (safest)
-docker run -d ghcr.io/owine/radarr-go:stable-v1.0.0
+# Latest pre-release
+docker run -d ghcr.io/radarr/radarr-go:testing
 
-# Testing new features
-docker run -d ghcr.io/owine/radarr-go:testing
+# Database optimized
+docker run -d ghcr.io/radarr/radarr-go:v0.9.0-alpha-postgres
 
-# Development/bleeding edge
-docker run -d ghcr.io/owine/radarr-go:nightly
-
-# Database-specific optimization
-docker run -d ghcr.io/owine/radarr-go:postgres
+# Digest pinning (production-style)
+docker run -d ghcr.io/radarr/radarr-go@sha256:abc1234...
 ```
 
-**🔒 Production Recommendation**: Use `:latest` for general use or `:stable-v1.0.0` for immutable deployments where you need guaranteed consistency.
+#### **Version Migration Path**
+**For existing users**: See [MIGRATION.md](MIGRATION.md) for upgrade guidance from v0.0.x.
+
+**🔒 Current Recommendation**: Use `:v0.9.0-alpha` for testing environments. See [versioning strategy](VERSIONING.md) for full details.
 
 ### Binary
 
 Download the latest release for your platform from the [releases page](https://github.com/radarr/radarr-go/releases).
+
+**Current Release**: v0.9.0-alpha (95% feature parity, near production-ready)  
+**Next Milestone**: v1.0.0 (Q2 2025) - Full production release with API stability guarantee
 
 **Supported Platforms:**
 - Linux: amd64, arm64
@@ -239,10 +239,17 @@ The project uses a structured CI pipeline:
 
 This implementation maintains strict compatibility with Radarr's v3 API:
 
-- All endpoints match original URL patterns
+- **150+ API endpoints** implemented with 100% compatibility
 - Request/response formats are identical
-- Authentication works the same way
+- Authentication works the same way (API key based)
 - Existing Radarr clients work without modification
+
+**Current Status**: 95% API parity achieved (v0.9.0-alpha)
+**Target**: 100% compatibility by v1.0.0 (Q2 2025)
+
+**Compatibility Promise**: No breaking changes to Radarr v3 API endpoints in any version.
+
+See [API Compatibility Documentation](docs/API_COMPATIBILITY.md) for detailed endpoint status.
 
 ## Performance
 
@@ -265,15 +272,40 @@ Benchmarks show significant improvements over the original .NET implementation:
 - **Testing**: Comprehensive matrix testing with benchmarks and examples
 - **Development**: Pre-commit hooks, automated formatting, and security checks
 
+## Versioning Strategy
+
+Radarr Go follows [Semantic Versioning 2.0.0](https://semver.org/) with project-specific adaptations for the pre-1.0 phase:
+
+### Current Phase (Pre-1.0)
+- **v0.9.x-alpha**: Near production-ready with 95% feature parity
+- **Breaking changes allowed**: Minor version updates may include breaking changes
+- **API compatibility maintained**: Radarr v3 API endpoints remain stable
+
+### Future Phase (v1.0.0+)
+- **API stability guarantee**: No breaking changes to public APIs
+- **Strict semantic versioning**: Major.Minor.Patch with clear compatibility rules
+- **Production readiness**: Full support and maintenance commitment
+
+**Comprehensive Documentation**: See [VERSIONING.md](VERSIONING.md) for complete strategy details.
+
+**Migration Guide**: See [MIGRATION.md](MIGRATION.md) for upgrade paths and version migration instructions.
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
+3. Make your changes following [versioning guidelines](VERSIONING.md)
 4. Add tests for new functionality
 5. Run `make all` to ensure code quality
 6. Update documentation if needed
 7. Submit a pull request
+
+### Version Release Process
+Contributors should follow the [automated versioning workflow](VERSIONING_AUTOMATION_SUMMARY.md):
+- Version format validation
+- Automated Docker tag management
+- Progressive release testing
+- Comprehensive release documentation
 
 ### Code Quality
 

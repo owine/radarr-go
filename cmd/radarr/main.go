@@ -22,7 +22,22 @@ var (
 func main() {
 	var configPath = flag.String("config", "config.yaml", "path to configuration file")
 	var dataDir = flag.String("data", "./data", "path to data directory")
+	var showVersion = flag.Bool("version", false, "show version information and exit")
 	flag.Parse()
+
+	// Handle version flag
+	if *showVersion {
+		log.Printf("Radarr Go v%s (commit: %s, built: %s)", version, commit, date)
+		return
+	}
+
+	// Check for --version argument (also support this format)
+	for _, arg := range flag.Args() {
+		if arg == "--version" {
+			log.Printf("Radarr Go v%s (commit: %s, built: %s)", version, commit, date)
+			return
+		}
+	}
 
 	// Initialize configuration
 	cfg, err := config.Load(*configPath, *dataDir)

@@ -36,11 +36,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      is_prerelease: ${{ steps.release.outputs.prerelease }}
+      version: ${{ steps.version_analysis.outputs.version }}
+      is_prerelease: ${{ steps.version_analysis.outputs.is_prerelease }}
       tag_name: ${{ steps.release.outputs.tag_name }}
       build_date: ${{ steps.build_info.outputs.build_date }}
       commit_sha: ${{ steps.build_info.outputs.commit_sha }}
+      docker_tags: ${{ steps.version_analysis.outputs.docker_tags }}
+      prerelease_type: ${{ steps.version_analysis.outputs.prerelease_type }}
+      maturity_level: ${{ steps.version_analysis.outputs.maturity_level }}
+      release_stability: ${{ steps.version_analysis.outputs.release_stability }}
+      is_pre_1_0: ${{ steps.version_analysis.outputs.is_pre_1_0 }}
 
     steps:
     - name: Checkout code
@@ -66,30 +71,57 @@ jobs:
         echo "🏷️ Release tag: ${TAG_NAME}"
         echo "🔄 Pre-release: ${IS_PRERELEASE}"
 
-    - name: Validate version format
-      id: version
+    - name: Enhanced version analysis and validation
+      id: version_analysis
       run: |
         TAG_NAME="${{ steps.release.outputs.tag_name }}"
-        VERSION="${TAG_NAME#v}"  # Remove 'v' prefix if present
 
-        # Validate semantic version format (stricter regex)
-        if [[ ! $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
-          echo "❌ Invalid version format: $VERSION"
-          echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
-          echo "Examples: 1.0.0, 1.2.3-alpha, 1.2.3-beta.1"
-          exit 1
+        echo "🔍 Analyzing version: $TAG_NAME"
+
+        # Use enhanced version analyzer script
+        chmod +x ./.github/scripts/version-analyzer.sh
+
+        # Get version analysis results
+        eval "$(./.github/scripts/version-analyzer.sh "$TAG_NAME" --env)"
+
+        # Set all outputs for downstream jobs
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+        echo "prerelease_type=$PRERELEASE_TYPE" >> $GITHUB_OUTPUT
+        echo "maturity_level=$MATURITY_LEVEL" >> $GITHUB_OUTPUT
+        echo "release_stability=$RELEASE_STABILITY" >> $GITHUB_OUTPUT
+        echo "is_pre_1_0=$IS_PRE_1_0" >> $GITHUB_OUTPUT
+
+        # Generate Docker tags based on VERSIONING.md strategy
+        BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        DOCKER_TAGS=$(./.github/scripts/version-analyzer.sh "$TAG_NAME" --docker-tags "$BASE_IMAGE")
+        echo "docker_tags=$DOCKER_TAGS" >> $GITHUB_OUTPUT
+
+        echo "🎯 Release Classification:"
+        echo "   Version: $VERSION"
+        echo "   Prerelease: $IS_PRERELEASE"
+        echo "   Pre-1.0: $IS_PRE_1_0"
+        echo "   Type: $PRERELEASE_TYPE"
+        echo "   Maturity: $MATURITY_LEVEL"
+        echo "   Stability: $RELEASE_STABILITY"
+
+        echo "🏷️ Generated Docker tags:"
+        echo "$DOCKER_TAGS" | tr ',' '\n' | sed 's/^/   - /'
+
+        # Validation check
+        if [[ "$VALIDATION_RESULT" != "valid" ]]; then
+          echo "⚠️ Version validation warnings detected - check logs above"
         fi
 
-        # Extract version components for validation
-        MAJOR=$(echo "$VERSION" | sed -E 's/([0-9]+)\..*/\1/')
-        MINOR=$(echo "$VERSION" | sed -E 's/[0-9]+\.([0-9]+)\..*/\1/')
-        PATCH=$(echo "$VERSION" | sed -E 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
+    - name: Validate version progression against Git history
+      run: |
+        echo "🔍 Validating version progression against existing releases..."
 
-        echo "✅ Valid version: $VERSION (Major: $MAJOR, Minor: $MINOR, Patch: $PATCH)"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "major=$MAJOR" >> $GITHUB_OUTPUT
-        echo "minor=$MINOR" >> $GITHUB_OUTPUT
-        echo "patch=$PATCH" >> $GITHUB_OUTPUT
+        # Use version progression validation script
+        chmod +x ./.github/scripts/validate-version-progression.sh
+        ./.github/scripts/validate-version-progression.sh "${{ steps.release.outputs.tag_name }}"
+
+        echo "✅ Version progression validation completed"
 
     - name: Generate build information
       id: build_info
@@ -389,9 +421,9 @@ jobs:
         body_path: RELEASE_NOTES.md
         fail_on_unmatched_files: true
         generate_release_notes: true
-        prerelease: ${{ needs.validate.outputs.is_prerelease }}
+        prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
         draft: false
-        make_latest: ${{ needs.validate.outputs.is_prerelease == 'false' }}
+        make_latest: ${{ needs.validate.outputs.is_prerelease == 'false' && needs.validate.outputs.is_pre_1_0 == 'false' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -566,63 +598,55 @@ jobs:
         # Wait for logins
         wait
 
-    - name: Generate Docker tags based on release type
+    - name: Process automated Docker tags from VERSIONING.md strategy
       id: docker_tags
       run: |
-        BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        # Use pre-calculated Docker tags from validation step
+        DOCKER_TAGS="${{ needs.validate.outputs.docker_tags }}"
         VERSION="${{ needs.validate.outputs.version }}"
         IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
-        CURRENT_DATE=$(date +%Y.%m)
+        PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
+        MATURITY_LEVEL="${{ needs.validate.outputs.maturity_level }}"
+        IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
 
-        # Always include version tag and database compatibility tags
-        TAGS="${BASE_IMAGE}:v${VERSION}
-        ${BASE_IMAGE}:v${VERSION}-multi-db
-        ${BASE_IMAGE}:v${VERSION}-postgres
-        ${BASE_IMAGE}:v${VERSION}-mariadb"
+        echo "docker_tags=${DOCKER_TAGS}" >> $GITHUB_OUTPUT
 
-        # Add conditional tags based on release type
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          # Full release - add comprehensive production tags
-          TAGS="${TAGS}
-          ${BASE_IMAGE}:latest
-          ${BASE_IMAGE}:release
-          ${BASE_IMAGE}:stable-v${VERSION}
-          ${BASE_IMAGE}:stable
-          ${BASE_IMAGE}:${CURRENT_DATE}
-          ${BASE_IMAGE}:multi-db
-          ${BASE_IMAGE}:postgres
-          ${BASE_IMAGE}:mariadb"
-
-          echo "🏷️ FULL RELEASE tags generated"
-        else
-          # Prerelease - add testing and prerelease tags
-          TAGS="${TAGS}
-          ${BASE_IMAGE}:testing
-          ${BASE_IMAGE}:testing-v${VERSION}
-          ${BASE_IMAGE}:prerelease"
-
-          echo "🏷️ PRERELEASE tags generated"
+        echo "🏷️ Automated Docker Tagging Strategy (VERSIONING.md)"
+        echo "   Version: v${VERSION}"
+        echo "   Classification: ${MATURITY_LEVEL}"
+        echo "   Pre-1.0 Status: ${IS_PRE_1_0}"
+        echo "   Prerelease: ${IS_PRERELEASE}"
+        if [[ -n "$PRERELEASE_TYPE" ]]; then
+          echo "   Type: ${PRERELEASE_TYPE}"
         fi
-
-        # Convert to proper format (remove extra newlines and spaces)
-        FORMATTED_TAGS=$(echo "${TAGS}" | sed '/^$/d' | tr '\n' ',' | sed 's/,$//')
-
-        echo "docker_tags=${FORMATTED_TAGS}" >> $GITHUB_OUTPUT
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          echo "🏷️ Docker tags for FULL RELEASE:"
-        else
-          echo "🏷️ Docker tags for PRERELEASE:"
-        fi
-        echo "${TAGS}"
         echo ""
-        echo "📋 Tag breakdown:"
-        echo "- Version: v${VERSION}"
-        echo "- Database compatibility: multi-db, postgres, mariadb"
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          echo "- Production: latest, release, stable-v${VERSION}, stable"
-          echo "- Calendar: ${CURRENT_DATE}"
+        echo "📋 Generated Tags:"
+        echo "$DOCKER_TAGS" | tr ',' '\n' | sed 's/^/   - /'
+
+        # Provide tagging strategy explanation
+        if [[ "$IS_PRERELEASE" == "false" ]]; then
+          if [[ "$IS_PRE_1_0" == "true" ]]; then
+            echo ""
+            echo "🎯 PRE-1.0 PRODUCTION strategy applied:"
+            echo "   - Version-specific tags for precision"
+            echo "   - Database compatibility variants"
+            echo "   - Limited production tags (pre-1.0 status)"
+            echo "   - 'latest' tag reserved for post-1.0 releases"
+          else
+            echo ""
+            echo "🎯 FULL PRODUCTION strategy applied:"
+            echo "   - Complete production tag set"
+            echo "   - Latest and stable tags"
+            echo "   - Calendar versioning"
+            echo "   - Database optimization tags"
+          fi
         else
-          echo "- Testing: testing, testing-v${VERSION}, prerelease"
+          echo ""
+          echo "🎯 PRERELEASE strategy applied:"
+          echo "   - Testing and prerelease tags"
+          echo "   - Type-specific tags (${PRERELEASE_TYPE})"
+          echo "   - Version-specific tags"
+          echo "   - No production tags assigned"
         fi
 
     - name: Build and push Docker images with enhanced caching
@@ -631,7 +655,7 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.docker_tags.outputs.docker_tags }}
+        tags: ${{ needs.validate.outputs.docker_tags }}
         build-args: |
           VERSION=${{ needs.validate.outputs.version }}
           COMMIT=${{ needs.validate.outputs.commit_sha }}
@@ -656,20 +680,41 @@ jobs:
         echo "### 🏷️ Available Tags" >> $GITHUB_STEP_SUMMARY
         echo "- **Version**: \`v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Database Compatibility**: \`v${VERSION}-multi-db\`, \`v${VERSION}-postgres\`, \`v${VERSION}-mariadb\`" >> $GITHUB_STEP_SUMMARY
+        MATURITY_LEVEL="${{ needs.validate.outputs.maturity_level }}"
+        IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
+
         if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          echo "- **Production Tags**: \`:latest\`, \`:release\`, \`:stable-v${VERSION}\`, \`:stable\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${IS_PRE_1_0}" == "false" ]]; then
+            echo "- **Production Tags**: \`:latest\`, \`:release\`, \`:stable-v${VERSION}\`, \`:stable\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Pre-1.0 Production**: \`:release\`, \`:stable-v${VERSION}\` (no \`:latest\` until v1.0.0)" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "- **Database Focus**: \`:multi-db\`, \`:postgres\`, \`:mariadb\`" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- **Prerelease Tag**: \`:testing\`, \`:testing-v${VERSION}\`, \`:prerelease\`" >> $GITHUB_STEP_SUMMARY
+          PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
+          echo "- **Prerelease Tags**: \`:testing\`, \`:testing-v${VERSION}\`, \`:prerelease\`" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "$PRERELEASE_TYPE" && "$PRERELEASE_TYPE" != "custom" ]]; then
+            echo "- **Type-Specific**: \`:${PRERELEASE_TYPE}\` (${MATURITY_LEVEL})" >> $GITHUB_STEP_SUMMARY
+          fi
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
+        IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
+
         if [[ "${IS_PRERELEASE}" == "false" ]]; then
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "docker run -d ${BASE_IMAGE}:latest" >> $GITHUB_STEP_SUMMARY
+          if [[ "${IS_PRE_1_0}" == "false" ]]; then
+            echo "# Post-1.0 production release" >> $GITHUB_STEP_SUMMARY
+            echo "docker run -d ${BASE_IMAGE}:latest" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "# Pre-1.0 production release (use specific version)" >> $GITHUB_STEP_SUMMARY
+            echo "docker run -d ${BASE_IMAGE}:v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         else
+          PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Prerelease (${PRERELEASE_TYPE})" >> $GITHUB_STEP_SUMMARY
           echo "docker run -d ${BASE_IMAGE}:testing" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         fi
@@ -705,10 +750,29 @@ jobs:
 
         # Get the manifest digest for the versioned tag
         IMAGE_TAG="${BASE_IMAGE}:v${VERSION}"
-        DIGEST=$(docker buildx imagetools inspect "$IMAGE_TAG" --format "{{.Manifest.Digest}}")
+        echo "🔍 Inspecting image: $IMAGE_TAG"
 
-        if [[ -z "$DIGEST" ]]; then
-          echo "⚠️ Could not fetch digest, using commit SHA as fallback"
+        # Get the raw inspect output and extract only the digest line
+        RAW_OUTPUT=$(docker buildx imagetools inspect "$IMAGE_TAG" --format "{{.Manifest.Digest}}" 2>/dev/null || echo "")
+
+        # Extract the digest SHA value from the "Digest:" line
+        DIGEST=$(echo "$RAW_OUTPUT" | grep "^Digest:" | awk '{print $2}' 2>/dev/null || echo "")
+
+        # If we didn't get a proper digest, try alternative extraction method
+        if [[ -z "$DIGEST" || ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+          echo "⚠️ Primary digest extraction failed, trying alternative method..."
+          # Try to get digest from the registry using docker manifest inspect
+          DIGEST=$(docker manifest inspect "$IMAGE_TAG" 2>/dev/null | jq -r '.config.digest // empty' || echo "")
+
+          # If still empty, try getting the manifest list digest
+          if [[ -z "$DIGEST" || ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            DIGEST=$(docker manifest inspect "$IMAGE_TAG" 2>/dev/null | jq -r '.digest // empty' || echo "")
+          fi
+        fi
+
+        # Final fallback if all methods fail
+        if [[ -z "$DIGEST" || ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+          echo "⚠️ Could not fetch valid digest, using commit SHA as fallback"
           DIGEST="sha256:${COMMIT_SHA}"
         fi
 
@@ -717,11 +781,18 @@ jobs:
         echo "base_image=${BASE_IMAGE}" >> $GITHUB_OUTPUT
 
         # Generate all available tags based on release type
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          AVAILABLE_TAGS="latest, release, stable, v${VERSION}, v${VERSION}-multi-db, v${VERSION}-postgres, v${VERSION}-mariadb, multi-db, postgres, mariadb"
-        else
-          AVAILABLE_TAGS="testing, prerelease, v${VERSION}, v${VERSION}-multi-db, v${VERSION}-postgres, v${VERSION}-mariadb"
-        fi
+        # Extract available tags from the automated Docker tags
+        DOCKER_TAGS="${{ needs.validate.outputs.docker_tags }}"
+        IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
+        PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
+
+        # Convert comma-separated tags to human-readable format
+        AVAILABLE_TAGS=$(echo "$DOCKER_TAGS" | sed "s|${BASE_IMAGE}:||g" | tr ',' ', ')
+
+        echo "📋 Available tags (automated from VERSIONING.md):"
+        echo "$AVAILABLE_TAGS" | tr ',' '\n' | sed 's/^ */   - /'
+        echo ""
+        echo "🎯 Tagging strategy applied: $(if [[ "$IS_PRERELEASE" == "false" ]]; then if [[ "$IS_PRE_1_0" == "false" ]]; then echo "Full Production"; else echo "Pre-1.0 Production"; fi; else echo "Prerelease ($PRERELEASE_TYPE)"; fi)"
 
         echo "available_tags=${AVAILABLE_TAGS}" >> $GITHUB_OUTPUT
         echo "📋 Digest: ${DIGEST}"

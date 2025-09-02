@@ -8,6 +8,8 @@ This is **Radarr Go**, a complete rewrite of the Radarr movie collection manager
 
 **Current Status: v0.9.0-alpha** - Near production-ready with 95% feature parity to original Radarr.
 
+**Versioning Strategy**: Follows [Semantic Versioning 2.0.0](https://semver.org/) with automated Docker tag management. See [VERSIONING.md](VERSIONING.md) and [MIGRATION.md](MIGRATION.md) for complete details.
+
 ## Comprehensive Feature Set
 
 ### Core Movie Management
@@ -226,6 +228,38 @@ docker-compose -f docker-compose.dev.yml --profile frontend up -d    # Include f
 # - Frontend Dev Server: http://localhost:3000 (Phase 2)
 ```
 
+### Versioning and Release Management
+```bash
+# Version Analysis and Validation
+./.github/scripts/version-analyzer.sh v1.2.3 --env     # Analyze version and generate environment variables
+./.github/scripts/version-analyzer.sh v1.2.3 --json   # Get JSON analysis output
+./.github/scripts/version-analyzer.sh v1.2.3 --docker-tags ghcr.io/radarr/radarr-go  # Generate Docker tags
+
+# Version Progression Validation
+./.github/scripts/validate-version-progression.sh v1.2.3  # Validate version against Git history
+
+# Build System Testing
+./.github/scripts/validate-build-version.sh         # Test version injection system
+./.github/scripts/validate-build-version.sh ./radarr  # Test specific binary
+
+# Release Notes Generation
+./.github/scripts/generate-release-notes.sh         # Generate comprehensive release notes
+
+# Complete System Testing
+./.github/scripts/test-versioning-system.sh         # Test all versioning components
+
+# Version Information
+./radarr --version              # Check application version information
+
+# Release Process (Automated via GitHub Actions)
+git tag v1.2.3                 # Create release tag (triggers automated workflow)
+git push origin v1.2.3         # Push tag to trigger CI/CD pipeline
+
+# Pre-release Process  
+git tag v1.2.3-alpha.1         # Create pre-release tag
+git push origin v1.2.3-alpha.1 # Push pre-release tag
+```
+
 ### Frontend Development (Phase 2 Preparation)
 ```bash
 # Frontend structure setup
@@ -320,6 +354,41 @@ The project uses a structured CI pipeline with concurrent execution:
 **Stage 4**: Publish (Docker images + artifacts after all tests pass)
 
 Supported platforms: Linux, Darwin, Windows, FreeBSD on amd64/arm64 architectures.
+
+### Versioning and Release Architecture
+
+The project implements a comprehensive automated versioning system that eliminates manual processes:
+
+#### Automated Versioning Workflow
+- **Version Analysis**: Automatic semantic version validation and Docker tag generation via `.github/scripts/version-analyzer.sh`
+- **Progression Validation**: Git history-based version progression validation via `.github/scripts/validate-version-progression.sh`
+- **Build Integration**: Automated version injection during build process with validation via `.github/scripts/validate-build-version.sh`
+- **Release Documentation**: Automated comprehensive release notes with Docker information via `.github/scripts/generate-release-notes.sh`
+
+#### Docker Tag Strategy (Automated)
+**Current Phase (Pre-1.0)**:
+- `:testing`, `:prerelease` - Latest pre-release versions
+- `:v0.9.0-alpha` - Specific version pinning (recommended)
+- `:alpha`, `:beta`, `:rc` - Prerelease type tags
+- Database-specific tags: `:v0.9.0-alpha-postgres`, `:v0.9.0-alpha-mariadb`
+
+**Future Phase (v1.0.0+)**:
+- `:latest` - Production releases (assigned at v1.0.0)
+- `:stable` - Stable release pointer
+- `:2025.04` - Calendar-based versioning
+
+#### Version Command Support
+```bash
+# Check application version
+./radarr --version
+# Output: Radarr Go v0.9.0-alpha (commit: abc123, built: 2025-01-01_12:00:00)
+```
+
+#### Release Process Integration
+- **Tag Creation**: `git tag v1.2.3` triggers full automated workflow
+- **Validation**: Version format, progression rules, build system validation
+- **Publication**: Multi-platform builds, Docker images, comprehensive documentation
+- **Quality Assurance**: Integration tests, performance benchmarks, security scanning
 
 ### Go Workspace and Modern Practices
 The project now includes Go 1.24+ workspace support and follows modern Go best practices:
@@ -599,9 +668,11 @@ type Movie struct {
 
 - Update CLAUDE.md with new development commands, architecture changes, or workflow modifications
 - Update README.md with new features, installation steps, or usage instructions
+- Update versioning documentation (VERSIONING.md, MIGRATION.md) for version-related changes
 - Update inline code comments for significant logic changes
 - Ensure all documentation remains accurate and current
 - Documentation updates should be included in the same commit as the related code changes
+- **Versioning Impact**: Consider if changes affect versioning strategy, Docker tags, or migration paths
 
 ## Development Best Practices
 

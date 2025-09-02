@@ -36,7 +36,7 @@ version: '3.8'
 
 services:
   radarr-go:
-    image: ghcr.io/username/radarr-go:latest
+    image: ghcr.io/radarr/radarr-go:v0.9.0-alpha  # Pin to specific version for production
     container_name: radarr-go
     restart: unless-stopped
     depends_on:

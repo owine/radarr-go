@@ -45,7 +45,7 @@ version: '3.8'
 
 services:
   radarr-go:
-    image: ghcr.io/username/radarr-go:latest
+    image: ghcr.io/radarr/radarr-go:v0.9.0-alpha
     container_name: radarr-go-secure
     restart: unless-stopped
 
@@ -1389,7 +1389,7 @@ Create `scripts/security-scan.sh`:
 set -euo pipefail
 
 SCAN_RESULTS_DIR="/var/log/radarr/security-scans"
-DOCKER_IMAGE="${RADARR_DOCKER_IMAGE:-ghcr.io/username/radarr-go:latest}"
+DOCKER_IMAGE="${RADARR_DOCKER_IMAGE:-ghcr.io/radarr/radarr-go:v0.9.0-alpha}"
 
 log() { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"; }
 

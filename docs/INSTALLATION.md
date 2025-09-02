@@ -1,7 +1,9 @@
 # Radarr Go Installation and Setup Guide
 
 **Version**: v0.9.0-alpha
-**Last Updated**: August 2025
+**Last Updated**: September 2025
+
+**Important**: This guide covers installation of Radarr Go v0.9.0-alpha and later versions. For version migration guidance, see [MIGRATION.md](../MIGRATION.md). For complete versioning information, see [VERSIONING.md](../VERSIONING.md).
 
 ## Table of Contents
 
@@ -96,7 +98,7 @@ docker run -d \
   -e RADARR_DATABASE_USERNAME=radarr \
   -e RADARR_DATABASE_PASSWORD=your-password \
   -e RADARR_TMDB_API_KEY=your-tmdb-key \
-  ghcr.io/radarr/radarr-go:latest
+  ghcr.io/radarr/radarr-go:v0.9.0-alpha
 ```
 
 #### Docker Compose (Recommended)
@@ -108,7 +110,7 @@ version: '3.8'
 
 services:
   radarr-go:
-    image: ghcr.io/radarr/radarr-go:latest
+    image: ghcr.io/radarr/radarr-go:v0.9.0-alpha  # Recommended: pin to specific version
     container_name: radarr-go
     restart: unless-stopped
     ports:
@@ -190,7 +192,7 @@ version: '3.8'
 
 services:
   radarr-go:
-    image: ghcr.io/radarr/radarr-go:latest
+    image: ghcr.io/radarr/radarr-go:v0.9.0-alpha  # Recommended: pin to specific version
     container_name: radarr-go
     restart: unless-stopped
     ports:
@@ -229,6 +231,43 @@ services:
 volumes:
   radarr_data:
   mariadb_data:
+```
+
+#### Docker Tag Strategy and Versioning
+
+Radarr Go follows a comprehensive [versioning strategy](../VERSIONING.md) with automated Docker tag management:
+
+##### Current Phase (Pre-1.0)
+**Recommended for Testing/Development**:
+- `:v0.9.0-alpha` - **Specific alpha version** (recommended for stability)
+- `:testing` - Latest pre-release version (may include newer alphas/betas)
+- `:alpha` - Latest alpha release
+
+**Database-Optimized Tags**:
+- `:v0.9.0-alpha-postgres` - PostgreSQL optimized (recommended)
+- `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized  
+- `:postgres` - Latest with PostgreSQL optimizations
+- `:mariadb` - Latest with MariaDB optimizations
+
+##### Future Production Tags (v1.0.0+)
+Once v1.0.0 is released (Q2 2025), production tags will be available:
+- `:latest` - Latest stable release (assigned starting with v1.0.0)
+- `:stable` - Stable release pointer
+- `:v1.0.0` - Immutable version pinning
+- `:2025.04` - Calendar-based releases
+
+##### Version Migration Strategy
+- **Current users**: Use `:v0.9.0-alpha` for stability
+- **Existing v0.0.x users**: See [MIGRATION.md](../MIGRATION.md) for upgrade path
+- **Production deployment**: Wait for v1.0.0 or use `:v0.9.0-alpha` with caution
+
+##### Security Recommendations
+```bash
+# Pin to specific digest for production-style deployment
+docker pull ghcr.io/radarr/radarr-go@sha256:abc123...
+
+# Check image digest
+docker buildx imagetools inspect ghcr.io/radarr/radarr-go:v0.9.0-alpha
 ```
 
 ### Binary Installation
@@ -1285,7 +1324,7 @@ services:
       - "./letsencrypt:/letsencrypt"
 
   radarr-go:
-    image: ghcr.io/radarr/radarr-go:latest
+    image: ghcr.io/radarr/radarr-go:v0.9.0-alpha  # Recommended: pin to specific version
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.yourdomain.com`)"
