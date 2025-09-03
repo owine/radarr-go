@@ -140,8 +140,8 @@ dev:
 # Full development environment with all services
 dev-full:
 	@echo "Starting full development environment..."
-	@echo "Backend + PostgreSQL + MariaDB + Redis + Monitoring + Frontend"
-	docker compose -f docker compose.yml -f docker compose.dev.yml up --profile dev --build
+	@echo "Backend + PostgreSQL + Database Admin + Frontend"
+	docker compose --profile frontend up -d --build
 
 # Development with specific database
 dev-postgres:
@@ -176,7 +176,7 @@ test-db-up:
 # Alternative: Use dedicated test override
 test-env-up:
 	@echo "Starting complete test environment..."
-	docker compose -f docker compose.yml -f docker compose.test.yml.new up --profile test -d
+	docker compose -f docker-compose.yml -f docker-compose.test.yml.new up --profile test -d
 
 test-db-down:
 	docker compose down postgres-test mariadb-test -v
@@ -241,7 +241,7 @@ test-bench-legacy: test-db-up
 
 # Run tests in Docker container (full isolation)
 test-docker:
-	docker compose -f docker compose.test.yml up --build --abort-on-container-exit test-runner
+	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit test-runner
 
 # Run tests without database (unit tests only)
 test-unit:
@@ -276,17 +276,17 @@ lint:
 # Production deployment
 prod-up:
 	@echo "Starting production environment..."
-	docker compose -f docker compose.yml -f docker compose.prod.yml.new up -d
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml.new up -d
 	@echo "Production services started. Check logs with: make prod-logs"
 
 prod-down:
-	docker compose -f docker compose.yml -f docker compose.prod.yml.new down
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml.new down
 
 prod-logs:
-	docker compose -f docker compose.yml -f docker compose.prod.yml.new logs -f
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml.new logs -f
 
 prod-status:
-	docker compose -f docker compose.yml -f docker compose.prod.yml.new ps
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml.new ps
 
 # Docker Commands (Legacy/Simple)
 # ===========================================
@@ -314,9 +314,9 @@ docker-logs:
 docker-clean:
 	@echo "Cleaning up all Docker containers and volumes..."
 	docker compose down --remove-orphans -v
-	docker compose -f docker compose.dev.yml.new down --remove-orphans -v 2>/dev/null || true
-	docker compose -f docker compose.test.yml.new down --remove-orphans -v 2>/dev/null || true
-	docker compose -f docker compose.prod.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker compose -f docker-compose.dev.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker compose -f docker-compose.test.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker compose -f docker-compose.prod.yml.new down --remove-orphans -v 2>/dev/null || true
 	docker system prune -f
 
 # Show all running services
