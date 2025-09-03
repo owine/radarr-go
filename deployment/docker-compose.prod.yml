@@ -1,8 +1,6 @@
 # docker-compose.prod.yml - Production-ready Radarr Go deployment
 # Comprehensive production Docker Compose configuration with security, monitoring, and backup
 
-version: '3.8'
-
 services:
   # Main Radarr Go application
   radarr-go:

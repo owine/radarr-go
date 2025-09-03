@@ -1,8 +1,6 @@
 # docker-compose.monitoring.yml - Monitoring stack for Radarr Go
 # Complete observability stack with Prometheus, Grafana, AlertManager, and Loki
 
-version: '3.8'
-
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
