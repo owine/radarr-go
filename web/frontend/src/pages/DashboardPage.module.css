@@ -1,0 +1,206 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--space-8);
+}
+
+.header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.header p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.statusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.statusItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.statusItem:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.healthStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) 0;
+}
+
+.healthIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.healthIndicator.healthy {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--color-success-dark);
+}
+
+.healthIndicator.error {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger-dark);
+}
+
+.healthIcon {
+  font-size: var(--font-size-xl);
+}
+
+.healthTitle {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.healthSubtitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.movieStats {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.statItem {
+  flex: 1;
+}
+
+.statNumber {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: var(--space-1);
+}
+
+.statLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.activityPlaceholder {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--text-tertiary);
+}
+
+.healthIssues {
+  margin-top: var(--space-6);
+}
+
+.issuesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.issue {
+  padding: var(--space-4);
+  border-left: 3px solid var(--color-danger);
+  background-color: rgba(220, 53, 69, 0.05);
+  border-radius: var(--radius-md);
+}
+
+.issueHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.issueType {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.issueStatus {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  background-color: rgba(220, 53, 69, 0.1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.issueMessage {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .movieStats {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+  
+  .statItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+  
+  .statNumber {
+    order: 2;
+    margin-bottom: 0;
+  }
+  
+  .issueHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}

@@ -1,0 +1,179 @@
+.offlineBanner {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  background-color: var(--color-warning);
+  color: white;
+  z-index: var(--z-toast);
+  animation: slideDown 0.3s ease-out;
+}
+
+.bannerContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bannerIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bannerMessage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bannerTitle {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.bannerDescription {
+  font-size: var(--font-size-xs);
+  opacity: 0.9;
+}
+
+.bannerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.retryButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.retryButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.retryButton:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dismissButton {
+  background: none;
+  border: none;
+  color: white;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  opacity: 0.8;
+}
+
+.dismissButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
+.offlineIndicator {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  background-color: var(--color-warning);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-toast);
+  transition: all var(--transition-fast);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.offlineIndicator:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-xl);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .bannerContent {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+  
+  .bannerMessage {
+    min-width: 0;
+  }
+  
+  .bannerDescription {
+    display: none;
+  }
+  
+  .retryButton {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+  
+  .offlineIndicator {
+    bottom: var(--space-3);
+    right: var(--space-3);
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bannerContent {
+    flex-wrap: wrap;
+  }
+  
+  .bannerActions {
+    order: -1;
+    margin-left: auto;
+  }
+  
+  .retryButton {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+}

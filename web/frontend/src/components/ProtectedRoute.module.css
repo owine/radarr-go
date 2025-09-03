@@ -1,0 +1,27 @@
+.loadingContainer {
+  padding: var(--space-6);
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .loadingContainer {
+    padding: var(--space-4);
+  }
+  
+  .loadingGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}

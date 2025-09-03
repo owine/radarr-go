@@ -1,0 +1,77 @@
+# Multi-stage Docker build for Radarr Go with React frontend
+# This Dockerfile builds both the Go backend and React frontend in a single image
+
+# Frontend build stage
+FROM node:24-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy package files
+COPY web/frontend/package*.json ./
+
+# Install dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy frontend source
+COPY web/frontend ./
+
+# Build frontend
+RUN npm run build
+
+# Backend build stage
+FROM golang:1.25-alpine AS backend-builder
+
+# Build arguments for version information
+ARG VERSION="dev"
+ARG COMMIT="unknown"
+ARG BUILD_DATE="unknown"
+
+RUN apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Copy frontend build from previous stage
+COPY --from=frontend-builder /app/frontend/dist ./web/static/
+
+# Build the application with version information (pure-Go, no CGO needed)
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
+    -ldflags="-w -s -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${BUILD_DATE}'" \
+    -o radarr ./cmd/radarr
+
+# Final runtime stage
+FROM alpine:3.22
+
+RUN apk --no-cache add ca-certificates tzdata sqlite
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1000 radarr && \
+    adduser -D -s /bin/sh -u 1000 -G radarr radarr
+
+# Copy binary and assets from builder stage
+COPY --from=backend-builder /app/radarr .
+COPY --from=backend-builder /app/migrations ./migrations
+COPY --from=backend-builder /app/config.yaml .
+COPY --from=backend-builder /app/web ./web
+
+# Create data directory
+RUN mkdir -p /data && chown -R radarr:radarr /data /app
+
+USER radarr
+
+EXPOSE 7878
+
+VOLUME ["/data", "/movies"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:7878/api/v3/system/status || exit 1
+
+CMD ["./radarr", "-data", "/data"]

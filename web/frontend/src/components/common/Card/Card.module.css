@@ -1,0 +1,120 @@
+.card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.interactive {
+  cursor: pointer;
+  
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  
+  &:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+}
+
+.header {
+  padding: var(--card-padding);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0 0;
+}
+
+.content {
+  padding: var(--card-padding);
+}
+
+.footer {
+  padding: var(--card-padding);
+  border-top: 1px solid var(--border-primary);
+  background-color: var(--bg-secondary);
+}
+
+/* Variants */
+.elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.flat {
+  border: none;
+  box-shadow: none;
+}
+
+.outlined {
+  border: 2px solid var(--border-primary);
+}
+
+/* Size variants */
+.compact .header,
+.compact .content,
+.compact .footer {
+  padding: var(--space-4);
+}
+
+.spacious .header,
+.spacious .content,
+.spacious .footer {
+  padding: var(--space-8);
+}
+
+/* Without sections */
+.noHeader .content {
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.noFooter .content {
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.contentOnly {
+  padding: var(--card-padding);
+}
+
+/* Loading state */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.loading .content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+/* Media queries */
+@media (max-width: 640px) {
+  .header,
+  .content,
+  .footer {
+    padding: var(--space-4);
+  }
+  
+  .spacious .header,
+  .spacious .content,
+  .spacious .footer {
+    padding: var(--space-6);
+  }
+}
