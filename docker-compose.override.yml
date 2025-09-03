@@ -35,9 +35,9 @@ services:
   postgres:
     environment:
       # Override for development-friendly settings
-      - POSTGRES_DB=radarr_dev
-      - POSTGRES_USER=radarr_dev
-      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_DB=radarr
+      - POSTGRES_USER=radarr
+      - POSTGRES_PASSWORD=password
     command: >
       postgres
       -c log_statement=all
