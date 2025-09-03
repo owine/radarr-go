@@ -295,6 +295,8 @@ RADARR_DATABASE_TYPE=postgres ./radarr    # Use PostgreSQL (default)
 ```
 
 ### Docker Operations
+**Note**: Docker Compose files have been consolidated (September 2024) from 6 fragmented files to 5 clean, maintainable files with eliminated duplication. All files are Docker Compose v2 compatible (deprecated `version:` fields removed). See `docs/DOCKER-COMPOSE-GUIDE.md` for complete usage guide.
+
 ```bash
 # Production Docker
 make docker-build           # Build Docker image
