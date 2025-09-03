@@ -69,5 +69,5 @@ volumes:
 # Use simpler networking for development
 networks:
   app-network:
-    name: radarr-dev-network
+    name: radarr-network
     driver: bridge
