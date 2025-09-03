@@ -248,7 +248,7 @@ services:
 
   # Redis cache
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: radarr-redis
     restart: unless-stopped
 
