@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -35,7 +37,13 @@ const (
 
 	// Docker compose file path
 	testComposeFile = "docker-compose.test.yml"
+
+	// Database type constants
+	mysqlType = "mysql"
 )
+
+// containerIDPattern validates Docker container IDs
+var containerIDPattern = regexp.MustCompile(`^[a-f0-9]{12,64}$`)
 
 // DatabaseManager handles test database lifecycle management
 type DatabaseManager struct {
@@ -90,7 +98,7 @@ func (dm *DatabaseManager) StartDatabases() error {
 
 	// Check if Docker is available
 	if !isDockerAvailable() {
-		return fmt.Errorf("Docker is not available or not running")
+		return fmt.Errorf("docker is not available or not running")
 	}
 
 	// Check if docker-compose.test.yml exists
@@ -99,7 +107,8 @@ func (dm *DatabaseManager) StartDatabases() error {
 	}
 
 	// Start the database services
-	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile, "up", "-d", "postgres-test", "mariadb-test")
+	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile,
+		"up", "-d", "postgres-test", "mariadb-test")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -126,7 +135,7 @@ func (dm *DatabaseManager) StopDatabases() error {
 	defer dm.mu.Unlock()
 
 	if !isDockerAvailable() {
-		return fmt.Errorf("Docker is not available")
+		return fmt.Errorf("docker is not available")
 	}
 
 	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile, "down")
@@ -150,7 +159,7 @@ func (dm *DatabaseManager) CleanDatabases() error {
 	defer dm.mu.Unlock()
 
 	if !isDockerAvailable() {
-		return fmt.Errorf("Docker is not available")
+		return fmt.Errorf("docker is not available")
 	}
 
 	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile, "down", "-v", "--remove-orphans")
@@ -184,7 +193,7 @@ func (dm *DatabaseManager) WaitForDatabase(dbType string, timeout time.Duration)
 	case "postgres":
 		serviceName = "postgres-test"
 		port = postgresTestPort
-	case "mariadb", "mysql":
+	case "mariadb", mysqlType:
 		serviceName = "mariadb-test"
 		port = mariadbTestPort
 	default:
@@ -247,10 +256,16 @@ func (dm *DatabaseManager) isServiceHealthy(serviceName string) bool {
 	}
 
 	// Check container health status
-	containerID := string(output)
-	containerID = containerID[:len(containerID)-1] // Remove newline
+	containerID := strings.TrimSpace(string(output))
 
-	healthCmd := exec.CommandContext(dm.ctx, "docker", "inspect", "--format={{.State.Health.Status}}", containerID)
+	// Validate container ID format to prevent command injection
+	if !containerIDPattern.MatchString(containerID) {
+		log.Printf("Warning: Invalid container ID format: %s", containerID)
+		return false
+	}
+
+	// #nosec G204 - containerID is validated against a strict regex pattern above
+	healthCmd := exec.CommandContext(dm.ctx, "docker", "inspect", "--format={{.State.Health.Status}}", "--", containerID)
 	healthOutput, err := healthCmd.Output()
 	if err != nil {
 		// If no health check, assume it's healthy if running
@@ -270,9 +285,10 @@ func (dm *DatabaseManager) isDatabaseReady(dbType string, port int) bool {
 	case "postgres":
 		driverName = "pgx"
 		dsn = fmt.Sprintf("postgres://radarr_test:test_password@localhost:%d/radarr_test?sslmode=disable", port)
-	case "mariadb", "mysql":
-		driverName = "mysql"
-		dsn = fmt.Sprintf("radarr_test:test_password@tcp(localhost:%d)/radarr_test?charset=utf8mb4&parseTime=True&loc=Local", port)
+	case "mariadb", mysqlType:
+		driverName = mysqlType
+		dsn = fmt.Sprintf("radarr_test:test_password@tcp(localhost:%d)/radarr_test?charset=utf8mb4&parseTime=True&loc=Local",
+			port)
 	default:
 		return false
 	}
@@ -295,7 +311,9 @@ func (dm *DatabaseManager) isDatabaseReady(dbType string, port int) bool {
 
 // isDockerAvailable checks if Docker is installed and running
 func isDockerAvailable() bool {
-	cmd := exec.Command("docker", "version")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "docker", "version")
 	return cmd.Run() == nil
 }
 
@@ -406,7 +424,8 @@ func RunWithTestDatabase(t *testing.T, dbType string, testFunc func(*testing.T, 
 }
 
 // RunBenchmarkWithTestDatabase is like RunWithTestDatabase but for benchmarks
-func RunBenchmarkWithTestDatabase(b *testing.B, dbType string, benchFunc func(*testing.B, *database.Database, *logger.Logger)) {
+func RunBenchmarkWithTestDatabase(b *testing.B, dbType string,
+	benchFunc func(*testing.B, *database.Database, *logger.Logger)) {
 	b.Helper()
 
 	// For benchmarks, we need to set up the database outside the benchmark timing

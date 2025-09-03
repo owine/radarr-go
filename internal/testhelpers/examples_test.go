@@ -45,7 +45,7 @@ func ExampleNewTestContext_withCustomOptions() {
 func ExampleRunWithTestDatabase() {
 	t := &testing.T{} // Placeholder for example
 
-	testhelpers.RunWithTestDatabase(t, "postgres", func(t *testing.T, db *database.Database, log *logger.Logger) {
+	testhelpers.RunWithTestDatabase(t, "postgres", func(_ *testing.T, db *database.Database, _ *logger.Logger) {
 		// Your test logic here
 		// Database is automatically set up and cleaned up
 
@@ -161,7 +161,7 @@ func ExampleSkipInShortMode() {
 func ExampleRunBenchmarkWithTestDatabase() {
 	b := &testing.B{} // Placeholder for example
 
-	testhelpers.RunBenchmarkWithTestDatabase(b, "postgres", func(b *testing.B, db *database.Database, log *logger.Logger) {
+	testhelpers.RunBenchmarkWithTestDatabase(b, "postgres", func(b *testing.B, db *database.Database, _ *logger.Logger) {
 		// Setup benchmark data outside timing
 		factory := testhelpers.NewTestDataFactory(db.GORM)
 		defer factory.Cleanup()

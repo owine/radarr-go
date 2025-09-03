@@ -2,8 +2,9 @@ package testhelpers
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"os"
 	"runtime"
 	"strings"
@@ -16,6 +17,12 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+)
+
+const (
+	// Database type constants for consistency with main database package
+	postgresType = "postgres"
+	mariadbType  = "mariadb"
 )
 
 // TestContext provides a comprehensive testing environment
@@ -142,7 +149,8 @@ func (ctx *TestContext) setupDatabase(t *testing.T, dbType string, options TestO
 }
 
 // setupIsolatedDatabase creates an isolated database schema for this test
-func (ctx *TestContext) setupIsolatedDatabase(t *testing.T, dbType string, options TestOptions) (*database.Database, *logger.Logger) {
+func (ctx *TestContext) setupIsolatedDatabase(t *testing.T, dbType string,
+	options TestOptions) (*database.Database, *logger.Logger) {
 	t.Helper()
 
 	// Generate unique schema name for this test
@@ -211,9 +219,9 @@ func (ctx *TestContext) setupIsolatedDatabase(t *testing.T, dbType string, optio
 func (ctx *TestContext) createIsolatedSchema(baseDB TestDatabase, schemaName string) error {
 	// This is a simplified implementation - in practice you might want more sophisticated schema creation
 	switch baseDB.Type {
-	case "postgres":
+	case postgresType:
 		return ctx.createPostgresSchema(baseDB, schemaName)
-	case "mariadb", "mysql":
+	case mariadbType, "mysql":
 		return ctx.createMySQLDatabase(baseDB, schemaName)
 	default:
 		return fmt.Errorf("unsupported database type for schema isolation: %s", baseDB.Type)
@@ -274,9 +282,9 @@ func (ctx *TestContext) createMySQLDatabase(baseDB TestDatabase, databaseName st
 // dropIsolatedSchema removes the isolated schema/database
 func (ctx *TestContext) dropIsolatedSchema(baseDB TestDatabase, schemaName string) error {
 	switch baseDB.Type {
-	case "postgres":
+	case postgresType:
 		return ctx.dropPostgresDatabase(baseDB, schemaName)
-	case "mariadb", "mysql":
+	case mariadbType, "mysql":
 		return ctx.dropMySQLDatabase(baseDB, schemaName)
 	default:
 		return fmt.Errorf("unsupported database type for schema cleanup: %s", baseDB.Type)
@@ -342,9 +350,14 @@ func generateUniqueSchemaName(t *testing.T) string {
 	}
 
 	timestamp := time.Now().Unix()
-	random := rand.Intn(10000)
+	// Use crypto/rand for secure random number generation
+	randomNum, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		// Fallback to timestamp if crypto/rand fails
+		randomNum = big.NewInt(timestamp % 10000)
+	}
 
-	return fmt.Sprintf("test_%s_%d_%d", testName, timestamp, random)
+	return fmt.Sprintf("test_%s_%d_%d", testName, timestamp, randomNum.Int64())
 }
 
 // selectBestAvailableDatabase chooses the best available database for testing
@@ -359,7 +372,7 @@ func selectBestAvailableDatabase(t *testing.T) string {
 	}
 
 	// Check available databases in order of preference
-	preferred := []string{"postgres", "mariadb"}
+	preferred := []string{postgresType, mariadbType}
 	for _, dbType := range preferred {
 		if IsTestDatabaseRunning(dbType) {
 			return dbType
@@ -437,7 +450,7 @@ func GetTestDatabaseType() string {
 	if envType := os.Getenv("RADARR_TEST_DATABASE_TYPE"); envType != "" {
 		return envType
 	}
-	return "postgres" // default
+	return postgresType // default
 }
 
 // IsRunningInParallel checks if tests are running in parallel
@@ -446,12 +459,12 @@ func IsRunningInParallel() bool {
 }
 
 // SetMaxParallelism sets the maximum number of tests that can run in parallel
-func SetMaxParallelism(t *testing.T, max int) {
+func SetMaxParallelism(t *testing.T, maxParallelism int) {
 	t.Helper()
 	if IsRunningInParallel() {
 		t.Parallel()
 		// Create a buffered channel to limit concurrency
-		sem := make(chan struct{}, max)
+		sem := make(chan struct{}, maxParallelism)
 		t.Cleanup(func() {
 			<-sem
 		})

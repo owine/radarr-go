@@ -26,25 +26,50 @@ func NewSeedData(db *gorm.DB) *SeedData {
 func (s *SeedData) SeedBasicDataset() (*BasicDataset, error) {
 	dataset := &BasicDataset{}
 
-	// Create quality profiles
+	// Create all the basic components
+	s.seedBasicQualityProfiles(dataset)
+	s.seedBasicIndexers(dataset)
+	s.seedBasicDownloadClient(dataset)
+	s.seedBasicNotifications(dataset)
+	s.seedBasicMovies(dataset)
+
+	// Create movie file and update movie
+	if err := s.seedBasicMovieFile(dataset); err != nil {
+		return nil, err
+	}
+
+	// Create tasks
+	s.seedBasicTasks(dataset)
+
+	return dataset, nil
+}
+
+// seedBasicQualityProfiles creates quality profiles for basic dataset
+func (s *SeedData) seedBasicQualityProfiles(dataset *BasicDataset) {
 	dataset.QualityProfile = s.factory.CreateQualityProfile()
 	dataset.QualityProfileHD = s.factory.CreateQualityProfile(func(qp *models.QualityProfile) {
 		qp.Name = "HD Quality Profile"
 		qp.Cutoff = 5 // WEBDL-720p
 	})
+}
 
-	// Create indexers
+// seedBasicIndexers creates indexers for basic dataset
+func (s *SeedData) seedBasicIndexers(dataset *BasicDataset) {
 	dataset.PrimaryIndexer = s.factory.CreateIndexer()
 	dataset.SecondaryIndexer = s.factory.CreateIndexer(func(i *models.Indexer) {
 		i.Name = "Secondary Indexer"
 		i.BaseURL = "https://api2.example.com"
 		i.Priority = 15
 	})
+}
 
-	// Create download clients
+// seedBasicDownloadClient creates download client for basic dataset
+func (s *SeedData) seedBasicDownloadClient(dataset *BasicDataset) {
 	dataset.DownloadClient = s.factory.CreateDownloadClient()
+}
 
-	// Create notifications
+// seedBasicNotifications creates notifications for basic dataset
+func (s *SeedData) seedBasicNotifications(dataset *BasicDataset) {
 	dataset.EmailNotification = s.factory.CreateNotification()
 	dataset.SlackNotification = s.factory.CreateNotification(func(n *models.Notification) {
 		n.Name = "Slack Notification"
@@ -55,8 +80,10 @@ func (s *SeedData) SeedBasicDataset() (*BasicDataset, error) {
 			"channel": "#radarr-test",
 		}
 	})
+}
 
-	// Create movies with different statuses
+// seedBasicMovies creates movies with different statuses for basic dataset
+func (s *SeedData) seedBasicMovies(dataset *BasicDataset) {
 	dataset.ReleasedMovie = s.factory.CreateMovie(func(m *models.Movie) {
 		m.Title = "Released Test Movie"
 		m.TitleSlug = "released-test-movie"
@@ -96,8 +123,10 @@ func (s *SeedData) SeedBasicDataset() (*BasicDataset, error) {
 		m.HasFile = false
 		m.TmdbID = 100004
 	})
+}
 
-	// Create movie file for released movie
+// seedBasicMovieFile creates movie file and links it to released movie
+func (s *SeedData) seedBasicMovieFile(dataset *BasicDataset) error {
 	dataset.MovieFile = s.factory.CreateMovieFile(dataset.ReleasedMovie.ID, func(mf *models.MovieFile) {
 		mf.Path = fmt.Sprintf("/movies/%s/%s.mkv", dataset.ReleasedMovie.FolderName, dataset.ReleasedMovie.TitleSlug)
 		mf.RelativePath = fmt.Sprintf("%s.mkv", dataset.ReleasedMovie.TitleSlug)
@@ -107,10 +136,14 @@ func (s *SeedData) SeedBasicDataset() (*BasicDataset, error) {
 	dataset.ReleasedMovie.MovieFile = dataset.MovieFile
 	dataset.ReleasedMovie.SizeOnDisk = dataset.MovieFile.Size
 	if err := s.db.Save(dataset.ReleasedMovie).Error; err != nil {
-		return nil, fmt.Errorf("failed to update movie with file: %w", err)
+		return fmt.Errorf("failed to update movie with file: %w", err)
 	}
 
-	// Create tasks
+	return nil
+}
+
+// seedBasicTasks creates tasks for basic dataset
+func (s *SeedData) seedBasicTasks(dataset *BasicDataset) {
 	dataset.CompletedTask = s.factory.CreateTask(func(t *models.Task) {
 		t.Name = "Refresh Movie Metadata"
 		t.CommandName = "refresh-movie"
@@ -127,8 +160,6 @@ func (s *SeedData) SeedBasicDataset() (*BasicDataset, error) {
 		t.StartedAt = &startedAt
 		t.EndedAt = nil
 	})
-
-	return dataset, nil
 }
 
 // SeedPerformanceDataset creates a large dataset for performance testing
@@ -139,6 +170,23 @@ func (s *SeedData) SeedPerformanceDataset(movieCount int) (*PerformanceDataset, 
 	}
 
 	// Create indexers
+	s.seedPerformanceIndexers(dataset)
+
+	// Create movies in batches
+	if err := s.seedPerformanceMovies(dataset, movieCount); err != nil {
+		return nil, err
+	}
+
+	// Create movie files for movies that have files
+	if err := s.seedPerformanceMovieFiles(dataset); err != nil {
+		return nil, err
+	}
+
+	return dataset, nil
+}
+
+// seedPerformanceIndexers creates indexers for performance dataset
+func (s *SeedData) seedPerformanceIndexers(dataset *PerformanceDataset) {
 	for i := 0; i < 5; i++ {
 		indexer := s.factory.CreateIndexer(func(idx *models.Indexer) {
 			idx.Name = fmt.Sprintf("Performance Indexer %d", i+1)
@@ -147,63 +195,86 @@ func (s *SeedData) SeedPerformanceDataset(movieCount int) (*PerformanceDataset, 
 		})
 		dataset.Indexers = append(dataset.Indexers, indexer)
 	}
+}
 
-	// Create movies in batches to avoid memory issues
+// seedPerformanceMovies creates movies in batches for performance dataset
+func (s *SeedData) seedPerformanceMovies(dataset *PerformanceDataset, movieCount int) error {
 	batchSize := 100
 	for batch := 0; batch < movieCount; batch += batchSize {
-		var batchMovies []*models.Movie
-
-		endIdx := batch + batchSize
-		if endIdx > movieCount {
-			endIdx = movieCount
-		}
-
-		for i := batch; i < endIdx; i++ {
-			movie := &models.Movie{
-				TmdbID:              200000 + i,
-				Title:               fmt.Sprintf("Performance Movie %d", i+1),
-				TitleSlug:           fmt.Sprintf("performance-movie-%d", i+1),
-				Year:                2020 + (i % 4),
-				Overview:            fmt.Sprintf("This is performance test movie number %d for testing scalability", i+1),
-				Runtime:             90 + (i % 60), // 90-150 minutes
-				Status:              models.MovieStatusReleased,
-				Monitored:           i%2 == 0, // Every other movie monitored
-				MinimumAvailability: models.AvailabilityReleased,
-				IsAvailable:         true,
-				HasFile:             i%3 == 0, // Every third movie has a file
-				QualityProfileID:    dataset.QualityProfile.ID,
-				Path:                fmt.Sprintf("/movies/performance-movie-%d", i+1),
-				RootFolderPath:      "/movies",
-				FolderName:          fmt.Sprintf("performance-movie-%d", i+1),
-				SizeOnDisk:          0,
-				Genres:              getRandomGenres(i),
-				Tags:                models.IntArray{},
-			}
-
-			// Add some variety to release dates
-			if i%5 != 0 { // 80% have release dates
-				inCinemas := time.Date(2020+(i%4), time.Month((i%12)+1), (i%28)+1, 0, 0, 0, 0, time.UTC)
-				movie.InCinemas = &inCinemas
-
-				digitalRelease := inCinemas.Add(90 * 24 * time.Hour)
-				movie.DigitalRelease = &digitalRelease
-
-				physicalRelease := inCinemas.Add(120 * 24 * time.Hour)
-				movie.PhysicalRelease = &physicalRelease
-			}
-
-			batchMovies = append(batchMovies, movie)
-		}
+		batchMovies := s.createPerformanceMovieBatch(dataset, batch, movieCount, batchSize)
 
 		// Insert batch
 		if err := s.db.CreateInBatches(batchMovies, batchSize).Error; err != nil {
-			return nil, fmt.Errorf("failed to create movie batch: %w", err)
+			return fmt.Errorf("failed to create movie batch: %w", err)
 		}
 
 		dataset.Movies = append(dataset.Movies, batchMovies...)
 	}
+	return nil
+}
 
-	// Create movie files for movies that have files
+// createPerformanceMovieBatch creates a batch of movies for performance testing
+func (s *SeedData) createPerformanceMovieBatch(dataset *PerformanceDataset,
+	batch, movieCount, batchSize int) []*models.Movie {
+	endIdx := batch + batchSize
+	if endIdx > movieCount {
+		endIdx = movieCount
+	}
+
+	var batchMovies []*models.Movie
+	for i := batch; i < endIdx; i++ {
+		movie := s.createPerformanceMovie(i, dataset.QualityProfile.ID)
+		batchMovies = append(batchMovies, movie)
+	}
+
+	return batchMovies
+}
+
+// createPerformanceMovie creates a single performance test movie
+func (s *SeedData) createPerformanceMovie(index int, qualityProfileID int) *models.Movie {
+	movie := &models.Movie{
+		TmdbID:              200000 + index,
+		Title:               fmt.Sprintf("Performance Movie %d", index+1),
+		TitleSlug:           fmt.Sprintf("performance-movie-%d", index+1),
+		Year:                2020 + (index % 4),
+		Overview:            fmt.Sprintf("This is performance test movie number %d for testing scalability", index+1),
+		Runtime:             90 + (index % 60), // 90-150 minutes
+		Status:              models.MovieStatusReleased,
+		Monitored:           index%2 == 0, // Every other movie monitored
+		MinimumAvailability: models.AvailabilityReleased,
+		IsAvailable:         true,
+		HasFile:             index%3 == 0, // Every third movie has a file
+		QualityProfileID:    qualityProfileID,
+		Path:                fmt.Sprintf("/movies/performance-movie-%d", index+1),
+		RootFolderPath:      "/movies",
+		FolderName:          fmt.Sprintf("performance-movie-%d", index+1),
+		SizeOnDisk:          0,
+		Genres:              getRandomGenres(index),
+		Tags:                models.IntArray{},
+	}
+
+	// Add some variety to release dates
+	if index%5 != 0 { // 80% have release dates
+		s.addReleaseDates(movie, index)
+	}
+
+	return movie
+}
+
+// addReleaseDates adds release date variety to performance movies
+func (s *SeedData) addReleaseDates(movie *models.Movie, index int) {
+	inCinemas := time.Date(2020+(index%4), time.Month((index%12)+1), (index%28)+1, 0, 0, 0, 0, time.UTC)
+	movie.InCinemas = &inCinemas
+
+	digitalRelease := inCinemas.Add(90 * 24 * time.Hour)
+	movie.DigitalRelease = &digitalRelease
+
+	physicalRelease := inCinemas.Add(120 * 24 * time.Hour)
+	movie.PhysicalRelease = &physicalRelease
+}
+
+// seedPerformanceMovieFiles creates movie files for performance movies
+func (s *SeedData) seedPerformanceMovieFiles(dataset *PerformanceDataset) error {
 	var movieFiles []*models.MovieFile
 	for _, movie := range dataset.Movies {
 		if movie.HasFile {
@@ -226,20 +297,32 @@ func (s *SeedData) SeedPerformanceDataset(movieCount int) (*PerformanceDataset, 
 
 	// Create movie files in batches
 	if len(movieFiles) > 0 {
+		batchSize := 100
 		if err := s.db.CreateInBatches(movieFiles, batchSize).Error; err != nil {
-			return nil, fmt.Errorf("failed to create movie files: %w", err)
+			return fmt.Errorf("failed to create movie files: %w", err)
 		}
 		dataset.MovieFiles = movieFiles
 	}
 
-	return dataset, nil
+	return nil
 }
 
 // SeedStressTestDataset creates a comprehensive dataset for stress testing
 func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 	dataset := &StressTestDataset{}
 
-	// Create multiple quality profiles
+	// Create all stress test components
+	s.seedStressQualityProfiles(dataset)
+	s.seedStressIndexers(dataset)
+	s.seedStressDownloadClients(dataset)
+	s.seedStressNotifications(dataset)
+	s.seedStressTasks(dataset)
+
+	return dataset, nil
+}
+
+// seedStressQualityProfiles creates multiple quality profiles for stress testing
+func (s *SeedData) seedStressQualityProfiles(dataset *StressTestDataset) {
 	for i := 0; i < 10; i++ {
 		profile := s.factory.CreateQualityProfile(func(qp *models.QualityProfile) {
 			qp.Name = fmt.Sprintf("Stress Quality Profile %d", i+1)
@@ -247,8 +330,10 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 		})
 		dataset.QualityProfiles = append(dataset.QualityProfiles, profile)
 	}
+}
 
-	// Create many indexers
+// seedStressIndexers creates many indexers for stress testing
+func (s *SeedData) seedStressIndexers(dataset *StressTestDataset) {
 	for i := 0; i < 25; i++ {
 		indexer := s.factory.CreateIndexer(func(idx *models.Indexer) {
 			idx.Name = fmt.Sprintf("Stress Indexer %d", i+1)
@@ -260,8 +345,10 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 		})
 		dataset.Indexers = append(dataset.Indexers, indexer)
 	}
+}
 
-	// Create download clients
+// seedStressDownloadClients creates download clients for stress testing
+func (s *SeedData) seedStressDownloadClients(dataset *StressTestDataset) {
 	for i := 0; i < 10; i++ {
 		client := s.factory.CreateDownloadClient(func(dc *models.DownloadClient) {
 			dc.Name = fmt.Sprintf("Stress Download Client %d", i+1)
@@ -270,8 +357,10 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 		})
 		dataset.DownloadClients = append(dataset.DownloadClients, client)
 	}
+}
 
-	// Create notifications
+// seedStressNotifications creates various notifications for stress testing
+func (s *SeedData) seedStressNotifications(dataset *StressTestDataset) {
 	notificationTypes := []models.NotificationType{
 		models.NotificationTypeEmail,
 		models.NotificationTypeSlack,
@@ -279,6 +368,7 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 		models.NotificationTypeWebhook,
 		models.NotificationTypePushover,
 	}
+
 	for i := 0; i < 15; i++ {
 		notification := s.factory.CreateNotification(func(n *models.Notification) {
 			n.Name = fmt.Sprintf("Stress Notification %d", i+1)
@@ -289,8 +379,10 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 		})
 		dataset.Notifications = append(dataset.Notifications, notification)
 	}
+}
 
-	// Create many tasks with different statuses
+// seedStressTasks creates many tasks with different statuses for stress testing
+func (s *SeedData) seedStressTasks(dataset *StressTestDataset) {
 	taskStatuses := []models.TaskStatus{
 		models.TaskStatusQueued,
 		models.TaskStatusStarted,
@@ -305,30 +397,34 @@ func (s *SeedData) SeedStressTestDataset() (*StressTestDataset, error) {
 			t.CommandName = fmt.Sprintf("stress-command-%d", i%10)
 			t.Status = taskStatuses[i%len(taskStatuses)]
 
-			baseTime := time.Now().Add(-time.Duration(i) * time.Hour)
-			t.QueuedAt = baseTime
-
-			if t.Status != models.TaskStatusQueued {
-				startedAt := baseTime.Add(5 * time.Minute)
-				t.StartedAt = &startedAt
-
-				if t.Status == models.TaskStatusCompleted || t.Status == models.TaskStatusFailed {
-					endedAt := startedAt.Add(time.Duration(10+i%50) * time.Minute)
-					t.EndedAt = &endedAt
-					duration := endedAt.Sub(startedAt)
-					t.Duration = &duration
-				}
-			}
+			s.setTaskTimestamps(t, i)
 		})
 		dataset.Tasks = append(dataset.Tasks, task)
 	}
+}
 
-	return dataset, nil
+// setTaskTimestamps sets appropriate timestamps for stress test tasks
+func (s *SeedData) setTaskTimestamps(task *models.Task, index int) {
+	baseTime := time.Now().Add(-time.Duration(index) * time.Hour)
+	task.QueuedAt = baseTime
+
+	if task.Status != models.TaskStatusQueued {
+		startedAt := baseTime.Add(5 * time.Minute)
+		task.StartedAt = &startedAt
+
+		if task.Status == models.TaskStatusCompleted || task.Status == models.TaskStatusFailed {
+			endedAt := startedAt.Add(time.Duration(10+index%50) * time.Minute)
+			task.EndedAt = &endedAt
+			duration := endedAt.Sub(startedAt)
+			task.Duration = &duration
+		}
+	}
 }
 
 // getRandomGenres returns a random set of genres for variety
 func getRandomGenres(seed int) models.StringArray {
-	genres := []string{"Action", "Adventure", "Comedy", "Drama", "Horror", "Sci-Fi", "Thriller", "Romance", "Fantasy", "Mystery"}
+	genres := []string{"Action", "Adventure", "Comedy", "Drama", "Horror",
+		"Sci-Fi", "Thriller", "Romance", "Fantasy", "Mystery"}
 
 	// Use seed to determine which genres to include
 	var selected []string
