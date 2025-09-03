@@ -1,46 +1,362 @@
----
-version: '3.8'
+# Radarr Go - Base Docker Compose Configuration
+# This file contains core services that are shared across all environments
+# Use profiles to activate optional services and override files for environment-specific settings
 
 services:
+  # Main Radarr Go Application
   radarr-go:
     build: .
     container_name: radarr-go
     restart: unless-stopped
     ports:
-      - "7878:7878"
+      - "${RADARR_PORT:-7878}:7878"
     volumes:
       - radarr_data:/data
-      - ./movies:/movies
+      - ${MOVIES_PATH:-./movies}:/movies
     environment:
-      - RADARR_LOG_LEVEL=info
+      - RADARR_LOG_LEVEL=${RADARR_LOG_LEVEL:-info}
       - RADARR_SERVER_PORT=7878
-      - RADARR_DATABASE_TYPE=sqlite
-      - RADARR_DATABASE_CONNECTION_URL=/data/radarr.db
+      - RADARR_DATABASE_TYPE=${RADARR_DATABASE_TYPE:-postgres}
+      - RADARR_DATABASE_HOST=${RADARR_DATABASE_HOST:-postgres}
+      - RADARR_DATABASE_PORT=${RADARR_DATABASE_PORT:-5432}
+      - RADARR_DATABASE_USERNAME=${RADARR_DATABASE_USERNAME:-radarr}
+      - RADARR_DATABASE_PASSWORD=${RADARR_DATABASE_PASSWORD:-password}
+      - RADARR_DATABASE_NAME=${RADARR_DATABASE_NAME:-radarr}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: >
-        ["CMD", "wget", "--quiet", "--tries=1", "--spider",
-         "http://localhost:7878/ping"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7878/ping"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    networks:
+      - app-network
 
-  # Optional: PostgreSQL database
+  # PostgreSQL Database (Primary)
   postgres:
-    image: postgres:17-alpine
+    image: postgres:${POSTGRES_VERSION:-17-alpine}
     container_name: radarr-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=radarr
-      - POSTGRES_USER=radarr
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=${RADARR_DATABASE_NAME:-radarr}
+      - POSTGRES_USER=${RADARR_DATABASE_USERNAME:-radarr}
+      - POSTGRES_PASSWORD=${RADARR_DATABASE_PASSWORD:-password}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    profiles:
-      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${RADARR_DATABASE_USERNAME:-radarr} -d ${RADARR_DATABASE_NAME:-radarr}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-network
 
+  # MariaDB Database (Alternative)
+  mariadb:
+    image: mariadb:${MARIADB_VERSION:-12.0}
+    container_name: radarr-mariadb
+    restart: unless-stopped
+    environment:
+      - MARIADB_DATABASE=${RADARR_DATABASE_NAME:-radarr}
+      - MARIADB_USER=${RADARR_DATABASE_USERNAME:-radarr}
+      - MARIADB_PASSWORD=${RADARR_DATABASE_PASSWORD:-password}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-root_password}
+      - MARIADB_INITDB_SKIP_TZINFO=1
+    ports:
+      - "${MARIADB_EXTERNAL_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=${MARIADB_INNODB_BUFFER_POOL_SIZE:-128M}
+      --max-connections=${MARIADB_MAX_CONNECTIONS:-100}
+    profiles:
+      - mariadb
+    networks:
+      - app-network
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:${REDIS_VERSION:-8-alpine}
+    container_name: radarr-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_EXTERNAL_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - redis
+    networks:
+      - app-network
+
+  # Frontend Development Server (React)
+  radarr-frontend:
+    image: node:22-alpine
+    container_name: radarr-frontend
+    ports:
+      - "3000:3000"  # React dev server
+      - "3001:3001"  # Storybook (if used)
+    volumes:
+      - ./web/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_BASE_URL=http://localhost:7878
+      - WDS_SOCKET_HOST=localhost
+      - CHOKIDAR_USEPOLLING=true
+    command: >
+      sh -c "
+      if [ -f package.json ]; then
+        npm install && npm run dev;
+      else
+        echo 'Frontend not yet implemented. Creating placeholder...';
+        mkdir -p src public;
+        echo '{\"name\":\"radarr-frontend\",\"version\":\"0.1.0\",' \
+             '\"scripts\":{\"dev\":\"echo Frontend dev server would start here\"}}' > package.json;
+        echo '<!DOCTYPE html><html><head><title>Radarr Frontend Dev</title></head>' \
+             '<body><h1>Frontend Development Server</h1>' \
+             '<p>React frontend coming in Phase 2</p>' \
+             '<p>Backend API: <a href=\"http://localhost:7878\">http://localhost:7878</a></p>' \
+             '</body></html>' > public/index.html;
+        python3 -m http.server 3000;
+      fi
+      "
+    profiles:
+      - frontend
+    networks:
+      - app-network
+
+  # Database Administration Interface
+  adminer:
+    image: adminer:${ADMINER_VERSION:-4.8.1-standalone}
+    container_name: radarr-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=nette
+    depends_on:
+      - postgres
+    profiles:
+      - admin
+    networks:
+      - app-network
+
+  # Email Testing (Development)
+  mailhog:
+    image: mailhog/mailhog:${MAILHOG_VERSION:-v1.0.1}
+    container_name: radarr-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILHOG_WEB_PORT:-8025}:8025"   # Web UI
+    profiles:
+      - admin
+    networks:
+      - app-network
+
+  # Basic Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v3.5.0}
+    container_name: radarr-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring
+    networks:
+      - app-network
+      - monitoring-network
+
+  # Basic Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:-12.1.1}
+    container_name: radarr-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+    networks:
+      - app-network
+      - monitoring-network
+
+  # Distributed Tracing - Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one:${JAEGER_VERSION:-1.60}
+    container_name: radarr-jaeger
+    restart: unless-stopped
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"  # Jaeger UI
+      - "${JAEGER_HTTP_PORT:-14268}:14268"  # Jaeger HTTP endpoint
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - SPAN_STORAGE_TYPE=memory
+    profiles:
+      - monitoring
+    networks:
+      - app-network
+      - monitoring-network
+
+  # Test Database Services (Separate Ports)
+  postgres-test:
+    image: postgres:17-alpine
+    container_name: radarr-postgres-test
+    environment:
+      - POSTGRES_DB=radarr_test
+      - POSTGRES_USER=radarr_test
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radarr_test -d radarr_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    shm_size: 64mb
+    profiles:
+      - test
+    networks:
+      - test-network
+
+  mariadb-test:
+    image: mariadb:12.0
+    container_name: radarr-mariadb-test
+    environment:
+      - MARIADB_DATABASE=radarr_test
+      - MARIADB_USER=radarr_test
+      - MARIADB_PASSWORD=test_password
+      - MARIADB_ROOT_PASSWORD=root_test_password
+      - MARIADB_INITDB_SKIP_TZINFO=1
+    ports:
+      - "13306:3306"
+    volumes:
+      - mariadb_test_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=64M
+      --innodb-log-file-size=16M
+      --innodb-flush-log-at-trx-commit=2
+      --sync-binlog=0
+      --innodb-doublewrite=0
+    tmpfs:
+      - /tmp
+      - /var/run/mysqld
+    profiles:
+      - test
+    networks:
+      - test-network
+
+# Network Configuration
+networks:
+  app-network:
+    name: radarr-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+
+  monitoring-network:
+    name: radarr-monitoring-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+
+  test-network:
+    name: radarr-test-network
+    driver: bridge
+
+# Volume Configuration
 volumes:
+  # Application Data
   radarr_data:
+    driver: local
+
+  # Database Volumes
   postgres_data:
+    driver: local
+
+  mariadb_data:
+    driver: local
+
+  redis_data:
+    driver: local
+
+  # Frontend Volumes
+  frontend_node_modules:
+    driver: local
+
+  # Monitoring Volumes
+  prometheus_data:
+    driver: local
+
+  grafana_data:
+    driver: local
+
+  # Test Database Volumes
+  postgres_test_data:
+    driver: local
+
+  mariadb_test_data:
+    driver: local

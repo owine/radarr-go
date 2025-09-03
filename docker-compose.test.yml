@@ -1,22 +1,21 @@
----
-# Docker Compose file for test databases
+# docker-compose.test.yml - Testing Environment
+# Minimal services for running tests
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.test.yml up --profile test
 
 services:
-  # PostgreSQL test database
+  # Test databases use separate ports and optimized for fast startup
   postgres-test:
-    image: postgres:17-alpine
-    container_name: radarr-postgres-test
-    environment:
-      - POSTGRES_DB=radarr_test
-      - POSTGRES_USER=radarr_test
-      - POSTGRES_PASSWORD=test_password
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    profiles:
+      - test
     ports:
       - "15432:5432"
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=radarr_test
+      - POSTGRES_USER=radarr_test
+      - POSTGRES_PASSWORD=test_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U radarr_test -d radarr_test"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,27 +24,36 @@ services:
       - /tmp
       - /var/run/postgresql
     shm_size: 64mb
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c checkpoint_segments=32
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
 
-  # MariaDB test database
   mariadb-test:
-    image: mariadb:12.0
-    container_name: radarr-mariadb-test
+    profiles:
+      - test
+      - mariadb
+    ports:
+      - "13306:3306"
+    volumes:
+      - mariadb_test_data:/var/lib/mysql
     environment:
       - MARIADB_DATABASE=radarr_test
       - MARIADB_USER=radarr_test
       - MARIADB_PASSWORD=test_password
       - MARIADB_ROOT_PASSWORD=root_test_password
-      - MARIADB_INITDB_SKIP_TZINFO=1
-    ports:
-      - "13306:3306"
-    volumes:
-      - mariadb_test_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
+    tmpfs:
+      - /tmp
+      - /var/run/mysqld
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
@@ -54,11 +62,9 @@ services:
       --innodb-flush-log-at-trx-commit=2
       --sync-binlog=0
       --innodb-doublewrite=0
-    tmpfs:
-      - /tmp
-      - /var/run/mysqld
+      --innodb-flush-method=O_DIRECT
 
-  # Test runner service (optional - for running tests in container)
+  # Optional test runner service
   test-runner:
     build:
       context: .
@@ -73,6 +79,12 @@ services:
       - CGO_ENABLED=0
       - GOOS=linux
       - GOARCH=amd64
+      - RADARR_DATABASE_TYPE=postgres
+      - RADARR_DATABASE_HOST=postgres-test
+      - RADARR_DATABASE_PORT=5432
+      - RADARR_DATABASE_USERNAME=radarr_test
+      - RADARR_DATABASE_PASSWORD=test_password
+      - RADARR_DATABASE_NAME=radarr_test
     volumes:
       - .:/workspace
       - test_cache:/go/pkg/mod
@@ -80,18 +92,18 @@ services:
     working_dir: /workspace
     profiles:
       - test-runner
+    networks:
+      - test-network
 
+# Test-specific volumes (use faster tmpfs where possible)
 volumes:
-  postgres_test_data:
-    driver: local
-  mariadb_test_data:
-    driver: local
   test_cache:
     driver: local
   test_build_cache:
     driver: local
 
+# Test network isolation
 networks:
-  default:
+  test-network:
     name: radarr-test-network
     driver: bridge

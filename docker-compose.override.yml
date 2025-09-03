@@ -1,0 +1,73 @@
+# docker-compose.override.yml
+# Default development environment - automatically loaded by docker-compose
+# Provides sensible defaults for local development
+
+services:
+  # Override main app for development mode with hot reload
+  radarr-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - GO_VERSION=1.25
+    container_name: radarr-dev
+    volumes:
+      # Override with workspace mount for hot reload
+      - .:/workspace
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      # Keep data mounts
+      - radarr_data:/data
+      - ${MOVIES_PATH:-./movies}:/movies
+    environment:
+      # Development-specific overrides
+      - RADARR_LOG_LEVEL=debug
+      - RADARR_DATABASE_HOST=postgres  # Use main postgres, not -dev variant
+      - RADARR_DATABASE_USERNAME=radarr
+      - RADARR_DATABASE_PASSWORD=password
+      - RADARR_DATABASE_NAME=radarr
+    working_dir: /workspace
+    command: air  # Hot reload for development
+    ports:
+      - "8080:8080"  # Add debug/profiling port
+
+  # Development database optimizations
+  postgres:
+    environment:
+      # Override for development-friendly settings
+      - POSTGRES_DB=radarr_dev
+      - POSTGRES_USER=radarr_dev
+      - POSTGRES_PASSWORD=dev_password
+    command: >
+      postgres
+      -c log_statement=all
+      -c log_min_duration_statement=0
+      -c log_connections=on
+      -c log_disconnections=on
+      -c max_connections=200
+      -c shared_buffers=128MB
+      -c effective_cache_size=512MB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Enable admin tools by default in development
+  adminer:
+    profiles: []  # Remove profile requirement - always available in dev
+
+  mailhog:
+    profiles: []  # Remove profile requirement - always available in dev
+
+# Development-specific volumes
+volumes:
+  # Build cache volumes for faster rebuilds
+  go_mod_cache:
+    driver: local
+  go_build_cache:
+    driver: local
+
+# Use simpler networking for development
+networks:
+  app-network:
+    name: radarr-dev-network
+    driver: bridge

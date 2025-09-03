@@ -1,0 +1,244 @@
+# docker-compose.prod.yml - Production Environment
+# Production-optimized configuration with security and performance
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  # Production Radarr Go with security hardening
+  radarr-go:
+    image: ghcr.io/radarr/radarr-go:${RADARR_VERSION:-latest}
+    user: "1000:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    environment:
+      # Production environment variables
+      - RADARR_SERVER_HOST=0.0.0.0
+      - RADARR_SERVER_URL_BASE=${RADARR_URL_BASE:-}
+      - RADARR_LOG_LEVEL=info
+      - RADARR_LOG_FORMAT=json
+      - RADARR_DATABASE_MAX_CONNECTIONS=25
+      - RADARR_DATABASE_CONNECTION_TIMEOUT=30s
+      - RADARR_AUTH_METHOD=apikey
+      - RADARR_AUTH_API_KEY=${RADARR_API_KEY}
+      - RADARR_TMDB_API_KEY=${TMDB_API_KEY}
+      - RADARR_PERFORMANCE_CONNECTION_POOL_SIZE=20
+      - RADARR_PERFORMANCE_PARALLEL_FILE_OPERATIONS=10
+      - RADARR_PERFORMANCE_ENABLE_RESPONSE_CACHING=true
+      - RADARR_HEALTH_ENABLED=true
+      - RADARR_HEALTH_INTERVAL=2m
+      - RADARR_HEALTH_NOTIFY_CRITICAL_ISSUES=true
+      # Go runtime optimization
+      - GOMAXPROCS=4
+      - GOGC=100
+      - GOMEMLIMIT=1GiB
+    volumes:
+      # Production volume mounts with security options
+      - radarr_config:/config:rw,noexec,nosuid,nodev
+      - radarr_data:/data:rw,noexec,nosuid,nodev
+      - ${MOVIES_PATH:-/media/movies}:/movies:ro,noexec,nosuid,nodev
+      - ${DOWNLOADS_PATH:-/media/downloads}:/downloads:rw,noexec,nosuid,nodev
+      # Temporary filesystem
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100M
+          mode: 01777
+          noexec: true
+          nosuid: true
+          nodev: true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        tag: "radarr-go"
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=7878"
+      - "prometheus.io/path=/metrics"
+      - "service.name=radarr-go"
+      - "service.version=${RADARR_VERSION:-latest}"
+
+  # Production PostgreSQL with optimizations
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-15-alpine}
+    user: "999:999"
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw,noexec,nosuid,nodev
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - work_mem=4MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - log_checkpoints=on
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
+      - -c
+      - log_lock_waits=on
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "postgres"
+    labels:
+      - "service.name=postgres"
+      - "service.type=database"
+
+  # Production Redis with authentication
+  redis:
+    user: "999:999"
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - redis-server
+      - --save 60 1
+      - --loglevel warning
+      - --maxmemory 256mb
+      - --maxmemory-policy allkeys-lru
+      - --requirepass ${REDIS_PASSWORD:-}
+      - --appendonly yes
+      - --tcp-keepalive 60
+    volumes:
+      - redis_data:/data:rw,noexec,nosuid,nodev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "redis"
+    labels:
+      - "service.name=redis"
+      - "service.type=cache"
+
+# Production volumes with bind mounts
+volumes:
+  radarr_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/config
+    labels:
+      - "volume.description=Radarr configuration data"
+
+  radarr_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/data
+    labels:
+      - "volume.description=Radarr application data"
+
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/postgres
+    labels:
+      - "volume.description=PostgreSQL database data"
+
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/redis
+    labels:
+      - "volume.description=Redis cache data"
+
+# Production networks with isolation
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${APP_SUBNET:-172.20.1.0/24}
+    labels:
+      - "network.description=Application services communication"
+
+  monitoring-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${MONITORING_SUBNET:-172.20.4.0/24}
+    labels:
+      - "network.description=Monitoring services communication"
