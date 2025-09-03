@@ -1,0 +1,615 @@
+# docker-compose.prod.yml - Production-ready Radarr Go deployment
+# Comprehensive production Docker Compose configuration with security, monitoring, and backup
+
+version: '3.8'
+
+services:
+  # Main Radarr Go application
+  radarr-go:
+    image: ghcr.io/radarr/radarr-go:${RADARR_VERSION:-latest}
+    container_name: radarr-go
+    restart: unless-stopped
+
+    # Security configuration
+    user: "1000:1000"
+    read_only: true
+
+    # Capability restrictions
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+
+    # Environment variables
+    environment:
+      # Core configuration
+      - RADARR_SERVER_PORT=7878
+      - RADARR_SERVER_HOST=0.0.0.0
+      - RADARR_SERVER_URL_BASE=${RADARR_URL_BASE:-}
+      - RADARR_LOG_LEVEL=info
+      - RADARR_LOG_FORMAT=json
+
+      # Database configuration
+      - RADARR_DATABASE_TYPE=postgres
+      - RADARR_DATABASE_HOST=postgres
+      - RADARR_DATABASE_PORT=5432
+      - RADARR_DATABASE_DATABASE=${POSTGRES_DB:-radarr}
+      - RADARR_DATABASE_USERNAME=${POSTGRES_USER:-radarr}
+      - RADARR_DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - RADARR_DATABASE_MAX_CONNECTIONS=25
+      - RADARR_DATABASE_CONNECTION_TIMEOUT=30s
+
+      # Authentication
+      - RADARR_AUTH_METHOD=apikey
+      - RADARR_AUTH_API_KEY=${RADARR_API_KEY}
+
+      # External services
+      - RADARR_TMDB_API_KEY=${TMDB_API_KEY}
+
+      # Performance settings
+      - RADARR_PERFORMANCE_CONNECTION_POOL_SIZE=20
+      - RADARR_PERFORMANCE_PARALLEL_FILE_OPERATIONS=10
+      - RADARR_PERFORMANCE_ENABLE_RESPONSE_CACHING=true
+
+      # Health monitoring
+      - RADARR_HEALTH_ENABLED=true
+      - RADARR_HEALTH_INTERVAL=2m
+      - RADARR_HEALTH_NOTIFY_CRITICAL_ISSUES=true
+
+      # Go runtime optimization
+      - GOMAXPROCS=4
+      - GOGC=100
+      - GOMEMLIMIT=1GiB
+
+    # Port exposure
+    ports:
+      - "7878:7878"
+
+    # Volume mounts
+    volumes:
+      # Application data
+      - radarr_config:/config:rw,noexec,nosuid,nodev
+      - radarr_data:/data:rw,noexec,nosuid,nodev
+
+      # Media directories
+      - ${MOVIES_PATH:-/media/movies}:/movies:ro,noexec,nosuid,nodev
+      - ${DOWNLOADS_PATH:-/media/downloads}:/downloads:rw,noexec,nosuid,nodev
+
+      # Temporary filesystem
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 100M
+          mode: 01777
+          noexec: true
+          nosuid: true
+          nodev: true
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+
+    # Networks
+    networks:
+      - app-network
+      - db-network
+      - monitoring-network
+
+    # Dependencies
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    # Labels for monitoring
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=7878"
+      - "prometheus.io/path=/metrics"
+      - "service.name=radarr-go"
+      - "service.version=${RADARR_VERSION:-latest}"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        tag: "radarr-go"
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-15-alpine}
+    container_name: radarr-postgres
+    restart: unless-stopped
+
+    # Security
+    user: "999:999"
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Environment
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-radarr}
+      - POSTGRES_USER=${POSTGRES_USER:-radarr}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+
+    # Volumes
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw,noexec,nosuid,nodev
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d:ro,noexec,nosuid,nodev
+
+    # Optimized PostgreSQL configuration
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - work_mem=4MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - log_checkpoints=on
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
+      - -c
+      - log_lock_waits=on
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-radarr} -d ${POSTGRES_DB:-radarr}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+
+    # Networks
+    networks:
+      - db-network
+      - monitoring-network
+
+    # Labels
+    labels:
+      - "service.name=postgres"
+      - "service.type=database"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "postgres"
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: radarr-redis
+    restart: unless-stopped
+
+    # Security
+    user: "999:999"
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Configuration
+    command:
+      - redis-server
+      - --save 60 1
+      - --loglevel warning
+      - --maxmemory 256mb
+      - --maxmemory-policy allkeys-lru
+      - --requirepass ${REDIS_PASSWORD:-}
+      - --appendonly yes
+      - --tcp-keepalive 60
+
+    # Volumes
+    volumes:
+      - redis_data:/data:rw,noexec,nosuid,nodev
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - app-network
+      - monitoring-network
+
+    # Labels
+    labels:
+      - "service.name=redis"
+      - "service.type=cache"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "redis"
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: radarr-nginx
+    restart: unless-stopped
+
+    # Security
+    user: "nginx:nginx"
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Ports
+    ports:
+      - "80:80"
+      - "443:443"
+
+    # Volumes
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro,noexec,nosuid,nodev
+      - ./ssl:/etc/ssl/private:ro,noexec,nosuid,nodev
+      - nginx_cache:/var/cache/nginx:rw,noexec,nosuid,nodev
+      - nginx_logs:/var/log/nginx:rw,noexec,nosuid,nodev
+
+      # Temporary filesystem
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 50M
+          noexec: true
+          nosuid: true
+          nodev: true
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - app-network
+      - web-network
+
+    # Dependencies
+    depends_on:
+      - radarr-go
+
+    # Labels
+    labels:
+      - "service.name=nginx"
+      - "service.type=proxy"
+      - "traefik.enable=false"  # Disable if using Traefik
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+        tag: "nginx"
+
+  # Automated backup service
+  backup:
+    image: postgres:15-alpine
+    container_name: radarr-backup
+    restart: unless-stopped
+
+    # Security
+    user: "999:999"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Environment
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER:-radarr}
+      - POSTGRES_DB=${POSTGRES_DB:-radarr}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+
+    # Volumes
+    volumes:
+      - postgres_backups:/backups:rw,noexec,nosuid,nodev
+      - ./scripts/backup:/scripts:ro,noexec,nosuid,nodev
+
+    # Cron-based backup schedule
+    command: >
+      sh -c "
+        apk add --no-cache dcron &&
+        echo '0 2 * * * /scripts/backup-database.sh' | crontab - &&
+        echo '0 3 * * 0 /scripts/cleanup-backups.sh' | crontab - &&
+        crond -f
+      "
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - db-network
+
+    # Dependencies
+    depends_on:
+      - postgres
+
+    # Labels
+    labels:
+      - "service.name=backup"
+      - "service.type=utility"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "backup"
+
+  # SSL certificate management (Let's Encrypt)
+  certbot:
+    image: certbot/certbot
+    container_name: radarr-certbot
+    restart: "no"
+
+    # Volumes
+    volumes:
+      - ./ssl:/etc/letsencrypt:rw,noexec,nosuid,nodev
+      - ./config/certbot:/var/lib/letsencrypt:rw,noexec,nosuid,nodev
+      - ./ssl/www:/var/www/certbot:rw,noexec,nosuid,nodev
+
+    # Command for certificate generation/renewal
+    command: >
+      sh -c "
+        trap exit TERM;
+        while :; do
+          certbot renew --webroot --webroot-path=/var/www/certbot --email ${ACME_EMAIL} --agree-tos --no-eff-email;
+          sleep 12h & wait $${!};
+        done
+      "
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - web-network
+
+    # Labels
+    labels:
+      - "service.name=certbot"
+      - "service.type=utility"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "certbot"
+
+# Network configuration
+networks:
+  # Application network (Radarr <-> Redis/Cache)
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${APP_SUBNET:-172.20.1.0/24}
+    labels:
+      - "network.description=Application services communication"
+
+  # Database network (internal only)
+  db-network:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: ${DB_SUBNET:-172.20.2.0/24}
+    labels:
+      - "network.description=Database services communication (internal)"
+
+  # Web network (external facing)
+  web-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
+    labels:
+      - "network.description=Web services communication"
+
+  # Monitoring network
+  monitoring-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${MONITORING_SUBNET:-172.20.4.0/24}
+    labels:
+      - "network.description=Monitoring services communication"
+
+# Volume configuration
+volumes:
+  # Application volumes
+  radarr_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/config
+    labels:
+      - "volume.description=Radarr configuration data"
+
+  radarr_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/data
+    labels:
+      - "volume.description=Radarr application data"
+
+  # Database volumes
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/postgres
+    labels:
+      - "volume.description=PostgreSQL database data"
+
+  postgres_backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/backups/postgres
+    labels:
+      - "volume.description=PostgreSQL database backups"
+
+  # Cache volumes
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/redis
+    labels:
+      - "volume.description=Redis cache data"
+
+  # Web server volumes
+  nginx_cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/nginx/cache
+    labels:
+      - "volume.description=Nginx cache data"
+
+  nginx_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/nginx/logs
+    labels:
+      - "volume.description=Nginx access and error logs"

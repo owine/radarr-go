@@ -1,0 +1,664 @@
+# docker-compose.monitoring.yml - Monitoring stack for Radarr Go
+# Complete observability stack with Prometheus, Grafana, AlertManager, and Loki
+
+version: '3.8'
+
+services:
+  # Prometheus - Metrics collection and storage
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: radarr-prometheus
+    restart: unless-stopped
+
+    # Security
+    user: "65534:65534"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Ports
+    ports:
+      - "9090:9090"
+
+    # Volumes
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/rules:/etc/prometheus/rules:ro,noexec,nosuid,nodev
+      - prometheus_data:/prometheus:rw,noexec,nosuid,nodev
+
+    # Command with optimizations
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}'
+      - '--storage.tsdb.retention.size=50GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--query.timeout=2m'
+      - '--query.max-concurrency=20'
+      - '--storage.tsdb.min-block-duration=2h'
+      - '--storage.tsdb.max-block-duration=25h'
+      - '--storage.tsdb.wal-compression'
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+    # Networks
+    networks:
+      - monitoring-network
+      - app-network
+      - db-network
+
+    # Labels
+    labels:
+      - "service.name=prometheus"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "prometheus"
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: radarr-grafana
+    restart: unless-stopped
+
+    # Security
+    user: "472:472"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Ports
+    ports:
+      - "3000:3000"
+
+    # Environment
+    environment:
+      # Security settings
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY:-please-change-this-secret}
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+      - GF_SECURITY_CONTENT_TYPE_PROTECTION=true
+      - GF_SECURITY_X_CONTENT_TYPE_OPTIONS=nosniff
+      - GF_SECURITY_X_XSS_PROTECTION=true
+
+      # Users and authentication
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_USERS_AUTO_ASSIGN_ORG=true
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+
+      # Server settings
+      - GF_SERVER_DOMAIN=${DOMAIN:-localhost}
+      - GF_SERVER_ROOT_URL=https://${DOMAIN:-localhost}/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+
+      # Database
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=${POSTGRES_USER:-radarr}
+      - GF_DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+
+      # Analytics and telemetry
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+
+      # Logging
+      - GF_LOG_MODE=console file
+      - GF_LOG_LEVEL=info
+
+      # Plugins
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel
+
+    # Volumes
+    volumes:
+      - grafana_data:/var/lib/grafana:rw,noexec,nosuid,nodev
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro,noexec,nosuid,nodev
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro,noexec,nosuid,nodev
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+    # Networks
+    networks:
+      - monitoring-network
+      - db-network
+
+    # Dependencies
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+    # Labels
+    labels:
+      - "service.name=grafana"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "grafana"
+
+  # AlertManager - Alert routing and notification
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: radarr-alertmanager
+    restart: unless-stopped
+
+    # Security
+    user: "65534:65534"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Ports
+    ports:
+      - "9093:9093"
+
+    # Volumes
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./config/alertmanager/templates:/etc/alertmanager/templates:ro,noexec,nosuid,nodev
+      - alertmanager_data:/alertmanager:rw,noexec,nosuid,nodev
+
+    # Command
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--web.route-prefix=/'
+      - '--cluster.listen-address=0.0.0.0:9094'
+      - '--log.level=info'
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - monitoring-network
+
+    # Dependencies
+    depends_on:
+      - prometheus
+
+    # Labels
+    labels:
+      - "service.name=alertmanager"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "alertmanager"
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: radarr-loki
+    restart: unless-stopped
+
+    # Security
+    user: "10001:10001"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Ports
+    ports:
+      - "3100:3100"
+
+    # Volumes
+    volumes:
+      - ./config/loki/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki:rw,noexec,nosuid,nodev
+
+    # Command
+    command: -config.file=/etc/loki/local-config.yaml
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+    # Networks
+    networks:
+      - monitoring-network
+
+    # Labels
+    labels:
+      - "service.name=loki"
+      - "service.type=logging"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+        tag: "loki"
+
+  # Promtail - Log collection
+  promtail:
+    image: grafana/promtail:latest
+    container_name: radarr-promtail
+    restart: unless-stopped
+
+    # Security
+    user: "0:0"  # Needs root for log access
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Volumes
+    volumes:
+      - ./config/promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_positions:/tmp/positions
+
+    # Command
+    command: -config.file=/etc/promtail/config.yml
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - monitoring-network
+
+    # Dependencies
+    depends_on:
+      - loki
+
+    # Labels
+    labels:
+      - "service.name=promtail"
+      - "service.type=logging"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "promtail"
+
+  # Node Exporter - System metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: radarr-node-exporter
+    restart: unless-stopped
+
+    # Security
+    user: "65534:65534"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Host access for metrics
+    pid: host
+    network_mode: host
+
+    # Volumes
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /etc/hostname:/etc/nodename:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    # Command
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)'
+      - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
+      - '--no-collector.infiniband'
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+    # Labels
+    labels:
+      - "service.name=node-exporter"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "node-exporter"
+
+  # cAdvisor - Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: radarr-cadvisor
+    restart: unless-stopped
+
+    # Security (needs privileged access for container monitoring)
+    privileged: true
+
+    # Volumes
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+    # Ports
+    ports:
+      - "8080:8080"
+
+    # Command
+    command:
+      - '--housekeeping_interval=10s'
+      - '--docker_only=true'
+      - '--disable_metrics=advtcp,cpu_topology,disk,hugetlb,memory_numa,percpu,referenced_memory,resctrl,sched,tcp,udp'
+      - '--store_container_labels=false'
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - monitoring-network
+
+    # Labels
+    labels:
+      - "service.name=cadvisor"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "cadvisor"
+
+  # PostgreSQL Exporter - Database metrics
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: radarr-postgres-exporter
+    restart: unless-stopped
+
+    # Security
+    user: "65534:65534"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Environment
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER:-radarr}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-radarr}?sslmode=disable
+      - PG_EXPORTER_EXTEND_QUERY_PATH=/etc/postgres_exporter/queries.yaml
+
+    # Volumes
+    volumes:
+      - ./config/postgres-exporter/queries.yaml:/etc/postgres_exporter/queries.yaml:ro
+
+    # Ports
+    ports:
+      - "9187:9187"
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - monitoring-network
+      - db-network
+
+    # Dependencies
+    depends_on:
+      - prometheus
+
+    # Labels
+    labels:
+      - "service.name=postgres-exporter"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "postgres-exporter"
+
+  # Redis Exporter - Cache metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: radarr-redis-exporter
+    restart: unless-stopped
+
+    # Security
+    user: "59000:59000"
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Environment
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
+    # Ports
+    ports:
+      - "9121:9121"
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+    # Networks
+    networks:
+      - monitoring-network
+      - app-network
+
+    # Dependencies
+    depends_on:
+      - prometheus
+
+    # Labels
+    labels:
+      - "service.name=redis-exporter"
+      - "service.type=monitoring"
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        tag: "redis-exporter"
+
+# Monitoring network (defined in main compose file)
+networks:
+  monitoring-network:
+    external: true
+    name: radarr_monitoring-network
+
+  app-network:
+    external: true
+    name: radarr_app-network
+
+  db-network:
+    external: true
+    name: radarr_db-network
+
+# Monitoring volumes
+volumes:
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/monitoring/prometheus
+    labels:
+      - "volume.description=Prometheus metrics data"
+
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/monitoring/grafana
+    labels:
+      - "volume.description=Grafana configuration and dashboards"
+
+  alertmanager_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/monitoring/alertmanager
+    labels:
+      - "volume.description=AlertManager notification data"
+
+  loki_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_ROOT:-/opt/radarr}/monitoring/loki
+    labels:
+      - "volume.description=Loki log storage"
+
+  promtail_positions:
+    driver: local
+    labels:
+      - "volume.description=Promtail log positions"
