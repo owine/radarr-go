@@ -58,6 +58,10 @@ services:
   mailhog:
     profiles: []  # Remove profile requirement - always available in dev
 
+  # Enable frontend by default in development
+  radarr-frontend:
+    profiles: []  # Remove profile requirement - always available in dev
+
 # Development-specific volumes
 volumes:
   # Build cache volumes for faster rebuilds
