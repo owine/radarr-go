@@ -184,6 +184,102 @@
       "pinDigests": false
     },
     {
+      "description": "npm major updates - separate PRs, manual review",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "npm",
+        "major"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "npm dependencies - group minor and patch updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "npm dependencies",
+      "automerge": true,
+      "addLabels": [
+        "npm"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "React ecosystem - separate group for React, React-DOM, and related packages",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "react-redux",
+        "react-router-dom",
+        "@types/react-redux",
+        "@types/react-router-dom"
+      ],
+      "groupName": "React ecosystem",
+      "automerge": false,
+      "addLabels": [
+        "npm",
+        "react"
+      ],
+      "minimumReleaseAge": "5 days"
+    },
+    {
+      "description": "Frontend build tools - group Vite, TypeScript, ESLint, PostCSS",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "vite",
+        "@vitejs/plugin-react",
+        "typescript",
+        "typescript-eslint",
+        "eslint",
+        "@eslint/js",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "postcss",
+        "postcss-preset-env",
+        "autoprefixer"
+      ],
+      "groupName": "Frontend build tools",
+      "automerge": true,
+      "addLabels": [
+        "npm",
+        "build-tools"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Redux toolkit updates - separate group for state management",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@reduxjs/toolkit"
+      ],
+      "groupName": "Redux ecosystem",
+      "automerge": false,
+      "addLabels": [
+        "npm",
+        "redux"
+      ],
+      "minimumReleaseAge": "5 days"
+    },
+    {
       "description": "Security updates - immediate processing with highest priority",
       "matchPackageNames": [
         "*"
