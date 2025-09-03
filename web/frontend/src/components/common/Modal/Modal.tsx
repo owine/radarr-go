@@ -48,7 +48,7 @@ export const Modal = ({
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         document.body.style.overflow = originalOverflow;
       };
@@ -82,7 +82,7 @@ export const Modal = ({
       const focusableElements = modalRef.current.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
-      
+
       const firstElement = focusableElements[0] as HTMLElement;
       const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
@@ -159,7 +159,7 @@ export const Modal = ({
             </button>
           </div>
         )}
-        
+
         <div className={styles.content}>
           {loading ? (
             <div style={{ textAlign: 'center' }}>Loading...</div>
@@ -167,7 +167,7 @@ export const Modal = ({
             children
           )}
         </div>
-        
+
         {showFooter && footer && (
           <div className={styles.footer}>
             {footer}

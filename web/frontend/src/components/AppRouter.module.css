@@ -63,16 +63,16 @@
   .loadingContainer {
     padding: var(--space-4);
   }
-  
+
   .dashboardLoading {
     grid-template-columns: 1fr;
     gap: var(--space-3);
   }
-  
+
   .unauthorizedContainer {
     padding: var(--space-6) var(--space-4);
   }
-  
+
   .unauthorizedContent h1 {
     font-size: var(--font-size-xl);
   }

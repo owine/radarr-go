@@ -115,7 +115,7 @@ function createMockStore() {
 
 describe('API Integration Layer', () => {
   let store: ReturnType<typeof createMockStore>;
-  
+
   beforeEach(() => {
     store = createMockStore();
     vi.clearAllMocks();
@@ -128,11 +128,11 @@ describe('API Integration Layer', () => {
   describe('RTK Query API Slice', () => {
     it('should have all expected endpoints', () => {
       const endpoints = Object.keys(radarrApi.endpoints);
-      
+
       // System endpoints
       expect(endpoints).toContain('getSystemStatus');
       expect(endpoints).toContain('getHealth');
-      
+
       // Movie endpoints
       expect(endpoints).toContain('getMovies');
       expect(endpoints).toContain('getMovie');
@@ -142,35 +142,35 @@ describe('API Integration Layer', () => {
       expect(endpoints).toContain('searchMovies');
       expect(endpoints).toContain('getPopularMovies');
       expect(endpoints).toContain('getTrendingMovies');
-      
+
       // Quality endpoints
       expect(endpoints).toContain('getQualityProfiles');
       expect(endpoints).toContain('getQualityProfile');
       expect(endpoints).toContain('getQualityDefinitions');
       expect(endpoints).toContain('getCustomFormats');
-      
+
       // Queue endpoints
       expect(endpoints).toContain('getQueue');
       expect(endpoints).toContain('getQueueItem');
       expect(endpoints).toContain('removeQueueItem');
       expect(endpoints).toContain('removeQueueItems');
       expect(endpoints).toContain('getQueueStats');
-      
+
       // History endpoints
       expect(endpoints).toContain('getHistory');
       expect(endpoints).toContain('getHistoryStats');
-      
+
       // Activity endpoints
       expect(endpoints).toContain('getActivity');
       expect(endpoints).toContain('getRunningActivities');
-      
+
       // Indexer endpoints
       expect(endpoints).toContain('getIndexers');
       expect(endpoints).toContain('createIndexer');
       expect(endpoints).toContain('updateIndexer');
       expect(endpoints).toContain('deleteIndexer');
       expect(endpoints).toContain('testIndexer');
-      
+
       // Download Client endpoints
       expect(endpoints).toContain('getDownloadClients');
       expect(endpoints).toContain('createDownloadClient');
@@ -178,7 +178,7 @@ describe('API Integration Layer', () => {
       expect(endpoints).toContain('deleteDownloadClient');
       expect(endpoints).toContain('testDownloadClient');
       expect(endpoints).toContain('getDownloadClientStats');
-      
+
       // Import List endpoints
       expect(endpoints).toContain('getImportLists');
       expect(endpoints).toContain('createImportList');
@@ -188,7 +188,7 @@ describe('API Integration Layer', () => {
       expect(endpoints).toContain('syncImportList');
       expect(endpoints).toContain('syncAllImportLists');
       expect(endpoints).toContain('getImportListStats');
-      
+
       // Notification endpoints
       expect(endpoints).toContain('getNotifications');
       expect(endpoints).toContain('createNotification');
@@ -196,7 +196,7 @@ describe('API Integration Layer', () => {
       expect(endpoints).toContain('deleteNotification');
       expect(endpoints).toContain('testNotification');
       expect(endpoints).toContain('getNotificationProviders');
-      
+
       // Configuration endpoints
       expect(endpoints).toContain('getHostConfig');
       expect(endpoints).toContain('updateHostConfig');
@@ -205,40 +205,40 @@ describe('API Integration Layer', () => {
       expect(endpoints).toContain('getMediaManagementConfig');
       expect(endpoints).toContain('updateMediaManagementConfig');
       expect(endpoints).toContain('getConfigStats');
-      
+
       // Tag endpoints
       expect(endpoints).toContain('getTags');
       expect(endpoints).toContain('createTag');
       expect(endpoints).toContain('updateTag');
       expect(endpoints).toContain('deleteTag');
-      
+
       // Release and Search endpoints
       expect(endpoints).toContain('getReleases');
       expect(endpoints).toContain('searchMovieReleases');
       expect(endpoints).toContain('grabRelease');
-      
+
       // Calendar endpoints
       expect(endpoints).toContain('getCalendar');
-      
+
       // Wanted Movies endpoints
       expect(endpoints).toContain('getMissingMovies');
       expect(endpoints).toContain('getCutoffUnmetMovies');
       expect(endpoints).toContain('getWantedStats');
-      
+
       // Parse endpoints
       expect(endpoints).toContain('parseReleaseTitle');
-      
+
       // Command/Task endpoints
       expect(endpoints).toContain('getCommands');
       expect(endpoints).toContain('getCommand');
       expect(endpoints).toContain('queueCommand');
       expect(endpoints).toContain('cancelCommand');
-      
+
       // System Resource endpoints
       expect(endpoints).toContain('getSystemResources');
       expect(endpoints).toContain('getDiskSpace');
       expect(endpoints).toContain('getPerformanceMetrics');
-      
+
       // Collection endpoints
       expect(endpoints).toContain('getCollections');
       expect(endpoints).toContain('createCollection');
@@ -249,7 +249,7 @@ describe('API Integration Layer', () => {
 
     it('should have proper tag types for cache invalidation', () => {
       const tagTypes = radarrApi.tagTypes;
-      
+
       expect(tagTypes).toContain('Movie');
       expect(tagTypes).toContain('MovieFile');
       expect(tagTypes).toContain('QualityProfile');
@@ -287,7 +287,7 @@ describe('API Integration Layer', () => {
     it('should support event subscription', () => {
       const mockCallback = vi.fn();
       const unsubscribe = webSocketManager.subscribe('QueueUpdate', mockCallback);
-      
+
       expect(typeof unsubscribe).toBe('function');
       unsubscribe();
     });
@@ -306,7 +306,7 @@ describe('API Integration Layer', () => {
     it('should cache and retrieve data', () => {
       const testData = { id: 1, name: 'test' };
       cacheManager.set('test-key', testData, { ttl: 60000 });
-      
+
       const retrieved = cacheManager.get('test-key');
       expect(retrieved).toEqual(testData);
     });
@@ -314,10 +314,10 @@ describe('API Integration Layer', () => {
     it('should handle cache expiration', async () => {
       const testData = { id: 1, name: 'test' };
       cacheManager.set('test-key', testData, { ttl: 1 }); // 1ms TTL
-      
+
       // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       const retrieved = cacheManager.get('test-key');
       expect(retrieved).toBeNull();
     });
@@ -326,9 +326,9 @@ describe('API Integration Layer', () => {
       cacheManager.set('key1', { data: 'test1' }, { tags: ['movies'] });
       cacheManager.set('key2', { data: 'test2' }, { tags: ['queue'] });
       cacheManager.set('key3', { data: 'test3' }, { tags: ['movies', 'queue'] });
-      
+
       const deletedCount = cacheManager.clearByTags(['movies']);
-      
+
       expect(deletedCount).toBe(2); // key1 and key3
       expect(cacheManager.get('key2')).not.toBeNull();
     });
@@ -336,7 +336,7 @@ describe('API Integration Layer', () => {
     it('should provide cache statistics', () => {
       cacheManager.set('key1', { data: 'test1' });
       cacheManager.set('key2', { data: 'test2' });
-      
+
       const stats = cacheManager.getStats();
       expect(stats.totalItems).toBe(2);
       expect(stats.validItems).toBe(2);
@@ -347,11 +347,11 @@ describe('API Integration Layer', () => {
   describe('Data Transformations', () => {
     it('should normalize and denormalize data correctly', () => {
       const movies = [mockMovie, { ...mockMovie, id: 2, title: 'Another Movie' }];
-      
+
       const normalized = dataTransforms.normalizeById(movies);
       expect(normalized[1]).toEqual(mockMovie);
       expect(normalized[2].title).toBe('Another Movie');
-      
+
       const denormalized = dataTransforms.denormalizeToArray(normalized);
       expect(denormalized).toHaveLength(2);
     });
@@ -362,7 +362,7 @@ describe('API Integration Layer', () => {
         { ...mockMovie, id: 2, year: 2024 },
         { ...mockMovie, id: 3, year: 2023 }
       ];
-      
+
       const grouped = dataTransforms.groupBy(movies, 'year');
       expect(grouped['2023']).toHaveLength(2);
       expect(grouped['2024']).toHaveLength(1);
@@ -370,7 +370,7 @@ describe('API Integration Layer', () => {
 
     it('should enrich movies with computed properties', () => {
       const enriched = dataTransforms.movie.enrichMovie(mockMovie);
-      
+
       expect(enriched.sizeOnDisk).toBe(5000000000);
       expect(enriched.qualityString).toBe('Bluray-1080p');
       expect(enriched.isDownloaded).toBe(true);
@@ -384,9 +384,9 @@ describe('API Integration Layer', () => {
         { ...mockMovie, id: 2, hasFile: false, monitored: false },
         { ...mockMovie, id: 3, year: 2024 }
       ];
-      
+
       const stats = dataTransforms.movie.calculateMovieStats(movies);
-      
+
       expect(stats.total).toBe(3);
       expect(stats.downloaded).toBe(2);
       expect(stats.monitored).toBe(2);
@@ -401,17 +401,17 @@ describe('API Integration Layer', () => {
         { ...mockMovie, id: 2, title: 'Comedy Movie', genres: ['Comedy'], year: 2024 },
         { ...mockMovie, id: 3, title: 'Horror Film', genres: ['Horror'], monitored: false }
       ];
-      
+
       // Text search
       const searchResults = dataTransforms.movie.searchMovies(movies, 'comedy');
       expect(searchResults).toHaveLength(1);
       expect(searchResults[0].title).toBe('Comedy Movie');
-      
+
       // Filter by genre
       const actionMovies = dataTransforms.movie.searchMovies(movies, '', { genre: 'Action' });
       expect(actionMovies).toHaveLength(1);
       expect(actionMovies[0].title).toBe('Test Movie');
-      
+
       // Filter by monitored status
       const unmonitoredMovies = dataTransforms.movie.searchMovies(movies, '', { monitored: false });
       expect(unmonitoredMovies).toHaveLength(1);
@@ -420,7 +420,7 @@ describe('API Integration Layer', () => {
 
     it('should enrich queue items with computed properties', () => {
       const enriched = dataTransforms.queue.enrichQueueItem(mockQueueItem);
-      
+
       expect(enriched.progressPercent).toBe(80); // (5GB - 1GB) / 5GB * 100
       expect(enriched.isDownloading).toBe(true);
       expect(enriched.isCompleted).toBe(false);
@@ -449,7 +449,7 @@ describe('API Integration Layer', () => {
 
     it('should have proper invalidation rules', () => {
       const movieUpdateStrategy = invalidationStrategies.movieUpdate;
-      
+
       expect(movieUpdateStrategy.name).toBe('Movie Update');
       expect(movieUpdateStrategy.rules).toHaveLength(1);
       expect(movieUpdateStrategy.rules[0].triggerTags).toContain('Movie');
@@ -462,7 +462,7 @@ describe('API Integration Layer', () => {
     it('should support conditional invalidation', () => {
       const taskCompleteStrategy = invalidationStrategies.taskComplete;
       const rule = taskCompleteStrategy.rules[0];
-      
+
       expect(rule.condition).toBeDefined();
       expect(rule.condition!({ status: 'completed' })).toBe(true);
       expect(rule.condition!({ status: 'running' })).toBe(false);
@@ -473,7 +473,7 @@ describe('API Integration Layer', () => {
     it('should have proper pagination support for queue endpoint', () => {
       const queueEndpoint = radarrApi.endpoints.getQueue;
       expect(queueEndpoint).toBeDefined();
-      
+
       // The endpoint should accept pagination parameters
       const queryArgs = {
         page: 2,
@@ -483,7 +483,7 @@ describe('API Integration Layer', () => {
         includeUnknownMovieItems: true,
         includeMovie: true,
       };
-      
+
       // This tests the query structure - it should not throw
       expect(() => queueEndpoint.query(queryArgs)).not.toThrow();
     });
@@ -491,10 +491,10 @@ describe('API Integration Layer', () => {
     it('should have proper mutation endpoints with invalidation tags', () => {
       const updateMovieEndpoint = radarrApi.endpoints.updateMovie;
       expect(updateMovieEndpoint).toBeDefined();
-      
+
       const deleteMovieEndpoint = radarrApi.endpoints.deleteMovie;
       expect(deleteMovieEndpoint).toBeDefined();
-      
+
       const addMovieEndpoint = radarrApi.endpoints.addMovie;
       expect(addMovieEndpoint).toBeDefined();
     });
@@ -504,7 +504,7 @@ describe('API Integration Layer', () => {
     it('should have proper TypeScript types for Movie interface', () => {
       // This test ensures the Movie interface has all expected properties
       const movieKeys = Object.keys(mockMovie);
-      
+
       const expectedKeys = [
         'id', 'title', 'originalTitle', 'sortTitle', 'status', 'overview',
         'inCinemas', 'physicalRelease', 'digitalRelease', 'images', 'website',
@@ -514,7 +514,7 @@ describe('API Integration Layer', () => {
         'tmdbId', 'titleSlug', 'certification', 'genres', 'tags', 'added',
         'ratings', 'movieFile'
       ];
-      
+
       expectedKeys.forEach(key => {
         expect(movieKeys).toContain(key);
       });
@@ -522,7 +522,7 @@ describe('API Integration Layer', () => {
 
     it('should have proper TypeScript types for QueueItem interface', () => {
       const queueItemKeys = Object.keys(mockQueueItem);
-      
+
       const expectedKeys = [
         'id', 'movieId', 'movie', 'languages', 'quality', 'customFormats',
         'size', 'title', 'sizeleft', 'timeleft', 'estimatedCompletionTime',
@@ -530,7 +530,7 @@ describe('API Integration Layer', () => {
         'statusMessages', 'downloadId', 'protocol', 'downloadClient',
         'indexer', 'outputPath'
       ];
-      
+
       expectedKeys.forEach(key => {
         expect(queueItemKeys).toContain(key);
       });
@@ -541,7 +541,7 @@ describe('API Integration Layer', () => {
     it('should handle API errors gracefully', async () => {
       // Mock fetch to return an error
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
-      
+
       try {
         const result = await store.dispatch(
           radarrApi.endpoints.getSystemStatus.initiate()

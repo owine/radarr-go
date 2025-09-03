@@ -20,11 +20,11 @@ export const NotFoundPage: React.FC = () => {
         <Card size="spacious" className={styles.card}>
           <div className={styles.errorContent}>
             <div className={styles.errorNumber}>404</div>
-            
+
             <div className={styles.errorMessage}>
               <h1>Page Not Found</h1>
               <p>
-                Sorry, we couldn't find the page you're looking for. It might have been moved, 
+                Sorry, we couldn't find the page you're looking for. It might have been moved,
                 deleted, or you might have typed the wrong URL.
               </p>
             </div>
@@ -49,7 +49,7 @@ export const NotFoundPage: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <div className={styles.illustration}>
           <svg
             width="200"

@@ -32,7 +32,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     const errorId = `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return {
       hasError: true,
       error,
@@ -119,11 +119,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <div className={styles.errorContent}>
               <div className={styles.errorIcon}>
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                  <circle 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
                     strokeWidth="2"
                     fill="none"
                   />
@@ -146,14 +146,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                       <h4>Error ID: {this.state.errorId}</h4>
                       <h4>Error Message:</h4>
                       <pre>{this.state.error.message}</pre>
-                      
+
                       {this.state.error.stack && (
                         <>
                           <h4>Stack Trace:</h4>
                           <pre>{this.state.error.stack}</pre>
                         </>
                       )}
-                      
+
                       {this.state.errorInfo?.componentStack && (
                         <>
                           <h4>Component Stack:</h4>
@@ -166,21 +166,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </div>
 
               <div className={styles.errorActions}>
-                <Button 
+                <Button
                   onClick={this.resetError}
                   variant="primary"
                 >
                   Try Again
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={this.goHome}
                   variant="secondary"
                 >
                   Go to Dashboard
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={this.reloadPage}
                   variant="ghost"
                 >

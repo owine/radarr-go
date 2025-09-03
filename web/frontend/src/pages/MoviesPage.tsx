@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { 
-  useGetMoviesQuery, 
-  useGetQualityProfilesQuery, 
+import {
+  useGetMoviesQuery,
+  useGetQualityProfilesQuery,
   useGetRootFoldersQuery,
   useToggleMovieMonitorMutation,
   useSearchMovieMutation,
@@ -11,13 +11,13 @@ import {
   useAddMovieMutation
 } from '../store/api/radarrApi';
 import { Button } from '../components/common';
-import { 
-  MovieList, 
-  MovieDetail, 
-  SearchBar, 
-  AddMovieModal, 
-  type MovieFilter, 
-  type DiscoverMovie 
+import {
+  MovieList,
+  MovieDetail,
+  SearchBar,
+  AddMovieModal,
+  type MovieFilter,
+  type DiscoverMovie
 } from '../components/movies';
 import type { Movie, AddMovieRequest } from '../types/api';
 import styles from './MoviesPage.module.css';
@@ -179,8 +179,8 @@ export const MoviesPage = () => {
 
   // Handlers
   const handleSelectMovie = useCallback((movieId: number, selected: boolean) => {
-    setSelectedMovies(prev => 
-      selected 
+    setSelectedMovies(prev =>
+      selected
         ? [...prev, movieId]
         : prev.filter(id => id !== movieId)
     );
@@ -237,7 +237,7 @@ export const MoviesPage = () => {
   const handleBulkMonitor = useCallback(async (movieIds: number[], monitored: boolean) => {
     try {
       await Promise.all(
-        movieIds.map(movieId => 
+        movieIds.map(movieId =>
           toggleMonitor({ movieId, monitored }).unwrap()
         )
       );
@@ -251,7 +251,7 @@ export const MoviesPage = () => {
   const handleBulkSearch = useCallback(async (movieIds: number[]) => {
     try {
       await Promise.all(
-        movieIds.map(movieId => 
+        movieIds.map(movieId =>
           searchMovie(movieId).unwrap()
         )
       );
@@ -265,7 +265,7 @@ export const MoviesPage = () => {
     if (window.confirm(`Are you sure you want to delete ${movieIds.length} movies?`)) {
       try {
         await Promise.all(
-          movieIds.map(movieId => 
+          movieIds.map(movieId =>
             deleteMovie({ id: movieId, deleteFiles: false }).unwrap()
           )
         );
@@ -332,7 +332,7 @@ export const MoviesPage = () => {
             <h1>Movies</h1>
             <p>Manage your movie collection</p>
           </div>
-          
+
           <Button
             onClick={() => setShowAddModal(true)}
             icon={<Plus size={16} />}
@@ -341,7 +341,7 @@ export const MoviesPage = () => {
             Add Movies
           </Button>
         </div>
-        
+
         <div className={styles.searchContainer}>
           <SearchBar
             filter={filter}

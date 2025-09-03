@@ -54,11 +54,11 @@ export interface MovieUpdateEvent extends WebSocketEvent {
 }
 
 // WebSocket Connection States
-export type WebSocketConnectionState = 
-  | 'disconnected' 
-  | 'connecting' 
-  | 'connected' 
-  | 'reconnecting' 
+export type WebSocketConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
   | 'error';
 
 // WebSocket Configuration
@@ -112,14 +112,14 @@ class WebSocketManager {
   initialize(dispatch: any, getState: () => RootState, apiKey?: string) {
     this.dispatch = dispatch;
     this.getState = getState;
-    
+
     // Build WebSocket URL based on current location
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const wsUrl = `${protocol}//${host}/api/v3/ws`;
-    
+
     this.config.url = wsUrl;
-    
+
     // Add API key to protocols if available
     if (apiKey) {
       this.config.protocols = [`radarr-api-key-${apiKey}`];
@@ -135,10 +135,10 @@ class WebSocketManager {
     }
 
     this.setState('connecting');
-    
+
     try {
       const ws = new WebSocket(this.config.url, this.config.protocols);
-      
+
       // Set connection timeout
       this.state.connectionTimer = setTimeout(() => {
         if (ws.readyState === WebSocket.CONNECTING) {
@@ -161,11 +161,11 @@ class WebSocketManager {
 
   disconnect() {
     this.clearTimers();
-    
+
     if (this.state.connection) {
       this.state.connection.close(1000, 'Intentional disconnect');
     }
-    
+
     this.setState('disconnected');
     this.state.connection = null;
     this.state.reconnectAttempts = 0;
@@ -217,10 +217,10 @@ class WebSocketManager {
     this.state.reconnectAttempts = 0;
 
     console.log('WebSocket connected successfully');
-    
+
     // Start heartbeat
     this.startHeartbeat();
-    
+
     // Dispatch connection event
     if (this.dispatch) {
       this.dispatch(radarrApi.util.invalidateTags(['Queue', 'Activity', 'Health']));
@@ -266,7 +266,7 @@ class WebSocketManager {
   private handleConnectionError(error: Error) {
     this.clearTimers();
     this.setState('error');
-    
+
     if (this.state.reconnectAttempts < this.config.maxReconnectAttempts) {
       this.scheduleReconnect();
     }
@@ -301,12 +301,12 @@ class WebSocketManager {
       clearInterval(this.state.heartbeatTimer);
       this.state.heartbeatTimer = undefined;
     }
-    
+
     if (this.state.reconnectTimer) {
       clearTimeout(this.state.reconnectTimer);
       this.state.reconnectTimer = undefined;
     }
-    
+
     if (this.state.connectionTimer) {
       clearTimeout(this.state.connectionTimer);
       this.state.connectionTimer = undefined;
@@ -316,7 +316,7 @@ class WebSocketManager {
   private setState(newState: WebSocketConnectionState) {
     const oldState = this.state.connectionState;
     this.state.connectionState = newState;
-    
+
     // Notify state change listeners
     this.notifyListeners({
       type: 'ConnectionStateChange',
@@ -327,7 +327,7 @@ class WebSocketManager {
 
   private addToEventHistory(event: WebSocketEvent) {
     this.state.eventHistory.push(event);
-    
+
     // Keep only last 1000 events
     if (this.state.eventHistory.length > 1000) {
       this.state.eventHistory = this.state.eventHistory.slice(-1000);
@@ -366,9 +366,9 @@ class WebSocketManager {
       case 'DownloadComplete':
         // Invalidate multiple caches for download completion
         this.dispatch(radarrApi.util.invalidateTags([
-          'Queue', 
-          'Movie', 
-          'Activity', 
+          'Queue',
+          'Movie',
+          'Activity',
           'History',
           'WantedMovie'
         ]));
@@ -377,8 +377,8 @@ class WebSocketManager {
       case 'ImportComplete':
         // Similar to download complete
         this.dispatch(radarrApi.util.invalidateTags([
-          'Movie', 
-          'Activity', 
+          'Movie',
+          'Activity',
           'History'
         ]));
         break;
@@ -416,19 +416,19 @@ class WebSocketManager {
 export const webSocketManager = new WebSocketManager();
 
 // Redux middleware for WebSocket integration
-export const websocketMiddleware: Middleware<{}, RootState> = 
+export const websocketMiddleware: Middleware<{}, RootState> =
   (store) => (next) => (action) => {
     const { dispatch, getState } = store;
-    
+
     // Initialize WebSocket connection when auth state changes
     if (action.type === 'auth/setAuthenticated' && action.payload === true) {
       const state = getState();
       const apiKey = state.auth.apiKey;
-      
+
       // Initialize WebSocket with API key
       webSocketManager.initialize(dispatch, getState, apiKey || undefined);
     }
-    
+
     // Disconnect WebSocket when logging out
     if (action.type === 'auth/logout' || action.type === 'auth/setAuthenticated' && action.payload === false) {
       webSocketManager.disconnect();

@@ -130,30 +130,30 @@
     padding: var(--space-4);
     min-height: 50vh;
   }
-  
+
   .errorIcon svg {
     width: 48px;
     height: 48px;
   }
-  
+
   .errorMessage h2 {
     font-size: var(--font-size-lg);
   }
-  
+
   .errorActions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .errorActions > * {
     width: 100%;
     max-width: 200px;
   }
-  
+
   .errorDetails {
     padding: var(--space-3);
   }
-  
+
   .errorStack pre {
     font-size: var(--font-size-xs);
     padding: var(--space-2);

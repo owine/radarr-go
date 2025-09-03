@@ -276,11 +276,11 @@
     transition: transform var(--transition-base);
     width: var(--sidebar-width);
   }
-  
+
   .sidebar.open {
     transform: translateX(0);
   }
-  
+
   /* Overlay for mobile */
   .sidebar::before {
     content: '';
@@ -295,7 +295,7 @@
     pointer-events: none;
     transition: opacity var(--transition-base);
   }
-  
+
   .sidebar.open::before {
     opacity: 1;
     pointer-events: auto;
@@ -307,12 +307,12 @@
     width: 280px;
     top: var(--header-height);
   }
-  
+
   .navItem {
     padding: var(--space-3) var(--space-4);
     min-height: 52px;
   }
-  
+
   .subNavItem {
     min-height: 44px;
     padding: var(--space-2) var(--space-4) var(--space-2) var(--space-6);

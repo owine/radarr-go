@@ -14,16 +14,16 @@ export const QueuePage: React.FC = () => {
       color: 'var(--text-muted)'
     }}>
       <Download size={64} style={{ marginBottom: '20px' }} />
-      <h2 style={{ 
-        margin: '0 0 12px 0', 
-        fontSize: '24px', 
+      <h2 style={{
+        margin: '0 0 12px 0',
+        fontSize: '24px',
         fontWeight: '600',
         color: 'var(--text-primary)'
       }}>
         Download Queue
       </h2>
-      <p style={{ 
-        margin: '0', 
+      <p style={{
+        margin: '0',
         fontSize: '16px',
         maxWidth: '400px',
         lineHeight: '1.5'

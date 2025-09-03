@@ -354,19 +354,19 @@
   .header {
     padding: 0 var(--space-3);
   }
-  
+
   .logo h1 {
     font-size: var(--font-size-lg);
   }
-  
+
   .center {
     display: none;
   }
-  
+
   .userName {
     display: none;
   }
-  
+
   .userDropdown {
     right: var(--space-2);
     min-width: 200px;
@@ -377,7 +377,7 @@
   .right {
     gap: var(--space-2);
   }
-  
+
   .statusIndicator {
     display: none;
   }

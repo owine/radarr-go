@@ -9,12 +9,12 @@
 
 .interactive {
   cursor: pointer;
-  
+
   &:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
-  
+
   &:focus-visible {
     outline: 2px solid var(--border-focus);
     outline-offset: 2px;
@@ -111,7 +111,7 @@
   .footer {
     padding: var(--space-4);
   }
-  
+
   .spacious .header,
   .spacious .content,
   .spacious .footer {

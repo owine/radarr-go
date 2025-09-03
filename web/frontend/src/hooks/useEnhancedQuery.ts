@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import type { 
-  QueryDefinition, 
+import type {
+  QueryDefinition,
   QueryHooks,
   QueryActionCreatorResult,
   QueryDefinition as RTKQueryDefinition
@@ -15,35 +15,35 @@ export interface EnhancedQueryOptions {
   // Polling options
   pollingInterval?: number;
   skipPollingWhenHidden?: boolean;
-  
+
   // Retry options
   maxRetries?: number;
   retryDelay?: number;
   exponentialBackoff?: boolean;
-  
+
   // Cache options
   cacheTime?: number;
   staleTime?: number;
   useOfflineCache?: boolean;
-  
+
   // Background updates
   refetchOnMount?: boolean;
   refetchOnFocus?: boolean;
   refetchOnReconnect?: boolean;
   refetchOnVisibilityChange?: boolean;
-  
+
   // Optimistic updates
   optimisticUpdate?: boolean;
   optimisticData?: any;
-  
+
   // Real-time updates
   subscribeToUpdates?: boolean;
   updateEvents?: string[];
-  
+
   // Error handling
   onError?: (error: any) => void;
   onSuccess?: (data: any) => void;
-  
+
   // Transform data
   select?: (data: any) => any;
   transformError?: (error: any) => any;
@@ -60,16 +60,16 @@ export interface EnhancedQueryResult<T> {
   isStale: boolean;
   isOffline: boolean;
   lastFetchedAt?: Date;
-  
+
   // Actions
   refetch: () => Promise<any>;
   invalidate: () => void;
   reset: () => void;
-  
+
   // Status helpers
   hasData: boolean;
   isEmpty: boolean;
-  
+
   // Retry functionality
   retry: () => void;
   retryCount: number;
@@ -81,18 +81,18 @@ export interface EnhancedMutationOptions<T> {
   // Optimistic updates
   optimisticUpdate?: (currentData: any, variables: any) => any;
   rollbackOnError?: boolean;
-  
+
   // Cache invalidation
   invalidatesTags?: string[];
   updatesCaches?: Array<{
     queryKey: string;
     updater: (currentData: any, result: T, variables: any) => any;
   }>;
-  
+
   // UI feedback
   showSuccessMessage?: boolean | string;
   showErrorMessage?: boolean | string;
-  
+
   // Callbacks
   onMutate?: (variables: any) => void;
   onSuccess?: (result: T, variables: any) => void;
@@ -105,14 +105,14 @@ export interface EnhancedMutationResult<T, V> {
   mutate: (variables: V) => Promise<T>;
   mutateAsync: (variables: V) => Promise<T>;
   reset: () => void;
-  
+
   data: T | undefined;
   error: any;
   isLoading: boolean;
   isSuccess: boolean;
   isError: boolean;
   isIdle: boolean;
-  
+
   // Status helpers
   hasData: boolean;
   canMutate: boolean;
@@ -126,7 +126,7 @@ export function useEnhancedQuery<T>(
 ): EnhancedQueryResult<T> {
   const dispatch = useDispatch();
   const wsConnection = useWebSocketConnection();
-  
+
   // State management
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<any>(null);
@@ -135,14 +135,14 @@ export function useEnhancedQuery<T>(
   const [retryCount, setRetryCount] = useState(0);
   const [lastFetchedAt, setLastFetchedAt] = useState<Date | undefined>();
   const [isStale, setIsStale] = useState(false);
-  
+
   // Refs for managing state and cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const staleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isOnlineRef = useRef(navigator.onLine);
-  
+
   // Computed states
   const isSuccess = !isLoading && !error && data !== undefined;
   const isError = !isLoading && error !== null;
@@ -157,17 +157,17 @@ export function useEnhancedQuery<T>(
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Create new abort controller
     abortControllerRef.current = new AbortController();
-    
+
     if (showLoading) {
       setIsFetching(true);
       if (data === undefined) {
         setIsLoading(true);
       }
     }
-    
+
     setError(null);
 
     try {
@@ -184,7 +184,7 @@ export function useEnhancedQuery<T>(
 
       // Execute the query
       const result = await queryFn();
-      
+
       // Check if request was aborted
       if (abortControllerRef.current?.signal.aborted) {
         return;
@@ -192,7 +192,7 @@ export function useEnhancedQuery<T>(
 
       // Transform data if select function provided
       const transformedData = options.select ? options.select(result) : result;
-      
+
       // Update state
       setData(transformedData);
       setError(null);
@@ -200,24 +200,24 @@ export function useEnhancedQuery<T>(
       setLastFetchedAt(new Date());
       setIsLoading(false);
       setIsFetching(false);
-      
+
       // Cache the result
       if (options.useOfflineCache) {
         cacheManager.set(queryKey, result, { ttl: options.cacheTime || 5 * 60 * 1000 });
       }
-      
+
       // Set up stale timeout
       if (options.staleTime) {
         staleTimeoutRef.current = setTimeout(() => {
           setIsStale(true);
         }, options.staleTime);
       }
-      
+
       // Call success callback
       if (options.onSuccess) {
         options.onSuccess(transformedData);
       }
-      
+
     } catch (err: any) {
       // Check if request was aborted
       if (abortControllerRef.current?.signal.aborted) {
@@ -228,18 +228,18 @@ export function useEnhancedQuery<T>(
       setError(transformedError);
       setIsLoading(false);
       setIsFetching(false);
-      
+
       // Call error callback
       if (options.onError) {
         options.onError(transformedError);
       }
-      
+
       // Auto retry if configured
       if (retryCount < (options.maxRetries || 3)) {
-        const delay = options.exponentialBackoff 
+        const delay = options.exponentialBackoff
           ? (options.retryDelay || 1000) * Math.pow(2, retryCount)
           : (options.retryDelay || 1000);
-        
+
         retryTimeoutRef.current = setTimeout(() => {
           setRetryCount(prev => prev + 1);
           executeQuery(false);
@@ -278,7 +278,7 @@ export function useEnhancedQuery<T>(
     setRetryCount(0);
     setLastFetchedAt(undefined);
     setIsStale(false);
-    
+
     // Clear timeouts
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -296,7 +296,7 @@ export function useEnhancedQuery<T>(
         if (options.skipPollingWhenHidden && document.hidden) {
           return;
         }
-        
+
         executeQuery(false);
       }, options.pollingInterval);
     }
@@ -311,7 +311,7 @@ export function useEnhancedQuery<T>(
   // Set up real-time subscriptions
   useEffect(() => {
     if (options.subscribeToUpdates && options.updateEvents) {
-      const unsubscribers = options.updateEvents.map(eventType => 
+      const unsubscribers = options.updateEvents.map(eventType =>
         wsConnection.subscribe(eventType, () => {
           refetch();
         })
@@ -351,11 +351,11 @@ export function useEnhancedQuery<T>(
     if (options.refetchOnFocus) {
       window.addEventListener('focus', handleFocus);
     }
-    
+
     if (options.refetchOnVisibilityChange) {
       document.addEventListener('visibilitychange', handleVisibilityChange);
     }
-    
+
     if (options.refetchOnReconnect) {
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
@@ -421,12 +421,12 @@ export function useEnhancedMutation<T, V>(
   options: EnhancedMutationOptions<T> = {}
 ): EnhancedMutationResult<T, V> {
   const dispatch = useDispatch();
-  
+
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isIdle, setIsIdle] = useState(true);
-  
+
   const isSuccess = !isLoading && !error && data !== undefined;
   const isError = !isLoading && error !== null;
   const hasData = data !== undefined;
@@ -460,11 +460,11 @@ export function useEnhancedMutation<T, V>(
 
       // Execute mutation
       const result = await mutationFn(variables);
-      
+
       // Update state
       setData(result);
       setIsLoading(false);
-      
+
       // Update caches with real data
       if (options.updatesCaches) {
         options.updatesCaches.forEach(({ queryKey, updater }) => {
@@ -475,7 +475,7 @@ export function useEnhancedMutation<T, V>(
           }
         });
       }
-      
+
       // Invalidate cache tags
       if (options.invalidatesTags) {
         cacheManager.clearByTags(options.invalidatesTags);
@@ -487,11 +487,11 @@ export function useEnhancedMutation<T, V>(
       }
 
       return result;
-      
+
     } catch (err: any) {
       setError(err);
       setIsLoading(false);
-      
+
       // Rollback optimistic updates
       if (options.rollbackOnError && originalCacheState.size > 0) {
         originalCacheState.forEach((originalData, queryKey) => {
@@ -505,7 +505,7 @@ export function useEnhancedMutation<T, V>(
       }
 
       throw err;
-      
+
     } finally {
       // Call settled callback
       if (options.onSettled) {
@@ -549,31 +549,31 @@ export const useInfiniteQuery = <T>(
   const [pages, setPages] = useState<T[][]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+
   const pageSize = options.pageSize || 20;
-  
+
   // Load first page
   const firstPageQuery = useEnhancedQuery(
     queryKeyFactory(1),
     queryFnFactory(1),
     options
   );
-  
+
   useEffect(() => {
     if (firstPageQuery.data) {
       setPages([firstPageQuery.data]);
       setHasNextPage(firstPageQuery.data.length === pageSize);
     }
   }, [firstPageQuery.data, pageSize]);
-  
+
   const loadMore = useCallback(async () => {
     if (!hasNextPage || isLoadingMore) return;
-    
+
     setIsLoadingMore(true);
     try {
       const nextPage = pages.length + 1;
       const nextPageData = await queryFnFactory(nextPage)();
-      
+
       setPages(prev => [...prev, nextPageData]);
       setHasNextPage(nextPageData.length === pageSize);
     } catch (error) {
@@ -582,7 +582,7 @@ export const useInfiniteQuery = <T>(
       setIsLoadingMore(false);
     }
   }, [hasNextPage, isLoadingMore, pages.length, pageSize, queryFnFactory]);
-  
+
   return {
     data: pages.flat(),
     pages,

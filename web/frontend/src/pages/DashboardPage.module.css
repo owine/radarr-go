@@ -180,24 +180,24 @@
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .movieStats {
     flex-direction: column;
     gap: var(--space-6);
   }
-  
+
   .statItem {
     display: flex;
     justify-content: space-between;
     align-items: center;
     text-align: left;
   }
-  
+
   .statNumber {
     order: 2;
     margin-bottom: 0;
   }
-  
+
   .issueHeader {
     flex-direction: column;
     align-items: flex-start;

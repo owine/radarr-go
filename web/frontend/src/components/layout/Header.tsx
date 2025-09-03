@@ -18,7 +18,7 @@ export const Header = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  
+
   // Get system status and health for indicators
   const { data: systemStatus } = useGetSystemStatusQuery(undefined, {
     pollingInterval: 30000, // Poll every 30 seconds
@@ -31,26 +31,26 @@ export const Header = () => {
   const getBreadcrumbs = () => {
     const path = location.pathname;
     const segments = path.split('/').filter(Boolean);
-    
+
     const breadcrumbs = [{ label: 'Home', path: '/dashboard' }];
-    
+
     let currentPath = '';
     segments.forEach(segment => {
       currentPath += `/${segment}`;
       const label = segment.charAt(0).toUpperCase() + segment.slice(1);
       breadcrumbs.push({ label, path: currentPath });
     });
-    
+
     return breadcrumbs.slice(0, -1); // Remove last item as it's the current page
   };
-  
+
   // Get health status summary
   const getHealthStatus = () => {
     if (!healthChecks) return { status: 'unknown', count: 0 };
-    
+
     const errorCount = healthChecks.filter(check => check.type === 'error').length;
     const warningCount = healthChecks.filter(check => check.type === 'warning').length;
-    
+
     if (errorCount > 0) return { status: 'error', count: errorCount };
     if (warningCount > 0) return { status: 'warning', count: warningCount };
     return { status: 'ok', count: 0 };
@@ -68,7 +68,7 @@ export const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
   };
-  
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -77,7 +77,7 @@ export const Header = () => {
       searchInputRef.current?.blur();
     }
   };
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === '/' && !searchFocused) {
       e.preventDefault();
@@ -88,7 +88,7 @@ export const Header = () => {
       setUserMenuOpen(false);
     }
   };
-  
+
   // Click outside handler for user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,17 +96,17 @@ export const Header = () => {
         setUserMenuOpen(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
   // Keyboard shortcuts
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchFocused]);
-  
+
   const breadcrumbs = getBreadcrumbs();
   const healthStatus = getHealthStatus();
 
@@ -129,7 +129,7 @@ export const Header = () => {
             />
           </svg>
         </Button>
-        
+
         <div className={styles.logo}>
           <h1>Radarr</h1>
         </div>
@@ -151,7 +151,7 @@ export const Header = () => {
             </React.Fragment>
           ))}
         </div>
-        
+
         <div className={styles.search}>
           <form onSubmit={handleSearch} className={styles.searchForm}>
             <div className={styles.searchWrapper}>
@@ -180,7 +180,7 @@ export const Header = () => {
       <div className={styles.right}>
         {/* Health status indicator */}
         <div className={styles.statusIndicator}>
-          <div 
+          <div
             className={`${styles.healthBadge} ${styles[healthStatus.status]}`}
             title={`System health: ${healthStatus.status}${healthStatus.count > 0 ? ` (${healthStatus.count} issues)` : ''}`}
           >
@@ -241,14 +241,14 @@ export const Header = () => {
             <span className={styles.userName}>
               {user?.username || 'User'}
             </span>
-            <svg 
-              className={`${styles.userMenuIcon} ${userMenuOpen ? styles.rotated : ''}`} 
+            <svg
+              className={`${styles.userMenuIcon} ${userMenuOpen ? styles.rotated : ''}`}
               width="16" height="16" viewBox="0 0 24 24" fill="none"
             >
               <polyline points="6,9 12,15 18,9" stroke="currentColor" strokeWidth="2"/>
             </svg>
           </button>
-          
+
           {userMenuOpen && (
             <div className={styles.userDropdown}>
               <div className={styles.userInfo}>
@@ -264,10 +264,10 @@ export const Header = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className={styles.userMenuDivider}></div>
-              
-              <button 
+
+              <button
                 className={styles.userMenuItem}
                 onClick={() => {
                   navigate('/system');
@@ -280,10 +280,10 @@ export const Header = () => {
                 </svg>
                 Settings
               </button>
-              
+
               <div className={styles.userMenuDivider}></div>
-              
-              <button 
+
+              <button
                 className={`${styles.userMenuItem} ${styles.danger}`}
                 onClick={() => {
                   handleLogout();

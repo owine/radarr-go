@@ -176,11 +176,11 @@
     align-items: flex-start;
     gap: var(--space-1);
   }
-  
+
   .infoValue {
     text-align: left;
   }
-  
+
   .healthHeader {
     flex-direction: column;
     align-items: flex-start;

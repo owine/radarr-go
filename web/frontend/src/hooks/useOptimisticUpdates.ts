@@ -282,7 +282,7 @@ export const useOptimisticTagManagement = () => {
       try {
         // Perform actual creation
         const result = await createTag({ label }).unwrap();
-        
+
         // Update with real ID
         dispatch(
           radarrApi.util.updateQueryData('getTags', undefined, (draft) => {
@@ -292,7 +292,7 @@ export const useOptimisticTagManagement = () => {
             }
           })
         );
-        
+
         return result;
       } catch (error) {
         // Rollback on error

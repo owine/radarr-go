@@ -112,7 +112,7 @@ const getNavigationItems = (): NavigationItem[] => [
 export const Sidebar = () => {
   const location = useLocation();
   const sidebarCollapsed = useAppSelector(state => state.ui.sidebarCollapsed);
-  
+
   // Get data for activity indicators
   const { data: queueData } = useGetQueueQuery({}, {
     pollingInterval: 10000, // Poll every 10 seconds
@@ -120,7 +120,7 @@ export const Sidebar = () => {
   const { data: healthData } = useGetHealthQuery(undefined, {
     pollingInterval: 30000, // Poll every 30 seconds
   });
-  
+
   // Calculate badge counts
   const getBadgeCount = (badge: string | undefined) => {
     switch (badge) {
@@ -132,10 +132,10 @@ export const Sidebar = () => {
         return 0;
     }
   };
-  
+
   const getBadgeColor = (badge: string | undefined, count: number) => {
     if (count === 0) return 'default';
-    
+
     switch (badge) {
       case 'queue':
         return 'info';
@@ -145,14 +145,14 @@ export const Sidebar = () => {
         return 'default';
     }
   };
-  
+
   const isPathActive = (itemPath: string) => {
     if (itemPath === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(itemPath);
   };
-  
+
   const navigationItems = getNavigationItems();
 
   return (
@@ -162,7 +162,7 @@ export const Sidebar = () => {
           const badgeCount = getBadgeCount(item.badge);
           const badgeColor = getBadgeColor(item.badge, badgeCount);
           const isActive = isPathActive(item.path);
-          
+
           return (
             <div key={item.path} className={styles.navGroup}>
               <NavLink
@@ -181,21 +181,21 @@ export const Sidebar = () => {
                   <span className={styles.label}>{item.label}</span>
                 )}
                 {!sidebarCollapsed && item.subItems && (
-                  <svg 
-                    className={`${styles.expandIcon} ${isActive ? styles.expanded : ''}`} 
+                  <svg
+                    className={`${styles.expandIcon} ${isActive ? styles.expanded : ''}`}
                     width="16" height="16" viewBox="0 0 24 24" fill="none"
                   >
                     <polyline points="9,18 15,12 9,6" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                 )}
               </NavLink>
-              
+
               {!sidebarCollapsed && item.subItems && isActive && (
                 <div className={styles.subNavigation}>
                   {item.subItems.map((subItem) => {
                     const subBadgeCount = getBadgeCount(subItem.badge);
                     const subBadgeColor = getBadgeColor(subItem.badge, subBadgeCount);
-                    
+
                     return (
                       <NavLink
                         key={subItem.path}
@@ -222,7 +222,7 @@ export const Sidebar = () => {
           );
         })}
       </nav>
-      
+
       {/* Footer with system version */}
       {!sidebarCollapsed && (
         <div className={styles.footer}>

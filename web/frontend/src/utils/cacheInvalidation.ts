@@ -319,7 +319,7 @@ export class CacheInvalidationManager {
     };
 
     const tagsToInvalidate = [type];
-    
+
     // Add related tags based on relationships
     if (relationships[type]) {
       tagsToInvalidate.push(...relationships[type]);

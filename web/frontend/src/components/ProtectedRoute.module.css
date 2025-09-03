@@ -19,7 +19,7 @@
   .loadingContainer {
     padding: var(--space-4);
   }
-  
+
   .loadingGrid {
     grid-template-columns: 1fr;
     gap: var(--space-3);

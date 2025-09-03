@@ -14,20 +14,20 @@
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
-  
+
   /* Focus ring */
   &:focus-visible {
     outline: 2px solid var(--border-focus);
     outline-offset: 2px;
   }
-  
+
   /* Disabled state */
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     pointer-events: none;
   }
-  
+
   /* Loading state */
   &.loading {
     opacity: 0.8;
@@ -62,12 +62,12 @@
   background-color: var(--color-primary);
   color: var(--text-inverse);
   border-color: var(--color-primary);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
     border-color: var(--color-primary-hover);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-primary-dark);
     border-color: var(--color-primary-dark);
@@ -78,12 +78,12 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   border-color: var(--border-primary);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--bg-secondary);
     border-color: var(--border-secondary);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--bg-tertiary);
   }
@@ -93,7 +93,7 @@
   background-color: var(--color-success);
   color: var(--text-inverse);
   border-color: var(--color-success);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-success-dark);
     border-color: var(--color-success-dark);
@@ -104,7 +104,7 @@
   background-color: var(--color-danger);
   color: var(--text-inverse);
   border-color: var(--color-danger);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-danger-dark);
     border-color: var(--color-danger-dark);
@@ -115,7 +115,7 @@
   background-color: var(--color-warning);
   color: var(--text-primary);
   border-color: var(--color-warning);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-warning-dark);
     border-color: var(--color-warning-dark);
@@ -126,11 +126,11 @@
   background-color: transparent;
   color: var(--color-primary);
   border-color: transparent;
-  
+
   &:hover:not(:disabled) {
     background-color: rgba(0, 122, 204, 0.1);
   }
-  
+
   &:active:not(:disabled) {
     background-color: rgba(0, 122, 204, 0.2);
   }
@@ -140,7 +140,7 @@
   background-color: transparent;
   color: var(--color-primary);
   border-color: var(--color-primary);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-primary);
     color: var(--text-inverse);

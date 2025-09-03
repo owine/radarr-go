@@ -119,7 +119,7 @@ export const SkeletonTable: React.FC<{
         <Skeleton key={`header-${index}`} height={20} variant="rounded" />
       ))}
     </div>
-    
+
     {/* Rows */}
     {Array.from({ length: rows }, (_, rowIndex) => (
       <div key={`row-${rowIndex}`} className={styles.skeletonTableRow}>

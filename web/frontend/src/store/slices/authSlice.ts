@@ -52,11 +52,11 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.user = action.payload.user || null;
       state.lastValidated = Date.now();
-      
+
       if (action.payload.rememberMe !== undefined) {
         state.rememberMe = action.payload.rememberMe;
       }
-      
+
       const storage = state.rememberMe ? localStorage : sessionStorage;
       storage.setItem('radarr_api_key', action.payload.apiKey);
       localStorage.setItem('radarr_remember_me', state.rememberMe.toString());

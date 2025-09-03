@@ -30,18 +30,18 @@ export const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     const apiKeyError = validateApiKey(apiKey);
     if (apiKeyError) {
       setFormErrors({ apiKey: apiKeyError });
       return;
     }
-    
+
     setFormErrors({});
     dispatch(loginStart());
     dispatch(setRememberMe(rememberMeLocal));
-    
+
     // Set validation key to trigger API validation
     setValidationKey(apiKey);
   };
@@ -57,7 +57,7 @@ export const LoginPage = () => {
 
     if (statusError) {
       let errorMessage = 'Invalid API key. Please check your credentials.';
-      
+
       if ('status' in statusError) {
         switch (statusError.status) {
           case 401:
@@ -76,7 +76,7 @@ export const LoginPage = () => {
             errorMessage = 'Connection failed. Please check your network connection.';
         }
       }
-      
+
       dispatch(loginFailure(errorMessage));
       setValidationKey('');
     } else if (statusData) {
@@ -85,19 +85,19 @@ export const LoginPage = () => {
         username: statusData.authentication?.username || 'User',
         permissions: statusData.authentication?.permissions || [],
       };
-      
-      dispatch(loginSuccess({ 
-        apiKey: validationKey, 
-        user, 
-        rememberMe: rememberMeLocal 
+
+      dispatch(loginSuccess({
+        apiKey: validationKey,
+        user,
+        rememberMe: rememberMeLocal
       }));
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Login Successful',
         message: `Welcome to Radarr${user.username !== 'User' ? `, ${user.username}` : ''}!`,
       }));
-      
+
       setValidationKey('');
     }
   }, [validationKey, statusLoading, statusError, statusData, dispatch, rememberMeLocal]);
@@ -120,7 +120,7 @@ export const LoginPage = () => {
                 You can find your API key in the Radarr settings under General → Security.
               </p>
             </div>
-            
+
             <Input
               label="API Key"
               type="password"
@@ -134,7 +134,7 @@ export const LoginPage = () => {
               autoComplete="off"
               spellCheck={false}
             />
-            
+
             <div className={styles.checkboxContainer}>
               <label className={styles.checkbox}>
                 <input
@@ -148,7 +148,7 @@ export const LoginPage = () => {
                 </span>
               </label>
             </div>
-            
+
             <Button
               type="submit"
               fullWidth
@@ -157,7 +157,7 @@ export const LoginPage = () => {
             >
               {isLoading ? 'Authenticating...' : 'Sign In'}
             </Button>
-            
+
             <div className={styles.helpLinks}>
               <p className={styles.helpLink}>
                 Need help? <a href="#" onClick={(e) => {

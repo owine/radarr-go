@@ -27,8 +27,8 @@ export const DashboardPage = () => {
               <div className={styles.statusItem}>
                 <span className={styles.label}>Uptime:</span>
                 <span className={styles.value}>
-                  {systemStatus.startTime ? 
-                    new Date(systemStatus.startTime).toLocaleDateString() : 
+                  {systemStatus.startTime ?
+                    new Date(systemStatus.startTime).toLocaleDateString() :
                     'Unknown'
                   }
                 </span>

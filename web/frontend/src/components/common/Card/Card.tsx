@@ -54,7 +54,7 @@ export const Card = ({
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
       )}
-      
+
       <div className={styles.content}>
         {loading ? (
           <div>Loading...</div>
@@ -62,7 +62,7 @@ export const Card = ({
           children
         )}
       </div>
-      
+
       {footer && (
         <div className={styles.footer}>
           {footer}

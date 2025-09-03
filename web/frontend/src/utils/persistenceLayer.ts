@@ -7,40 +7,40 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   language: string;
   timezone: string;
-  
+
   // UI preferences
   sidebarCollapsed: boolean;
   compactMode: boolean;
   showPosters: boolean;
   posterSize: 'small' | 'medium' | 'large';
-  
+
   // Table preferences
   movieTableColumns: string[];
   queueTableColumns: string[];
   historyTableColumns: string[];
-  
+
   // Default values
   defaultQualityProfile: number;
   defaultRootFolder: string;
   defaultMinimumAvailability: string;
-  
+
   // Notification preferences
   enableNotifications: boolean;
   notificationDuration: number;
-  
+
   // Performance preferences
   enableAnimations: boolean;
   enableBackgroundRefresh: boolean;
   refreshInterval: number;
-  
+
   // Search preferences
   searchResultsPerPage: number;
   defaultSearchSort: string;
-  
+
   // Calendar preferences
   calendarStartDay: 0 | 1; // 0 = Sunday, 1 = Monday
   calendarDefaultView: 'month' | 'week' | 'agenda';
-  
+
   // Advanced preferences
   enableDebugMode: boolean;
   enableBetaFeatures: boolean;
@@ -73,33 +73,33 @@ const defaultPreferences: UserPreferences = {
   theme: 'system',
   language: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  
+
   sidebarCollapsed: false,
   compactMode: false,
   showPosters: true,
   posterSize: 'medium',
-  
+
   movieTableColumns: ['title', 'year', 'status', 'quality', 'size', 'added'],
   queueTableColumns: ['title', 'status', 'progress', 'size', 'eta', 'actions'],
   historyTableColumns: ['date', 'movie', 'event', 'quality', 'source'],
-  
+
   defaultQualityProfile: 1,
   defaultRootFolder: '',
   defaultMinimumAvailability: 'announced',
-  
+
   enableNotifications: true,
   notificationDuration: 5000,
-  
+
   enableAnimations: true,
   enableBackgroundRefresh: true,
   refreshInterval: 30000,
-  
+
   searchResultsPerPage: 20,
   defaultSearchSort: 'title',
-  
+
   calendarStartDay: 0,
   calendarDefaultView: 'month',
-  
+
   enableDebugMode: false,
   enableBetaFeatures: false,
   maxConcurrentDownloads: 3,
@@ -171,7 +171,7 @@ export class PersistenceLayer {
   async updatePreferences(updates: Partial<UserPreferences>) {
     this.preferences = { ...this.preferences, ...updates };
     await cacheManager.setUserPreference('preferences', this.preferences);
-    
+
     // Dispatch preference update event
     this.dispatch({ type: 'ui/setPreferences', payload: this.preferences });
   }
@@ -198,18 +198,18 @@ export class PersistenceLayer {
   async addToSearchHistory(query: string) {
     const history = [...this.appState.searchHistory];
     const existingIndex = history.indexOf(query);
-    
+
     if (existingIndex !== -1) {
       history.splice(existingIndex, 1);
     }
-    
+
     history.unshift(query);
-    
+
     // Keep only last 50 searches
     if (history.length > 50) {
       history.splice(50);
     }
-    
+
     await this.updateAppState({ searchHistory: history });
   }
 
@@ -225,18 +225,18 @@ export class PersistenceLayer {
   async addToRecentlyViewed(movieId: number) {
     const recent = [...this.appState.recentlyViewedMovies];
     const existingIndex = recent.indexOf(movieId);
-    
+
     if (existingIndex !== -1) {
       recent.splice(existingIndex, 1);
     }
-    
+
     recent.unshift(movieId);
-    
+
     // Keep only last 20 movies
     if (recent.length > 20) {
       recent.splice(20);
     }
-    
+
     await this.updateAppState({ recentlyViewedMovies: recent });
   }
 
@@ -253,7 +253,7 @@ export class PersistenceLayer {
       url,
       timestamp: Date.now(),
     };
-    
+
     bookmarks.push(bookmark);
     await this.updateAppState({ bookmarks });
   }
@@ -274,7 +274,7 @@ export class PersistenceLayer {
       presets[context] = {};
     }
     presets[context][name] = filters;
-    
+
     await this.updateAppState({ filterPresets: presets });
   }
 
@@ -339,13 +339,13 @@ export class PersistenceLayer {
   async getFormDraft(formId: string) {
     const draft = this.sessionData.formDrafts[formId];
     if (!draft) return null;
-    
+
     // Check if draft is too old (1 hour)
     if (Date.now() - draft.timestamp > 60 * 60 * 1000) {
       await this.removeFormDraft(formId);
       return null;
     }
-    
+
     return draft.data;
   }
 
@@ -420,7 +420,7 @@ export class PersistenceLayer {
   async importData(jsonData: string): Promise<void> {
     try {
       const importData = JSON.parse(jsonData);
-      
+
       // Validate data structure
       if (!importData.preferences || !importData.appState) {
         throw new Error('Invalid import data format');

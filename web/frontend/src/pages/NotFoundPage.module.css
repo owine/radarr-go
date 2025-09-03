@@ -111,33 +111,33 @@
   .container {
     padding: var(--space-6) var(--space-4);
   }
-  
+
   .content {
     grid-template-columns: 1fr;
     gap: var(--space-6);
     text-align: center;
   }
-  
+
   .errorContent {
     text-align: center;
   }
-  
+
   .errorNumber {
     font-size: 4rem;
   }
-  
+
   .errorMessage h1 {
     font-size: var(--font-size-xl);
   }
-  
+
   .actions {
     justify-content: center;
   }
-  
+
   .illustration {
     order: -1;
   }
-  
+
   .illustration svg {
     width: 150px;
     height: 150px;
@@ -148,31 +148,31 @@
   .container {
     padding: var(--space-4) var(--space-3);
   }
-  
+
   .errorNumber {
     font-size: 3rem;
   }
-  
+
   .errorMessage h1 {
     font-size: var(--font-size-lg);
   }
-  
+
   .errorMessage p {
     font-size: var(--font-size-sm);
   }
-  
+
   .suggestions {
     padding: var(--space-3);
   }
-  
+
   .actions {
     flex-direction: column;
   }
-  
+
   .actions > * {
     width: 100%;
   }
-  
+
   .illustration svg {
     width: 120px;
     height: 120px;

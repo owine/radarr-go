@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { 
-  Movie, 
-  SystemStatus, 
-  HealthCheck, 
-  QualityProfile, 
+import type {
+  Movie,
+  SystemStatus,
+  HealthCheck,
+  QualityProfile,
   RootFolder,
   MovieSearchParams,
   AddMovieRequest,
@@ -56,11 +56,11 @@ const baseQuery = fetchBaseQuery({
   baseUrl: '/api/v3/',
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.apiKey;
-    
+
     if (token) {
       headers.set('X-Api-Key', token);
     }
-    
+
     headers.set('Content-Type', 'application/json');
     return headers;
   },
@@ -70,13 +70,13 @@ export const radarrApi = createApi({
   reducerPath: 'radarrApi',
   baseQuery,
   tagTypes: [
-    'Movie', 
-    'MovieFile', 
-    'QualityProfile', 
+    'Movie',
+    'MovieFile',
+    'QualityProfile',
     'QualityDefinition',
     'CustomFormat',
-    'RootFolder', 
-    'SystemStatus', 
+    'RootFolder',
+    'SystemStatus',
     'Health',
     'Collection',
     'Indexer',
@@ -961,7 +961,7 @@ export const {
   // System hooks
   useGetSystemStatusQuery,
   useGetHealthQuery,
-  
+
   // Movie hooks
   useGetMoviesQuery,
   useGetMovieQuery,
@@ -971,50 +971,50 @@ export const {
   useSearchMoviesQuery,
   useGetPopularMoviesQuery,
   useGetTrendingMoviesQuery,
-  
+
   // Quality Profile hooks
   useGetQualityProfilesQuery,
   useGetQualityProfileQuery,
-  
+
   // Quality Definition hooks
   useGetQualityDefinitionsQuery,
   useGetQualityDefinitionQuery,
   useUpdateQualityDefinitionMutation,
-  
+
   // Custom Format hooks
   useGetCustomFormatsQuery,
   useGetCustomFormatQuery,
   useCreateCustomFormatMutation,
   useUpdateCustomFormatMutation,
   useDeleteCustomFormatMutation,
-  
+
   // Root Folder hooks
   useGetRootFoldersQuery,
-  
+
   // Movie operations hooks
   useRefreshMovieMutation,
   useSearchMovieMutation,
   useToggleMovieMonitorMutation,
   useRefreshAllMoviesMutation,
-  
+
   // Calendar hooks
   useGetCalendarQuery,
-  
+
   // History hooks
   useGetHistoryQuery,
   useGetHistoryStatsQuery,
-  
+
   // Activity hooks
   useGetActivityQuery,
   useGetRunningActivitiesQuery,
-  
+
   // Queue hooks
   useGetQueueQuery,
   useGetQueueItemQuery,
   useRemoveQueueItemMutation,
   useRemoveQueueItemsMutation,
   useGetQueueStatsQuery,
-  
+
   // Indexer hooks
   useGetIndexersQuery,
   useGetIndexerQuery,
@@ -1022,7 +1022,7 @@ export const {
   useUpdateIndexerMutation,
   useDeleteIndexerMutation,
   useTestIndexerMutation,
-  
+
   // Download Client hooks
   useGetDownloadClientsQuery,
   useGetDownloadClientQuery,
@@ -1031,7 +1031,7 @@ export const {
   useDeleteDownloadClientMutation,
   useTestDownloadClientMutation,
   useGetDownloadClientStatsQuery,
-  
+
   // Import List hooks
   useGetImportListsQuery,
   useGetImportListQuery,
@@ -1042,7 +1042,7 @@ export const {
   useSyncImportListMutation,
   useSyncAllImportListsMutation,
   useGetImportListStatsQuery,
-  
+
   // Notification hooks
   useGetNotificationsQuery,
   useGetNotificationQuery,
@@ -1051,7 +1051,7 @@ export const {
   useDeleteNotificationMutation,
   useTestNotificationMutation,
   useGetNotificationProvidersQuery,
-  
+
   // Configuration hooks
   useGetHostConfigQuery,
   useUpdateHostConfigMutation,
@@ -1060,37 +1060,37 @@ export const {
   useGetMediaManagementConfigQuery,
   useUpdateMediaManagementConfigMutation,
   useGetConfigStatsQuery,
-  
+
   // Tag hooks
   useGetTagsQuery,
   useCreateTagMutation,
   useUpdateTagMutation,
   useDeleteTagMutation,
-  
+
   // Release and Search hooks
   useGetReleasesQuery,
   useSearchMovieReleasesQuery,
   useGrabReleaseMutation,
-  
+
   // Wanted Movies hooks
   useGetMissingMoviesQuery,
   useGetCutoffUnmetMoviesQuery,
   useGetWantedStatsQuery,
-  
+
   // Parse hooks
   useParseReleaseTitleQuery,
-  
+
   // Command/Task hooks
   useGetCommandsQuery,
   useGetCommandQuery,
   useQueueCommandMutation,
   useCancelCommandMutation,
-  
+
   // System Resource hooks
   useGetSystemResourcesQuery,
   useGetDiskSpaceQuery,
   useGetPerformanceMetricsQuery,
-  
+
   // Collection hooks
   useGetCollectionsQuery,
   useGetCollectionQuery,

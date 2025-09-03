@@ -1,7 +1,7 @@
-import type { 
-  Movie, 
-  QueueItem, 
-  History, 
+import type {
+  Movie,
+  QueueItem,
+  History,
   Activity,
   WantedMovie,
   CalendarEvent,
@@ -46,7 +46,7 @@ export const transformers = {
       for (const sortFn of sortFns) {
         const aVal = sortFn(a);
         const bVal = sortFn(b);
-        
+
         if (aVal < bVal) return -1;
         if (aVal > bVal) return 1;
       }
@@ -63,7 +63,7 @@ export const transformers = {
   paginate: <T>(items: T[], page: number, pageSize: number) => {
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    
+
     return {
       items: items.slice(startIndex, endIndex),
       totalPages: Math.ceil(items.length / pageSize),
@@ -103,9 +103,9 @@ export const movieTransforms = {
 
   // Get movies requiring attention
   getMoviesNeedingAttention: (movies: Movie[]) => {
-    return movies.filter(movie => 
-      movie.monitored && 
-      !movie.hasFile && 
+    return movies.filter(movie =>
+      movie.monitored &&
+      !movie.hasFile &&
       movie.pathState !== 'static'
     );
   },
@@ -113,7 +113,7 @@ export const movieTransforms = {
   // Calculate collection statistics
   calculateMovieStats: (movies: Movie[]) => {
     const enrichedMovies = movies.map(movieTransforms.enrichMovie);
-    
+
     return {
       total: movies.length,
       downloaded: enrichedMovies.filter(m => m.isDownloaded).length,
@@ -146,7 +146,7 @@ export const movieTransforms = {
     // Text search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(movie => 
+      filtered = filtered.filter(movie =>
         movie.title.toLowerCase().includes(term) ||
         movie.originalTitle?.toLowerCase().includes(term) ||
         movie.overview?.toLowerCase().includes(term) ||
@@ -177,7 +177,7 @@ export const movieTransforms = {
     }
 
     if (filters.tags && filters.tags.length > 0) {
-      filtered = filtered.filter(movie => 
+      filtered = filtered.filter(movie =>
         filters.tags!.some(tagId => movie.tags.includes(tagId))
       );
     }
@@ -212,7 +212,7 @@ export const queueTransforms = {
   // Calculate queue statistics
   calculateQueueStats: (items: QueueItem[]) => {
     const enriched = items.map(queueTransforms.enrichQueueItem);
-    
+
     return {
       total: items.length,
       downloading: enriched.filter(i => i.isDownloading).length,
@@ -236,7 +236,7 @@ export const calendarTransforms = {
   enrichCalendarEvent: (event: CalendarEvent) => ({
     ...event,
     isPast: event.airDate ? new Date(event.airDate) < new Date() : false,
-    isToday: event.airDate ? 
+    isToday: event.airDate ?
       new Date(event.airDate).toDateString() === new Date().toDateString() : false,
     isThisWeek: event.airDate ? isWithinDays(new Date(event.airDate), 7) : false,
     isThisMonth: event.airDate ? isWithinDays(new Date(event.airDate), 30) : false,
@@ -283,7 +283,7 @@ export const historyTransforms = {
   // Calculate history statistics
   calculateHistoryStats: (records: History[]) => {
     const enriched = records.map(historyTransforms.enrichHistory);
-    
+
     return {
       total: records.length,
       successful: enriched.filter(r => r.wasSuccessful).length,
@@ -305,11 +305,11 @@ export const collectionTransforms = {
     movieCount: collection.movies?.length || 0,
     downloadedCount: collection.movies?.filter(m => m.hasFile).length || 0,
     monitoredCount: collection.movies?.filter(m => m.monitored).length || 0,
-    completionPercentage: collection.movies?.length ? 
+    completionPercentage: collection.movies?.length ?
       ((collection.movies.filter(m => m.hasFile).length / collection.movies.length) * 100) : 0,
     totalSize: collection.movies?.reduce((sum, movie) => sum + (movie.movieFile?.size || 0), 0) || 0,
     genres: Array.from(new Set(collection.movies?.flatMap(m => m.genres) || [])),
-    averageRating: collection.movies?.length ? 
+    averageRating: collection.movies?.length ?
       collection.movies.reduce((sum, m) => sum + (m.ratings?.value || 0), 0) / collection.movies.length : 0,
   }),
 };
@@ -373,7 +373,7 @@ function getEventTypeDisplay(eventType: string): string {
     'inCinemas': 'In Cinemas',
     'digitalRelease': 'Digital Release',
   };
-  
+
   return eventTypeMap[eventType] || eventType;
 }
 
@@ -392,11 +392,11 @@ function getAgeDisplay(ageInDays: number): string {
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';
-  
+
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -406,7 +406,7 @@ function getProtocolIcon(protocol: string): string {
     'usenet': '📡',
     'http': '🌐',
   };
-  
+
   return icons[protocol.toLowerCase()] || '📄';
 }
 

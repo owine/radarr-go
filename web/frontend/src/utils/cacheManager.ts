@@ -54,7 +54,7 @@ class CacheManager {
 
   get<T>(key: string, options: { decompress?: boolean } = {}): T | null {
     const item = this.cache.get(key);
-    
+
     if (!item) return null;
 
     // Check if expired
@@ -108,14 +108,14 @@ class CacheManager {
   // Clear cache items by tags
   clearByTags(tags: string[]): number {
     let deletedCount = 0;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (tags.some(tag => item.tags.includes(tag))) {
         this.cache.delete(key);
         deletedCount++;
       }
     }
-    
+
     return deletedCount;
   }
 
@@ -132,7 +132,7 @@ class CacheManager {
       } else {
         validItems++;
       }
-      
+
       totalSize += this.getItemSize(item);
     }
 
@@ -150,7 +150,7 @@ class CacheManager {
     const storageType = options.storageType || 'localStorage';
     const namespace = options.namespace || this.defaultNamespace;
     const fullKey = `${namespace}:${key}`;
-    
+
     const item: CacheItem<T> = {
       data,
       timestamp: Date.now(),
@@ -336,7 +336,7 @@ class CacheManager {
       .sort(([, a], [, b]) => a.timestamp - b.timestamp);
 
     const itemsToRemove = this.cache.size - this.maxSize + Math.floor(this.maxSize * 0.1);
-    
+
     for (let i = 0; i < itemsToRemove; i++) {
       this.cache.delete(entries[i][0]);
     }
@@ -386,13 +386,13 @@ class CacheManager {
     // Simple XOR encryption with fixed key (NOT secure)
     const key = 'radarr-go-key';
     let result = '';
-    
+
     for (let i = 0; i < str.length; i++) {
       result += String.fromCharCode(
         str.charCodeAt(i) ^ key.charCodeAt(i % key.length)
       );
     }
-    
+
     return btoa(result);
   }
 
@@ -401,13 +401,13 @@ class CacheManager {
       const decoded = atob(str);
       const key = 'radarr-go-key';
       let result = '';
-      
+
       for (let i = 0; i < decoded.length; i++) {
         result += String.fromCharCode(
           decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length)
         );
       }
-      
+
       return result;
     } catch {
       throw new Error('Failed to decrypt data');
@@ -418,18 +418,18 @@ class CacheManager {
   private async setIndexedDB(key: string, value: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('RadarrGoCache', 1);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result;
         const transaction = db.transaction(['cache'], 'readwrite');
         const store = transaction.objectStore('cache');
-        
+
         store.put({ key, value });
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       };
-      
+
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains('cache')) {
@@ -442,14 +442,14 @@ class CacheManager {
   private async getIndexedDB(key: string): Promise<string | null> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('RadarrGoCache', 1);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result;
         const transaction = db.transaction(['cache'], 'readonly');
         const store = transaction.objectStore('cache');
         const getRequest = store.get(key);
-        
+
         getRequest.onsuccess = () => {
           resolve(getRequest.result?.value || null);
         };
@@ -461,13 +461,13 @@ class CacheManager {
   private async removeIndexedDB(key: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('RadarrGoCache', 1);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result;
         const transaction = db.transaction(['cache'], 'readwrite');
         const store = transaction.objectStore('cache');
-        
+
         store.delete(key);
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
@@ -478,13 +478,13 @@ class CacheManager {
   private async clearIndexedDB(namespace: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('RadarrGoCache', 1);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const db = request.result;
         const transaction = db.transaction(['cache'], 'readwrite');
         const store = transaction.objectStore('cache');
-        
+
         const cursorRequest = store.openCursor();
         cursorRequest.onsuccess = (event) => {
           const cursor = (event.target as IDBRequest).result;
@@ -495,7 +495,7 @@ class CacheManager {
             cursor.continue();
           }
         };
-        
+
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       };
@@ -514,7 +514,7 @@ export const cacheUtils = {
       .sort()
       .map(key => `${key}:${params[key]}`)
       .join('|');
-    
+
     return sortedParams ? `${prefix}:${sortedParams}` : prefix;
   },
 
@@ -559,7 +559,7 @@ export const cacheUtils = {
     options: CacheOptions = {}
   ): Promise<T> => {
     const cached = cacheManager.get<T>(key);
-    
+
     if (cached !== null) {
       return Promise.resolve(cached);
     }

@@ -16,7 +16,7 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
     const handleOnline = () => {
       setIsOnline(true);
       setShowOfflineBanner(false);
-      
+
       dispatch(addNotification({
         type: 'success',
         title: 'Connection Restored',
@@ -28,7 +28,7 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
     const handleOffline = () => {
       setIsOnline(false);
       setShowOfflineBanner(true);
-      
+
       dispatch(addNotification({
         type: 'warning',
         title: 'Connection Lost',
@@ -106,14 +106,14 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
                 />
               </svg>
             </div>
-            
+
             <div className={styles.bannerMessage}>
               <span className={styles.bannerTitle}>You're offline</span>
               <span className={styles.bannerDescription}>
                 Check your connection and try again
               </span>
             </div>
-            
+
             <div className={styles.bannerActions}>
               <button
                 className={styles.retryButton}
@@ -122,7 +122,7 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
               >
                 Retry
               </button>
-              
+
               <button
                 className={styles.dismissButton}
                 onClick={dismissBanner}
@@ -138,7 +138,7 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
           </div>
         </div>
       )}
-      
+
       {/* Add offline indicator to app when offline but banner is dismissed */}
       {!isOnline && !showOfflineBanner && (
         <div className={styles.offlineIndicator} onClick={() => setShowOfflineBanner(true)}>
@@ -160,7 +160,7 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
           </svg>
         </div>
       )}
-      
+
       {children}
     </>
   );

@@ -57,12 +57,12 @@
   cursor: pointer;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
-  
+
   &:hover {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
   }
-  
+
   &:focus-visible {
     outline: 2px solid var(--border-focus);
     outline-offset: 2px;
@@ -107,22 +107,22 @@
   .overlay {
     padding: 0;
   }
-  
+
   .modal {
     height: 100vh;
     max-height: 100vh;
     border-radius: 0;
     max-width: 100%;
   }
-  
+
   .header {
     padding: var(--space-4);
   }
-  
+
   .content {
     padding: var(--space-4);
   }
-  
+
   .footer {
     padding: var(--space-4);
   }
