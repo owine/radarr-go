@@ -32,9 +32,13 @@ const initialState: AuthState = {
   user: null,
 };
 
-// Set initial authentication state based on stored API key
+// Set initial authentication state based on stored API key or development mode
 if (initialState.apiKey) {
   initialState.isAuthenticated = true;
+} else if (import.meta.env.DEV) {
+  // In development mode, auto-authenticate if backend doesn't require auth
+  initialState.isAuthenticated = true;
+  initialState.apiKey = 'dev-mode-bypass';
 }
 
 const authSlice = createSlice({
