@@ -88,19 +88,20 @@ install-frontend:
 	fi
 
 # Build frontend for production
-build-frontend:
+build-frontend: install-frontend
 	@echo "Building frontend..."
 	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
 		cd $(FRONTEND_DIR) && $(NODE_CMD) run build; \
-		echo "Copying frontend build to static directory..."; \
-		mkdir -p $(STATIC_DIR); \
-		cp -r $(FRONTEND_BUILD_DIR)/* $(STATIC_DIR)/; \
 	else \
 		echo "Frontend not yet implemented. Creating placeholder static files..."; \
 		mkdir -p $(STATIC_DIR); \
 		echo "<!DOCTYPE html><html><head><title>Radarr Go</title></head><body><h1>Radarr Go - Frontend Coming Soon</h1><p>The React frontend will be available in Phase 2.</p></body></html>" > $(STATIC_DIR)/index.html; \
 		echo "Frontend placeholder created in $(STATIC_DIR)/"; \
+		exit 0; \
 	fi
+	@echo "Copying frontend build to static directory..."
+	@mkdir -p $(STATIC_DIR)
+	@cp -r $(FRONTEND_BUILD_DIR)/* $(STATIC_DIR)/
 
 # Start frontend development server
 dev-frontend:
