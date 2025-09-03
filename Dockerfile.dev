@@ -8,7 +8,9 @@ RUN apk add --no-cache \
     bash \
     make \
     gcc \
+    g++ \
     musl-dev \
+    binutils \
     ca-certificates \
     tzdata
 
@@ -16,10 +18,9 @@ RUN apk add --no-cache \
 ENV TZ=UTC
 
 # Install air for hot reload
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/air-verse/air@latest
 
 # Install other development tools
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Create app directory

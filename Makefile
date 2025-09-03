@@ -70,7 +70,7 @@ run: build
 	./$(BINARY_NAME)
 
 # Run with hot reload using air (install with: go install github.com/cosmtrek/air@latest)
-dev:
+dev-air:
 	air
 
 # Frontend Development Commands
@@ -103,8 +103,8 @@ build-frontend: install-frontend
 	@mkdir -p $(STATIC_DIR)
 	@cp -r $(FRONTEND_BUILD_DIR)/* $(STATIC_DIR)/
 
-# Start frontend development server
-dev-frontend:
+# Start frontend development server (legacy - use dev-frontend below)
+dev-frontend-legacy:
 	@echo "Starting frontend development server..."
 	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
 		cd $(FRONTEND_DIR) && $(NODE_CMD) run dev; \
@@ -128,30 +128,64 @@ setup-frontend:
 	mkdir -p $(STATIC_DIR)
 	@echo "Frontend structure created. Ready for React implementation in Phase 2."
 
-# Full Development Environment
+# Development Environment Commands (Consolidated)
 # ===========================================
 
-# Start full development environment (backend + frontend + databases)
+# Quick development with defaults (uses docker compose.override.yml automatically)
+dev:
+	@echo "Starting basic development environment..."
+	@echo "Backend with hot reload + PostgreSQL + Admin tools"
+	docker compose up --build
+
+# Full development environment with all services
 dev-full:
 	@echo "Starting full development environment..."
-	@echo "This will start all services in development mode"
-	docker-compose -f docker-compose.dev.yml up --build
+	@echo "Backend + PostgreSQL + MariaDB + Redis + Monitoring + Frontend"
+	docker compose -f docker compose.yml -f docker compose.dev.yml up --profile dev --build
 
-# Test Database Management
+# Development with specific database
+dev-postgres:
+	@echo "Starting development with PostgreSQL only..."
+	docker compose up radarr-go postgres adminer --build
+
+dev-mariadb:
+	@echo "Starting development with MariaDB..."
+	RADARR_DATABASE_TYPE=mariadb docker compose up radarr-go mariadb adminer --profile mariadb --build
+
+# Development with monitoring stack
+dev-monitoring:
+	@echo "Starting development with monitoring..."
+	docker compose up --profile admin --profile monitoring --build
+
+# Frontend development
+dev-frontend:
+	@echo "Starting frontend development..."
+	docker compose up --profile frontend --build
+
+# Test Environment Commands (Consolidated)
+# ===========================================
+
+# Start test databases
 test-db-up:
-	docker-compose -f docker-compose.test.yml up -d postgres-test mariadb-test
+	@echo "Starting test databases..."
+	docker compose up --profile test -d postgres-test mariadb-test
 	@echo "Waiting for test databases to be ready..."
 	@sleep 10
 	@echo "Test databases should be ready!"
 
+# Alternative: Use dedicated test override
+test-env-up:
+	@echo "Starting complete test environment..."
+	docker compose -f docker compose.yml -f docker compose.test.yml.new up --profile test -d
+
 test-db-down:
-	docker-compose -f docker-compose.test.yml down -v
+	docker compose down postgres-test mariadb-test -v
 
 test-db-logs:
-	docker-compose -f docker-compose.test.yml logs -f
+	docker compose logs -f postgres-test mariadb-test
 
 test-db-clean:
-	docker-compose -f docker-compose.test.yml down -v --remove-orphans
+	docker compose down --remove-orphans -v
 	docker volume prune -f
 
 # Run all tests using the comprehensive test runner
@@ -182,8 +216,8 @@ test-mariadb:
 test-integration:
 	./scripts/test-runner.sh --mode integration
 
-# Run unit tests only (no database required)
-test-unit:
+# Run unit tests only (no database required) - legacy
+test-unit-legacy:
 	./scripts/test-runner.sh --mode unit
 
 # Run tests in CI mode (parallel, with coverage)
@@ -207,7 +241,7 @@ test-bench-legacy: test-db-up
 
 # Run tests in Docker container (full isolation)
 test-docker:
-	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit test-runner
+	docker compose -f docker compose.test.yml up --build --abort-on-container-exit test-runner
 
 # Run tests without database (unit tests only)
 test-unit:
@@ -236,21 +270,62 @@ fmt:
 lint:
 	golangci-lint run
 
+# Production Environment Commands
+# ===========================================
+
+# Production deployment
+prod-up:
+	@echo "Starting production environment..."
+	docker compose -f docker compose.yml -f docker compose.prod.yml.new up -d
+	@echo "Production services started. Check logs with: make prod-logs"
+
+prod-down:
+	docker compose -f docker compose.yml -f docker compose.prod.yml.new down
+
+prod-logs:
+	docker compose -f docker compose.yml -f docker compose.prod.yml.new logs -f
+
+prod-status:
+	docker compose -f docker compose.yml -f docker compose.prod.yml.new ps
+
+# Docker Commands (Legacy/Simple)
+# ===========================================
+
 # Build Docker image
 docker-build:
 	docker build -t radarr-go .
 
 # Run with Docker Compose
 docker-run:
-	docker-compose up -d
+	docker compose up -d
 
 # Stop Docker Compose
 docker-stop:
-	docker-compose down
+	docker compose down
 
 # View Docker logs
 docker-logs:
-	docker-compose logs -f radarr-go
+	docker compose logs -f radarr-go
+
+# Docker Compose Management
+# ===========================================
+
+# Clean up all containers and volumes
+docker-clean:
+	@echo "Cleaning up all Docker containers and volumes..."
+	docker compose down --remove-orphans -v
+	docker compose -f docker compose.dev.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker compose -f docker compose.test.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker compose -f docker compose.prod.yml.new down --remove-orphans -v 2>/dev/null || true
+	docker system prune -f
+
+# Show all running services
+docker-ps:
+	@echo "=== Main Services ==="
+	docker compose ps
+	@echo ""
+	@echo "=== All Docker Containers ==="
+	docker ps -a
 
 # Database migrations
 migrate-up:
@@ -319,4 +394,4 @@ check-env:
 	@which node > /dev/null && echo "Node.js: ✓ Installed ($(shell node --version))" || echo "Node.js: ✗ Not installed (required for frontend)"
 	@which npm > /dev/null && echo "npm: ✓ Installed ($(shell npm --version))" || echo "npm: ✗ Not installed (required for frontend)"
 	@which docker > /dev/null && echo "Docker: ✓ Installed" || echo "Docker: ✗ Not installed (required for development databases)"
-	@which docker-compose > /dev/null && echo "Docker Compose: ✓ Installed" || echo "Docker Compose: ✗ Not installed (required for development databases)"
+	@which docker compose > /dev/null && echo "Docker Compose: ✓ Installed" || echo "Docker Compose: ✗ Not installed (required for development databases)"
