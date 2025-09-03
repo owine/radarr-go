@@ -1,0 +1,25 @@
+server:
+  port: 7878
+  host: "0.0.0.0"
+
+database:
+  type: "postgres"
+  host: "localhost"
+  port: 5432
+  username: "radarr_dev"
+  password: "dev_password"
+  database: "radarr_dev"
+  sslmode: "disable"
+
+log:
+  level: "info"
+  format: "text"
+
+auth:
+  method: "api-key"
+  api_key: "test-api-key-12345"
+
+storage:
+  data_dir: "./test-data"
+  config_dir: "./test-data/config"
+  logs_dir: "./test-data/logs"
