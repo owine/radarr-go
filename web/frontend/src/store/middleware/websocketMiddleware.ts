@@ -1,4 +1,5 @@
-import { Middleware, isAnyOf } from '@reduxjs/toolkit';
+import type { Middleware } from '@reduxjs/toolkit';
+import { isAnyOf } from '@reduxjs/toolkit';
 import { radarrApi } from '../api/radarrApi';
 import type { RootState } from '../index';
 
