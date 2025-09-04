@@ -12,7 +12,7 @@ env:
   # renovate: datasource=golang-version depName=golang
   NODE_VERSION: '20'
   # renovate: datasource=node-version depName=node
-  POSTGRES_VERSION: '17'
+  POSTGRES_VERSION: '18'
   # renovate: datasource=docker depName=postgres versioning=docker
   MARIADB_VERSION: '12.1'
   # renovate: datasource=docker depName=mariadb versioning=docker
