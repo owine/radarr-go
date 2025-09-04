@@ -200,15 +200,20 @@ jobs:
 
         # Build all platforms in parallel (much faster than matrix strategy)
         # Linux builds
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-linux-amd64" ./cmd/radarr &
-        GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-linux-arm64" ./cmd/radarr &
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" -o "dist/radarr-linux-amd64" ./cmd/radarr &
+        GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" -o "dist/radarr-linux-arm64" ./cmd/radarr &
 
         # macOS builds (cross-compile instead of expensive native runners)
-        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-darwin-amd64" ./cmd/radarr &
-        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-darwin-arm64" ./cmd/radarr &
+        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" -o "dist/radarr-darwin-amd64" ./cmd/radarr &
+        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" -o "dist/radarr-darwin-arm64" ./cmd/radarr &
 
         # Windows builds (cross-compile instead of expensive Windows runners)
-        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-windows-amd64.exe" ./cmd/radarr &
+        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} \
+          -ldflags="${LDFLAGS}" -o "dist/radarr-windows-amd64.exe" ./cmd/radarr &
 
         # FreeBSD builds
         GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build ${{ env.BUILD_FLAGS }} -ldflags="${LDFLAGS}" -o "dist/radarr-freebsd-amd64" ./cmd/radarr &
