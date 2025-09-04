@@ -67,10 +67,6 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest &
           wait
 
-          # Install system packages for linting  
-          sudo apt-get update
-          sudo apt-get install -y yamllint
-
           # Install comprehensive linting tools
           make setup-lint-tools
 
