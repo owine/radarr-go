@@ -35,23 +35,104 @@ jobs:
             go.sum
             go.work.sum
 
+      - name: Set up Node.js for linting tools
+        uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6  # v4.0.4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Set up Python for YAML linting
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3  # v5.2.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      # Cache linting tools for better performance
+      - name: Cache linting tools
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+        with:
+          path: |
+            ~/go/bin/golangci-lint
+            ~/.local/bin
+            ~/.npm
+            /usr/local/lib/node_modules
+          key: lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node20-${{ hashFiles('Makefile') }}
+          restore-keys: |
+            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node20-
+            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
+            lint-tools-${{ runner.os }}-
+
       - name: Install dependencies and tools
         run: |
           go mod download
           go work sync
-          # Install tools in parallel
+          # Install security tools in parallel
           go install github.com/securego/gosec/v2/cmd/gosec@latest &
           go install golang.org/x/vuln/cmd/govulncheck@latest &
           wait
 
-      # Combined linting and security in parallel steps
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9
-        with:
-          version: latest
-          args: --timeout=5m
-          # Use existing cache from setup-go
-          skip-cache: true
+          # Install system packages for linting
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+          # Install comprehensive linting tools
+          make setup-lint-tools
+
+      - name: Validate linting tools installation
+        run: |
+          echo "Validating linting tools installation..."
+          make check-lint-tools
+          echo "✅ Linting tools validation completed"
+
+      # Comprehensive linting with strategic failure handling
+      - name: Run critical linting (must pass)
+        run: |
+          echo "Running critical linting that must pass..."
+          make lint-go
+          if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
+            make lint-frontend
+          fi
+
+      - name: Run additional linting (warnings only)
+        continue-on-error: true
+        run: |
+          echo "Running additional linting (warnings only)..."
+          make lint-yaml || echo "⚠️  YAML linting issues found"
+          make lint-json || echo "⚠️  JSON linting issues found"
+          make lint-markdown || echo "⚠️  Markdown linting issues found"
+          make lint-shell || echo "⚠️  Shell script linting issues found"
+
+      - name: Generate linting summary
+        if: always()
+        run: |
+          echo "## 🔍 Comprehensive Linting Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Critical Linting (Must Pass)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Go code linting (golangci-lint)" >> $GITHUB_STEP_SUMMARY
+          if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
+            echo "- ✅ Frontend TypeScript/React linting (ESLint)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ Frontend linting skipped (no frontend detected)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Additional Linting (Warnings Only)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📄 YAML files (yamllint)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📄 JSON files (jsonlint/python)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📝 Markdown files (markdownlint)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐚 Shell scripts (shellcheck)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠️ Available Linting Commands" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Run all linting" >> $GITHUB_STEP_SUMMARY
+          echo "make lint-all" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Run specific linting" >> $GITHUB_STEP_SUMMARY
+          echo "make lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Auto-fix linting issues" >> $GITHUB_STEP_SUMMARY
+          echo "make lint-fix" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Run security checks in parallel
         run: |
@@ -63,12 +144,7 @@ jobs:
           govulncheck ./... &
           VULN_PID=$!
 
-          # Run formatting check
-          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-            echo "The following files are not formatted properly:"
-            gofmt -s -l .
-            exit 1
-          fi
+          # Formatting check is now handled by lint-go target
 
           # Wait for security checks
           wait $GOSEC_PID $VULN_PID

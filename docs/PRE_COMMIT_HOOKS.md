@@ -15,6 +15,7 @@ Our pre-commit hooks are organized into categories and provide comprehensive lin
 ## Installation and Setup
 
 ### Automatic Setup
+
 ```bash
 # Complete development environment setup (includes pre-commit)
 ./scripts/dev-setup.sh
@@ -25,6 +26,7 @@ pre-commit install
 ```
 
 ### Manual Setup
+
 ```bash
 # Install pre-commit hooks
 pre-commit install --install-hooks
@@ -38,24 +40,28 @@ pre-commit autoupdate
 ### 1. Go Development Hooks
 
 #### Go Format (`go-fmt`)
+
 - **Purpose**: Format Go code with `gofmt -s`
 - **Auto-fix**: Yes
 - **Files**: `*.go`
 - **Command**: `gofmt -s`
 
 #### Go Imports (`go-imports`)  
+
 - **Purpose**: Organize Go imports with `goimports`
 - **Auto-fix**: Yes
 - **Files**: `*.go`
 - **Command**: `goimports`
 
 #### Go Mod Tidy (`go-mod-tidy`)
+
 - **Purpose**: Tidy and verify Go modules
 - **Auto-fix**: Yes
 - **Files**: `go.mod`, `go.sum`
 - **Command**: `go mod tidy`
 
 #### Go Lint (`golangci-lint`)
+
 - **Purpose**: Comprehensive Go linting
 - **Auto-fix**: Partial
 - **Files**: `*.go`
@@ -63,6 +69,7 @@ pre-commit autoupdate
 - **Command**: `golangci-lint run --config=.golangci.yml`
 
 #### Go Unit Tests (`go-unit-tests`)
+
 - **Purpose**: Run Go unit tests
 - **Stage**: Manual only (use `--hook-stage manual`)
 - **Timeout**: 2 minutes
@@ -71,6 +78,7 @@ pre-commit autoupdate
 ### 2. Frontend Development Hooks
 
 #### Frontend ESLint (`eslint-frontend`)
+
 - **Purpose**: Lint TypeScript/React files with ESLint
 - **Auto-fix**: Yes
 - **Files**: `web/frontend/src/**/*.{ts,tsx}`
@@ -78,6 +86,7 @@ pre-commit autoupdate
 - **Command**: `cd web/frontend && npx eslint --fix`
 
 #### TypeScript Check (`typescript-check`)
+
 - **Purpose**: Check TypeScript compilation without emitting files
 - **Auto-fix**: No
 - **Files**: `web/frontend/src/**/*.{ts,tsx}`
@@ -87,6 +96,7 @@ pre-commit autoupdate
 ### 3. Configuration & Documentation Hooks
 
 #### YAML Lint (`yamllint`)
+
 - **Purpose**: Validate and lint YAML files
 - **Auto-fix**: No
 - **Files**: `*.yml`, `*.yaml`
@@ -95,6 +105,7 @@ pre-commit autoupdate
 - **Command**: `yamllint -c .yamllint.yml`
 
 #### JSON Syntax Check (`check-json`)
+
 - **Purpose**: Validate JSON file syntax
 - **Auto-fix**: No
 - **Files**: `*.json`
@@ -102,6 +113,7 @@ pre-commit autoupdate
 - **Command**: `python -m json.tool`
 
 #### Markdown Lint (`markdownlint`)
+
 - **Purpose**: Lint Markdown files for consistency
 - **Auto-fix**: Yes (some rules)
 - **Files**: `*.md`
@@ -112,6 +124,7 @@ pre-commit autoupdate
 ### 4. Shell Script Hooks
 
 #### Shell Script Lint (`shellcheck`)
+
 - **Purpose**: Lint shell scripts with ShellCheck
 - **Auto-fix**: No (provides suggestions)
 - **Files**: `*.sh`, `*.bash`
@@ -122,28 +135,33 @@ pre-commit autoupdate
 ### 5. General File Hooks
 
 #### Trim Trailing Whitespace (`trailing-whitespace`)
+
 - **Purpose**: Remove trailing whitespace from files
 - **Auto-fix**: Yes
 - **Special**: Preserves Markdown line breaks
 - **Excludes**: Binary files, patches, diff files
 
 #### Fix End of Files (`end-of-file-fixer`)
+
 - **Purpose**: Ensure files end with a newline
 - **Auto-fix**: Yes
 - **Excludes**: Binary files (images, fonts, etc.)
 
 #### Fix Line Endings (`mixed-line-ending`)
+
 - **Purpose**: Normalize line endings to LF
 - **Auto-fix**: Yes
 - **Args**: `--fix=lf`
 - **Excludes**: Windows batch files (`.bat`, `.cmd`)
 
 #### Check Large Files (`check-added-large-files`)
+
 - **Purpose**: Prevent large files from being committed
 - **Limit**: 1000KB
 - **Auto-fix**: No (manual review required)
 
 #### Security Checks
+
 - **Check Merge Conflicts**: Detect merge conflict markers
 - **Check Case Conflicts**: Detect case conflicts in filenames
 - **Check Symlinks**: Validate symbolic links
@@ -153,6 +171,7 @@ pre-commit autoupdate
 ## Usage Examples
 
 ### Run All Hooks
+
 ```bash
 # Run on staged files (normal commit behavior)
 pre-commit run
@@ -166,6 +185,7 @@ pre-commit run eslint-frontend
 ```
 
 ### Run Specific Hook Categories
+
 ```bash
 # Go linting only
 pre-commit run go-fmt go-imports golangci-lint
@@ -181,6 +201,7 @@ pre-commit run trailing-whitespace end-of-file-fixer mixed-line-ending
 ```
 
 ### Skip Hooks
+
 ```bash
 # Skip specific hooks
 SKIP=go-unit-tests git commit -m "Quick fix"
@@ -193,6 +214,7 @@ git commit -m "Update docs" -- README.md
 ```
 
 ### Manual Testing Mode
+
 ```bash
 # Run tests manually (not on every commit)
 pre-commit run --hook-stage manual go-unit-tests
@@ -201,20 +223,26 @@ pre-commit run --hook-stage manual go-unit-tests
 ## Performance Optimization
 
 ### Hook Execution Order
+
 Hooks are organized for optimal performance:
+
 1. **Fast formatting** (go-fmt, trailing-whitespace) run first
 2. **Medium linting** (golangci-lint, eslint) run second  
 3. **Slow operations** (tests) run last or manually only
 
 ### File Filtering
+
 Each hook only runs on relevant file types:
+
 - Go hooks: `*.go` files only
 - Frontend hooks: `web/frontend/src/**/*.{ts,tsx}` only
 - YAML hooks: `*.yml`, `*.yaml` files only
 - etc.
 
 ### Exclusion Patterns
+
 Strategic exclusions prevent unnecessary processing:
+
 - `node_modules/` directories
 - `radarr-source/` legacy code
 - Build artifacts (`dist/`, `build/`)
@@ -223,11 +251,13 @@ Strategic exclusions prevent unnecessary processing:
 ## Configuration Files
 
 ### Pre-commit Config
+
 - **File**: `.pre-commit-config.yaml`
 - **Purpose**: Defines all hooks and their configuration
 - **Updates**: Use `pre-commit autoupdate` to update hook versions
 
 ### Tool-Specific Configs
+
 - **Go**: `.golangci.yml` - golangci-lint configuration
 - **YAML**: `.yamllint.yml` - yamllint rules
 - **Markdown**: `.markdownlint.json` - markdownlint rules
@@ -255,6 +285,7 @@ make fmt               # Go formatting (gofmt + goimports)
 ### Common Issues
 
 #### Hook Installation Failed
+
 ```bash
 # Clear cache and reinstall
 pre-commit clean
@@ -262,12 +293,14 @@ pre-commit install --install-hooks
 ```
 
 #### golangci-lint Version Issues  
+
 ```bash
 # Update to stable version
 pre-commit autoupdate --repo https://github.com/golangci/golangci-lint
 ```
 
 #### Frontend Hooks Not Running
+
 ```bash
 # Ensure Node.js dependencies are installed
 cd web/frontend
@@ -275,6 +308,7 @@ npm install
 ```
 
 #### YAML/Markdown Linting Errors
+
 ```bash  
 # Install Python linting tools
 pip install yamllint
@@ -284,6 +318,7 @@ npm install -g markdownlint-cli
 ### Performance Issues
 
 #### Slow Hook Execution
+
 ```bash
 # Run hooks in parallel (default behavior)
 # Or skip slow hooks temporarily
@@ -291,6 +326,7 @@ SKIP=go-unit-tests,typescript-check git commit -m "Fast commit"
 ```
 
 #### Large Repository Issues
+
 ```bash
 # Run hooks only on changed files
 pre-commit run --files file1.go file2.ts
@@ -324,6 +360,7 @@ pre-commit run --files file1.go file2.ts
 ## Hook Maintenance
 
 ### Regular Updates
+
 ```bash
 # Update all hooks to latest versions
 pre-commit autoupdate
@@ -337,12 +374,14 @@ git commit -m "chore: update pre-commit hooks"
 ```
 
 ### Adding New Hooks
+
 1. **Add to `.pre-commit-config.yaml`**
 2. **Update this documentation**  
 3. **Test with `pre-commit run --all-files`**
 4. **Add corresponding Makefile target if needed**
 
 ### Hook Configuration Changes
+
 1. **Update tool config files** (`.golangci.yml`, `.yamllint.yml`, etc.)
 2. **Test changes** with `pre-commit run --all-files`
 3. **Document changes** in commit messages and this file
