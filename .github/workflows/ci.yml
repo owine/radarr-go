@@ -14,7 +14,7 @@ env:
   # renovate: datasource=node-version depName=node
   POSTGRES_VERSION: '17'
   # renovate: datasource=docker depName=postgres versioning=docker
-  MARIADB_VERSION: '12.1'
+  MARIADB_VERSION: '12.2'
   # renovate: datasource=docker depName=mariadb versioning=docker
   ALPINE_VERSION: '3.22'
   # renovate: datasource=docker depName=alpine versioning=docker
