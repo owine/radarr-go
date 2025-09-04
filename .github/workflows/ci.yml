@@ -9,6 +9,9 @@ on:
 
 env:
   GO_VERSION: '1.25.0'
+  # renovate: datasource=golang-version depName=golang
+  NODE_VERSION: '20'
+  # renovate: datasource=node-version depName=node
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -38,7 +41,7 @@ jobs:
       - name: Set up Node.js for linting tools
         uses: actions/setup-node@v5.0.0
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 

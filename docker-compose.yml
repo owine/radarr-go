@@ -3,6 +3,10 @@
 # This file contains core services that are shared across all environments
 # Use profiles to activate optional services and override files for environment-specific settings
 
+# Version variables for Renovate
+# DOCKER_NODE_VERSION: 22
+# renovate: datasource=node-version depName=node
+
 services:
   # Main Radarr Go Application
   radarr-go:
@@ -118,7 +122,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:22-alpine
+    image: node:${DOCKER_NODE_VERSION:-22}-alpine
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
