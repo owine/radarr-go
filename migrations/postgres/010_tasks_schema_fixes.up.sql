@@ -26,10 +26,12 @@ BEGIN
         -- Convert TEXT to JSON, handling invalid JSON
         UPDATE tasks SET body = '{}' WHERE body IS NULL OR body = '';
         ALTER TABLE tasks ALTER COLUMN body TYPE JSON USING body::JSON;
+        -- Set default value after conversion to JSON
+        ALTER TABLE tasks ALTER COLUMN body SET DEFAULT '{}'::JSON;
+    ELSE
+        -- Column is already JSON type, just ensure default is correct
+        ALTER TABLE tasks ALTER COLUMN body SET DEFAULT '{}'::JSON;
     END IF;
-
-    -- Ensure body has proper default
-    ALTER TABLE tasks ALTER COLUMN body SET DEFAULT '{}'::JSON;
 END $$;
 
 -- Add indexes for new columns if they don't exist
