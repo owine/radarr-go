@@ -43,48 +43,14 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
 
-      # Optimized caching strategy for linting tools (performance-focused)
-      - name: Cache Go linting tools
+      # Minimal explicit caching for custom binaries only (leverages setup action caching)
+      - name: Cache Go binary tools
         uses: actions/cache@v4.2.4
         with:
-          path: |
-            ~/go/bin/golangci-lint
-            ~/go/pkg/mod
-          key: go-lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-${{ hashFiles('go.sum', '.golangci.yml') }}
+          path: ~/go/bin/golangci-lint
+          key: go-binary-tools-${{ runner.os }}-${{ hashFiles('.golangci.yml') }}
           restore-keys: |
-            go-lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
-            go-lint-tools-${{ runner.os }}-
-
-      - name: Cache Node.js linting tools
-        uses: actions/cache@v4.2.4
-        with:
-          path: |
-            ~/.npm
-            /usr/local/lib/node_modules/markdownlint-cli
-          key: node-lint-tools-${{ runner.os }}-node20-${{ hashFiles('package*.json', '.markdownlint.json') }}
-          restore-keys: |
-            node-lint-tools-${{ runner.os }}-node20-
-            node-lint-tools-${{ runner.os }}-
-
-      - name: Cache Python linting tools
-        uses: actions/cache@v4.2.4
-        with:
-          path: |
-            ~/.local/bin
-            ~/.cache/pip
-          key: python-lint-tools-${{ runner.os }}-${{ hashFiles('.yamllint.yml') }}
-          restore-keys: |
-            python-lint-tools-${{ runner.os }}-
-
-      - name: Cache system linting tools
-        uses: actions/cache@v4.2.4
-        with:
-          path: |
-            /usr/bin/shellcheck
-            /usr/local/bin/shellcheck
-          key: system-lint-tools-${{ runner.os }}-shellcheck
-          restore-keys: |
-            system-lint-tools-${{ runner.os }}-
+            go-binary-tools-${{ runner.os }}-
 
       - name: Install dependencies and tools (optimized)
         run: |
