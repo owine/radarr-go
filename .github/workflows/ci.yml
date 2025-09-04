@@ -50,7 +50,7 @@ jobs:
 
       # Cache linting tools for better performance
       - name: Cache linting tools
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4.2.4
         with:
           path: |
             ~/go/bin/golangci-lint
