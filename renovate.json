@@ -52,7 +52,7 @@
       "matchManagers": [
         "github-actions"
       ],
-      "groupName": "GitHub Actions",
+      "groupName": "GHA",
       "automerge": true,
       "addLabels": [
         "github-actions"
