@@ -544,14 +544,18 @@ jobs:
             echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "# Specific commit build" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> \
+              $GITHUB_STEP_SUMMARY
+            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> \
+              $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "**Pull Request Build:**" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> \
+              $GITHUB_STEP_SUMMARY
+            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> \
+              $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           else
             echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY

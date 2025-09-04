@@ -1,3 +1,4 @@
+---
 name: Bug Report
 description: File a bug report to help us improve
 title: "[Bug]: "
@@ -72,14 +73,17 @@ body:
     id: logs
     attributes:
       label: Relevant Log Output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      description: |
+        Please copy and paste any relevant log output. This will be automatically
+        formatted into code, so no need for backticks.
       render: shell
 
   - type: textarea
     id: config
     attributes:
       label: Configuration
-      description: Please share your configuration (remove any sensitive information)
+      description: |
+        Please share your configuration (remove any sensitive information)
       render: yaml
 
   - type: checkboxes
