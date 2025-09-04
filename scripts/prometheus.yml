@@ -1,11 +1,12 @@
+---
 # Prometheus configuration for development environment
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+# - "first_rules.yml"
+# - "second_rules.yml"
 
 scrape_configs:
   # Prometheus itself
@@ -40,4 +41,4 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          # - alertmanager:9093
+            # - alertmanager:9093

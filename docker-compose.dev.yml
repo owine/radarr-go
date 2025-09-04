@@ -1,3 +1,4 @@
+---
 # docker-compose.dev.yml - Full Development Environment
 # Complete development stack with all services enabled
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --profile dev

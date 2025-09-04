@@ -1,3 +1,4 @@
+---
 # Radarr Go - Base Docker Compose Configuration
 # This file contains core services that are shared across all environments
 # Use profiles to activate optional services and override files for environment-specific settings

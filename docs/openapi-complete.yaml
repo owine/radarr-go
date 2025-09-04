@@ -1,8 +1,10 @@
+---
 openapi: 3.0.3
 info:
   title: Radarr Go API
   description: |
-    Radarr Go API - A complete rewrite of Radarr movie collection manager from C#/.NET to Go, maintaining 100% compatibility with Radarr v3 API.
+    Radarr Go API - A complete rewrite of Radarr movie collection manager from C#/.NET to Go,
+    maintaining 100% compatibility with Radarr v3 API.
 
     ## Features
 
