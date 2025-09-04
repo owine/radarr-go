@@ -58,6 +58,12 @@ jobs:
           go mod download
           go work sync
 
+          # Install frontend dependencies if frontend exists (required for ESLint)
+          if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
+            echo "Installing frontend dependencies for ESLint..."
+            cd web/frontend && npm ci --only=dev && cd ../..
+          fi
+
           # Install security tools in parallel (background)
           echo "Installing security tools in parallel..."
           go install github.com/securego/gosec/v2/cmd/gosec@latest &
