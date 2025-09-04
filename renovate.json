@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices"
+    "config:best-practices",
+    "customManagers:githubActionsVersions"
   ],
   "schedule": [
     "at any time"
@@ -14,20 +15,6 @@
   "postUpdateOptions": [
     "gomodTidy",
     "gomodUpdateImportPaths"
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^\\.github/workflows/.+\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "GO_VERSION:\\s*['\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\"]?"
-      ],
-      "depNameTemplate": "golang",
-      "datasourceTemplate": "golang-version",
-      "versioningTemplate": "semver"
-    }
   ],
   "packageRules": [
     {
@@ -60,42 +47,6 @@
         "go"
       ],
       "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Go version patch updates in GitHub Actions - auto-merge",
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchDepNames": [
-        "golang"
-      ],
-      "matchUpdateTypes": [
-        "patch"
-      ],
-      "automerge": true,
-      "addLabels": [
-        "go-version"
-      ],
-      "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Go version minor/major updates in GitHub Actions - manual review",
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchDepNames": [
-        "golang"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "major"
-      ],
-      "automerge": false,
-      "addLabels": [
-        "go-version",
-        "manual-review"
-      ],
-      "minimumReleaseAge": "7 days"
     },
     {
       "description": "GitHub Actions - group all updates with SHA pinning",
