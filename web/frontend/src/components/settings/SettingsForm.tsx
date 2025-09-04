@@ -130,4 +130,3 @@ export function SettingsForm<T extends Record<string, unknown>>({
     </form>
   );
 }
-

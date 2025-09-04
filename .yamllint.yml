@@ -8,22 +8,22 @@ rules:
   line-length:
     max: 120
     level: warning
-  
+
   # Allow indentation variations for Docker Compose and other configurations
   indentation:
     spaces: 2
     indent-sequences: consistent
-  
+
   # Allow comments to start at any position
   comments:
     min-spaces-from-content: 1
-  
+
   # Allow duplicate keys (common in Docker Compose overrides)
   key-duplicates: disable
-  
+
   # Be more lenient with trailing spaces
   trailing-spaces: disable
-  
+
   # Allow truthy values like 'on', 'off', 'yes', 'no'
   truthy:
     allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']

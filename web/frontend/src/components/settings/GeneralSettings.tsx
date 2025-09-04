@@ -260,4 +260,3 @@ export const GeneralSettings: React.FC = () => {
     </SettingsForm>
   );
 };
-

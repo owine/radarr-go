@@ -248,4 +248,3 @@ export const MediaManagementSettings: React.FC = () => {
     </SettingsForm>
   );
 };
-
