@@ -1,0 +1,156 @@
+.settingsSection {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-lg);
+  background-color: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.header {
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  transition: all var(--transition-fast);
+}
+
+.header.collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+
+.header.collapsible:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.header.collapsible:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.header.collapsed {
+  border-bottom: none;
+}
+
+.headerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.titleContainer {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1) 0;
+  line-height: 1.4;
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.badge {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+}
+
+.expandIcon {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+  color: var(--text-tertiary);
+}
+
+.chevron {
+  transition: transform var(--transition-fast);
+}
+
+.chevronExpanded {
+  transform: rotate(180deg);
+}
+
+.content {
+  padding: var(--space-5);
+}
+
+.collapsibleContent {
+  animation: expandContent 0.2s ease-out;
+}
+
+/* Content spacing */
+.content > * + * {
+  margin-top: var(--space-4);
+}
+
+/* Animations */
+@keyframes expandContent {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .content {
+    padding: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--font-size-base);
+  }
+
+  .description {
+    font-size: var(--font-size-sm);
+  }
+
+  .headerContent {
+    gap: var(--space-2);
+  }
+
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: var(--space-3);
+  }
+
+  .content {
+    padding: var(--space-3);
+  }
+
+  .headerContent {
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    margin-left: 0;
+    margin-top: var(--space-1);
+  }
+}

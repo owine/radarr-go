@@ -20,6 +20,7 @@ const CalendarPage = lazy(() => import('../pages/CalendarPage').then(module => (
 const QueuePage = lazy(() => import('../pages/QueuePage').then(module => ({ default: module.QueuePage || (() => <div>Queue Page (Coming Soon)</div>) })));
 const HistoryPage = lazy(() => import('../pages/HistoryPage').then(module => ({ default: module.HistoryPage || (() => <div>History Page (Coming Soon)</div>) })));
 const WantedPage = lazy(() => import('../pages/WantedPage').then(module => ({ default: module.WantedPage || (() => <div>Wanted Page (Coming Soon)</div>) })));
+const SettingsPage = lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
 
 // Loading components for different page types
 const DashboardLoading = () => (
@@ -154,6 +155,16 @@ export const AppRouter: React.FC = () => {
               element={
                 <ProtectedRoute fallback={<TableLoading />}>
                   <WantedPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Settings */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute fallback={<GenericLoading />}>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />

@@ -2,6 +2,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -1366,6 +1367,248 @@ func (s *Server) handleGetConfigStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, stats)
+}
+
+// Application Settings handlers
+
+// handleGetAppSettings retrieves the application settings
+func (s *Server) handleGetAppSettings(c *gin.Context) {
+	settings, err := s.services.ConfigService.GetAppSettings()
+	if err != nil {
+		s.logger.Error("Failed to get app settings", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve application settings"})
+		return
+	}
+
+	c.JSON(http.StatusOK, settings)
+}
+
+// handleUpdateAppSettings updates the application settings
+func (s *Server) handleUpdateAppSettings(c *gin.Context) {
+	var settings models.AppSettings
+	if err := c.ShouldBindJSON(&settings); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid application settings data"})
+		return
+	}
+
+	err := s.services.ConfigService.UpdateAppSettings(&settings)
+	if err != nil {
+		s.logger.Error("Failed to update app settings", "error", err)
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, settings)
+}
+
+// Configuration Validation handlers
+
+// handleValidateAllConfigurations validates all configuration components
+func (s *Server) handleValidateAllConfigurations(c *gin.Context) {
+	result, err := s.services.ConfigService.ValidateAllConfigurations()
+	if err != nil {
+		s.logger.Error("Failed to validate configurations", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate configurations"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// Configuration Backup and Restore handlers
+
+// handleCreateConfigurationBackup creates a backup of all configuration
+func (s *Server) handleCreateConfigurationBackup(c *gin.Context) {
+	var request struct {
+		Name        string `json:"name" binding:"required"`
+		Description string `json:"description"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid backup request data"})
+		return
+	}
+
+	backup, err := s.services.ConfigService.CreateConfigurationBackup(request.Name, request.Description)
+	if err != nil {
+		s.logger.Error("Failed to create configuration backup", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create configuration backup"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, backup)
+}
+
+// handleRestoreConfigurationBackup restores configuration from a backup
+func (s *Server) handleRestoreConfigurationBackup(c *gin.Context) {
+	var request struct {
+		Backup     models.ConfigurationBackup `json:"backup" binding:"required"`
+		Components []string                   `json:"components" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid restore request data"})
+		return
+	}
+
+	result, err := s.services.ConfigService.RestoreConfigurationBackup(&request.Backup, request.Components)
+	if err != nil {
+		s.logger.Error("Failed to restore configuration backup", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restore configuration backup"})
+		return
+	}
+
+	if !result.Success {
+		c.JSON(http.StatusUnprocessableEntity, result)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// handleFactoryResetConfiguration performs a factory reset of configuration components
+func (s *Server) handleFactoryResetConfiguration(c *gin.Context) {
+	var request struct {
+		Components []string `json:"components" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid factory reset request data"})
+		return
+	}
+
+	// Validate components
+	validComponents := map[string]bool{
+		"host":   true,
+		"naming": true,
+		"media":  true,
+		"app":    true,
+	}
+
+	for _, component := range request.Components {
+		if !validComponents[component] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid component: %s", component)})
+			return
+		}
+	}
+
+	err := s.services.ConfigService.FactoryResetConfiguration(request.Components)
+	if err != nil {
+		s.logger.Error("Failed to perform factory reset", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to perform factory reset"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Factory reset completed successfully",
+		"components": request.Components,
+		"resetAt":    time.Now(),
+	})
+}
+
+// handleTestConfiguration tests configuration components
+func (s *Server) handleTestConfiguration(c *gin.Context) {
+	configType := c.Param("type")
+
+	// For now, this is a placeholder that validates the configuration
+	// In a full implementation, this would perform actual connectivity tests
+	result, err := s.services.ConfigService.ValidateAllConfigurations()
+	if err != nil {
+		s.logger.Error("Failed to test configuration", "type", configType, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to test configuration"})
+		return
+	}
+
+	// Filter result by configuration type if specified
+	if configType != "" && configType != "all" {
+		filteredResult := &models.ConfigurationValidationResult{
+			IsValid:          true,
+			ValidationErrors: make(map[string][]string),
+			Warnings:         make(map[string][]string),
+			ComponentStatus:  make(map[string]models.ConfigurationStatus),
+			TestResults:      make(map[string]models.ConfigurationTestResult),
+		}
+
+		if errors, exists := result.ValidationErrors[configType]; exists {
+			filteredResult.ValidationErrors[configType] = errors
+			filteredResult.IsValid = false
+		}
+		if warnings, exists := result.Warnings[configType]; exists {
+			filteredResult.Warnings[configType] = warnings
+		}
+		if status, exists := result.ComponentStatus[configType]; exists {
+			filteredResult.ComponentStatus[configType] = status
+		}
+
+		c.JSON(http.StatusOK, filteredResult)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// Configuration Export/Import handlers
+
+// handleExportConfiguration exports configuration as JSON
+func (s *Server) handleExportConfiguration(c *gin.Context) {
+	backup, err := s.services.ConfigService.CreateConfigurationBackup(
+		fmt.Sprintf("Export_%d", time.Now().Unix()),
+		"Configuration export via API",
+	)
+	if err != nil {
+		s.logger.Error("Failed to export configuration", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export configuration"})
+		return
+	}
+
+	export := models.ConfigurationExport{
+		ExportedAt:         time.Now(),
+		ApplicationVersion: "1.0.0", // Should come from app version
+		ExportVersion:      "1.0",
+		Data:               make(models.JSON),
+	}
+
+	// Convert backup to JSON
+	if backupData, err := json.Marshal(backup); err == nil {
+		export.Data["backup"] = string(backupData)
+	}
+
+	c.Header("Content-Type", "application/json")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=radarr-config-%d.json", time.Now().Unix()))
+	c.JSON(http.StatusOK, export)
+}
+
+// handleImportConfiguration imports configuration from JSON
+func (s *Server) handleImportConfiguration(c *gin.Context) {
+	var importData models.ConfigurationExport
+	if err := c.ShouldBindJSON(&importData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid import data"})
+		return
+	}
+
+	// Parse the backup data
+	var backup models.ConfigurationBackup
+	if backupStr, ok := importData.Data["backup"].(string); ok {
+		if err := json.Unmarshal([]byte(backupStr), &backup); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid backup data format"})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No backup data found in import"})
+		return
+	}
+
+	// Import all components by default
+	components := []string{"host", "naming", "media", "app"}
+
+	result, err := s.services.ConfigService.RestoreConfigurationBackup(&backup, components)
+	if err != nil {
+		s.logger.Error("Failed to import configuration", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to import configuration"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 // Search & Release Management handlers

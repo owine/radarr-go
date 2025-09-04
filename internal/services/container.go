@@ -101,6 +101,9 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 	container.ParseService = NewParseService(db, logger)
 	container.RenameService = NewRenameService(db, logger, container.NamingService)
 
+	// Set service container reference for ConfigService
+	container.ConfigService.SetServiceContainer(container)
+
 	// Register task handlers
 	container.TaskService.RegisterHandler(NewRefreshMovieHandler(container.MovieService, container.MetadataService))
 	container.TaskService.RegisterHandler(NewRefreshAllMoviesHandler(container.MovieService, container.MetadataService))

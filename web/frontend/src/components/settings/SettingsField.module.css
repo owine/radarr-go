@@ -1,0 +1,203 @@
+.fieldContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.checkboxContainer {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.labelContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.required {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Form Controls */
+.select,
+.textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  transition: all var(--transition-fast);
+}
+
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.select:disabled,
+.textarea:disabled {
+  background-color: var(--bg-secondary);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.select.error,
+.textarea.error {
+  border-color: var(--color-error);
+}
+
+.select.error:focus,
+.textarea.error:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px var(--color-error-alpha);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+/* Checkbox Styling */
+.checkboxWrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.checkboxWrapper.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.checkbox:disabled {
+  cursor: not-allowed;
+}
+
+.checkboxLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Input wrapper for suffix/prefix */
+.inputWithSuffix {
+  position: relative;
+  width: 100%;
+}
+
+/* Help and Error Text */
+.helpText {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  margin: 0;
+  padding-left: var(--space-1);
+}
+
+.errorText {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  line-height: 1.4;
+  margin: 0;
+  padding-left: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.errorText::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3C/svg%3E");
+  background-size: contain;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fieldContainer {
+    gap: var(--space-2);
+  }
+
+  .checkboxContainer {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .label {
+    font-size: var(--font-size-sm);
+  }
+
+  .description,
+  .helpText {
+    font-size: var(--font-size-xs);
+  }
+
+  .select,
+  .textarea {
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .select,
+  .textarea {
+    padding: var(--space-2);
+  }
+
+  .checkboxWrapper {
+    gap: var(--space-2);
+  }
+
+  .checkbox {
+    width: 16px;
+    height: 16px;
+  }
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/radarr/radarr-go/internal/database"
 	"github.com/radarr/radarr-go/internal/logger"
@@ -13,16 +14,23 @@ import (
 
 // ConfigService provides operations for managing system configuration
 type ConfigService struct {
-	db     *database.Database
-	logger *logger.Logger
+	db       *database.Database
+	logger   *logger.Logger
+	services *Container
 }
 
 // NewConfigService creates a new instance of ConfigService
 func NewConfigService(db *database.Database, logger *logger.Logger) *ConfigService {
 	return &ConfigService{
-		db:     db,
-		logger: logger,
+		db:       db,
+		logger:   logger,
+		services: nil, // Will be set later via SetServiceContainer
 	}
+}
+
+// SetServiceContainer sets the service container reference for accessing other services
+func (s *ConfigService) SetServiceContainer(services *Container) {
+	s.services = services
 }
 
 // Host Configuration Management
@@ -375,4 +383,366 @@ func (s *ConfigService) updateConfig(config interface{}, configType string, vali
 
 	s.logger.Info("Updated " + configType + " configuration")
 	return nil
+}
+
+// Application Settings Management
+
+// GetAppSettings retrieves consolidated application settings
+func (s *ConfigService) GetAppSettings() (*models.AppSettings, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("database not available")
+	}
+
+	settings := models.GetDefaultAppSettings()
+
+	// Retrieve all app config entries
+	var configs []models.AppConfig
+	if err := s.db.GORM.Find(&configs).Error; err != nil {
+		s.logger.Error("Failed to fetch app configs", "error", err)
+		return settings, nil // Return defaults if no configs exist
+	}
+
+	// Map config values to settings struct
+	configMap := make(map[string]interface{})
+	for _, config := range configs {
+		var value interface{}
+		if err := config.Value.Scan(config.Value); err == nil {
+			configMap[config.Key] = value
+		}
+	}
+
+	// Apply config values to settings
+	s.applyConfigToSettings(configMap, settings)
+
+	return settings, nil
+}
+
+// UpdateAppSettings updates application settings
+func (s *ConfigService) UpdateAppSettings(settings *models.AppSettings) error {
+	if s.db == nil {
+		return fmt.Errorf("database not available")
+	}
+
+	// Validate settings
+	if errors := settings.ValidateSettings(); len(errors) > 0 {
+		return fmt.Errorf("validation failed: %v", errors)
+	}
+
+	// Convert settings to config entries
+	configs := s.convertSettingsToConfigs(settings)
+
+	// Update each configuration entry
+	for _, config := range configs {
+		if err := s.db.GORM.Save(&config).Error; err != nil {
+			s.logger.Error("Failed to update app config", "key", config.Key, "error", err)
+			return fmt.Errorf("failed to update app config %s: %w", config.Key, err)
+		}
+	}
+
+	s.logger.Info("Updated application settings")
+	return nil
+}
+
+// Configuration Backup and Restore
+
+// CreateConfigurationBackup creates a complete backup of all configuration
+func (s *ConfigService) CreateConfigurationBackup(name, description string) (*models.ConfigurationBackup, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("database not available")
+	}
+
+	backup := &models.ConfigurationBackup{
+		BackupName:  name,
+		Description: description,
+		CreatedAt:   time.Now(),
+	}
+
+	// Collect all configuration data
+	hostConfig, _ := s.GetHostConfig()
+	namingConfig, _ := s.GetNamingConfig()
+	mediaConfig, _ := s.GetMediaManagementConfig()
+	appSettings, _ := s.GetAppSettings()
+
+	backup.HostConfig = hostConfig
+	backup.NamingConfig = namingConfig
+	backup.MediaManagementConfig = mediaConfig
+	backup.AppSettings = appSettings
+
+	// Get additional configurations if available
+	if s.services != nil {
+		if qualityProfiles, err := s.services.QualityService.GetQualityProfiles(); err == nil {
+			// Convert from []*models.QualityProfile to []models.QualityProfile
+			for _, profile := range qualityProfiles {
+				if profile != nil {
+					backup.QualityProfiles = append(backup.QualityProfiles, *profile)
+				}
+			}
+		}
+		if rootFolders, err := s.GetRootFolders(); err == nil {
+			backup.RootFolders = rootFolders
+		}
+	}
+
+	// Calculate backup statistics
+	backup.ConfigurationCount = s.countConfigurations(backup)
+
+	s.logger.Info("Created configuration backup", "name", name)
+	return backup, nil
+}
+
+// RestoreConfigurationBackup restores configuration from a backup
+func (s *ConfigService) RestoreConfigurationBackup(
+	backup *models.ConfigurationBackup, components []string,
+) (*models.ConfigurationImportResult, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("database not available")
+	}
+
+	result := &models.ConfigurationImportResult{
+		Success:             true,
+		ImportedComponents:  []string{},
+		SkippedComponents:   []string{},
+		ValidationErrors:    make(map[string][]string),
+		ConflictResolutions: make(map[string]string),
+		ImportedAt:          time.Now(),
+	}
+
+	// Import each requested component
+	for _, component := range components {
+		s.restoreConfigurationComponent(backup, component, result)
+	}
+
+	s.logger.Info("Restored configuration backup",
+		"imported", len(result.ImportedComponents),
+		"skipped", len(result.SkippedComponents))
+	return result, nil
+}
+
+// restoreConfigurationComponent restores a single configuration component
+func (s *ConfigService) restoreConfigurationComponent(
+	backup *models.ConfigurationBackup,
+	component string,
+	result *models.ConfigurationImportResult,
+) {
+	switch component {
+	case "host":
+		if backup.HostConfig != nil {
+			if err := s.UpdateHostConfig(backup.HostConfig); err != nil {
+				result.ValidationErrors["host"] = []string{err.Error()}
+				result.Success = false
+			} else {
+				result.ImportedComponents = append(result.ImportedComponents, "host")
+			}
+		}
+	case "naming":
+		if backup.NamingConfig != nil {
+			if err := s.UpdateNamingConfig(backup.NamingConfig); err != nil {
+				result.ValidationErrors["naming"] = []string{err.Error()}
+				result.Success = false
+			} else {
+				result.ImportedComponents = append(result.ImportedComponents, "naming")
+			}
+		}
+	case "media":
+		if backup.MediaManagementConfig != nil {
+			if err := s.UpdateMediaManagementConfig(backup.MediaManagementConfig); err != nil {
+				result.ValidationErrors["media"] = []string{err.Error()}
+				result.Success = false
+			} else {
+				result.ImportedComponents = append(result.ImportedComponents, "media")
+			}
+		}
+	case "app":
+		if backup.AppSettings != nil {
+			if err := s.UpdateAppSettings(backup.AppSettings); err != nil {
+				result.ValidationErrors["app"] = []string{err.Error()}
+				result.Success = false
+			} else {
+				result.ImportedComponents = append(result.ImportedComponents, "app")
+			}
+		}
+	default:
+		result.SkippedComponents = append(result.SkippedComponents, component)
+	}
+}
+
+// FactoryResetConfiguration resets all configuration to default values
+func (s *ConfigService) FactoryResetConfiguration(components []string) error {
+	if s.db == nil {
+		return fmt.Errorf("database not available")
+	}
+
+	for _, component := range components {
+		switch component {
+		case "host":
+			defaultConfig := models.GetDefaultHostConfig()
+			if err := s.UpdateHostConfig(defaultConfig); err != nil {
+				return fmt.Errorf("failed to reset host config: %w", err)
+			}
+		case "naming":
+			defaultConfig := models.GetDefaultNamingConfig()
+			if err := s.UpdateNamingConfig(defaultConfig); err != nil {
+				return fmt.Errorf("failed to reset naming config: %w", err)
+			}
+		case "media":
+			defaultConfig := models.GetDefaultMediaManagementConfig()
+			if err := s.UpdateMediaManagementConfig(defaultConfig); err != nil {
+				return fmt.Errorf("failed to reset media management config: %w", err)
+			}
+		case "app":
+			defaultSettings := models.GetDefaultAppSettings()
+			if err := s.UpdateAppSettings(defaultSettings); err != nil {
+				return fmt.Errorf("failed to reset app settings: %w", err)
+			}
+		}
+	}
+
+	s.logger.Info("Performed factory reset", "components", components)
+	return nil
+}
+
+// Configuration Validation
+
+// ValidateAllConfigurations validates all configuration components
+func (s *ConfigService) ValidateAllConfigurations() (*models.ConfigurationValidationResult, error) {
+	result := &models.ConfigurationValidationResult{
+		IsValid:          true,
+		ValidationErrors: make(map[string][]string),
+		Warnings:         make(map[string][]string),
+		ComponentStatus:  make(map[string]models.ConfigurationStatus),
+		TestResults:      make(map[string]models.ConfigurationTestResult),
+	}
+
+	// Validate all components
+	s.validateHostConfig(result)
+	s.validateNamingConfig(result)
+	s.validateMediaManagementConfig(result)
+	s.validateAppSettings(result)
+	s.validateRootFolders(result)
+
+	return result, nil
+}
+
+// validateHostConfig validates host configuration
+func (s *ConfigService) validateHostConfig(result *models.ConfigurationValidationResult) {
+	if hostConfig, err := s.GetHostConfig(); err == nil {
+		if errors := hostConfig.ValidateConfiguration(); len(errors) > 0 {
+			result.ValidationErrors["host"] = errors
+			result.ComponentStatus["host"] = models.ConfigurationStatusError
+			result.IsValid = false
+		} else {
+			result.ComponentStatus["host"] = models.ConfigurationStatusOK
+		}
+	}
+}
+
+// validateNamingConfig validates naming configuration
+func (s *ConfigService) validateNamingConfig(result *models.ConfigurationValidationResult) {
+	if namingConfig, err := s.GetNamingConfig(); err == nil {
+		if errors := namingConfig.ValidateConfiguration(); len(errors) > 0 {
+			result.ValidationErrors["naming"] = errors
+			result.ComponentStatus["naming"] = models.ConfigurationStatusError
+			result.IsValid = false
+		} else {
+			result.ComponentStatus["naming"] = models.ConfigurationStatusOK
+		}
+	}
+}
+
+// validateMediaManagementConfig validates media management configuration
+func (s *ConfigService) validateMediaManagementConfig(result *models.ConfigurationValidationResult) {
+	if mediaConfig, err := s.GetMediaManagementConfig(); err == nil {
+		if errors := mediaConfig.ValidateConfiguration(); len(errors) > 0 {
+			result.ValidationErrors["media"] = errors
+			result.ComponentStatus["media"] = models.ConfigurationStatusError
+			result.IsValid = false
+		} else {
+			result.ComponentStatus["media"] = models.ConfigurationStatusOK
+		}
+	}
+}
+
+// validateAppSettings validates app settings
+func (s *ConfigService) validateAppSettings(result *models.ConfigurationValidationResult) {
+	if appSettings, err := s.GetAppSettings(); err == nil {
+		if errors := appSettings.ValidateSettings(); len(errors) > 0 {
+			result.ValidationErrors["app"] = errors
+			result.ComponentStatus["app"] = models.ConfigurationStatusError
+			result.IsValid = false
+		} else {
+			result.ComponentStatus["app"] = models.ConfigurationStatusOK
+		}
+	}
+}
+
+// validateRootFolders validates root folders
+func (s *ConfigService) validateRootFolders(result *models.ConfigurationValidationResult) {
+	if rootFolders, err := s.GetRootFolders(); err == nil {
+		for _, folder := range rootFolders {
+			if errors := models.ValidateRootFolder(&folder); len(errors) > 0 {
+				key := fmt.Sprintf("rootFolder_%d", folder.ID)
+				result.ValidationErrors[key] = errors
+				result.ComponentStatus[key] = models.ConfigurationStatusError
+				result.IsValid = false
+			} else if !folder.Accessible {
+				key := fmt.Sprintf("rootFolder_%d", folder.ID)
+				result.Warnings[key] = []string{"Root folder is not accessible"}
+				result.ComponentStatus[key] = models.ConfigurationStatusWarning
+			}
+		}
+	}
+}
+
+// Helper methods
+
+// applyConfigToSettings applies configuration map to settings struct
+func (s *ConfigService) applyConfigToSettings(configMap map[string]interface{}, settings *models.AppSettings) {
+	// Implementation would map specific keys to struct fields
+	if version, ok := configMap["app.version"].(string); ok {
+		settings.Version = version
+	}
+	if initialized, ok := configMap["app.initialized"].(bool); ok {
+		settings.Initialized = initialized
+	}
+	if theme, ok := configMap["ui.theme"].(string); ok {
+		settings.Theme = theme
+	}
+	// Add more mappings as needed
+}
+
+// convertSettingsToConfigs converts settings struct to config entries
+func (s *ConfigService) convertSettingsToConfigs(settings *models.AppSettings) []models.AppConfig {
+	configs := []models.AppConfig{
+		{Key: "app.version", Value: models.JSON{"value": settings.Version}, Description: "Application version"},
+		{Key: "app.initialized", Value: models.JSON{"value": settings.Initialized},
+			Description: "Application initialization status"},
+		{Key: "ui.theme", Value: models.JSON{"value": settings.Theme}, Description: "UI theme preference"},
+		{Key: "ui.language", Value: models.JSON{"value": settings.Language}, Description: "UI language preference"},
+		{Key: "security.api_key_required", Value: models.JSON{"value": settings.APIKeyRequired},
+			Description: "Whether API key is required"},
+		{Key: "performance.max_concurrent_tasks",
+			Value:       models.JSON{"value": settings.MaxConcurrentTasks},
+			Description: "Maximum concurrent tasks"},
+	}
+	return configs
+}
+
+// countConfigurations counts the number of configuration components in a backup
+func (s *ConfigService) countConfigurations(backup *models.ConfigurationBackup) int {
+	count := 0
+	if backup.HostConfig != nil {
+		count++
+	}
+	if backup.NamingConfig != nil {
+		count++
+	}
+	if backup.MediaManagementConfig != nil {
+		count++
+	}
+	if backup.AppSettings != nil {
+		count++
+	}
+	count += len(backup.QualityProfiles)
+	count += len(backup.RootFolders)
+	return count
 }

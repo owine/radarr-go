@@ -1,0 +1,113 @@
+.settingsActions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--border-primary);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  margin: var(--space-6) calc(-1 * var(--space-5)) calc(-1 * var(--space-5));
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leftActions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.rightActions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.changeIndicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--bg-primary);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-warning-alpha);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.changeIcon {
+  color: var(--color-warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.changeText {
+  white-space: nowrap;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .settingsActions {
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    position: relative;
+    margin: var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  }
+
+  .leftActions,
+  .rightActions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .changeIndicator {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    order: -1;
+    width: fit-content;
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .settingsActions {
+    padding: var(--space-3);
+    margin: var(--space-3) calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
+    gap: var(--space-2);
+  }
+
+  .leftActions,
+  .rightActions {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .leftActions > *,
+  .rightActions > * {
+    width: 100%;
+  }
+
+  .changeIndicator {
+    padding: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
+}

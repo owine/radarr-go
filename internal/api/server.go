@@ -380,6 +380,23 @@ func (s *Server) setupConfigRoutes(v3 *gin.RouterGroup) {
 
 	// Configuration stats
 	v3.GET("/config/stats", s.handleGetConfigStats)
+
+	// Application settings
+	v3.GET("/config/app", s.handleGetAppSettings)
+	v3.PUT("/config/app", s.handleUpdateAppSettings)
+
+	// Configuration validation
+	v3.GET("/config/validate", s.handleValidateAllConfigurations)
+	v3.GET("/config/validate/:type", s.handleTestConfiguration)
+
+	// Configuration backup and restore
+	v3.POST("/config/backup", s.handleCreateConfigurationBackup)
+	v3.POST("/config/restore", s.handleRestoreConfigurationBackup)
+	v3.POST("/config/reset", s.handleFactoryResetConfiguration)
+
+	// Configuration export/import
+	v3.GET("/config/export", s.handleExportConfiguration)
+	v3.POST("/config/import", s.handleImportConfiguration)
 }
 
 func (s *Server) setupSearchRoutes(v3 *gin.RouterGroup) {

@@ -698,6 +698,15 @@ export const radarrApi = createApi({
       providesTags: [{ type: 'Config', id: 'STATS' }],
     }),
 
+    // Additional configuration endpoints
+    getNamingTokens: builder.query<string[], void>({
+      query: () => 'config/naming/tokens',
+    }),
+
+    previewNaming: builder.query<{ filename: string; folder?: string }, number>({
+      query: (movieId) => `config/naming/preview/${movieId}`,
+    }),
+
     // Tag endpoints
     getTags: builder.query<Tag[], void>({
       query: () => 'tag',
@@ -1060,6 +1069,8 @@ export const {
   useGetMediaManagementConfigQuery,
   useUpdateMediaManagementConfigMutation,
   useGetConfigStatsQuery,
+  useGetNamingTokensQuery,
+  usePreviewNamingQuery,
 
   // Tag hooks
   useGetTagsQuery,
