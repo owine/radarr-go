@@ -22,7 +22,8 @@ permissions:
   actions: read    # Required to download artifacts
 
 env:
-  GO_VERSION: '1.25.0'
+  # renovate: datasource=golang-version depName=golang
+  GO_VERSION: '1.25'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   # Security: Use secure build flags
@@ -49,7 +50,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Full history for proper version detection
 
@@ -135,7 +136,7 @@ jobs:
         echo "📝 Commit: ${COMMIT_SHA}"
 
     - name: Set up Go
-      uses: actions/setup-go@v6.0.0
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: false  # Disable cache for validation to ensure clean state
@@ -167,10 +168,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5
 
     - name: Set up Go with enhanced caching
-      uses: actions/setup-go@v6.0.0
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
@@ -288,7 +289,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@v4.6.2
+      uses: actions/upload-artifact@v4
       with:
         name: release-archives-all
         path: archives/
@@ -305,7 +306,7 @@ jobs:
 
     steps:
     - name: Download release artifacts
-      uses: actions/download-artifact@v5.0.0
+      uses: actions/download-artifact@v4
       with:
         name: release-archives-all
         path: release-artifacts
@@ -405,7 +406,7 @@ jobs:
         echo "✅ Release preparation completed"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2.3.2
+      uses: softprops/action-gh-release@v2
       with:
         files: release-artifacts/*
         name: "Radarr Go v${{ needs.validate.outputs.version }}"
@@ -447,7 +448,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
+        image: postgres:17-alpine
         env:
           POSTGRES_PASSWORD: radarr_test
           POSTGRES_USER: radarr_test
@@ -462,7 +463,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5
 
     - name: Wait and run integration test
       env:
@@ -572,10 +573,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3.11.1
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to registries in parallel
       run: |
@@ -642,7 +643,7 @@ jobs:
         fi
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v5.0.0
+      uses: actions/download-artifact@v4
       with:
         name: release-archives-all
         path: ./artifacts
@@ -670,7 +671,7 @@ jobs:
         chmod +x radarr-linux-*
 
     - name: Build and push Docker images with enhanced caching (using pre-built binaries)
-      uses: docker/build-push-action@v6.18.0
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile.artifacts
@@ -752,7 +753,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v5
 
     - name: Get Docker image information
       id: docker_info
