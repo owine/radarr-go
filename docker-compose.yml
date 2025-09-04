@@ -6,6 +6,14 @@
 # Version variables for Renovate
 # DOCKER_NODE_VERSION: 22
 # renovate: datasource=node-version depName=node
+# POSTGRES_VERSION: 17
+# renovate: datasource=docker depName=postgres versioning=docker
+# MARIADB_VERSION: 12.1
+# renovate: datasource=docker depName=mariadb versioning=docker
+# REDIS_VERSION: 8
+# renovate: datasource=docker depName=redis versioning=docker
+# ALPINE_VERSION: 3.22
+# renovate: datasource=docker depName=alpine versioning=docker
 
 services:
   # Main Radarr Go Application
@@ -41,7 +49,7 @@ services:
 
   # PostgreSQL Database (Primary)
   postgres:
-    image: postgres:${POSTGRES_VERSION:-17-alpine}
+    image: postgres:${POSTGRES_VERSION:-17}-alpine
     container_name: radarr-postgres
     restart: unless-stopped
     environment:
@@ -95,7 +103,7 @@ services:
 
   # Redis Cache (Optional)
   redis:
-    image: redis:${REDIS_VERSION:-8-alpine}
+    image: redis:${REDIS_VERSION:-8}-alpine
     container_name: radarr-redis
     restart: unless-stopped
     ports:
@@ -239,7 +247,7 @@ services:
 
   # Test Database Services (Separate Ports)
   postgres-test:
-    image: postgres:17-alpine
+    image: postgres:${POSTGRES_VERSION:-17}-alpine
     container_name: radarr-postgres-test
     environment:
       - POSTGRES_DB=radarr_test
@@ -266,7 +274,7 @@ services:
       - test-network
 
   mariadb-test:
-    image: mariadb:12.1
+    image: mariadb:${MARIADB_VERSION:-12.1}
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test

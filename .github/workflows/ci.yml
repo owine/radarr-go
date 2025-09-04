@@ -12,6 +12,14 @@ env:
   # renovate: datasource=golang-version depName=golang
   NODE_VERSION: '20'
   # renovate: datasource=node-version depName=node
+  POSTGRES_VERSION: '17'
+  # renovate: datasource=docker depName=postgres versioning=docker
+  MARIADB_VERSION: '12.1'
+  # renovate: datasource=docker depName=mariadb versioning=docker
+  ALPINE_VERSION: '3.22'
+  # renovate: datasource=docker depName=alpine versioning=docker
+  REDIS_VERSION: '8'
+  # renovate: datasource=docker depName=redis versioning=docker
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -252,7 +260,7 @@ jobs:
     services:
       postgres:
         image: >
-          postgres:17-alpine
+          postgres:${{ env.POSTGRES_VERSION }}-alpine
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
@@ -354,7 +362,7 @@ jobs:
     services:
       mariadb:
         image: >
-          mariadb:12.1
+          mariadb:${{ env.MARIADB_VERSION }}
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
