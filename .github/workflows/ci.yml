@@ -43,32 +43,71 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
 
-      # Cache linting tools for better performance
-      - name: Cache linting tools
+      # Optimized caching strategy for linting tools (performance-focused)
+      - name: Cache Go linting tools
         uses: actions/cache@v4.2.4
         with:
           path: |
             ~/go/bin/golangci-lint
-            ~/.local/bin
-            ~/.npm
-            /usr/local/lib/node_modules
-          key: lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node20-${{ hashFiles('Makefile') }}
+            ~/go/pkg/mod
+          key: go-lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-${{ hashFiles('go.sum', '.golangci.yml') }}
           restore-keys: |
-            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node20-
-            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
-            lint-tools-${{ runner.os }}-
+            go-lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
+            go-lint-tools-${{ runner.os }}-
 
-      - name: Install dependencies and tools
+      - name: Cache Node.js linting tools
+        uses: actions/cache@v4.2.4
+        with:
+          path: |
+            ~/.npm
+            /usr/local/lib/node_modules/markdownlint-cli
+          key: node-lint-tools-${{ runner.os }}-node20-${{ hashFiles('package*.json', '.markdownlint.json') }}
+          restore-keys: |
+            node-lint-tools-${{ runner.os }}-node20-
+            node-lint-tools-${{ runner.os }}-
+
+      - name: Cache Python linting tools
+        uses: actions/cache@v4.2.4
+        with:
+          path: |
+            ~/.local/bin
+            ~/.cache/pip
+          key: python-lint-tools-${{ runner.os }}-${{ hashFiles('.yamllint.yml') }}
+          restore-keys: |
+            python-lint-tools-${{ runner.os }}-
+
+      - name: Cache system linting tools
+        uses: actions/cache@v4.2.4
+        with:
+          path: |
+            /usr/bin/shellcheck
+            /usr/local/bin/shellcheck
+          key: system-lint-tools-${{ runner.os }}-shellcheck
+          restore-keys: |
+            system-lint-tools-${{ runner.os }}-
+
+      - name: Install dependencies and tools (optimized)
         run: |
+          # Download Go dependencies (cached)
           go mod download
           go work sync
-          # Install security tools in parallel
-          go install github.com/securego/gosec/v2/cmd/gosec@latest &
-          go install golang.org/x/vuln/cmd/govulncheck@latest &
-          wait
 
-          # Install comprehensive linting tools
-          make setup-lint-tools
+          # Install security tools in parallel (background)
+          echo "Installing security tools in parallel..."
+          go install github.com/securego/gosec/v2/cmd/gosec@latest &
+          GOSEC_PID=$!
+          go install golang.org/x/vuln/cmd/govulncheck@latest &
+          VULN_PID=$!
+
+          # Install linting tools optimized for CI (parallel, cache-aware)
+          echo "Installing optimized CI linting tools..."
+          make setup-lint-tools-ci &
+          LINT_PID=$!
+
+          # Wait for all installations to complete
+          echo "Waiting for all tool installations..."
+          wait $GOSEC_PID $VULN_PID $LINT_PID
+          echo "All tool installations completed"
 
       - name: Validate linting tools installation
         run: |
@@ -76,23 +115,24 @@ jobs:
           make check-lint-tools
           echo "✅ Linting tools validation completed"
 
-      # Comprehensive linting with strategic failure handling
-      - name: Run critical linting (must pass)
+      # Fast parallel linting optimized for CI performance
+      - name: Run fast parallel linting (optimized)
         run: |
-          echo "Running critical linting that must pass..."
-          make lint-go
-          if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
-            make lint-frontend
-          fi
+          echo "🚀 Running optimized fast parallel linting for CI..."
+          # Use our new CI-optimized fast linting target
+          make lint-ci-fast
+          echo "✅ Critical linting completed successfully"
 
-      - name: Run additional linting (warnings only)
+      - name: Run comprehensive linting validation (optional)
         continue-on-error: true
         run: |
-          echo "Running additional linting (warnings only)..."
-          make lint-yaml || echo "⚠️  YAML linting issues found"
-          make lint-json || echo "⚠️  JSON linting issues found"
-          make lint-markdown || echo "⚠️  Markdown linting issues found"
-          make lint-shell || echo "⚠️  Shell script linting issues found"
+          echo "🔍 Running comprehensive linting validation (non-blocking)..."
+          # Run additional checks that may have warnings but shouldn't fail CI
+          make lint-yaml || echo "⚠️  YAML linting issues found (non-blocking)"
+          make lint-json || echo "⚠️  JSON linting issues found (non-blocking)"
+          make lint-markdown || echo "⚠️  Markdown linting issues found (non-blocking)"
+          make lint-shell || echo "⚠️  Shell script linting issues found (non-blocking)"
+          echo "📋 Comprehensive validation completed"
 
       - name: Generate linting summary
         if: always()

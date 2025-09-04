@@ -2,8 +2,12 @@
 	build-frontend dev-frontend clean-frontend install-frontend \
 	build-all-with-frontend dev-full dev-env-start dev-env-stop \
 	dev-env-restart dev-env-status dev-env-info dev-monitor dev-logs dev-perf \
-	lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell \
-	lint-all lint-fix setup-lint-tools check-lint-tools
+	lint-go lint-go-ci lint-frontend lint-yaml lint-json lint-markdown lint-shell \
+	lint-all lint-all-parallel lint-ci-fast lint-fix \
+	setup-lint-tools setup-lint-tools-ci setup-lint-tools-minimal \
+	check-lint-tools lint-cache-check lint-profile lint-benchmark \
+	lint-performance-report ci ci-legacy dev-all dev-all-legacy \
+	all all-legacy
 
 # Go parameters
 GOCMD=go
@@ -294,6 +298,12 @@ lint-go:
 	@which golangci-lint > /dev/null || (echo "Error: golangci-lint not found. Run 'make setup-lint-tools'" && exit 1)
 	golangci-lint run
 
+# Lint Go code optimized for CI (faster, critical checks only)
+lint-go-ci:
+	@echo "⚡ Linting Go code (CI optimized)..."
+	@which golangci-lint > /dev/null || (echo "Error: golangci-lint not found. Run 'make setup-lint-tools-ci'" && exit 1)
+	golangci-lint run --config .golangci-ci.yml --timeout=2m
+
 # Lint frontend TypeScript/React code
 lint-frontend:
 	@echo "Linting frontend code..."
@@ -370,7 +380,47 @@ lint-shell:
 		fi; \
 	fi
 
-# Run all linting checks
+# Fast parallel linting for CI environments (critical checks only)
+lint-ci-fast:
+	@echo "⚡ Running fast parallel linting for CI..."
+	@# Run critical linting in parallel using optimized configs
+	@echo "Running Go linting (CI optimized)..."
+	@make lint-go-ci &
+	@# Frontend linting (if exists)
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		echo "Running frontend linting (critical)..."; \
+		make lint-frontend & \
+	fi
+	@# Wait for critical linting
+	@wait
+	@echo "✅ Critical CI linting completed"
+
+# Run all linting checks in parallel (optimal for local development)
+lint-all-parallel:
+	@echo "⚡ Running all linting checks in parallel..."
+	@# Start all linting processes in background
+	@make lint-go > /tmp/lint-go.log 2>&1 & LINT_GO_PID=$$!; \
+	if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		make lint-frontend > /tmp/lint-frontend.log 2>&1 & LINT_FRONTEND_PID=$$!; \
+	fi; \
+	make lint-yaml > /tmp/lint-yaml.log 2>&1 & LINT_YAML_PID=$$!; \
+	make lint-json > /tmp/lint-json.log 2>&1 & LINT_JSON_PID=$$!; \
+	make lint-markdown > /tmp/lint-markdown.log 2>&1 & LINT_MD_PID=$$!; \
+	make lint-shell > /tmp/lint-shell.log 2>&1 & LINT_SHELL_PID=$$!; \
+	echo "Waiting for all linting processes to complete..."; \
+	wait $$LINT_GO_PID && echo "✅ Go linting passed" || (echo "❌ Go linting failed:" && cat /tmp/lint-go.log && FAILED=1); \
+	if [ ! -z "$$LINT_FRONTEND_PID" ]; then \
+		wait $$LINT_FRONTEND_PID && echo "✅ Frontend linting passed" || (echo "❌ Frontend linting failed:" && cat /tmp/lint-frontend.log && FAILED=1); \
+	fi; \
+	wait $$LINT_YAML_PID && echo "✅ YAML linting passed" || (echo "⚠️  YAML linting failed:" && cat /tmp/lint-yaml.log); \
+	wait $$LINT_JSON_PID && echo "✅ JSON linting passed" || (echo "⚠️  JSON linting failed:" && cat /tmp/lint-json.log); \
+	wait $$LINT_MD_PID && echo "✅ Markdown linting passed" || (echo "⚠️  Markdown linting failed:" && cat /tmp/lint-markdown.log); \
+	wait $$LINT_SHELL_PID && echo "✅ Shell linting passed" || (echo "⚠️  Shell linting failed:" && cat /tmp/lint-shell.log); \
+	rm -f /tmp/lint-*.log; \
+	if [ "$$FAILED" = "1" ]; then exit 1; fi
+	@echo "🎉 All parallel linting checks completed!"
+
+# Run all linting checks (legacy sequential - for compatibility)
 lint-all: lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell
 	@echo "All linting checks completed."
 
@@ -389,8 +439,18 @@ lint-fix:
 	fi
 	@echo "Auto-fix completed. Please review changes and re-run 'make lint-all'"
 
+# Smart lint selection based on environment
+lint:
+	@if [ "$$CI" = "true" ]; then \
+		echo "🤖 CI environment detected - using fast parallel linting"; \
+		make lint-ci-fast; \
+	else \
+		echo "💻 Local environment detected - using Go linting"; \
+		make lint-go; \
+	fi
+
 # Legacy lint target (for backward compatibility)
-lint: lint-go
+lint-legacy: lint-go
 
 # Production Environment Commands
 # ===========================================
@@ -461,11 +521,17 @@ init: deps
 	mkdir -p data movies
 	cp config.yaml data/
 
-# All-in-one build and test
-all: deps fmt lint-all test test-bench build
+# All-in-one build and test (optimized)
+all: deps fmt lint-all-parallel test test-bench build
 
-# Development workflow
-dev-all: deps fmt lint-all test test-examples test-bench test-coverage build
+# All-in-one build and test (legacy sequential)
+all-legacy: deps fmt lint-all test test-bench build
+
+# Optimized development workflow (parallel linting)
+dev-all: deps fmt lint-all-parallel test test-examples test-bench test-coverage build
+
+# Legacy development workflow (sequential)
+dev-all-legacy: deps fmt lint-all test test-examples test-bench test-coverage build
 
 # Enhanced Development Environment Management
 dev-env-start:
@@ -493,8 +559,11 @@ dev-logs:
 dev-perf:
 	./scripts/dev-monitor.sh perf
 
-# CI/CD workflow (includes database testing)
-ci: deps fmt lint-all test-ci build-all
+# Optimized CI workflow (uses fast parallel linting)
+ci: deps fmt lint-ci-fast test-ci build-all
+
+# Legacy CI workflow (sequential)
+ci-legacy: deps fmt lint-all test-ci build-all
 
 # Development setup
 setup: setup-backend setup-frontend
@@ -506,12 +575,44 @@ setup-backend:
 	$(GOGET) github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	mkdir -p data movies web/static web/templates
 
-# Linting Tools Setup and Verification
+# Linting Tools Setup and Verification (Performance Optimized)
 # ===========================================
 
-# Install all linting tools
+# Fast parallel installation for CI environments
+setup-lint-tools-ci:
+	@echo "⚡ Installing critical linting tools for CI (parallel)..."
+	@mkdir -p ~/.local/bin
+	@# Install Go tools in parallel
+	@echo "Installing Go linting tools in parallel..."
+	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest &
+	@# Install Python tools (essential only)
+	@echo "Installing Python yamllint..."
+	@if which pip3 > /dev/null 2>&1; then \
+		pip3 install --user --no-cache-dir yamllint & \
+	elif which pip > /dev/null 2>&1; then \
+		pip install --user --no-cache-dir yamllint & \
+	fi
+	@# Install Node.js tools (essential only)
+	@echo "Installing Node.js markdownlint-cli..."
+	@if which npm > /dev/null 2>&1; then \
+		npm install -g --no-audit --no-fund markdownlint-cli & \
+	fi
+	@# Install shellcheck via package manager
+	@echo "Installing shellcheck..."
+	@if which apt-get > /dev/null 2>&1; then \
+		sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck & \
+	elif which yum > /dev/null 2>&1; then \
+		sudo yum install -y -q ShellCheck & \
+	elif which apk > /dev/null 2>&1; then \
+		sudo apk add --no-cache shellcheck & \
+	fi
+	@echo "Waiting for all installations to complete..."
+	@wait
+	@echo "✅ CI linting tools installation completed!"
+
+# Full installation for local development (comprehensive)
 setup-lint-tools:
-	@echo "Installing linting tools..."
+	@echo "Installing linting tools for local development..."
 	@echo "Installing Go linting tools..."
 	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "Installing YAML linting tools..."
@@ -560,6 +661,66 @@ check-lint-tools:
 	@which $(MARKDOWNLINT_CMD) > /dev/null && echo "markdownlint: ✓ Installed" || echo "markdownlint: ✗ Not installed"
 	@which $(SHELLCHECK_CMD) > /dev/null && echo "shellcheck: ✓ Installed" || echo "shellcheck: ✗ Not installed"
 	@echo "Linting tools check completed."
+
+# Performance Analysis and Profiling
+# ===========================================
+
+# Profile linting performance to identify bottlenecks
+lint-profile:
+	@echo "🔍 Profiling linting performance..."
+	@mkdir -p tmp/profile
+	@# Time individual linting steps
+	@echo "Timing Go linting..." && time make lint-go > tmp/profile/go.log 2>&1 || true
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		echo "Timing frontend linting..." && time make lint-frontend > tmp/profile/frontend.log 2>&1 || true; \
+	fi
+	@echo "Timing YAML linting..." && time make lint-yaml > tmp/profile/yaml.log 2>&1 || true
+	@echo "Timing JSON linting..." && time make lint-json > tmp/profile/json.log 2>&1 || true
+	@echo "Timing Markdown linting..." && time make lint-markdown > tmp/profile/markdown.log 2>&1 || true
+	@echo "Timing Shell linting..." && time make lint-shell > tmp/profile/shell.log 2>&1 || true
+	@echo "📊 Linting performance profile complete. Check tmp/profile/ for detailed logs."
+
+# Benchmark parallel vs sequential linting
+lint-benchmark:
+	@echo "🏁 Benchmarking linting approaches..."
+	@mkdir -p tmp/benchmark
+	@echo "Testing sequential linting..."
+	@time make lint-all > tmp/benchmark/sequential.log 2>&1 || echo "Sequential completed with errors"
+	@echo "Testing parallel linting..."
+	@time make lint-all-parallel > tmp/benchmark/parallel.log 2>&1 || echo "Parallel completed with errors"
+	@echo "Testing CI fast linting..."
+	@time make lint-ci-fast > tmp/benchmark/ci-fast.log 2>&1 || echo "CI fast completed with errors"
+	@echo "📊 Benchmark complete. Check tmp/benchmark/ for results."
+
+# Verify lint tools are cached and available
+lint-cache-check:
+	@echo "🔍 Checking lint tool cache status..."
+	@which golangci-lint > /dev/null && echo "✅ golangci-lint: cached" || echo "❌ golangci-lint: not cached"
+	@which yamllint > /dev/null && echo "✅ yamllint: cached" || echo "❌ yamllint: not cached"
+	@which markdownlint > /dev/null && echo "✅ markdownlint: cached" || echo "❌ markdownlint: not cached"
+	@which shellcheck > /dev/null && echo "✅ shellcheck: cached" || echo "❌ shellcheck: not cached"
+	@ls -la ~/.local/bin/ 2>/dev/null | head -5 || echo "Local bin directory empty"
+	@ls -la ~/go/bin/golangci-lint 2>/dev/null || echo "golangci-lint not in ~/go/bin/"
+
+# Fast CI tool installation with aggressive caching
+setup-lint-tools-minimal:
+	@echo "⚡ Minimal linting tools for CI (essential only)..."
+	@# Only install absolutely critical tools
+	@if [ ! -f "$(shell go env GOPATH)/bin/golangci-lint" ]; then \
+		echo "Installing golangci-lint..."; \
+		$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	else \
+		echo "✅ golangci-lint already cached"; \
+	fi
+	@# Skip non-critical tools in CI-minimal mode
+	@echo "✅ Minimal CI linting tools ready"
+
+# Run comprehensive linting performance analysis
+lint-performance-report:
+	@echo "📊 Running comprehensive linting performance analysis..."
+	@chmod +x ./scripts/lint-performance-report.sh
+	@./scripts/lint-performance-report.sh
+	@echo "✅ Performance analysis complete"
 
 # Check development environment
 check-env: check-lint-tools

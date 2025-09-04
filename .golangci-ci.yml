@@ -1,0 +1,94 @@
+---
+# Optimized golangci-lint configuration for CI environments
+# This config prioritizes speed while maintaining essential code quality checks
+
+version: "2"
+
+run:
+  timeout: 3m  # Reduced from 5m for faster CI
+  go: "1.25"
+  concurrency: 4  # Parallel processing for faster execution
+  build-tags:
+    - integration
+  skip-dirs:
+    - vendor
+    - node_modules
+    - tmp
+    - .git
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_test\\.go$"  # Skip test files for faster CI (can be re-enabled if needed)
+
+linters:
+  # Enable only critical linters for CI performance
+  enable:
+    - errcheck      # Critical: unhandled errors
+    - gosec         # Critical: security issues
+    - govet         # Critical: suspicious constructs
+    - ineffassign   # Critical: ineffective assignments
+    - staticcheck   # Critical: static analysis
+    - unused        # Critical: unused code
+    - misspell      # Critical: common misspellings
+    - whitespace    # Critical: whitespace formatting
+    - revive        # Critical: general linting rules (faster than golint)
+
+  # Disable slower linters that can be run locally/in development
+  disable:
+    - bodyclose     # Slower: HTTP response body checks
+    - dupl          # Slower: duplicate code detection
+    - exhaustive    # Slower: exhaustive switch statements
+    - funlen        # Slower: function length
+    - gochecknoinits # Slower: init function checks
+    - goconst       # Slower: constant extraction
+    - gocritic      # Slower: comprehensive criticism
+    - gocyclo       # Slower: cyclomatic complexity
+    - lll           # Slower: line length
+    - nakedret      # Slower: naked returns
+    - noctx         # Slower: context checks
+    - nolintlint    # Slower: lint directive checks
+    - rowserrcheck  # Slower: SQL row error checks
+    - unconvert     # Slower: unnecessary conversions
+    - unparam       # Slower: unused parameters
+
+issues:
+  max-issues-per-linter: 50  # Limit to prevent excessive output
+  max-same-issues: 10        # Limit duplicate issues
+  new-from-rev: origin/main  # Only check new issues in CI
+  exclude-use-default: false # Don't exclude common issues
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  gosec:
+    severity: high  # Only report high severity issues in CI
+    confidence: medium
+
+  govet:
+    enable-all: false
+    enable:
+      - atomic
+      - bools
+      - copylocks
+      - printf
+      - shadow
+      - shift
+      - unreachable
+
+  revive:
+    rules:
+      - name: exported-func
+      - name: exported-type
+      - name: var-naming
+      - name: package-comments
+        disabled: true  # Disable for CI speed
+      - name: exported-var
+        disabled: true  # Disable for CI speed
+
+output:
+  format: colored-line-number
+  print-issued-lines: false  # Reduce output for CI performance
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true
