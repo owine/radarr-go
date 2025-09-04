@@ -1,6 +1,6 @@
 // Advanced caching and persistence utilities for Radarr Go frontend
 
-export interface CacheItem<T = any> {
+export interface CacheItem<T = unknown> {
   data: T;
   timestamp: number;
   ttl: number; // Time to live in milliseconds
@@ -126,7 +126,7 @@ class CacheManager {
     let expiredItems = 0;
     let totalSize = 0;
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [, item] of this.cache.entries()) {
       if (now > item.timestamp + item.ttl) {
         expiredItems++;
       } else {
@@ -311,7 +311,7 @@ class CacheManager {
   }
 
   // App state persistence
-  async saveAppState(state: Record<string, any>): Promise<void> {
+  async saveAppState(state: Record<string, unknown>): Promise<void> {
     await this.persist('app-state', state, {
       ttl: 24 * 60 * 60 * 1000, // 24 hours
       storageType: 'localStorage',
@@ -320,7 +320,7 @@ class CacheManager {
     });
   }
 
-  async loadAppState(): Promise<Record<string, any> | null> {
+  async loadAppState(): Promise<Record<string, unknown> | null> {
     return await this.retrieve('app-state', {
       storageType: 'localStorage',
       compress: true,
@@ -509,7 +509,7 @@ export const cacheManager = new CacheManager();
 // Utility functions for common caching patterns
 export const cacheUtils = {
   // Generate cache key with parameters
-  generateKey: (prefix: string, params: Record<string, any> = {}): string => {
+  generateKey: (prefix: string, params: Record<string, unknown> = {}): string => {
     const sortedParams = Object.keys(params)
       .sort()
       .map(key => `${key}:${params[key]}`)

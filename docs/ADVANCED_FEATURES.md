@@ -20,6 +20,7 @@ Radarr-Go features a sophisticated multi-threaded task scheduling system with pr
 ### Architecture Overview
 
 The task system is built around three core worker pools:
+
 - **High Priority Queue**: Critical operations like health checks and user-initiated tasks
 - **Default Queue**: Standard operations like movie refreshes and import processing
 - **Background Queue**: Low-priority maintenance tasks and scheduled operations
@@ -47,6 +48,7 @@ tasks:
 #### Task Types and Commands
 
 **Built-in Task Commands:**
+
 - `RefreshMovie`: Updates movie metadata from external sources
 - `SearchMissing`: Searches for missing movies using configured indexers
 - `ImportListSync`: Synchronizes import lists and adds new movies
@@ -109,6 +111,7 @@ curl -X GET http://localhost:7878/api/v3/system/task \
 ```
 
 Response includes:
+
 - Active worker counts per queue
 - Queued task counts
 - Currently executing tasks
@@ -117,6 +120,7 @@ Response includes:
 #### Task History and Logging
 
 All task executions are logged with:
+
 - Start/end timestamps
 - Execution duration
 - Success/failure status
@@ -173,16 +177,19 @@ func (h *CustomTaskHandler) Execute(ctx context.Context, task *models.TaskV2,
 ### Troubleshooting Common Issues
 
 #### Task Queue Backlog
+
 - Monitor queue depths via `/api/v3/system/task`
 - Increase worker counts if consistently backlogged
 - Check for failing tasks causing retries
 
 #### Long-Running Tasks
+
 - Tasks automatically timeout after 30 minutes
 - Monitor task progress via API
 - Cancel stuck tasks if necessary
 
 #### Memory Usage
+
 - Tasks with large datasets may consume significant memory
 - Monitor system resources during peak times
 - Adjust concurrent task limits if needed
@@ -196,23 +203,27 @@ Radarr-Go provides a comprehensive notification system supporting 11+ notificati
 ### Supported Notification Providers
 
 #### Chat and Messaging Platforms
+
 - **Discord**: Rich embed notifications with custom webhooks
 - **Slack**: Channel notifications with customizable formatting
 - **Telegram**: Bot-based messaging with inline keyboards
 - **Signal**: Secure messaging via Signal CLI API
 
 #### Push Notification Services
+
 - **Pushover**: Mobile push notifications with priority levels
 - **Pushbullet**: Cross-platform push notifications
 - **Gotify**: Self-hosted push notification server
 - **Ntfy**: Simple pub-sub push notifications
 
 #### Email Services
+
 - **SMTP Email**: Direct SMTP server integration
 - **Mailgun**: Transactional email service
 - **SendGrid**: Cloud-based email delivery
 
 #### Advanced Integrations
+
 - **Webhook**: Custom HTTP POST notifications
 - **Custom Scripts**: Execute custom scripts with notification data
 
@@ -283,6 +294,7 @@ notifications:
 ### Event Types and Triggers
 
 #### Core Movie Events
+
 - **onGrab**: Movie grabbed from indexer
 - **onDownload**: Movie successfully downloaded and imported
 - **onUpgrade**: Movie file upgraded to better quality
@@ -292,6 +304,7 @@ notifications:
 - **onMovieFileDelete**: Movie file deleted
 
 #### System Events
+
 - **onHealthIssue**: System health problems detected
 - **onApplicationUpdate**: New application version available
 - **onManualInteractionRequired**: Manual intervention needed
@@ -303,6 +316,7 @@ notifications:
 Radarr-Go includes sophisticated templates for each event type with rich variable substitution:
 
 **Available Variables:**
+
 - `{{movie.title}}` - Movie title
 - `{{movie.year}}` - Movie release year
 - `{{movie.imdbId}}` - IMDb identifier
@@ -394,6 +408,7 @@ curl -X GET http://localhost:7878/api/v3/notification/history \
 ```
 
 Response includes:
+
 - Delivery timestamps
 - Success/failure status
 - Retry attempts
@@ -418,16 +433,19 @@ curl -X POST http://localhost:7878/api/v3/notification/test \
 #### Common Issues
 
 **Discord Webhook Failures:**
+
 - Verify webhook URL is correct and active
 - Check Discord server permissions
 - Ensure rate limits aren't exceeded
 
 **Email Delivery Issues:**
+
 - Verify SMTP credentials and server settings
 - Check firewall rules for SMTP ports
 - Test with email provider's specific requirements
 
 **Push Notification Problems:**
+
 - Validate API keys and user tokens
 - Check device registration
 - Verify service-specific requirements
@@ -435,11 +453,13 @@ curl -X POST http://localhost:7878/api/v3/notification/test \
 ### Performance Considerations
 
 #### Concurrent Delivery
+
 - Notifications are sent concurrently to avoid blocking
 - Failed notifications don't impact successful ones
 - Delivery timeouts prevent indefinite waits
 
 #### Rate Limiting
+
 - Automatic rate limiting for provider APIs
 - Queuing system for high-volume notifications
 - Provider-specific throttling configuration
@@ -453,6 +473,7 @@ The file organization system provides intelligent automated file management with
 ### Core Capabilities
 
 #### File Operations
+
 - **Move**: Transfer files to organized locations (default)
 - **Copy**: Duplicate files while preserving originals
 - **Hardlink**: Create hard links for space efficiency
@@ -478,6 +499,7 @@ naming:
 #### Available Naming Tokens
 
 **Movie Information:**
+
 - `{Movie Title}` - Movie title with cleaned characters
 - `{Movie TitleThe}` - Movie title with "The" moved to end
 - `{Movie OriginalTitle}` - Original movie title
@@ -486,6 +508,7 @@ naming:
 - `{TMDb Id}` - TMDB identifier
 
 **Quality and Media:**
+
 - `{Quality Full}` - Full quality name (e.g., "Bluray-1080p")
 - `{Quality Title}` - Quality title (e.g., "1080p")
 - `{Quality Proper}` - "PROPER" if proper release
@@ -495,11 +518,13 @@ naming:
 - `{MediaInfo AudioChannels}` - Audio channel count
 
 **Release Information:**
+
 - `{Release Group}` - Release group name
 - `{Edition Tags}` - Edition information (Director's Cut, etc.)
 - `{Custom Formats}` - Custom format tags
 
 **File Information:**
+
 - `{Original Title}` - Original filename without extension
 - `{Original Filename}` - Complete original filename
 
@@ -544,6 +569,7 @@ naming:
 ### File Operation Modes
 
 #### Move (Default)
+
 - Transfers files to new location
 - Original file is removed
 - Most space efficient
@@ -557,6 +583,7 @@ fileManagement:
 ```
 
 #### Copy
+
 - Duplicates files to new location
 - Original files preserved
 - Useful for backup scenarios
@@ -569,6 +596,7 @@ fileManagement:
 ```
 
 #### Hardlink
+
 - Creates hard links instead of copies
 - Same file accessible from multiple locations
 - Space efficient alternative to copying
@@ -582,6 +610,7 @@ fileManagement:
 ```
 
 #### Symlink
+
 - Creates symbolic links
 - Useful for complex storage setups
 - Requires proper permissions
@@ -695,21 +724,25 @@ curl -X GET http://localhost:7878/api/v3/manualimport \
 Common failure reasons and solutions:
 
 **File Permission Issues:**
+
 - Ensure Radarr-Go has read/write access to all paths
 - Check filesystem permissions
 - Verify user/group ownership
 
 **Path Length Limitations:**
+
 - Reduce naming template complexity
 - Enable path length limiting
 - Use shorter folder structures
 
 **Quality Detection Problems:**
+
 - Enable MediaInfo for accurate quality detection
 - Update quality definitions
 - Check filename parsing rules
 
 **Cross-Filesystem Operations:**
+
 - Hardlinks fail across filesystems - use copy fallback
 - Symlinks may have permission restrictions
 - Consider mount point configurations
@@ -717,6 +750,7 @@ Common failure reasons and solutions:
 ### Performance Optimization
 
 #### Concurrent Processing
+
 - Configurable concurrent import threads
 - Parallel file operations for large imports
 - Batch processing for efficiency
@@ -729,6 +763,7 @@ import:
 ```
 
 #### Storage Efficiency
+
 - Automatic cleanup of empty directories
 - Duplicate file detection and removal
 - Space usage monitoring and alerting
@@ -742,6 +777,7 @@ Radarr-Go includes a comprehensive health monitoring system that continuously wa
 ### Health Check Categories
 
 #### System Health Checks
+
 - **Disk Space**: Monitor available storage across all configured paths
 - **Database Connectivity**: Verify database connections and performance
 - **Network Connectivity**: Test internet and indexer accessibility
@@ -750,6 +786,7 @@ Radarr-Go includes a comprehensive health monitoring system that continuously wa
 - **CPU Usage**: Track processing load and bottlenecks
 
 #### Application Health Checks
+
 - **Indexer Status**: Verify indexer availability and authentication
 - **Download Client Status**: Check download client connectivity
 - **Import List Status**: Validate import list functionality
@@ -757,6 +794,7 @@ Radarr-Go includes a comprehensive health monitoring system that continuously wa
 - **API Endpoint Health**: Monitor API responsiveness
 
 #### Configuration Health Checks
+
 - **Quality Profile Validation**: Ensure quality profiles are properly configured
 - **Naming Configuration**: Verify naming templates are valid
 - **Path Configuration**: Check all configured paths exist and are accessible
@@ -838,6 +876,7 @@ health:
 ### Health Issue Management
 
 #### Issue Severity Levels
+
 - **OK**: All systems operating normally
 - **Notice**: Informational messages, no action required
 - **Warning**: Issues that may impact functionality but don't prevent operation
@@ -1036,6 +1075,7 @@ health:
 ### Troubleshooting Common Health Issues
 
 #### Disk Space Issues
+
 ```bash
 # Check disk usage
 df -h /movies /downloads
@@ -1048,6 +1088,7 @@ find /downloads -type f -mtime +7 -delete
 ```
 
 #### Database Connection Issues
+
 ```bash
 # Test database connectivity
 pg_isready -h localhost -p 5432 -U radarr
@@ -1060,6 +1101,7 @@ VACUUM ANALYZE;
 ```
 
 #### Permission Problems
+
 ```bash
 # Check file ownership
 ls -la /movies /downloads
@@ -1072,6 +1114,7 @@ sudo chmod -R 755 /movies /downloads
 ```
 
 #### Memory Usage Issues
+
 ```bash
 # Monitor memory usage
 htop
@@ -1092,12 +1135,14 @@ Radarr-Go is architected from the ground up for superior performance compared to
 ### Runtime Performance Advantages
 
 #### Memory Efficiency
+
 - **Native Compiled Binary**: No runtime overhead from JIT compilation or garbage collection pressure
 - **Efficient Memory Usage**: Typically 50-80% lower memory consumption than .NET Radarr
 - **Fast Startup**: Application starts in seconds, not minutes
 - **Minimal Memory Footprint**: Base memory usage under 100MB vs 500MB+ for .NET version
 
 #### Concurrency and Parallelism
+
 - **Goroutine-based Concurrency**: Lightweight threading model enables thousands of concurrent operations
 - **Non-blocking I/O**: Efficient handling of network requests and file operations
 - **Parallel Processing**: Multiple movies/files processed simultaneously
@@ -1106,6 +1151,7 @@ Radarr-Go is architected from the ground up for superior performance compared to
 ### Database Optimizations
 
 #### Connection Management
+
 ```yaml
 database:
   postgres:
@@ -1126,12 +1172,14 @@ database:
 ```
 
 #### Query Optimization
+
 - **Prepared Statements**: All database queries use prepared statements for optimal performance
 - **Index Optimization**: Carefully designed indexes for common query patterns
 - **Batch Operations**: Multiple records processed in single transactions
 - **Query Caching**: Frequently accessed data cached in memory
 
 #### GORM Enhancements
+
 - **Custom Hooks**: Validation and business logic implemented efficiently
 - **Preloading Optimization**: Strategic relationship loading to minimize N+1 queries
 - **Transaction Management**: Proper transaction boundaries for data consistency
@@ -1140,6 +1188,7 @@ database:
 ### HTTP Performance
 
 #### Gin Framework Optimizations
+
 ```yaml
 server:
   # Performance configuration
@@ -1159,6 +1208,7 @@ server:
 ```
 
 #### Middleware Efficiency
+
 - **Minimal Middleware Stack**: Only essential middleware enabled
 - **Fast Routing**: Gin's radix tree router provides O(1) route matching
 - **JSON Optimization**: Custom JSON encoding for better performance
@@ -1167,6 +1217,7 @@ server:
 ### I/O Performance
 
 #### File Operations
+
 - **Optimized File Copying**: Uses system calls for maximum throughput
 - **Parallel File Processing**: Multiple files processed concurrently
 - **Memory-Mapped Files**: For large file operations when beneficial
@@ -1186,6 +1237,7 @@ fileManagement:
 ```
 
 #### Network I/O
+
 - **HTTP Client Pool**: Reuse connections for external API calls
 - **Request Queuing**: Manage concurrent requests to external services
 - **Timeout Management**: Prevent hanging requests from impacting performance
@@ -1194,6 +1246,7 @@ fileManagement:
 ### Memory Management
 
 #### Garbage Collection Optimization
+
 ```bash
 # Tuning Go GC for optimal performance
 export GOGC=100              # Default GC target (adjust based on memory availability)
@@ -1202,6 +1255,7 @@ export GODEBUG=gctrace=1     # Enable GC tracing for monitoring
 ```
 
 #### Memory Pool Usage
+
 - **Object Pooling**: Reuse frequently allocated objects
 - **Buffer Pools**: Efficient buffer management for I/O operations
 - **String Optimization**: Minimize string allocations in hot paths
@@ -1210,6 +1264,7 @@ export GODEBUG=gctrace=1     # Enable GC tracing for monitoring
 ### Caching Strategies
 
 #### In-Memory Caching
+
 ```yaml
 cache:
   # Movie metadata caching
@@ -1232,6 +1287,7 @@ cache:
 ```
 
 #### Database Query Caching
+
 - **Query Result Caching**: Cache frequently accessed data
 - **Smart Invalidation**: Automatic cache invalidation on data changes
 - **Memory-Safe Caching**: Bounded cache sizes prevent memory exhaustion
@@ -1240,6 +1296,7 @@ cache:
 ### Monitoring and Profiling
 
 #### Performance Metrics Collection
+
 ```yaml
 monitoring:
   enabled: true
@@ -1259,6 +1316,7 @@ monitoring:
 ```
 
 #### Built-in Profiling
+
 ```bash
 # Enable pprof endpoints for performance analysis
 curl http://localhost:7878/debug/pprof/profile?seconds=30 > cpu.prof
@@ -1276,6 +1334,7 @@ go tool pprof goroutine.prof
 ### Benchmarking and Testing
 
 #### Performance Benchmarks
+
 ```bash
 # Run performance benchmarks
 make test-bench
@@ -1287,6 +1346,7 @@ go test -bench=BenchmarkAPI ./internal/api
 ```
 
 #### Load Testing
+
 ```bash
 # API load testing with Apache Bench
 ab -n 1000 -c 10 http://localhost:7878/api/v3/movie
@@ -1301,6 +1361,7 @@ pgbench -c 10 -j 2 -t 1000 radarr_db
 ### Production Performance Tuning
 
 #### System-Level Optimizations
+
 ```bash
 # Increase file descriptor limits
 echo "radarr soft nofile 65536" >> /etc/security/limits.conf
@@ -1315,6 +1376,7 @@ swapoff -a
 ```
 
 #### Container Optimizations
+
 ```yaml
 # Docker Compose performance settings
 services:
@@ -1375,6 +1437,7 @@ export RADARR_FEATURES_ENABLE_HEALTH_CHECKS=true
 ### Multi-Environment Deployment
 
 #### Development Configuration
+
 ```yaml
 # config.dev.yaml
 server:
@@ -1395,6 +1458,7 @@ features:
 ```
 
 #### Production Configuration
+
 ```yaml
 # config.prod.yaml
 server:

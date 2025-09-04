@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppSelector } from '../hooks/redux';
 import { Layout } from './layout/Layout';

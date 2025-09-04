@@ -18,12 +18,14 @@ This guide provides comprehensive monitoring and alerting configurations for Rad
 Radarr Go provides built-in monitoring capabilities that integrate seamlessly with modern observability stacks:
 
 ### Built-in Metrics
+
 - **System Metrics**: CPU, memory, disk usage, network I/O
 - **Application Metrics**: API response times, database query performance, active connections
 - **Business Metrics**: Movies processed, downloads completed, errors encountered
 - **Health Metrics**: Component health status, external service availability
 
 ### Monitoring Stack Components
+
 - **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboarding
 - **AlertManager**: Alert routing and notification

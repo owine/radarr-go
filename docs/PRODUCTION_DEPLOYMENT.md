@@ -520,6 +520,7 @@ esac
 ```
 
 Make the script executable:
+
 ```bash
 chmod +x deploy.sh
 ```

@@ -41,15 +41,18 @@ docker run -d \
 Our Docker images follow the comprehensive [versioning strategy](VERSIONING.md) with automated tag management:
 
 #### **Current Status** (Pre-1.0 Phase)
+
 **Note**: `:latest` tag is reserved for v1.0.0+. Current releases use targeted tags.
 
 #### **Alpha/Beta Tags** (Current Development)
+
 - `:testing` - **Latest pre-release** (current: v0.9.0-alpha)
 - `:v0.9.0-alpha` - **Specific alpha version** (recommended for current use)
 - `:prerelease` - Alias for latest pre-release
 - `:alpha` - Latest alpha version
 
 #### **Database-Specific Tags**
+
 - `:v0.9.0-alpha-postgres` - PostgreSQL optimized (recommended)
 - `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized
 - `:v0.9.0-alpha-multi-db` - Supports both databases
@@ -57,6 +60,7 @@ Our Docker images follow the comprehensive [versioning strategy](VERSIONING.md) 
 - `:mariadb` - Latest with MariaDB focus
 
 #### **Future Production Tags** (v1.0.0+)
+
 - `:latest` - Latest stable release (assigned at v1.0.0)
 - `:stable` - Stable release pointer
 - `:v1.0.0` - Immutable version pinning
@@ -79,6 +83,7 @@ docker run -d ghcr.io/radarr/radarr-go@sha256:abc1234...
 ```
 
 #### **Version Migration Path**
+
 **For existing users**: See [MIGRATION.md](MIGRATION.md) for upgrade guidance from v0.0.x.
 
 **🔒 Current Recommendation**: Use `:v0.9.0-alpha` for testing environments. See [versioning strategy](VERSIONING.md) for full details.
@@ -91,6 +96,7 @@ Download the latest release for your platform from the [releases page](https://g
 **Next Milestone**: v1.0.0 (Q2 2025) - Full production release with API stability guarantee
 
 **Supported Platforms:**
+
 - Linux: amd64, arm64
 - macOS (Darwin): amd64, arm64
 - FreeBSD: amd64, arm64
@@ -136,6 +142,7 @@ storage:
 ```
 
 Environment variables use the `RADARR_` prefix:
+
 - `RADARR_SERVER_PORT=7878`
 - `RADARR_DATABASE_TYPE=mariadb`
 - `RADARR_DATABASE_HOST=localhost`
@@ -145,6 +152,7 @@ Environment variables use the `RADARR_` prefix:
 ### Database Support
 
 **PostgreSQL (Default)**
+
 - Enterprise-grade relational database
 - Recommended for all environments from single-user to high-load
 - Requires PostgreSQL 12+ server
@@ -153,6 +161,7 @@ Environment variables use the `RADARR_` prefix:
 - Automatic timestamp triggers and proper constraint handling
 
 **MariaDB/MySQL**
+
 - High-performance alternative database option
 - Excellent compatibility and wide deployment support
 - Requires MariaDB 10.5+ or MySQL 8.0+ server
@@ -221,6 +230,7 @@ make test-quick         # Quick unit tests only
 ```
 
 **Key Testing Features:**
+
 - ✅ **Containerized Databases**: Automated PostgreSQL and MariaDB test containers
 - ✅ **Test Isolation**: Schema-level isolation for parallel testing
 - ✅ **Performance Testing**: Comprehensive benchmark suite
@@ -292,11 +302,13 @@ Benchmarks show significant improvements over the original .NET implementation:
 Radarr Go follows [Semantic Versioning 2.0.0](https://semver.org/) with project-specific adaptations for the pre-1.0 phase:
 
 ### Current Phase (Pre-1.0)
+
 - **v0.9.x-alpha**: Near production-ready with 95% feature parity
 - **Breaking changes allowed**: Minor version updates may include breaking changes
 - **API compatibility maintained**: Radarr v3 API endpoints remain stable
 
 ### Future Phase (v1.0.0+)
+
 - **API stability guarantee**: No breaking changes to public APIs
 - **Strict semantic versioning**: Major.Minor.Patch with clear compatibility rules
 - **Production readiness**: Full support and maintenance commitment
@@ -316,7 +328,9 @@ Radarr Go follows [Semantic Versioning 2.0.0](https://semver.org/) with project-
 7. Submit a pull request
 
 ### Version Release Process
+
 Contributors should follow the [automated versioning workflow](VERSIONING_AUTOMATION_SUMMARY.md):
+
 - Version format validation
 - Automated Docker tag management
 - Progressive release testing
@@ -325,6 +339,7 @@ Contributors should follow the [automated versioning workflow](VERSIONING_AUTOMA
 ### Code Quality
 
 The project maintains high code quality standards:
+
 - golangci-lint with comprehensive rules and strict formatting
 - Security scanning with gosec and govulncheck (vulnerability-free)
 - Race condition detection in tests

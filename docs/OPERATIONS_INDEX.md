@@ -9,6 +9,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ## 📚 Documentation Structure
 
 ### 🚀 [Production Deployment Guide](./PRODUCTION_DEPLOYMENT.md)
+
 **Complete production deployment strategies**
 
 - **Docker Compose Production Setup** - Multi-service production stacks
@@ -19,6 +20,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - **Automated Deployment Scripts** - One-click deployment automation
 
 **Key Features:**
+
 - Production-ready Docker Compose configurations
 - Kubernetes manifests with HPA and network policies
 - SSL automation with Let's Encrypt
@@ -26,6 +28,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - Multi-environment configuration management
 
 ### 📊 [Monitoring and Alerting Setup](./MONITORING_AND_ALERTING.md)
+
 **Comprehensive observability solutions**
 
 - **Prometheus Metrics Collection** - Application and system metrics
@@ -36,6 +39,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - **Performance Monitoring** - Automated performance tracking
 
 **Key Features:**
+
 - Pre-configured dashboards and alerting rules
 - Multi-channel notifications (Slack, Discord, email)
 - Log aggregation and search capabilities
@@ -43,6 +47,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - Security event correlation
 
 ### ⚡ [Performance Tuning Guide](./PERFORMANCE_TUNING.md)
+
 **Optimization strategies for maximum performance**
 
 - **Database Optimization** - PostgreSQL and MariaDB tuning
@@ -53,6 +58,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - **Scaling Strategies** - Horizontal and vertical scaling
 
 **Key Features:**
+
 - 3x faster API responses vs original Radarr
 - 60% lower memory usage optimization
 - Database performance tuning scripts
@@ -60,6 +66,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - Scaling configuration templates
 
 ### 🔒 [Security Hardening Guide](./SECURITY_HARDENING.md)
+
 **Enterprise-grade security implementation**
 
 - **Container Security** - Rootless containers and capability dropping
@@ -70,6 +77,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - **Vulnerability Management** - Automated security scanning
 
 **Key Features:**
+
 - Security-first container configurations
 - Automated vulnerability scanning
 - Encrypted backup strategies
@@ -77,6 +85,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - Incident response procedures
 
 ### 🤖 [Automation and Templates](./AUTOMATION_AND_TEMPLATES.md)
+
 **Infrastructure as Code and operational automation**
 
 - **CI/CD Pipelines** - GitHub Actions and GitLab CI templates
@@ -87,6 +96,7 @@ This comprehensive operations documentation suite provides everything needed to 
 - **Operational Scripts** - Comprehensive automation toolkit
 
 **Key Features:**
+
 - Complete CI/CD pipeline templates
 - Terraform infrastructure provisioning
 - Ansible configuration management
@@ -133,6 +143,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ## 🛠️ Essential Scripts and Tools
 
 ### Deployment Scripts
+
 ```bash
 # Complete stack deployment
 ./scripts/deploy-complete-stack.sh production radarr.yourdomain.com admin@yourdomain.com
@@ -145,6 +156,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ```
 
 ### Monitoring Setup
+
 ```bash
 # Deploy monitoring stack
 ./scripts/setup-monitoring.sh deploy
@@ -154,6 +166,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ```
 
 ### Maintenance Operations
+
 ```bash
 # Full system maintenance
 ./scripts/comprehensive-maintenance.sh full
@@ -166,6 +179,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ```
 
 ### Performance Testing
+
 ```bash
 # Complete performance test
 ./scripts/performance-test.sh all
@@ -180,6 +194,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ## 🏗️ Architecture Overview
 
 ### Deployment Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Load Balancer                        │
@@ -209,6 +224,7 @@ This comprehensive operations documentation suite provides everything needed to 
 ```
 
 ### Monitoring Architecture
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Application   │───▶│   Prometheus     │───▶│    Grafana      │
@@ -269,16 +285,19 @@ This comprehensive operations documentation suite provides everything needed to 
 ### Common Issues and Solutions
 
 #### Deployment Issues
+
 - **Container Won't Start**: Check logs with `docker-compose logs radarr-go`
 - **Database Connection Failed**: Verify database credentials and connectivity
 - **SSL Certificate Issues**: Run SSL setup script with proper domain
 
 #### Performance Issues
+
 - **High Memory Usage**: Check for memory leaks, tune garbage collection
 - **Slow API Responses**: Optimize database queries, check connection pool
 - **High CPU Usage**: Review concurrent task settings, check for infinite loops
 
 #### Security Issues
+
 - **Failed Authentication**: Verify API key configuration
 - **SSL/TLS Errors**: Check certificate validity and cipher suite compatibility
 - **Security Scan Failures**: Review and remediate identified vulnerabilities
@@ -322,6 +341,7 @@ This comprehensive operations documentation suite provides everything needed to 
 This documentation suite provides everything needed for enterprise-grade Radarr Go deployments. Start with the [Production Deployment Guide](./PRODUCTION_DEPLOYMENT.md) and follow the documentation in order for best results.
 
 **Remember**: Radarr Go offers significant advantages over the original version:
+
 - **3x faster performance**
 - **60% lower memory usage**
 - **Single binary deployment**

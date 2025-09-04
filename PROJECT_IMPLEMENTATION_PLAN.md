@@ -1,4 +1,5 @@
 # 🎯 **Radarr-Go Project Implementation Plan**
+
 *Detailed Agent Assignment and Execution Strategy*
 
 ## 📋 **Executive Summary**
@@ -6,6 +7,7 @@
 This implementation plan translates the high-level PROJECT_ROADMAP.md into specific, actionable tasks assigned to specialized Claude Code agents. Each phase includes detailed task assignments, agent responsibilities, dependencies, and deliverable specifications.
 
 **Plan Structure:**
+
 - **Agent-Specific Task Assignments** with clear scope boundaries
 - **Dependency Management** between tasks and agents
 - **Quality Gates** and review checkpoints
@@ -17,6 +19,7 @@ This implementation plan translates the high-level PROJECT_ROADMAP.md into speci
 ## 👥 **Agent Roles and Responsibilities**
 
 ### **Primary Development Agents**
+
 ```yaml
 backend-architect:
   - API design and backend architecture
@@ -44,6 +47,7 @@ devops-troubleshooter:
 ```
 
 ### **Specialized Support Agents**
+
 ```yaml
 docs-architect:
   - Documentation strategy and structure
@@ -73,11 +77,13 @@ golang-pro:
 ---
 
 ## 🚀 **Phase 0: Immediate Critical Fixes**
+
 **Duration**: 2-3 weeks | **Agents**: 3 primary + 2 support
 
 ### **Sprint 0.1: Critical Backend Fixes** (Week 1)
 
 #### **Task 0.1.1: Database Migration Fixes**
+
 **Agent**: `database-admin`
 **Priority**: CRITICAL
 **Duration**: 2-3 days
@@ -105,6 +111,7 @@ Quality Gates:
 ```
 
 #### **Task 0.1.2: Code Quality Fixes**
+
 **Agent**: `golang-pro`
 **Priority**: CRITICAL
 **Duration**: 2-3 days
@@ -132,6 +139,7 @@ Quality Gates:
 ```
 
 #### **Task 0.1.3: Testing Infrastructure Setup**
+
 **Agent**: `test-automator`
 **Priority**: HIGH
 **Duration**: 3-4 days
@@ -161,6 +169,7 @@ Quality Gates:
 ### **Sprint 0.2: Foundation Preparation** (Weeks 2-3)
 
 #### **Task 0.2.1: Development Environment Enhancement**
+
 **Agent**: `devops-troubleshooter`
 **Priority**: MEDIUM
 **Duration**: 3-4 days
@@ -188,6 +197,7 @@ Quality Gates:
 ```
 
 #### **Task 0.2.2: Release and Documentation Foundation**
+
 **Agent**: `docs-architect`
 **Priority**: MEDIUM
 **Duration**: 4-5 days
@@ -217,11 +227,13 @@ Quality Gates:
 ---
 
 ## 📚 **Phase 1: Documentation and User Experience**
+
 **Duration**: 4-6 weeks | **Agents**: 2 primary + 3 support
 
 ### **Sprint 1.1: Core User Documentation** (Weeks 1-2)
 
 #### **Task 1.1.1: Installation and Setup Documentation**
+
 **Agent**: `docs-architect`
 **Priority**: HIGH
 **Duration**: 5-6 days
@@ -249,6 +261,7 @@ Quality Gates:
 ```
 
 #### **Task 1.1.2: Feature Documentation**
+
 **Agent**: `docs-architect` + `backend-architect` (review)
 **Priority**: HIGH
 **Duration**: 7-8 days
@@ -278,6 +291,7 @@ Quality Gates:
 ### **Sprint 1.2: API Documentation** (Weeks 3-4)
 
 #### **Task 1.2.1: OpenAPI Specification Generation**
+
 **Agent**: `backend-architect`
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -305,6 +319,7 @@ Quality Gates:
 ```
 
 #### **Task 1.2.2: Integration Guides and Examples**
+
 **Agent**: `docs-architect` + `backend-architect` (examples)
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -334,6 +349,7 @@ Quality Gates:
 ### **Sprint 1.3: Developer Documentation** (Weeks 5-6)
 
 #### **Task 1.3.1: Architecture and Development Guides**
+
 **Agent**: `docs-architect` + `golang-pro` (technical review)
 **Priority**: MEDIUM
 **Duration**: 6-7 days
@@ -361,6 +377,7 @@ Quality Gates:
 ```
 
 #### **Task 1.3.2: Operations and Deployment Documentation**
+
 **Agent**: `devops-troubleshooter`
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -390,11 +407,13 @@ Quality Gates:
 ---
 
 ## 🎨 **Phase 2: Frontend Foundation**
+
 **Duration**: 8-10 weeks | **Agents**: 3 primary + 2 support
 
 ### **Sprint 2.1: Frontend Architecture Setup** (Weeks 1-2)
 
 #### **Task 2.1.1: Project Structure and Build System**
+
 **Agent**: `frontend-developer`
 **Priority**: CRITICAL
 **Duration**: 5-6 days
@@ -422,6 +441,7 @@ Quality Gates:
 ```
 
 #### **Task 2.1.2: Design System and Components**
+
 **Agent**: `frontend-developer` + `ui-ux-designer` (design)
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -449,6 +469,7 @@ Quality Gates:
 ```
 
 #### **Task 2.1.3: Build Integration and Docker**
+
 **Agent**: `devops-troubleshooter`
 **Priority**: HIGH
 **Duration**: 3-4 days
@@ -478,6 +499,7 @@ Quality Gates:
 ### **Sprint 2.2: Authentication and Core Layout** (Weeks 3-4)
 
 #### **Task 2.2.1: Authentication Implementation**
+
 **Agent**: `frontend-developer` + `security-auditor` (security review)
 **Priority**: CRITICAL
 **Duration**: 5-6 days
@@ -505,6 +527,7 @@ Quality Gates:
 ```
 
 #### **Task 2.2.2: Application Shell and Navigation**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -532,6 +555,7 @@ Quality Gates:
 ```
 
 #### **Task 2.2.3: Error Handling and Loading States**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 4-5 days
@@ -561,6 +585,7 @@ Quality Gates:
 ### **Sprint 2.3: API Integration Layer** (Weeks 5-6)
 
 #### **Task 2.3.1: RTK Query Configuration**
+
 **Agent**: `frontend-developer` + `backend-architect` (API review)
 **Priority**: CRITICAL
 **Duration**: 7-8 days
@@ -588,6 +613,7 @@ Quality Gates:
 ```
 
 #### **Task 2.3.2: Real-time Updates Implementation**
+
 **Agent**: `backend-architect` (WebSocket) + `frontend-developer` (client)
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -615,6 +641,7 @@ Quality Gates:
 ```
 
 #### **Task 2.3.3: Data Management and Caching**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 4-5 days
@@ -644,6 +671,7 @@ Quality Gates:
 ### **Sprint 2.4: Core Movie Management** (Weeks 7-8)
 
 #### **Task 2.4.1: Movie Library Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: CRITICAL
 **Duration**: 8-9 days
@@ -671,6 +699,7 @@ Quality Gates:
 ```
 
 #### **Task 2.4.2: Movie Detail and Management**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -698,6 +727,7 @@ Quality Gates:
 ```
 
 #### **Task 2.4.3: Movie Search and Import**
+
 **Agent**: `frontend-developer` + `backend-architect` (TMDB integration)
 **Priority**: HIGH
 **Duration**: 5-6 days
@@ -727,11 +757,13 @@ Quality Gates:
 ---
 
 ## ⚡ **Phase 3: Core Feature Implementation**
+
 **Duration**: 10-12 weeks | **Agents**: 4 primary + 3 support
 
 ### **Sprint 3.1: Settings and Configuration** (Weeks 1-3)
 
 #### **Task 3.1.1: Settings Architecture**
+
 **Agent**: `frontend-developer` + `backend-architect` (API design)
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -759,6 +791,7 @@ Quality Gates:
 ```
 
 #### **Task 3.1.2: Core Settings Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 10-12 days
@@ -790,6 +823,7 @@ Quality Gates:
 ```
 
 #### **Task 3.1.3: Advanced Settings Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 8-9 days
@@ -821,6 +855,7 @@ Quality Gates:
 ### **Sprint 3.2: Queue and Activity Monitoring** (Weeks 4-6)
 
 #### **Task 3.2.1: Queue Management Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 7-8 days
@@ -848,6 +883,7 @@ Quality Gates:
 ```
 
 #### **Task 3.2.2: Activity Monitoring System**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -875,6 +911,7 @@ Quality Gates:
 ```
 
 #### **Task 3.2.3: Health Monitoring Interface**
+
 **Agent**: `frontend-developer` + `devops-troubleshooter` (monitoring expertise)
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -904,6 +941,7 @@ Quality Gates:
 ### **Sprint 3.3: Calendar and Scheduling** (Weeks 7-9)
 
 #### **Task 3.3.1: Calendar Views Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 8-9 days
@@ -931,6 +969,7 @@ Quality Gates:
 ```
 
 #### **Task 3.3.2: Release Management**
+
 **Agent**: `frontend-developer` + `backend-architect` (scheduling logic)
 **Priority**: MEDIUM
 **Duration**: 6-7 days
@@ -958,6 +997,7 @@ Quality Gates:
 ```
 
 #### **Task 3.3.3: Calendar Integration Features**
+
 **Agent**: `frontend-developer`
 **Priority**: LOW
 **Duration**: 4-5 days
@@ -987,6 +1027,7 @@ Quality Gates:
 ### **Sprint 3.4: Search and Downloads** (Weeks 10-12)
 
 #### **Task 3.4.1: Interactive Search Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 8-9 days
@@ -1014,6 +1055,7 @@ Quality Gates:
 ```
 
 #### **Task 3.4.2: Download Management**
+
 **Agent**: `frontend-developer`
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -1041,6 +1083,7 @@ Quality Gates:
 ```
 
 #### **Task 3.4.3: Wanted Movies Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -1070,11 +1113,13 @@ Quality Gates:
 ---
 
 ## 🔧 **Phase 4: Advanced Features and Polish**
+
 **Duration**: 8-10 weeks | **Agents**: 4 primary + 3 support
 
 ### **Sprint 4.1: Collections and Advanced Management** (Weeks 1-3)
 
 #### **Task 4.1.1: Collections Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 7-8 days
@@ -1102,6 +1147,7 @@ Quality Gates:
 ```
 
 #### **Task 4.1.2: File Organization Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 6-7 days
@@ -1129,6 +1175,7 @@ Quality Gates:
 ```
 
 #### **Task 4.1.3: Parse Tools Interface**
+
 **Agent**: `frontend-developer`
 **Priority**: LOW
 **Duration**: 4-5 days
@@ -1158,6 +1205,7 @@ Quality Gates:
 ### **Sprint 4.2: Performance and Mobile Optimization** (Weeks 4-6)
 
 #### **Task 4.2.1: Performance Optimization**
+
 **Agent**: `frontend-developer` + `devops-troubleshooter` (monitoring)
 **Priority**: HIGH
 **Duration**: 7-8 days
@@ -1185,6 +1233,7 @@ Quality Gates:
 ```
 
 #### **Task 4.2.2: Mobile Experience**
+
 **Agent**: `frontend-developer` + `ui-ux-designer` (mobile UX)
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -1212,6 +1261,7 @@ Quality Gates:
 ```
 
 #### **Task 4.2.3: Accessibility Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -1241,6 +1291,7 @@ Quality Gates:
 ### **Sprint 4.3: Statistics and Reporting** (Weeks 7-8)
 
 #### **Task 4.3.1: Dashboard Implementation**
+
 **Agent**: `frontend-developer`
 **Priority**: MEDIUM
 **Duration**: 5-6 days
@@ -1268,6 +1319,7 @@ Quality Gates:
 ```
 
 #### **Task 4.3.2: Statistics and Analytics**
+
 **Agent**: `frontend-developer` + `backend-architect` (data analysis)
 **Priority**: LOW
 **Duration**: 6-7 days
@@ -1297,6 +1349,7 @@ Quality Gates:
 ### **Sprint 4.4: Testing and Quality Assurance** (Weeks 9-10)
 
 #### **Task 4.4.1: Frontend Testing Implementation**
+
 **Agent**: `test-automator`
 **Priority**: HIGH
 **Duration**: 8-9 days
@@ -1324,6 +1377,7 @@ Quality Gates:
 ```
 
 #### **Task 4.4.2: Quality Assurance and Bug Fixes**
+
 **Agent**: `test-automator` + `frontend-developer` (fixes)
 **Priority**: HIGH
 **Duration**: 6-7 days
@@ -1354,11 +1408,13 @@ Quality Gates:
 ---
 
 ## 🚀 **Phase 5: Production Readiness and Launch**
+
 **Duration**: 4-6 weeks | **Agents**: 5 primary + 2 support
 
 ### **Sprint 5.1: Deployment Infrastructure** (Weeks 1-2)
 
 #### **Task 5.1.1: Release Automation**
+
 **Agent**: `devops-troubleshooter`
 **Priority**: CRITICAL
 **Duration**: 6-7 days
@@ -1386,6 +1442,7 @@ Quality Gates:
 ```
 
 #### **Task 5.1.2: Documentation Finalization**
+
 **Agent**: `docs-architect`
 **Priority**: HIGH
 **Duration**: 5-6 days
@@ -1413,6 +1470,7 @@ Quality Gates:
 ```
 
 #### **Task 5.1.3: Security Review**
+
 **Agent**: `security-auditor`
 **Priority**: HIGH
 **Duration**: 4-5 days
@@ -1442,6 +1500,7 @@ Quality Gates:
 ### **Sprint 5.2: Beta Release and Community Testing** (Weeks 3-4)
 
 #### **Task 5.2.1: Beta Release Preparation**
+
 **Agent**: `devops-troubleshooter` + `docs-architect` (documentation)
 **Priority**: HIGH
 **Duration**: 5-6 days
@@ -1469,6 +1528,7 @@ Quality Gates:
 ```
 
 #### **Task 5.2.2: Community Engagement**
+
 **Agent**: `docs-architect`
 **Priority**: MEDIUM
 **Duration**: 4-5 days
@@ -1496,6 +1556,7 @@ Quality Gates:
 ```
 
 #### **Task 5.2.3: Monitoring and Analytics Setup**
+
 **Agent**: `devops-troubleshooter`
 **Priority**: MEDIUM
 **Duration**: 3-4 days
@@ -1525,6 +1586,7 @@ Quality Gates:
 ### **Sprint 5.3: Release Candidate and Production Launch** (Weeks 5-6)
 
 #### **Task 5.3.1: Release Candidate Preparation**
+
 **Agent**: `devops-troubleshooter` + `test-automator` (final testing)
 **Priority**: CRITICAL
 **Duration**: 6-7 days
@@ -1552,6 +1614,7 @@ Quality Gates:
 ```
 
 #### **Task 5.3.2: Production Launch**
+
 **Agent**: `devops-troubleshooter` + `docs-architect` (announcement)
 **Priority**: CRITICAL
 **Duration**: 3-4 days
@@ -1579,6 +1642,7 @@ Quality Gates:
 ```
 
 #### **Task 5.3.3: Post-Launch Support**
+
 **Agent**: `devops-troubleshooter` + `docs-architect` (documentation updates)
 **Priority**: HIGH
 **Duration**: Ongoing
@@ -1610,6 +1674,7 @@ Quality Gates:
 ## 📊 **Resource Management and Coordination**
 
 ### **Agent Utilization Chart**
+
 ```yaml
 Phase 0 (2-3 weeks):
   - database-admin: 75% (critical migration fixes)
@@ -1652,6 +1717,7 @@ Phase 5 (4-6 weeks):
 ```
 
 ### **Dependencies and Critical Path**
+
 ```yaml
 Critical Path Items:
   1. Database migration fixes (blocks all other development)
@@ -1669,6 +1735,7 @@ Parallel Execution Opportunities:
 ```
 
 ### **Risk Mitigation Through Agent Assignment**
+
 ```yaml
 Technical Risks:
   - Frontend complexity → Dedicated frontend-developer with ui-ux-designer support
@@ -1692,6 +1759,7 @@ Timeline Risks:
 ## 🎯 **Quality Gates and Review Checkpoints**
 
 ### **Phase Gate Reviews**
+
 ```yaml
 Phase 0 Gate:
   Reviewers: golang-pro, database-admin, test-automator
@@ -1743,6 +1811,7 @@ Phase 5 Gate:
 ```
 
 ### **Continuous Quality Assurance**
+
 ```yaml
 Daily Quality Checks:
   - Automated testing on all commits
@@ -1768,6 +1837,7 @@ Sprint Reviews:
 ## 📈 **Success Metrics and Monitoring**
 
 ### **Agent Performance Metrics**
+
 ```yaml
 Development Velocity:
   - Tasks completed per sprint
@@ -1789,6 +1859,7 @@ Collaboration Metrics:
 ```
 
 ### **Project Health Dashboard**
+
 ```yaml
 Real-time Metrics:
   - Phase completion percentage
@@ -1816,6 +1887,7 @@ Success Indicators:
 This implementation plan provides a detailed, agent-specific roadmap for transforming radarr-go into a complete, production-ready application. The plan leverages specialized Claude Code agents to ensure expert-level implementation across all domains while maintaining clear dependencies, quality gates, and success metrics.
 
 **Key Implementation Principles:**
+
 1. **Agent Specialization**: Each task assigned to the most qualified agent
 2. **Parallel Execution**: Maximum parallelization while respecting dependencies
 3. **Quality First**: Comprehensive testing and review at every stage

@@ -1,0 +1,40 @@
+# yamllint configuration for Radarr-Go project
+# More info: https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Allow longer lines for readability
+  line-length:
+    max: 120
+    level: warning
+  
+  # Allow indentation variations for Docker Compose and other configurations
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  
+  # Allow comments to start at any position
+  comments:
+    min-spaces-from-content: 1
+  
+  # Allow duplicate keys (common in Docker Compose overrides)
+  key-duplicates: disable
+  
+  # Be more lenient with trailing spaces
+  trailing-spaces: disable
+  
+  # Allow truthy values like 'on', 'off', 'yes', 'no'
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+    check-keys: false
+
+ignore: |
+  # Ignore node_modules and vendor directories
+  */node_modules/*
+  */vendor/*
+  # Ignore Docker Compose generated files
+  docker-compose.override.yml
+  # Ignore temporary files
+  *.tmp.yml
+  *.temp.yml

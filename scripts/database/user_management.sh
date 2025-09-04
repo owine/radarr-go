@@ -5,7 +5,7 @@
 # Usage:
 #   ./user_management.sh create-app-user postgresql
 #   ./user_management.sh create-readonly-user postgresql monitoring_user
-#   ./user_management.sh audit-permissions postgresql  
+#   ./user_management.sh audit-permissions postgresql
 #   ./user_management.sh rotate-password postgresql radarr_app
 
 set -euo pipefail
@@ -61,13 +61,13 @@ create_app_user() {
     local db_type="$1"
     local username="${2:-radarr_app}"
     local password="${3:-$(generate_password 20)}"
-    
+
     log "Creating application user '$username' for $db_type..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
-            
+
             # Create user with limited permissions
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d postgres << EOF
 -- Create user if not exists
@@ -119,7 +119,7 @@ FLUSH PRIVILEGES;
 EOF
             ;;
     esac
-    
+
     # Save credentials securely
     local cred_file="${SECURITY_DIR}/${username}_${db_type}_credentials.txt"
     {
@@ -140,7 +140,7 @@ EOF
         echo "export RADARR_DATABASE_NAME=$([ "$db_type" = "postgresql" ] && echo "$POSTGRES_DB" || echo "$MYSQL_DB")"
     } > "$cred_file"
     chmod 600 "$cred_file"  # Restrict access to credentials
-    
+
     log "Application user '$username' created for $db_type"
     log "Credentials saved to: $cred_file"
 }
@@ -150,13 +150,13 @@ create_readonly_user() {
     local db_type="$1"
     local username="${2:-radarr_readonly}"
     local password="${3:-$(generate_password 16)}"
-    
+
     log "Creating read-only user '$username' for $db_type..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
-            
+
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d postgres << EOF
 -- Create read-only user
 DO \$\$
@@ -206,7 +206,7 @@ FLUSH PRIVILEGES;
 EOF
             ;;
     esac
-    
+
     # Save credentials
     local cred_file="${SECURITY_DIR}/${username}_${db_type}_readonly_credentials.txt"
     {
@@ -220,7 +220,7 @@ EOF
         echo "Created: $(date)"
     } > "$cred_file"
     chmod 600 "$cred_file"
-    
+
     log "Read-only user '$username' created for $db_type"
     log "Credentials saved to: $cred_file"
 }
@@ -229,23 +229,23 @@ EOF
 audit_permissions() {
     local db_type="$1"
     local audit_file="${SECURITY_DIR}/permission_audit_${db_type}_$(date +%Y%m%d_%H%M%S).txt"
-    
+
     log "Auditing permissions for $db_type..."
-    
+
     {
         echo "Radarr Go Database Permission Audit"
         echo "==================================="
         echo "Database Type: $db_type"
         echo "Audit Date: $(date)"
         echo
-        
+
         case "$db_type" in
             "postgresql")
                 export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
-                
+
                 echo "Database Users:"
                 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d "$POSTGRES_DB" -c "
-                    SELECT 
+                    SELECT
                         usename as username,
                         usesuper as is_superuser,
                         usecreatedb as can_create_db,
@@ -254,10 +254,10 @@ audit_permissions() {
                     FROM pg_user
                     ORDER BY usename;
                 "
-                
+
                 echo -e "\nTable Permissions:"
                 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d "$POSTGRES_DB" -c "
-                    SELECT 
+                    SELECT
                         grantee,
                         table_name,
                         privilege_type,
@@ -270,7 +270,7 @@ audit_permissions() {
             "mariadb"|"mysql")
                 echo "Database Users:"
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_ADMIN_USER" -p"$MYSQL_ADMIN_PASSWORD" -e "
-                    SELECT 
+                    SELECT
                         User,
                         Host,
                         Super_priv,
@@ -283,10 +283,10 @@ audit_permissions() {
                     WHERE User != ''
                     ORDER BY User;
                 "
-                
+
                 echo -e "\nDatabase Permissions:"
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_ADMIN_USER" -p"$MYSQL_ADMIN_PASSWORD" -e "
-                    SELECT 
+                    SELECT
                         User,
                         Host,
                         Db,
@@ -302,9 +302,9 @@ audit_permissions() {
                 "
                 ;;
         esac
-        
+
     } > "$audit_file"
-    
+
     log "Permission audit completed: $audit_file"
 }
 
@@ -313,9 +313,9 @@ rotate_password() {
     local db_type="$1"
     local username="$2"
     local new_password="${3:-$(generate_password 20)}"
-    
+
     log "Rotating password for user '$username' in $db_type..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
@@ -331,22 +331,22 @@ rotate_password() {
             " >/dev/null 2>&1 || error_exit "Failed to rotate password for MariaDB user $username"
             ;;
     esac
-    
+
     # Update credentials file
     local cred_file="${SECURITY_DIR}/${username}_${db_type}_credentials.txt"
     if [ -f "$cred_file" ]; then
         # Create backup of old credentials
         cp "$cred_file" "${cred_file}.$(date +%Y%m%d_%H%M%S).bak"
-        
+
         # Update password in credentials file
         sed -i.tmp "s/Password: .*/Password: $new_password/" "$cred_file"
         rm -f "${cred_file}.tmp"
-        
+
         # Update environment variable line
         sed -i.tmp "s/export RADARR_DATABASE_PASSWORD=.*/export RADARR_DATABASE_PASSWORD=$new_password/" "$cred_file"
         rm -f "${cred_file}.tmp"
     fi
-    
+
     log "Password rotated successfully for user '$username'"
     log "Updated credentials file: $cred_file"
 }
@@ -356,9 +356,9 @@ create_replication_user() {
     local db_type="$1"
     local username="${2:-radarr_repl}"
     local password="${3:-$(generate_password 20)}"
-    
+
     log "Creating replication user '$username' for $db_type..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
@@ -389,7 +389,7 @@ FLUSH PRIVILEGES;
 EOF
             ;;
     esac
-    
+
     # Save replication credentials
     local cred_file="${SECURITY_DIR}/${username}_${db_type}_replication_credentials.txt"
     {
@@ -403,7 +403,7 @@ EOF
         echo "Created: $(date)"
     } > "$cred_file"
     chmod 600 "$cred_file"
-    
+
     log "Replication user '$username' created for $db_type"
     log "Credentials saved to: $cred_file"
 }
@@ -412,9 +412,9 @@ EOF
 remove_user() {
     local db_type="$1"
     local username="$2"
-    
+
     log "Removing user '$username' from $db_type..."
-    
+
     # Confirm before removal
     read -p "WARNING: This will permanently remove user '$username'. Continue? (y/N): " -n 1 -r
     echo
@@ -422,11 +422,11 @@ remove_user() {
         log "User removal cancelled"
         return 0
     fi
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
-            
+
             # Revoke all permissions first
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_ADMIN_USER" -d "$POSTGRES_DB" << EOF
 -- Revoke all permissions
@@ -449,23 +449,23 @@ FLUSH PRIVILEGES;
 EOF
             ;;
     esac
-    
+
     # Archive credentials file
     local cred_file="${SECURITY_DIR}/${username}_${db_type}_credentials.txt"
     if [ -f "$cred_file" ]; then
         mv "$cred_file" "${cred_file}.removed.$(date +%Y%m%d_%H%M%S)"
         log "Credentials file archived"
     fi
-    
+
     log "User '$username' removed from $db_type"
 }
 
 # Generate user permission matrix
 generate_permission_matrix() {
     local matrix_file="${SECURITY_DIR}/permission_matrix_$(date +%Y%m%d_%H%M%S).txt"
-    
+
     log "Generating permission matrix..."
-    
+
     {
         echo "Radarr Go Database Permission Matrix"
         echo "====================================="
@@ -473,35 +473,35 @@ generate_permission_matrix() {
         echo
         echo "Recommended User Roles and Permissions:"
         echo
-        
+
         cat << 'EOF'
 1. APPLICATION USER (radarr_app)
    Purpose: Main application database access
    Tables: ALL (movies, quality_*, wanted_movies, etc.)
    Permissions: SELECT, INSERT, UPDATE, DELETE
    Constraints: NO DDL, NO ADMIN, NO REPLICATION
-   
-2. READ-ONLY USER (radarr_readonly) 
+
+2. READ-ONLY USER (radarr_readonly)
    Purpose: Monitoring, reporting, analytics
    Tables: ALL (read-only access)
    Permissions: SELECT only
    Constraints: NO WRITE, NO DDL, NO ADMIN
-   
+
 3. REPLICATION USER (radarr_repl)
    Purpose: Database replication setup
    Permissions: REPLICATION SLAVE, REPLICATION CLIENT, SELECT on data
    Constraints: NO WRITE to application data
-   
+
 4. BACKUP USER (radarr_backup)
    Purpose: Automated backup operations
    Permissions: SELECT on all tables, LOCK TABLES (if needed)
    Constraints: NO WRITE, NO DDL
-   
+
 5. MIGRATION USER (radarr_migrate)
    Purpose: Schema migrations and maintenance
    Permissions: DDL operations (CREATE, ALTER, DROP)
    Constraints: Used only during maintenance windows
-   
+
 SECURITY PRINCIPLES:
 - Principle of Least Privilege: Each user gets minimal required permissions
 - Regular Password Rotation: Monthly rotation for production environments
@@ -518,16 +518,16 @@ CONNECTION SECURITY:
 
 MAINTENANCE SCHEDULE:
 - Weekly: Permission audit and review
-- Monthly: Password rotation for service accounts  
+- Monthly: Password rotation for service accounts
 - Quarterly: Full security review and penetration testing
 - Annually: Disaster recovery testing and documentation update
 
 EOF
-        
+
         echo
         echo "Current Users (if databases are accessible):"
         echo
-        
+
         # Try to list current users
         for db_type in postgresql mariadb; do
             echo "$db_type Users:"
@@ -554,18 +554,18 @@ EOF
             esac
             echo
         done
-        
+
     } > "$matrix_file"
-    
+
     log "Permission matrix generated: $matrix_file"
 }
 
 # Main function
 main() {
     local command="$1"
-    
+
     setup_security_dir
-    
+
     case "$command" in
         "create-app-user")
             if [ $# -lt 2 ]; then

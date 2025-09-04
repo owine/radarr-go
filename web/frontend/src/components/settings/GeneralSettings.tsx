@@ -15,11 +15,11 @@ export const GeneralSettings: React.FC = () => {
     try {
       await updateHostConfig(data).unwrap();
       showSuccess('Settings saved successfully', 'Your general settings have been updated.');
-    } catch (error: any) {
-      showError(
-        'Failed to save settings',
-        error?.data?.message || 'An error occurred while saving your settings.'
-      );
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'data' in error &&
+        typeof error.data === 'object' && error.data && 'message' in error.data &&
+        typeof error.data.message === 'string' ? error.data.message : 'An error occurred while saving your settings.';
+      showError('Failed to save settings', errorMessage);
       throw error; // Re-throw to prevent form from clearing dirty state
     }
   };
@@ -28,7 +28,7 @@ export const GeneralSettings: React.FC = () => {
     // Test connection or validate settings
     try {
       showSuccess('Connection test successful', 'All settings are working correctly.');
-    } catch (error) {
+    } catch {
       showError('Connection test failed', 'Please check your settings and try again.');
     }
   };
@@ -261,4 +261,3 @@ export const GeneralSettings: React.FC = () => {
   );
 };
 
-GeneralSettings.displayName = 'GeneralSettings';

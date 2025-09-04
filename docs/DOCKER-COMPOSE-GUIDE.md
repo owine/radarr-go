@@ -53,6 +53,7 @@ make prod-down            # Stop production services
 ## 📁 New File Structure
 
 ### Core Files (Consolidated)
+
 ```
 ├── docker-compose.yml              # 🎯 BASE - All services with profiles
 ├── docker-compose.override.yml     # 🔧 DEV DEFAULTS - Auto-loaded for development
@@ -73,6 +74,7 @@ make prod-down            # Stop production services
 The base `docker-compose.yml` now includes ALL services organized by profiles:
 
 ### Core Profiles
+
 - `default` - Main application + PostgreSQL (always available)
 - `dev` - Development-specific services with hot reload
 - `frontend` - React development server (Phase 2)
@@ -98,6 +100,7 @@ docker-compose up --profile admin --profile monitoring --profile redis
 ## 🏗️ Architecture Benefits
 
 ### ✅ Problems Solved
+
 - **Eliminated 70% duplication** - PostgreSQL/MariaDB defined once, reused everywhere
 - **Clear command patterns** - `make dev`, `make test-db-up`, `make prod-up`
 - **Automatic development defaults** - `docker-compose up` just works for developers
@@ -105,6 +108,7 @@ docker-compose up --profile admin --profile monitoring --profile redis
 - **Consistent configurations** - No more config drift between environments
 
 ### 🎯 Developer Experience Improvements
+
 - **Single command development**: `make dev` starts everything needed
 - **Smart defaults**: `docker-compose.override.yml` provides perfect dev setup automatically
 - **Clear service selection**: Profiles make it obvious what's running
@@ -116,12 +120,14 @@ docker-compose up --profile admin --profile monitoring --profile redis
 ### Core Development Workflows
 
 #### Basic Development (Default)
+
 ```bash
 # Starts: Backend (hot reload) + PostgreSQL + Adminer + MailHog
 make dev
 # or
 docker-compose up --build
 ```
+
 - Uses `docker-compose.override.yml` automatically
 - Backend hot reloads with Air
 - PostgreSQL with development-friendly logging
@@ -129,12 +135,14 @@ docker-compose up --build
 - MailHog for email testing
 
 #### Full Development Environment
+
 ```bash
 # Starts: Everything for complete development
 make dev-full
 # or
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml.new up --profile dev --build
 ```
+
 - Backend with hot reload
 - PostgreSQL + MariaDB (alternative)
 - Redis caching
@@ -142,6 +150,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml.new up --profile 
 - Frontend development server (when ready)
 
 #### Database-Specific Development
+
 ```bash
 # PostgreSQL only
 make dev-postgres
@@ -153,11 +162,13 @@ RADARR_DATABASE_TYPE=mariadb docker-compose up radarr-go mariadb adminer --profi
 ```
 
 #### Monitoring Development
+
 ```bash
 # Add monitoring to any environment
 make dev-monitoring
 docker-compose up --profile admin --profile monitoring --build
 ```
+
 - Prometheus metrics collection
 - Grafana dashboards
 - Jaeger distributed tracing
@@ -166,6 +177,7 @@ docker-compose up --profile admin --profile monitoring --build
 ### Testing Workflows
 
 #### Quick Test Setup
+
 ```bash
 # Start test databases on separate ports
 make test-db-up
@@ -179,11 +191,13 @@ make test-db-down
 ```
 
 #### Complete Test Environment
+
 ```bash
 # Advanced test setup with optimizations
 make test-env-up
 docker-compose -f docker-compose.yml -f docker-compose.test.yml.new up --profile test -d
 ```
+
 - Test databases with tmpfs for speed
 - Separate network isolation
 - Optimized database configurations for testing
@@ -191,6 +205,7 @@ docker-compose -f docker-compose.yml -f docker-compose.test.yml.new up --profile
 ### Production Deployment
 
 #### Production Startup
+
 ```bash
 # Secure production environment
 make prod-up
@@ -198,6 +213,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml.new up -d
 ```
 
 **Production Features:**
+
 - Security hardening (non-root users, capability restrictions)
 - Resource limits and reservations
 - Optimized database configurations
@@ -206,6 +222,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml.new up -d
 - Bind-mounted volumes for data persistence
 
 #### Production Management
+
 ```bash
 make prod-logs     # View all production logs
 make prod-status   # Check service health
@@ -217,7 +234,9 @@ make prod-down     # Graceful shutdown
 ### For Existing Developers
 
 #### Step 1: Update Your Workflow
+
 **OLD:**
+
 ```bash
 # Confusing - which file to use?
 docker-compose -f docker-compose.dev.yml up     # Full but heavy
@@ -225,6 +244,7 @@ docker compose up                              # Now provides perfect minimal de
 ```
 
 **NEW:**
+
 ```bash
 # Clear and intuitive
 make dev          # Perfect for most development
@@ -233,6 +253,7 @@ make test-db-up   # Just test databases
 ```
 
 #### Step 2: Environment Variables
+
 The new system uses the same environment variables but with better defaults:
 
 ```bash
@@ -242,7 +263,9 @@ RADARR_LOG_LEVEL=debug make dev
 ```
 
 #### Step 3: Port Mapping
+
 **Unchanged ports:**
+
 - Main app: `7878`
 - PostgreSQL: `5432` (dev), `15432` (test)
 - MariaDB: `3306` (dev), `13306` (test)
@@ -314,6 +337,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml.new -f docker-com
 ### Common Issues
 
 #### "Service not found"
+
 ```bash
 # Ensure you're using the right profile
 docker-compose up --profile admin adminer  # ✅ Correct
@@ -321,6 +345,7 @@ docker-compose up adminer                  # ❌ Won't work without profile
 ```
 
 #### "Port already in use"
+
 ```bash
 # Check what's running
 make docker-ps
@@ -331,6 +356,7 @@ make docker-clean
 ```
 
 #### Database connection issues
+
 ```bash
 # Check database health
 docker-compose ps postgres
@@ -376,6 +402,7 @@ The new structure maintains full compatibility:
 ### IDE Integration
 
 **VS Code Tasks** (`.vscode/tasks.json`):
+
 ```json
 {
     "label": "Start Development Environment",
@@ -388,6 +415,7 @@ The new structure maintains full compatibility:
 ### Scripts Integration
 
 Existing scripts continue to work:
+
 ```bash
 # Your existing scripts work unchanged
 ./scripts/dev-setup.sh

@@ -6,7 +6,7 @@ import { websocketMiddleware, webSocketManager } from '../store/middleware/webso
 import { cacheManager } from '../utils/cacheManager';
 import { dataTransforms } from '../utils/dataTransforms';
 import { invalidationStrategies } from '../utils/cacheInvalidation';
-import type { Movie, QueueItem, History } from '../types/api';
+import type { Movie, QueueItem } from '../types/api';
 
 // Mock data
 const mockMovie: Movie = {

@@ -15,11 +15,11 @@ export const MediaManagementSettings: React.FC = () => {
     try {
       await updateMediaConfig(data).unwrap();
       showSuccess('Media management settings saved', 'Your media management settings have been updated.');
-    } catch (error: any) {
-      showError(
-        'Failed to save media management settings',
-        error?.data?.message || 'An error occurred while saving your settings.'
-      );
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'data' in error &&
+        typeof error.data === 'object' && error.data && 'message' in error.data &&
+        typeof error.data.message === 'string' ? error.data.message : 'An error occurred while saving your settings.';
+      showError('Failed to save media management settings', errorMessage);
       throw error;
     }
   };
@@ -249,4 +249,3 @@ export const MediaManagementSettings: React.FC = () => {
   );
 };
 
-MediaManagementSettings.displayName = 'MediaManagementSettings';

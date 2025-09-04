@@ -559,6 +559,7 @@ make test-db-up
 #### 2. Port Conflicts
 
 Test databases use non-standard ports to avoid conflicts:
+
 - PostgreSQL: `15432` (instead of 5432)
 - MariaDB: `13306` (instead of 3306)
 

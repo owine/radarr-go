@@ -15,6 +15,7 @@ This document provides a comprehensive reference for all configuration options a
 ## Quick Start Examples
 
 ### Minimal Configuration
+
 ```yaml
 # config.yaml - Minimal setup for local development
 server:
@@ -29,6 +30,7 @@ tmdb:
 ```
 
 ### Production Configuration
+
 ```yaml
 # config.yaml - Production ready setup
 server:
@@ -103,6 +105,7 @@ server:
 #### Server Examples
 
 **Reverse Proxy Setup (Nginx/Apache)**:
+
 ```yaml
 server:
   port: 7878
@@ -111,6 +114,7 @@ server:
 ```
 
 **Direct SSL/HTTPS**:
+
 ```yaml
 server:
   port: 7878
@@ -120,6 +124,7 @@ server:
 ```
 
 **Docker/Container Deployment**:
+
 ```yaml
 server:
   port: 7878
@@ -158,6 +163,7 @@ database:
 #### Database Examples
 
 **PostgreSQL (Recommended)**:
+
 ```yaml
 database:
   type: "postgres"
@@ -170,6 +176,7 @@ database:
 ```
 
 **MariaDB/MySQL**:
+
 ```yaml
 database:
   type: "mariadb"
@@ -182,6 +189,7 @@ database:
 ```
 
 **Connection String Override**:
+
 ```yaml
 database:
   type: "postgres"
@@ -189,6 +197,7 @@ database:
 ```
 
 **Docker Compose Integration**:
+
 ```yaml
 database:
   type: "postgres"
@@ -233,6 +242,7 @@ log:
 #### Logging Examples
 
 **Development Logging**:
+
 ```yaml
 log:
   level: "debug"
@@ -241,6 +251,7 @@ log:
 ```
 
 **Production Logging**:
+
 ```yaml
 log:
   level: "info"
@@ -249,6 +260,7 @@ log:
 ```
 
 **Container Logging**:
+
 ```yaml
 log:
   level: "info"
@@ -285,12 +297,14 @@ auth:
 #### Authentication Examples
 
 **No Authentication (Development)**:
+
 ```yaml
 auth:
   method: "none"
 ```
 
 **API Key Authentication**:
+
 ```yaml
 auth:
   method: "apikey"
@@ -298,6 +312,7 @@ auth:
 ```
 
 **Environment Variable API Key**:
+
 ```yaml
 auth:
   method: "apikey"
@@ -326,6 +341,7 @@ storage:
 #### Storage Examples
 
 **Local Development**:
+
 ```yaml
 storage:
   data_directory: "./data"
@@ -334,6 +350,7 @@ storage:
 ```
 
 **Production Server**:
+
 ```yaml
 storage:
   data_directory: "/var/lib/radarr-go"
@@ -342,6 +359,7 @@ storage:
 ```
 
 **NAS/Network Storage**:
+
 ```yaml
 storage:
   data_directory: "/var/lib/radarr-go"
@@ -379,6 +397,7 @@ tmdb:
 ```
 
 **With Environment Variable**:
+
 ```yaml
 tmdb:
   api_key: "${TMDB_API_KEY}"
@@ -426,6 +445,7 @@ health:
 #### Health Monitoring Examples
 
 **Basic Health Monitoring**:
+
 ```yaml
 health:
   enabled: true
@@ -433,6 +453,7 @@ health:
 ```
 
 **Advanced Health Configuration**:
+
 ```yaml
 health:
   enabled: true
@@ -447,6 +468,7 @@ health:
 ```
 
 **Minimal Health Monitoring**:
+
 ```yaml
 health:
   enabled: true
@@ -523,21 +545,25 @@ Radarr Go validates configuration at startup and provides detailed error message
 ### Common Validation Errors
 
 **Invalid Database Type**:
+
 ```
 Error: unsupported database type 'sqlite', supported types: postgres, mariadb, mysql
 ```
 
 **Missing Required Fields**:
+
 ```
 Error: TMDB API key is required for movie metadata retrieval
 ```
 
 **Invalid Port Range**:
+
 ```
 Error: server port must be between 1 and 65535, got: 70000
 ```
 
 **Invalid Directory Permissions**:
+
 ```
 Error: cannot create data directory '/protected/path': permission denied
 ```
@@ -559,6 +585,7 @@ RADARR_DATABASE_PASSWORD=test ./radarr --test-config
 ### Database Performance
 
 **PostgreSQL Optimization**:
+
 ```yaml
 database:
   type: "postgres"
@@ -567,6 +594,7 @@ database:
 ```
 
 **MariaDB Optimization**:
+
 ```yaml
 database:
   type: "mariadb"
@@ -577,6 +605,7 @@ database:
 ### Health Monitoring Performance
 
 **High-Frequency Monitoring**:
+
 ```yaml
 health:
   enabled: true
@@ -585,6 +614,7 @@ health:
 ```
 
 **Resource-Conscious Monitoring**:
+
 ```yaml
 health:
   enabled: true
@@ -597,6 +627,7 @@ health:
 ### API Security
 
 **Strong API Key**:
+
 ```yaml
 auth:
   method: "apikey"
@@ -604,6 +635,7 @@ auth:
 ```
 
 **Environment Variable Security**:
+
 ```bash
 # Store sensitive data in environment variables
 export RADARR_API_KEY="$(openssl rand -base64 24)"
@@ -613,12 +645,14 @@ export RADARR_DATABASE_PASSWORD="$(openssl rand -base64 32)"
 ### SSL/TLS Configuration
 
 **Self-Signed Certificate** (Development):
+
 ```bash
 # Generate self-signed certificate
 openssl req -x509 -newkey rsa:4096 -keyout radarr.key -out radarr.crt -days 365 -nodes
 ```
 
 **Let's Encrypt Certificate** (Production):
+
 ```yaml
 server:
   enable_ssl: true
@@ -642,6 +676,7 @@ storage:
 Original Radarr configurations can be migrated to Radarr Go format:
 
 **Original Radarr `config.xml`**:
+
 ```xml
 <Config>
   <Port>7878</Port>
@@ -651,6 +686,7 @@ Original Radarr configurations can be migrated to Radarr Go format:
 ```
 
 **Radarr Go `config.yaml`**:
+
 ```yaml
 server:
   port: 7878
@@ -678,6 +714,7 @@ sqlite3 /path/to/radarr.db .dump > radarr_export.sql
 ### Common Issues
 
 **Database Connection Failed**:
+
 ```yaml
 database:
   type: "postgres"
@@ -689,6 +726,7 @@ database:
 ```
 
 **Permission Denied on Directories**:
+
 ```bash
 # Fix directory permissions
 sudo chown -R radarr:radarr /var/lib/radarr-go
@@ -696,6 +734,7 @@ sudo chmod -R 755 /var/lib/radarr-go
 ```
 
 **TMDB API Errors**:
+
 ```yaml
 tmdb:
   api_key: "your_valid_api_key"  # Verify key is valid
@@ -704,6 +743,7 @@ tmdb:
 ### Debug Configuration
 
 **Enable Debug Logging**:
+
 ```yaml
 log:
   level: "debug"
@@ -712,6 +752,7 @@ log:
 ```
 
 **Health Check Debugging**:
+
 ```yaml
 health:
   enabled: true
@@ -721,6 +762,7 @@ health:
 ### Configuration Validation
 
 **Validate Configuration File**:
+
 ```bash
 # Check YAML syntax
 yamllint config.yaml

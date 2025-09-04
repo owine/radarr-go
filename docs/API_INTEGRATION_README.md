@@ -38,6 +38,7 @@ curl -H "X-API-Key: your-api-key" http://localhost:7878/api/v3/ping
 Select the client implementation that matches your stack:
 
 #### Python (Most Complete)
+
 ```python
 from integration_guide import RadarrClient
 
@@ -46,6 +47,7 @@ movies = client.get_movies()
 ```
 
 #### JavaScript/Node.js
+
 ```javascript
 const RadarrClient = require('./integration_guide');
 
@@ -54,18 +56,21 @@ const movies = await client.getMovies();
 ```
 
 #### Shell Scripts
+
 ```bash
 ./integration-guide.sh status
 ./integration-guide.sh search "inception"
 ```
 
 #### PowerShell
+
 ```powershell
 Import-Module ./RadarrGoAPI.psm1 -ArgumentList 'http://localhost:7878', 'your-api-key'
 Show-RadarrStatus
 ```
 
 #### Go
+
 ```go
 client, _ := NewClient("http://localhost:7878", "your-api-key")
 status, _ := client.GetSystemStatus(context.Background())
@@ -74,6 +79,7 @@ status, _ := client.GetSystemStatus(context.Background())
 ### 3. Interactive Documentation
 
 Visit the **Swagger UI** for interactive API testing:
+
 ```
 http://localhost:7878/swagger-ui/
 ```
@@ -81,16 +87,19 @@ http://localhost:7878/swagger-ui/
 ## 🎯 Common Use Cases
 
 ### Movie Management
+
 - **Search and Add Movies**: Find movies via TMDB and add to collection
 - **Bulk Operations**: Mass import/export and library management
 - **Quality Management**: Automated quality profile optimization
 
 ### Monitoring and Automation
+
 - **Real-time Updates**: WebSocket integration for live status updates
 - **Health Monitoring**: Automated system health checks and alerting
 - **Queue Management**: Download progress tracking and management
 
 ### External Integration
+
 - **Media Servers**: Plex, Jellyfin, and Emby integration
 - **Notification Systems**: Discord, Slack, email notifications
 - **Backup/Restore**: Complete configuration and library backup
@@ -121,12 +130,14 @@ http://localhost:7878/swagger-ui/
 ## 📋 Integration Checklist
 
 ### Before You Start
+
 - [ ] Radarr Go is running and accessible
 - [ ] API key is configured and working
 - [ ] Network connectivity is tested
 - [ ] Rate limiting considerations are understood
 
 ### Development Phase
+
 - [ ] Choose appropriate client language/framework
 - [ ] Implement proper error handling and retries
 - [ ] Add logging and debugging capabilities
@@ -134,6 +145,7 @@ http://localhost:7878/swagger-ui/
 - [ ] Test with both success and failure scenarios
 
 ### Production Deployment
+
 - [ ] Implement proper security (HTTPS, API key rotation)
 - [ ] Set up monitoring and alerting
 - [ ] Configure backup and disaster recovery
@@ -141,6 +153,7 @@ http://localhost:7878/swagger-ui/
 - [ ] Document integration for team
 
 ### Ongoing Maintenance
+
 - [ ] Monitor API usage and performance
 - [ ] Keep client libraries updated
 - [ ] Review and rotate API keys periodically
@@ -149,6 +162,7 @@ http://localhost:7878/swagger-ui/
 ## 🚨 Common Pitfalls and Solutions
 
 ### Authentication Issues
+
 ```python
 # ❌ Wrong header case
 headers = {'X-Api-Key': 'key'}  # Should be 'X-API-Key'
@@ -160,6 +174,7 @@ params = {'apikey': 'your-api-key'}
 ```
 
 ### Rate Limiting
+
 ```python
 # ❌ No rate limiting handling
 for movie in movies:
@@ -174,6 +189,7 @@ for i, movie in enumerate(movies):
 ```
 
 ### Error Handling
+
 ```python
 # ❌ No error handling
 response = requests.get(f"{url}/api/v3/movie")
@@ -195,6 +211,7 @@ except requests.exceptions.RequestException as e:
 ## 🔧 Development Tools
 
 ### API Testing Tools
+
 ```bash
 # cURL examples
 curl -H "X-API-Key: key" http://localhost:7878/api/v3/system/status | jq
@@ -206,6 +223,7 @@ http GET localhost:7878/api/v3/movie X-API-Key:your-key
 ```
 
 ### Debugging Utilities
+
 ```python
 # Use the built-in debugger from troubleshooting guide
 from troubleshooting_guide import RadarrAPIDebugger
@@ -216,6 +234,7 @@ debugger.interactive_debug_session()
 ```
 
 ### Performance Testing
+
 ```python
 # Built-in performance analysis
 debugger.analyze_performance("movie", iterations=100)
@@ -224,6 +243,7 @@ debugger.analyze_performance("movie", iterations=100)
 ## 📊 Monitoring and Observability
 
 ### Health Checks
+
 ```python
 # Basic health check
 def check_radarr_health():
@@ -237,12 +257,14 @@ def check_radarr_health():
 ```
 
 ### Metrics Collection
+
 - **Response Times**: Track API response latency
 - **Error Rates**: Monitor failed requests and error types
 - **Rate Limiting**: Track rate limit usage and throttling
 - **Resource Usage**: Monitor system resources on Radarr server
 
 ### Alerting Scenarios
+
 - API endpoint becomes unavailable
 - Error rate exceeds threshold
 - Response time degrades significantly
@@ -252,18 +274,21 @@ def check_radarr_health():
 ## 🔐 Security Best Practices
 
 ### API Key Management
+
 - **Rotation**: Regularly rotate API keys (monthly/quarterly)
 - **Scope**: Use separate keys for different applications
 - **Storage**: Never commit keys to version control
 - **Environment**: Use environment variables or secure key stores
 
 ### Network Security
+
 - **HTTPS**: Always use HTTPS in production
 - **Firewall**: Restrict API access to necessary IP ranges
 - **Proxy**: Consider using reverse proxy for additional security
 - **VPN**: Use VPN for remote API access
 
 ### Data Protection
+
 - **Sensitive Data**: Never log API keys or passwords
 - **Encryption**: Encrypt stored configuration data
 - **Audit**: Log API access for security monitoring
@@ -272,6 +297,7 @@ def check_radarr_health():
 ## 🚀 Performance Optimization
 
 ### Client-Side Optimization
+
 - **Connection Pooling**: Reuse HTTP connections
 - **Compression**: Enable gzip compression
 - **Caching**: Cache frequently accessed data
@@ -279,6 +305,7 @@ def check_radarr_health():
 - **Async Operations**: Use async/await for concurrent requests
 
 ### Server-Side Considerations
+
 - **Database**: Optimize database queries and indexes
 - **Memory**: Monitor memory usage for large operations
 - **CPU**: Consider CPU usage during bulk operations
@@ -287,19 +314,23 @@ def check_radarr_health():
 ## 🤝 Contributing and Support
 
 ### Getting Help
+
 1. **Check Documentation**: Review all guides thoroughly
 2. **Search Issues**: Look for similar problems in GitHub issues
 3. **Create Issue**: Provide detailed reproduction steps
 4. **Community**: Join community discussions and forums
 
 ### Contributing Improvements
+
 - **Documentation**: Submit improvements to guides
 - **Examples**: Add new client implementations
 - **Bug Reports**: Report integration issues
 - **Feature Requests**: Suggest new API features
 
 ### Code Examples Repository
+
 All code examples in this documentation are production-ready and include:
+
 - ✅ Comprehensive error handling
 - ✅ Rate limiting management
 - ✅ Proper authentication
@@ -312,6 +343,7 @@ All code examples in this documentation are production-ready and include:
 This documentation is part of the Radarr Go project and is licensed under GPL-3.0.
 
 When using code examples in your projects:
+
 - Attribution is appreciated but not required
 - Examples are provided as-is without warranty
 - Modify and adapt as needed for your use case

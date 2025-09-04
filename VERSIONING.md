@@ -16,6 +16,7 @@ This document defines the comprehensive versioning strategy for Radarr Go, a com
 Radarr Go follows [Semantic Versioning 2.0.0](https://semver.org/) with project-specific adaptations:
 
 ### Version Format
+
 ```
 MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ```
@@ -23,32 +24,40 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ### Component Definitions
 
 #### MAJOR (X.y.z)
+
 **Pre-1.0 Strategy** (Current Phase):
+
 - **0.y.z**: Breaking changes are allowed in minor versions
 - Major version remains 0 until API stability is achieved
 - Breaking changes must be documented in CHANGELOG.md
 
 **Post-1.0 Strategy** (Future):
+
 - Incremented for incompatible API changes
 - Breaking changes to public Go APIs
 - Removal of deprecated features
 - Changes that break API compatibility with Radarr v3
 
 #### MINOR (x.Y.z)
+
 **Pre-1.0 Strategy**:
+
 - New functionality with potential breaking changes
 - Major feature additions
 - Significant architectural improvements
 - Database schema changes
 
 **Post-1.0 Strategy**:
+
 - Backward-compatible new functionality
 - New API endpoints or parameters
 - Feature enhancements
 - Performance improvements
 
 #### PATCH (x.y.Z)
+
 **Both Pre/Post-1.0**:
+
 - Backward-compatible bug fixes
 - Security patches
 - Performance optimizations without API changes
@@ -58,6 +67,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ### Pre-release Identifiers
 
 #### Alpha (-alpha, -alpha.N)
+
 ```bash
 # Examples
 v0.9.0-alpha
@@ -66,6 +76,7 @@ v1.0.0-alpha.2
 ```
 
 **Characteristics**:
+
 - Early development versions
 - May have incomplete features
 - Significant bugs expected
@@ -73,11 +84,13 @@ v1.0.0-alpha.2
 - Not suitable for production
 
 **Release Criteria**:
+
 - Core functionality implemented
 - Basic testing completed
 - Major architectural decisions made
 
 #### Beta (-beta, -beta.N)
+
 ```bash
 # Examples
 v0.9.0-beta.1
@@ -85,18 +98,21 @@ v1.0.0-beta.3
 ```
 
 **Characteristics**:
+
 - Feature-complete for the target release
 - Focused on stability and bug fixes
 - API changes minimized
 - Suitable for testing environments
 
 **Release Criteria**:
+
 - All planned features implemented
 - Comprehensive testing completed
 - Performance benchmarks met
 - Documentation updated
 
 #### Release Candidate (-rc, -rc.N)
+
 ```bash
 # Examples
 v1.0.0-rc.1
@@ -104,12 +120,14 @@ v1.2.0-rc.2
 ```
 
 **Characteristics**:
+
 - Production-ready candidates
 - Only critical bug fixes
 - No new features
 - API frozen
 
 **Release Criteria**:
+
 - All tests passing
 - Performance requirements met
 - Security audit completed
@@ -120,6 +138,7 @@ v1.2.0-rc.2
 ### Tag Hierarchy
 
 #### Version-Specific Tags
+
 ```bash
 # Exact version
 ghcr.io/radarr/radarr-go:v1.2.3
@@ -133,6 +152,7 @@ ghcr.io/radarr/radarr-go:v1.2.3-multi-db
 #### Release Type Tags
 
 **Production Releases** (non-prerelease):
+
 ```bash
 # Latest stable
 ghcr.io/radarr/radarr-go:latest
@@ -152,6 +172,7 @@ ghcr.io/radarr/radarr-go:multi-db
 ```
 
 **Pre-release** (alpha/beta/rc):
+
 ```bash
 # Testing versions
 ghcr.io/radarr/radarr-go:testing
@@ -171,11 +192,13 @@ ghcr.io/radarr/radarr-go:prerelease
 ### Major Version Bumps (Breaking Changes)
 
 **Pre-1.0**: Reserved for 1.0.0 release
+
 - Achievement of 100% API parity with Radarr v3
 - Production readiness milestone
 - API stability guarantee
 
 **Post-1.0**: Incompatible changes
+
 - Breaking API changes
 - Removal of deprecated features
 - Major architectural redesign
@@ -184,12 +207,14 @@ ghcr.io/radarr/radarr-go:prerelease
 ### Minor Version Bumps (Features)
 
 **Pre-1.0**: New functionality
+
 - Significant feature additions
 - API endpoint additions
 - Major performance improvements
 - Database schema changes
 
 **Post-1.0**: Compatible enhancements
+
 - New features maintaining backward compatibility
 - API extensions
 - Performance improvements
@@ -198,6 +223,7 @@ ghcr.io/radarr/radarr-go:prerelease
 ### Patch Version Bumps (Fixes)
 
 **All Versions**: Bug fixes and minor improvements
+
 - Security patches
 - Bug fixes
 - Performance optimizations
@@ -235,6 +261,7 @@ var (
 ```
 
 Build command:
+
 ```bash
 LDFLAGS="-w -s -X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${BUILD_DATE}'"
 go build -ldflags="${LDFLAGS}" ./cmd/radarr
@@ -243,6 +270,7 @@ go build -ldflags="${LDFLAGS}" ./cmd/radarr
 ## Release Process
 
 ### 1. Development Phase
+
 ```bash
 # Feature development on feature branches
 git checkout -b feature/new-functionality
@@ -251,6 +279,7 @@ git commit -m "feat(api): add new movie search endpoint"
 ```
 
 ### 2. Version Planning
+
 ```bash
 # Determine version bump type based on changes
 # Check CHANGELOG.md for accumulated changes
@@ -258,6 +287,7 @@ git commit -m "feat(api): add new movie search endpoint"
 ```
 
 ### 3. Pre-release Process
+
 ```bash
 # Create pre-release for testing
 git tag v0.9.1-beta.1
@@ -271,6 +301,7 @@ git push origin v0.9.1-beta.1
 ```
 
 ### 4. Release Preparation
+
 ```bash
 # Update CHANGELOG.md with release notes
 # Update version references in documentation
@@ -278,6 +309,7 @@ git push origin v0.9.1-beta.1
 ```
 
 ### 5. Production Release
+
 ```bash
 # Create production release
 git tag v0.9.1
@@ -292,6 +324,7 @@ git push origin v0.9.1
 ```
 
 ### 6. Post-Release
+
 ```bash
 # Verify release artifacts
 # Monitor for issues
@@ -303,6 +336,7 @@ git push origin v0.9.1
 ### Radarr v3 API Compatibility
 
 **Current Goal**: 100% compatibility with Radarr v3 API
+
 - **Status**: 95% complete (v0.9.0-alpha)
 - **Commitment**: No breaking changes to Radarr v3 API endpoints
 - **Testing**: Automated compatibility testing in CI/CD
@@ -320,11 +354,13 @@ git push origin v0.9.1
 ### Go API Versioning
 
 **Pre-1.0**: Go API changes allowed
+
 - Internal APIs may change
 - Public package APIs evolving
 - Import paths stable
 
 **Post-1.0**: Go module compatibility
+
 - Semantic import versioning
 - Backward compatibility for public APIs
 - Clear deprecation process
@@ -350,6 +386,7 @@ git push origin v0.9.1
 ## Development Workflow Integration
 
 ### Branch Naming
+
 ```bash
 # Feature branches
 feature/add-notification-provider
@@ -365,6 +402,7 @@ release/v1.0.0
 ```
 
 ### Commit Message Format
+
 ```bash
 # Type(scope): description
 feat(api): add movie collection management endpoints
@@ -374,6 +412,7 @@ chore(deps): update Go dependencies
 ```
 
 ### Tag Creation
+
 ```bash
 # Lightweight tags for development
 git tag v0.9.1-alpha.1
@@ -385,16 +424,19 @@ git tag -a v0.9.1 -m "Release v0.9.1: Stability improvements and bug fixes"
 ## Monitoring and Metrics
 
 ### Version Adoption Tracking
+
 - Docker image pull statistics by tag
 - GitHub release download counts
 - API usage metrics by version
 
 ### Performance Benchmarks
+
 - Automated benchmark testing in CI/CD
 - Performance regression detection
 - Resource utilization tracking
 
 ### Compatibility Testing
+
 - Automated tests against Radarr v3 API
 - Integration test suites
 - Database migration testing
@@ -402,6 +444,7 @@ git tag -a v0.9.1 -m "Release v0.9.1: Stability improvements and bug fixes"
 ## Tools and Utilities
 
 ### Version Management Scripts
+
 ```bash
 # Check current version
 ./radarr --version
@@ -414,6 +457,7 @@ git tag -a v0.9.1 -m "Release v0.9.1: Stability improvements and bug fixes"
 ```
 
 ### Docker Commands
+
 ```bash
 # Pull specific version
 docker pull ghcr.io/radarr/radarr-go:v1.2.3
@@ -428,12 +472,14 @@ docker inspect ghcr.io/radarr/radarr-go:latest
 ## Security Considerations
 
 ### Supply Chain Security
+
 - SBOM (Software Bill of Materials) generation
 - Provenance attestation for Docker images
 - Vulnerability scanning with govulncheck
 - Dependency security monitoring
 
 ### Release Verification
+
 ```bash
 # Verify release signatures
 gh release view v1.2.3 --json assets
@@ -448,12 +494,14 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 ## Communication Strategy
 
 ### Release Announcements
+
 - GitHub Releases with detailed changelog
 - Docker Hub descriptions
 - Project documentation updates
 - Community notifications
 
 ### Breaking Change Communication
+
 - Advance notice in pre-release versions
 - Migration guides
 - Deprecation warnings
@@ -462,6 +510,7 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 ## Best Practices
 
 ### For Developers
+
 1. **Always validate versions** using provided scripts
 2. **Test against multiple versions** of dependencies
 3. **Document breaking changes** immediately
@@ -469,6 +518,7 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 5. **Update documentation** with version-specific changes
 
 ### For Users
+
 1. **Pin to specific versions** in production
 2. **Test pre-releases** in staging environments
 3. **Subscribe to release notifications**
@@ -476,6 +526,7 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 5. **Use digest pinning** for Docker deployments
 
 ### For Operators
+
 1. **Monitor version adoption** metrics
 2. **Plan upgrade windows** for major releases
 3. **Maintain rollback capabilities**
@@ -485,12 +536,14 @@ sha256sum -c radarr-v1.2.3-linux-amd64.tar.gz.sha256
 ## Future Considerations
 
 ### Post-1.0 Evolution
+
 - Long-term support (LTS) versions
 - Extended support lifecycles
 - Enterprise support tiers
 - Feature flag systems
 
 ### Advanced Versioning
+
 - Semantic import versioning for Go modules
 - API versioning strategies
 - Microservice version coordination

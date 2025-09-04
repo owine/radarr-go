@@ -3,6 +3,7 @@
 ## Development Commands
 
 ### Setup and Dependencies
+
 ```bash
 make deps                    # Download Go modules
 make setup                   # Install dev tools (air, golangci-lint, migrate)
@@ -11,6 +12,7 @@ pre-commit install          # Setup git hooks
 ```
 
 ### Building
+
 ```bash
 make build                   # Build for current platform
 make build-all               # Build for all platforms
@@ -20,6 +22,7 @@ make build-darwin-arm64     # Build for macOS Apple Silicon
 ```
 
 ### Development Workflow
+
 ```bash
 make dev                     # Run with hot reload
 make run                     # Build and run
@@ -29,6 +32,7 @@ make lint                    # Run linter
 ```
 
 ### Testing
+
 ```bash
 make test                    # Run all tests
 make test-coverage          # Run tests with HTML coverage
@@ -41,6 +45,7 @@ RADARR_DATABASE_TYPE=mariadb go test ./...
 ```
 
 ### Database Operations
+
 ```bash
 make migrate-up             # Apply migrations
 make migrate-down           # Rollback migrations
@@ -50,6 +55,7 @@ migrate create -ext sql -dir migrations/postgres migration_name
 ## Architecture Quick Reference
 
 ### Service Container Pattern
+
 ```go
 // All services managed through dependency injection
 type Container struct {
@@ -66,6 +72,7 @@ type Container struct {
 ```
 
 ### Database Access Patterns
+
 ```go
 // GORM for complex operations
 s.db.GORM.Where("title ILIKE ?", "%"+title+"%").Find(&movies)
@@ -76,6 +83,7 @@ s.db.MySQL.GetMovieByTMDBID(ctx, tmdbID)
 ```
 
 ### Task Handler Pattern
+
 ```go
 type TaskHandler interface {
     Execute(ctx context.Context, task *models.TaskV2, updateProgress func(percent int, message string)) error
@@ -87,6 +95,7 @@ type TaskHandler interface {
 ## Common Code Patterns
 
 ### Service Constructor
+
 ```go
 func NewMovieService(db *database.Database, logger *logger.Logger) *MovieService {
     return &MovieService{
@@ -97,6 +106,7 @@ func NewMovieService(db *database.Database, logger *logger.Logger) *MovieService
 ```
 
 ### API Handler Pattern
+
 ```go
 func (s *Server) handleGetMovies(c *gin.Context) {
     // Parse parameters
@@ -122,6 +132,7 @@ func (s *Server) handleGetMovies(c *gin.Context) {
 ```
 
 ### Error Handling Pattern
+
 ```go
 if err != nil {
     return fmt.Errorf("failed to process movie with id %d: %w", id, err)
@@ -131,6 +142,7 @@ if err != nil {
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 RADARR_SERVER_PORT=7878
 RADARR_DATABASE_TYPE=postgres       # or mariadb
@@ -143,6 +155,7 @@ RADARR_AUTH_API_KEY=your_api_key
 ```
 
 ### Config Structure
+
 ```yaml
 server:
   port: 7878
@@ -173,6 +186,7 @@ health:
 ## Testing Patterns
 
 ### Unit Test Setup
+
 ```go
 func TestMovieService_GetMovie(t *testing.T) {
     // Setup
@@ -194,6 +208,7 @@ func TestMovieService_GetMovie(t *testing.T) {
 ```
 
 ### API Test Pattern
+
 ```go
 func TestMovieHandler_GetMovie(t *testing.T) {
     server := setupTestServer()
@@ -206,6 +221,7 @@ func TestMovieHandler_GetMovie(t *testing.T) {
 ```
 
 ### Benchmark Test Pattern
+
 ```go
 func BenchmarkMovieService_GetMovie(b *testing.B) {
     service := setupBenchmarkService()
@@ -224,18 +240,22 @@ func BenchmarkMovieService_GetMovie(b *testing.B) {
 ## Extension Points
 
 ### Add New Task Handler
+
 1. Implement `TaskHandler` interface
 2. Register in container: `container.TaskService.RegisterHandler(handler)`
 
 ### Add New Health Checker
+
 1. Implement `HealthChecker` interface
 2. Register in service: `healthService.RegisterChecker(checker)`
 
 ### Add New Notification Provider
+
 1. Implement provider with `Send()` and `Test()` methods
 2. Register in notification service
 
 ### Add New API Endpoint
+
 1. Create handler function
 2. Add route in `setupAPIRoutes()`
 
@@ -268,6 +288,7 @@ radarr-go/
 ## Git Workflow
 
 ### Commit Message Format
+
 ```
 feat(api): add movie search endpoint
 fix(database): resolve connection pool exhaustion
@@ -276,6 +297,7 @@ refactor(services): extract validation logic
 ```
 
 ### Branch Naming
+
 - `feature/movie-search-api`
 - `fix/database-connection-leak`
 - `refactor/service-container-cleanup`
@@ -283,6 +305,7 @@ refactor(services): extract validation logic
 ## Quality Checklist
 
 Before committing:
+
 - [ ] Code passes `make lint`
 - [ ] All tests pass with `make test`
 - [ ] Code is formatted with `make fmt`

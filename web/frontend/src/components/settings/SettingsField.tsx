@@ -1,7 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { Input } from '../common/Input/Input';
-import { useSettingsForm } from './SettingsForm';
+import { useSettingsForm } from './useSettingsForm';
 import styles from './SettingsField.module.css';
 
 export interface SettingsFieldProps {
@@ -47,7 +47,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   const error = errors[name];
   const isDisabled = disabled || loading;
 
-  const handleChange = (newValue: any) => {
+  const handleChange = (newValue: string | number | boolean) => {
     updateField(name, newValue);
   };
 
@@ -57,7 +57,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
         return (
           <select
             id={name}
-            value={value}
+            value={String(value)}
             onChange={(e) => {
               const option = options.find(opt => String(opt.value) === e.target.value);
               handleChange(option?.value ?? e.target.value);
@@ -96,7 +96,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
         return (
           <textarea
             id={name}
-            value={value}
+            value={String(value)}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
             disabled={isDisabled}
@@ -112,7 +112,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
             <Input
               id={name}
               type={type}
-              value={value}
+              value={String(value)}
               onChange={(e) => handleChange(e.target.value)}
               placeholder={placeholder}
               disabled={isDisabled}
@@ -160,4 +160,3 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
   );
 };
 
-SettingsField.displayName = 'SettingsField';

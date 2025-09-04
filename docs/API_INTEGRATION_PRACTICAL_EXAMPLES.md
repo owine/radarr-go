@@ -2445,6 +2445,7 @@ Complete troubleshooting guide for common integration issues:
 #### Authentication Issues
 
 **Error: 401 Unauthorized - Invalid API Key**
+
 ```json
 {
   "error": {
@@ -2456,6 +2457,7 @@ Complete troubleshooting guide for common integration issues:
 ```
 
 **Solutions:**
+
 ```python
 # Check API key format and location
 def troubleshoot_authentication():
@@ -2512,6 +2514,7 @@ def generate_api_key():
 ```
 
 **Error: 403 Forbidden - Authentication method not allowed**
+
 ```bash
 # Check Radarr configuration for authentication methods
 curl -H "X-API-Key: your-api-key" http://localhost:7878/api/v3/config/host
@@ -2526,6 +2529,7 @@ curl -H "X-API-Key: your-api-key" http://localhost:7878/api/v3/config/host
 #### Connection and Network Issues
 
 **Error: Connection timeout or refused**
+
 ```python
 import requests
 from requests.adapters import HTTPAdapter
@@ -2597,6 +2601,7 @@ def diagnose_connection(base_url):
 ```
 
 **CORS Issues (Browser/Web Applications)**
+
 ```javascript
 // Configure CORS for browser-based applications
 class RadarrClientWithCORS {
@@ -2673,6 +2678,7 @@ function diagnoseCORS(radarrUrl) {
 #### Rate Limiting Issues
 
 **Error: 429 Too Many Requests**
+
 ```python
 import time
 import random
@@ -2772,6 +2778,7 @@ def process_batch_with_rate_limiting(items, process_func, batch_size=10, delay=1
 #### WebSocket Connection Issues
 
 **WebSocket Connection Failures**
+
 ```javascript
 class RobustWebSocketManager {
     constructor(config) {
@@ -2992,6 +2999,7 @@ wsManager.connect()
 ### Performance Optimization
 
 **Slow API Response Times**
+
 ```python
 import time
 import statistics
@@ -3219,6 +3227,7 @@ class PaginatedClient:
 ### Custom Notification Webhook Implementation
 
 **Complete webhook implementation with error handling**
+
 ```python
 import hmac
 import hashlib
@@ -3403,6 +3412,7 @@ if __name__ == '__main__':
 ### Integration with External Tools
 
 **Plex Integration Example**
+
 ```python
 class PlexRadarrIntegration:
     """Integration between Radarr and Plex Media Server"""
@@ -3564,6 +3574,7 @@ This comprehensive guide provides production-ready examples for integrating with
 ### ✅ What You've Learned
 
 **Third-Party Client Integration:**
+
 - Complete Python client with async support, error handling, and rate limiting
 - JavaScript/Node.js client with WebSocket integration and real-time updates
 - Shell script automation with comprehensive error handling
@@ -3571,17 +3582,20 @@ This comprehensive guide provides production-ready examples for integrating with
 - Go client library for native integration
 
 **Common Integration Patterns:**
+
 - Movie search and addition workflows with validation and monitoring
 - Advanced queue management with automatic retry and alternative release selection
 - Efficient bulk operations with progress tracking and parallel execution
 - Real-time event handling via WebSocket with filtering and processing
 
 **Automation Examples:**
+
 - Complete backup and restore system with data integrity validation
 - Library maintenance automation with health monitoring and optimization
 - Scheduled maintenance tasks with comprehensive reporting
 
 **Troubleshooting Solutions:**
+
 - Authentication issues and resolution strategies
 - Network connectivity diagnosis and CORS handling
 - Performance optimization with caching and pagination
@@ -3616,16 +3630,19 @@ This comprehensive guide provides production-ready examples for integrating with
 ### 📚 Additional Resources
 
 **API Documentation:**
+
 - [API Endpoints Reference](/Users/owine/Git/radarr-go/docs/API_ENDPOINTS.md)
 - [OpenAPI Specification](/Users/owine/Git/radarr-go/docs/openapi.yaml)
 - [API Compatibility Guide](/Users/owine/Git/radarr-go/docs/API_COMPATIBILITY.md)
 
 **Development Resources:**
+
 - [Developer Guide](/Users/owine/Git/radarr-go/docs/DEVELOPER_GUIDE.md)
 - [Configuration Reference](/Users/owine/Git/radarr-go/docs/CONFIGURATION_REFERENCE.md)
 - [Troubleshooting Guide](/Users/owine/Git/radarr-go/docs/troubleshooting-guide.md)
 
 **Community and Support:**
+
 - GitHub Issues: Report bugs and request features
 - Discussions: Community support and integration examples
 - API Updates: Follow releases for new features and improvements
@@ -3633,24 +3650,28 @@ This comprehensive guide provides production-ready examples for integrating with
 ### 🔧 Best Practices Summary
 
 **Security:**
+
 - Always use HTTPS in production environments
 - Store API keys securely (environment variables, key management)
 - Implement webhook signature verification
 - Use proper authentication methods
 
 **Performance:**
+
 - Implement request caching for frequently accessed data
 - Use pagination for large datasets
 - Add rate limiting to respect API limits
 - Monitor and optimize slow endpoints
 
 **Reliability:**
+
 - Include comprehensive error handling
 - Implement retry logic with exponential backoff
 - Add health checks and monitoring
 - Use WebSocket reconnection strategies
 
 **Maintainability:**
+
 - Follow language-specific coding standards
 - Add comprehensive logging and monitoring
 - Include unit tests for critical functionality
@@ -5890,530 +5911,530 @@ Complete Go client library for integration:
 package radarrclient
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
+ "bytes"
+ "context"
+ "encoding/json"
+ "fmt"
+ "io"
+ "net/http"
+ "net/url"
+ "strconv"
+ "strings"
+ "time"
 )
 
 // Client represents a Radarr Go API client
 type Client struct {
-	baseURL    *url.URL
-	apiKey     string
-	httpClient *http.Client
-	userAgent  string
-	timeout    time.Duration
+ baseURL    *url.URL
+ apiKey     string
+ httpClient *http.Client
+ userAgent  string
+ timeout    time.Duration
 }
 
 // Config holds configuration for the Radarr client
 type Config struct {
-	BaseURL   string
-	APIKey    string
-	Timeout   time.Duration
-	UserAgent string
+ BaseURL   string
+ APIKey    string
+ Timeout   time.Duration
+ UserAgent string
 }
 
 // APIError represents an API error response
 type APIError struct {
-	StatusCode int    `json:"statusCode"`
-	Message    string `json:"message"`
-	Code       string `json:"code,omitempty"`
+ StatusCode int    `json:"statusCode"`
+ Message    string `json:"message"`
+ Code       string `json:"code,omitempty"`
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("API error %d: %s", e.StatusCode, e.Message)
+ return fmt.Sprintf("API error %d: %s", e.StatusCode, e.Message)
 }
 
 // Movie represents a movie in Radarr
 type Movie struct {
-	ID               int                `json:"id,omitempty"`
-	Title            string             `json:"title"`
-	OriginalTitle    string             `json:"originalTitle,omitempty"`
-	AlternativeTitles []AlternativeTitle `json:"alternativeTitles,omitempty"`
-	SortTitle        string             `json:"sortTitle,omitempty"`
-	Status           string             `json:"status,omitempty"`
-	Overview         string             `json:"overview,omitempty"`
-	InCinemas        *time.Time         `json:"inCinemas,omitempty"`
-	PhysicalRelease  *time.Time         `json:"physicalRelease,omitempty"`
-	DigitalRelease   *time.Time         `json:"digitalRelease,omitempty"`
-	Images           []MediaCover       `json:"images,omitempty"`
-	Website          string             `json:"website,omitempty"`
-	Year             int                `json:"year"`
-	HasFile          bool               `json:"hasFile"`
-	YouTubeTrailerID string             `json:"youTubeTrailerId,omitempty"`
-	Studio           string             `json:"studio,omitempty"`
-	Path             string             `json:"path,omitempty"`
-	QualityProfileID int                `json:"qualityProfileId"`
-	Monitored        bool               `json:"monitored"`
-	MinimumAvailability string          `json:"minimumAvailability,omitempty"`
-	IsAvailable      bool               `json:"isAvailable"`
-	FolderName       string             `json:"folderName,omitempty"`
-	Runtime          int                `json:"runtime,omitempty"`
-	CleanTitle       string             `json:"cleanTitle,omitempty"`
-	ImdbID           string             `json:"imdbId,omitempty"`
-	TmdbID           int                `json:"tmdbId"`
-	TitleSlug        string             `json:"titleSlug,omitempty"`
-	Certification    string             `json:"certification,omitempty"`
-	Genres           []string           `json:"genres,omitempty"`
-	Tags             []int              `json:"tags,omitempty"`
-	Added            *time.Time         `json:"added,omitempty"`
-	Ratings          *Ratings           `json:"ratings,omitempty"`
-	MovieFile        *MovieFile         `json:"movieFile,omitempty"`
-	Collection       *Collection        `json:"collection,omitempty"`
+ ID               int                `json:"id,omitempty"`
+ Title            string             `json:"title"`
+ OriginalTitle    string             `json:"originalTitle,omitempty"`
+ AlternativeTitles []AlternativeTitle `json:"alternativeTitles,omitempty"`
+ SortTitle        string             `json:"sortTitle,omitempty"`
+ Status           string             `json:"status,omitempty"`
+ Overview         string             `json:"overview,omitempty"`
+ InCinemas        *time.Time         `json:"inCinemas,omitempty"`
+ PhysicalRelease  *time.Time         `json:"physicalRelease,omitempty"`
+ DigitalRelease   *time.Time         `json:"digitalRelease,omitempty"`
+ Images           []MediaCover       `json:"images,omitempty"`
+ Website          string             `json:"website,omitempty"`
+ Year             int                `json:"year"`
+ HasFile          bool               `json:"hasFile"`
+ YouTubeTrailerID string             `json:"youTubeTrailerId,omitempty"`
+ Studio           string             `json:"studio,omitempty"`
+ Path             string             `json:"path,omitempty"`
+ QualityProfileID int                `json:"qualityProfileId"`
+ Monitored        bool               `json:"monitored"`
+ MinimumAvailability string          `json:"minimumAvailability,omitempty"`
+ IsAvailable      bool               `json:"isAvailable"`
+ FolderName       string             `json:"folderName,omitempty"`
+ Runtime          int                `json:"runtime,omitempty"`
+ CleanTitle       string             `json:"cleanTitle,omitempty"`
+ ImdbID           string             `json:"imdbId,omitempty"`
+ TmdbID           int                `json:"tmdbId"`
+ TitleSlug        string             `json:"titleSlug,omitempty"`
+ Certification    string             `json:"certification,omitempty"`
+ Genres           []string           `json:"genres,omitempty"`
+ Tags             []int              `json:"tags,omitempty"`
+ Added            *time.Time         `json:"added,omitempty"`
+ Ratings          *Ratings           `json:"ratings,omitempty"`
+ MovieFile        *MovieFile         `json:"movieFile,omitempty"`
+ Collection       *Collection        `json:"collection,omitempty"`
 }
 
 // AlternativeTitle represents an alternative title for a movie
 type AlternativeTitle struct {
-	SourceType string `json:"sourceType"`
-	MovieID    int    `json:"movieId"`
-	Title      string `json:"title"`
-	SourceID   int    `json:"sourceId"`
-	Votes      int    `json:"votes"`
-	VoteCount  int    `json:"voteCount"`
-	Language   string `json:"language"`
+ SourceType string `json:"sourceType"`
+ MovieID    int    `json:"movieId"`
+ Title      string `json:"title"`
+ SourceID   int    `json:"sourceId"`
+ Votes      int    `json:"votes"`
+ VoteCount  int    `json:"voteCount"`
+ Language   string `json:"language"`
 }
 
 // MediaCover represents a movie cover image
 type MediaCover struct {
-	CoverType string `json:"coverType"`
-	URL       string `json:"url"`
+ CoverType string `json:"coverType"`
+ URL       string `json:"url"`
 }
 
 // Ratings represents movie ratings
 type Ratings struct {
-	Imdb   *Rating `json:"imdb,omitempty"`
-	Tmdb   *Rating `json:"tmdb,omitempty"`
-	Metacritic *Rating `json:"metacritic,omitempty"`
-	RottenTomatoes *Rating `json:"rottenTomatoes,omitempty"`
+ Imdb   *Rating `json:"imdb,omitempty"`
+ Tmdb   *Rating `json:"tmdb,omitempty"`
+ Metacritic *Rating `json:"metacritic,omitempty"`
+ RottenTomatoes *Rating `json:"rottenTomatoes,omitempty"`
 }
 
 // Rating represents a single rating
 type Rating struct {
-	Votes int     `json:"votes"`
-	Value float64 `json:"value"`
-	Type  string  `json:"type"`
+ Votes int     `json:"votes"`
+ Value float64 `json:"value"`
+ Type  string  `json:"type"`
 }
 
 // MovieFile represents a movie file
 type MovieFile struct {
-	ID               int                `json:"id,omitempty"`
-	MovieID          int                `json:"movieId"`
-	RelativePath     string             `json:"relativePath"`
-	Path             string             `json:"path"`
-	Size             int64              `json:"size"`
-	DateAdded        *time.Time         `json:"dateAdded,omitempty"`
-	SceneName        string             `json:"sceneName,omitempty"`
-	ReleaseGroup     string             `json:"releaseGroup,omitempty"`
-	Quality          *Quality           `json:"quality,omitempty"`
-	IndexerFlags     int                `json:"indexerFlags"`
-	MediaInfo        *MediaInfo         `json:"mediaInfo,omitempty"`
-	OriginalFilePath string             `json:"originalFilePath,omitempty"`
+ ID               int                `json:"id,omitempty"`
+ MovieID          int                `json:"movieId"`
+ RelativePath     string             `json:"relativePath"`
+ Path             string             `json:"path"`
+ Size             int64              `json:"size"`
+ DateAdded        *time.Time         `json:"dateAdded,omitempty"`
+ SceneName        string             `json:"sceneName,omitempty"`
+ ReleaseGroup     string             `json:"releaseGroup,omitempty"`
+ Quality          *Quality           `json:"quality,omitempty"`
+ IndexerFlags     int                `json:"indexerFlags"`
+ MediaInfo        *MediaInfo         `json:"mediaInfo,omitempty"`
+ OriginalFilePath string             `json:"originalFilePath,omitempty"`
 }
 
 // Quality represents quality information
 type Quality struct {
-	Quality  *QualityDefinition `json:"quality,omitempty"`
-	Revision *Revision          `json:"revision,omitempty"`
+ Quality  *QualityDefinition `json:"quality,omitempty"`
+ Revision *Revision          `json:"revision,omitempty"`
 }
 
 // QualityDefinition represents a quality definition
 type QualityDefinition struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Source     string `json:"source"`
-	Resolution int    `json:"resolution"`
-	Modifier   string `json:"modifier"`
+ ID         int    `json:"id"`
+ Name       string `json:"name"`
+ Source     string `json:"source"`
+ Resolution int    `json:"resolution"`
+ Modifier   string `json:"modifier"`
 }
 
 // Revision represents quality revision information
 type Revision struct {
-	Version  int  `json:"version"`
-	Real     int  `json:"real"`
-	IsRepack bool `json:"isRepack"`
+ Version  int  `json:"version"`
+ Real     int  `json:"real"`
+ IsRepack bool `json:"isRepack"`
 }
 
 // MediaInfo represents media information
 type MediaInfo struct {
-	AudioBitrate         int     `json:"audioBitrate"`
-	AudioChannels        float64 `json:"audioChannels"`
-	AudioCodec           string  `json:"audioCodec"`
-	AudioLanguages       string  `json:"audioLanguages"`
-	AudioStreamCount     int     `json:"audioStreamCount"`
-	VideoBitDepth        int     `json:"videoBitDepth"`
-	VideoBitrate         int     `json:"videoBitrate"`
-	VideoCodec           string  `json:"videoCodec"`
-	VideoDynamicRange    string  `json:"videoDynamicRange"`
-	VideoDynamicRangeType string `json:"videoDynamicRangeType"`
-	VideoFPS             float64 `json:"videoFps"`
-	Resolution           string  `json:"resolution"`
-	RunTime              string  `json:"runTime"`
-	ScanType             string  `json:"scanType"`
-	Subtitles            string  `json:"subtitles"`
+ AudioBitrate         int     `json:"audioBitrate"`
+ AudioChannels        float64 `json:"audioChannels"`
+ AudioCodec           string  `json:"audioCodec"`
+ AudioLanguages       string  `json:"audioLanguages"`
+ AudioStreamCount     int     `json:"audioStreamCount"`
+ VideoBitDepth        int     `json:"videoBitDepth"`
+ VideoBitrate         int     `json:"videoBitrate"`
+ VideoCodec           string  `json:"videoCodec"`
+ VideoDynamicRange    string  `json:"videoDynamicRange"`
+ VideoDynamicRangeType string `json:"videoDynamicRangeType"`
+ VideoFPS             float64 `json:"videoFps"`
+ Resolution           string  `json:"resolution"`
+ RunTime              string  `json:"runTime"`
+ ScanType             string  `json:"scanType"`
+ Subtitles            string  `json:"subtitles"`
 }
 
 // Collection represents a movie collection
 type Collection struct {
-	ID             int                 `json:"id,omitempty"`
-	Title          string              `json:"title"`
-	CleanTitle     string              `json:"cleanTitle,omitempty"`
-	SortTitle      string              `json:"sortTitle,omitempty"`
-	TmdbID         int                 `json:"tmdbId"`
-	Images         []MediaCover        `json:"images,omitempty"`
-	Overview       string              `json:"overview,omitempty"`
-	Monitored      bool                `json:"monitored"`
-	RootFolderPath string              `json:"rootFolderPath"`
-	QualityProfileID int               `json:"qualityProfileId"`
-	SearchOnAdd    bool                `json:"searchOnAdd"`
-	MinimumAvailability string         `json:"minimumAvailability"`
-	Movies         []Movie             `json:"movies,omitempty"`
-	Added          *time.Time          `json:"added,omitempty"`
-	Tags           []int               `json:"tags,omitempty"`
+ ID             int                 `json:"id,omitempty"`
+ Title          string              `json:"title"`
+ CleanTitle     string              `json:"cleanTitle,omitempty"`
+ SortTitle      string              `json:"sortTitle,omitempty"`
+ TmdbID         int                 `json:"tmdbId"`
+ Images         []MediaCover        `json:"images,omitempty"`
+ Overview       string              `json:"overview,omitempty"`
+ Monitored      bool                `json:"monitored"`
+ RootFolderPath string              `json:"rootFolderPath"`
+ QualityProfileID int               `json:"qualityProfileId"`
+ SearchOnAdd    bool                `json:"searchOnAdd"`
+ MinimumAvailability string         `json:"minimumAvailability"`
+ Movies         []Movie             `json:"movies,omitempty"`
+ Added          *time.Time          `json:"added,omitempty"`
+ Tags           []int               `json:"tags,omitempty"`
 }
 
 // QueueItem represents an item in the download queue
 type QueueItem struct {
-	ID                    int        `json:"id"`
-	MovieID               int        `json:"movieId"`
-	Languages             []Language `json:"languages"`
-	Quality               *Quality   `json:"quality"`
-	CustomFormats         []string   `json:"customFormats"`
-	Size                  int64      `json:"size"`
-	Title                 string     `json:"title"`
-	SizeLeft              int64      `json:"sizeleft"`
-	TimeLeft              string     `json:"timeleft"`
-	EstimatedCompletionTime *time.Time `json:"estimatedCompletionTime"`
-	Status                string     `json:"status"`
-	TrackedDownloadStatus string     `json:"trackedDownloadStatus"`
-	TrackedDownloadState  string     `json:"trackedDownloadState"`
-	StatusMessages        []StatusMessage `json:"statusMessages"`
-	ErrorMessage          string     `json:"errorMessage"`
-	DownloadID            string     `json:"downloadId"`
-	Protocol              string     `json:"protocol"`
-	DownloadClient        string     `json:"downloadClient"`
-	Indexer               string     `json:"indexer"`
-	OutputPath            string     `json:"outputPath"`
-	Movie                 *Movie     `json:"movie"`
+ ID                    int        `json:"id"`
+ MovieID               int        `json:"movieId"`
+ Languages             []Language `json:"languages"`
+ Quality               *Quality   `json:"quality"`
+ CustomFormats         []string   `json:"customFormats"`
+ Size                  int64      `json:"size"`
+ Title                 string     `json:"title"`
+ SizeLeft              int64      `json:"sizeleft"`
+ TimeLeft              string     `json:"timeleft"`
+ EstimatedCompletionTime *time.Time `json:"estimatedCompletionTime"`
+ Status                string     `json:"status"`
+ TrackedDownloadStatus string     `json:"trackedDownloadStatus"`
+ TrackedDownloadState  string     `json:"trackedDownloadState"`
+ StatusMessages        []StatusMessage `json:"statusMessages"`
+ ErrorMessage          string     `json:"errorMessage"`
+ DownloadID            string     `json:"downloadId"`
+ Protocol              string     `json:"protocol"`
+ DownloadClient        string     `json:"downloadClient"`
+ Indexer               string     `json:"indexer"`
+ OutputPath            string     `json:"outputPath"`
+ Movie                 *Movie     `json:"movie"`
 }
 
 // Language represents a language
 type Language struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+ ID   int    `json:"id"`
+ Name string `json:"name"`
 }
 
 // StatusMessage represents a status message
 type StatusMessage struct {
-	Title    string   `json:"title"`
-	Messages []string `json:"messages"`
+ Title    string   `json:"title"`
+ Messages []string `json:"messages"`
 }
 
 // SystemStatus represents system status information
 type SystemStatus struct {
-	Version                string `json:"version"`
-	BuildTime              string `json:"buildTime"`
-	IsDebug                bool   `json:"isDebug"`
-	IsProduction           bool   `json:"isProduction"`
-	IsAdmin                bool   `json:"isAdmin"`
-	IsUserInteractive      bool   `json:"isUserInteractive"`
-	StartupPath            string `json:"startupPath"`
-	AppData                string `json:"appData"`
-	OSName                 string `json:"osName"`
-	OSVersion              string `json:"osVersion"`
-	IsMonoRuntime          bool   `json:"isMonoRuntime"`
-	IsMono                 bool   `json:"isMono"`
-	IsLinux                bool   `json:"isLinux"`
-	IsOSX                  bool   `json:"isOsx"`
-	IsWindows              bool   `json:"isWindows"`
-	Mode                   string `json:"mode"`
-	Branch                 string `json:"branch"`
-	Authentication         string `json:"authentication"`
-	SqliteVersion          string `json:"sqliteVersion"`
-	MigrationVersion       int    `json:"migrationVersion"`
-	URLBase                string `json:"urlBase"`
-	RuntimeVersion         string `json:"runtimeVersion"`
-	DatabaseType           string `json:"databaseType"`
-	DatabaseVersion        string `json:"databaseVersion"`
-	PackageVersion         string `json:"packageVersion"`
-	PackageAuthor          string `json:"packageAuthor"`
-	PackageUpdateMechanism string `json:"packageUpdateMechanism"`
+ Version                string `json:"version"`
+ BuildTime              string `json:"buildTime"`
+ IsDebug                bool   `json:"isDebug"`
+ IsProduction           bool   `json:"isProduction"`
+ IsAdmin                bool   `json:"isAdmin"`
+ IsUserInteractive      bool   `json:"isUserInteractive"`
+ StartupPath            string `json:"startupPath"`
+ AppData                string `json:"appData"`
+ OSName                 string `json:"osName"`
+ OSVersion              string `json:"osVersion"`
+ IsMonoRuntime          bool   `json:"isMonoRuntime"`
+ IsMono                 bool   `json:"isMono"`
+ IsLinux                bool   `json:"isLinux"`
+ IsOSX                  bool   `json:"isOsx"`
+ IsWindows              bool   `json:"isWindows"`
+ Mode                   string `json:"mode"`
+ Branch                 string `json:"branch"`
+ Authentication         string `json:"authentication"`
+ SqliteVersion          string `json:"sqliteVersion"`
+ MigrationVersion       int    `json:"migrationVersion"`
+ URLBase                string `json:"urlBase"`
+ RuntimeVersion         string `json:"runtimeVersion"`
+ DatabaseType           string `json:"databaseType"`
+ DatabaseVersion        string `json:"databaseVersion"`
+ PackageVersion         string `json:"packageVersion"`
+ PackageAuthor          string `json:"packageAuthor"`
+ PackageUpdateMechanism string `json:"packageUpdateMechanism"`
 }
 
 // Command represents a command/task
 type Command struct {
-	ID               int                    `json:"id"`
-	Name             string                 `json:"name"`
-	CommandName      string                 `json:"commandName"`
-	Message          string                 `json:"message"`
-	Body             map[string]interface{} `json:"body"`
-	Priority         string                 `json:"priority"`
-	Status           string                 `json:"status"`
-	Queued           *time.Time             `json:"queued"`
-	Started          *time.Time             `json:"started"`
-	Ended            *time.Time             `json:"ended"`
-	Duration         string                 `json:"duration"`
-	Exception        string                 `json:"exception"`
-	Trigger          string                 `json:"trigger"`
-	ClientUserAgent  string                 `json:"clientUserAgent"`
-	StateChangeTime  *time.Time             `json:"stateChangeTime"`
-	SendUpdatesToClient bool                `json:"sendUpdatesToClient"`
-	UpdateScheduledTask bool                `json:"updateScheduledTask"`
-	LastExecutionTime   *time.Time          `json:"lastExecutionTime"`
+ ID               int                    `json:"id"`
+ Name             string                 `json:"name"`
+ CommandName      string                 `json:"commandName"`
+ Message          string                 `json:"message"`
+ Body             map[string]interface{} `json:"body"`
+ Priority         string                 `json:"priority"`
+ Status           string                 `json:"status"`
+ Queued           *time.Time             `json:"queued"`
+ Started          *time.Time             `json:"started"`
+ Ended            *time.Time             `json:"ended"`
+ Duration         string                 `json:"duration"`
+ Exception        string                 `json:"exception"`
+ Trigger          string                 `json:"trigger"`
+ ClientUserAgent  string                 `json:"clientUserAgent"`
+ StateChangeTime  *time.Time             `json:"stateChangeTime"`
+ SendUpdatesToClient bool                `json:"sendUpdatesToClient"`
+ UpdateScheduledTask bool                `json:"updateScheduledTask"`
+ LastExecutionTime   *time.Time          `json:"lastExecutionTime"`
 }
 
 // NewClient creates a new Radarr API client
 func NewClient(config Config) (*Client, error) {
-	if config.BaseURL == "" {
-		return nil, fmt.Errorf("base URL is required")
-	}
+ if config.BaseURL == "" {
+  return nil, fmt.Errorf("base URL is required")
+ }
 
-	if config.APIKey == "" {
-		return nil, fmt.Errorf("API key is required")
-	}
+ if config.APIKey == "" {
+  return nil, fmt.Errorf("API key is required")
+ }
 
-	baseURL, err := url.Parse(config.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
+ baseURL, err := url.Parse(config.BaseURL)
+ if err != nil {
+  return nil, fmt.Errorf("invalid base URL: %w", err)
+ }
 
-	timeout := config.Timeout
-	if timeout == 0 {
-		timeout = 30 * time.Second
-	}
+ timeout := config.Timeout
+ if timeout == 0 {
+  timeout = 30 * time.Second
+ }
 
-	userAgent := config.UserAgent
-	if userAgent == "" {
-		userAgent = "Radarr-Go-Client/2.0"
-	}
+ userAgent := config.UserAgent
+ if userAgent == "" {
+  userAgent = "Radarr-Go-Client/2.0"
+ }
 
-	return &Client{
-		baseURL: baseURL,
-		apiKey:  config.APIKey,
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		userAgent: userAgent,
-		timeout:   timeout,
-	}, nil
+ return &Client{
+  baseURL: baseURL,
+  apiKey:  config.APIKey,
+  httpClient: &http.Client{
+   Timeout: timeout,
+  },
+  userAgent: userAgent,
+  timeout:   timeout,
+ }, nil
 }
 
 // makeRequest performs an HTTP request to the API
 func (c *Client) makeRequest(ctx context.Context, method, endpoint string, body interface{}, result interface{}) error {
-	var reqBody io.Reader
+ var reqBody io.Reader
 
-	if body != nil {
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			return fmt.Errorf("failed to marshal request body: %w", err)
-		}
-		reqBody = bytes.NewBuffer(jsonBody)
-	}
+ if body != nil {
+  jsonBody, err := json.Marshal(body)
+  if err != nil {
+   return fmt.Errorf("failed to marshal request body: %w", err)
+  }
+  reqBody = bytes.NewBuffer(jsonBody)
+ }
 
-	apiURL := c.baseURL.ResolveReference(&url.URL{Path: "/api/v3" + endpoint})
+ apiURL := c.baseURL.ResolveReference(&url.URL{Path: "/api/v3" + endpoint})
 
-	req, err := http.NewRequestWithContext(ctx, method, apiURL.String(), reqBody)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
+ req, err := http.NewRequestWithContext(ctx, method, apiURL.String(), reqBody)
+ if err != nil {
+  return fmt.Errorf("failed to create request: %w", err)
+ }
 
-	req.Header.Set("X-API-Key", c.apiKey)
-	req.Header.Set("User-Agent", c.userAgent)
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
+ req.Header.Set("X-API-Key", c.apiKey)
+ req.Header.Set("User-Agent", c.userAgent)
+ if body != nil {
+  req.Header.Set("Content-Type", "application/json")
+ }
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
+ resp, err := c.httpClient.Do(req)
+ if err != nil {
+  return fmt.Errorf("request failed: %w", err)
+ }
+ defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
+ respBody, err := io.ReadAll(resp.Body)
+ if err != nil {
+  return fmt.Errorf("failed to read response body: %w", err)
+ }
 
-	if resp.StatusCode >= 400 {
-		var apiErr APIError
-		if json.Unmarshal(respBody, &apiErr) == nil && apiErr.Message != "" {
-			apiErr.StatusCode = resp.StatusCode
-			return &apiErr
-		}
+ if resp.StatusCode >= 400 {
+  var apiErr APIError
+  if json.Unmarshal(respBody, &apiErr) == nil && apiErr.Message != "" {
+   apiErr.StatusCode = resp.StatusCode
+   return &apiErr
+  }
 
-		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
+  return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+ }
 
-	if result != nil && len(respBody) > 0 {
-		if err := json.Unmarshal(respBody, result); err != nil {
-			return fmt.Errorf("failed to unmarshal response: %w", err)
-		}
-	}
+ if result != nil && len(respBody) > 0 {
+  if err := json.Unmarshal(respBody, result); err != nil {
+   return fmt.Errorf("failed to unmarshal response: %w", err)
+  }
+ }
 
-	return nil
+ return nil
 }
 
 // System Operations
 func (c *Client) GetSystemStatus(ctx context.Context) (*SystemStatus, error) {
-	var status SystemStatus
-	err := c.makeRequest(ctx, "GET", "/system/status", nil, &status)
-	return &status, err
+ var status SystemStatus
+ err := c.makeRequest(ctx, "GET", "/system/status", nil, &status)
+ return &status, err
 }
 
 func (c *Client) HealthCheck(ctx context.Context) error {
-	return c.makeRequest(ctx, "GET", "/ping", nil, nil)
+ return c.makeRequest(ctx, "GET", "/ping", nil, nil)
 }
 
 // Movie Operations
 func (c *Client) GetMovies(ctx context.Context) ([]Movie, error) {
-	var movies []Movie
-	err := c.makeRequest(ctx, "GET", "/movie", nil, &movies)
-	return movies, err
+ var movies []Movie
+ err := c.makeRequest(ctx, "GET", "/movie", nil, &movies)
+ return movies, err
 }
 
 func (c *Client) GetMovie(ctx context.Context, movieID int) (*Movie, error) {
-	var movie Movie
-	err := c.makeRequest(ctx, "GET", "/movie/"+strconv.Itoa(movieID), nil, &movie)
-	return &movie, err
+ var movie Movie
+ err := c.makeRequest(ctx, "GET", "/movie/"+strconv.Itoa(movieID), nil, &movie)
+ return &movie, err
 }
 
 func (c *Client) SearchMovies(ctx context.Context, query string) ([]Movie, error) {
-	var movies []Movie
-	endpoint := fmt.Sprintf("/movie/lookup?term=%s", url.QueryEscape(query))
-	err := c.makeRequest(ctx, "GET", endpoint, nil, &movies)
-	return movies, err
+ var movies []Movie
+ endpoint := fmt.Sprintf("/movie/lookup?term=%s", url.QueryEscape(query))
+ err := c.makeRequest(ctx, "GET", endpoint, nil, &movies)
+ return movies, err
 }
 
 func (c *Client) AddMovie(ctx context.Context, movie *Movie) (*Movie, error) {
-	var addedMovie Movie
-	err := c.makeRequest(ctx, "POST", "/movie", movie, &addedMovie)
-	return &addedMovie, err
+ var addedMovie Movie
+ err := c.makeRequest(ctx, "POST", "/movie", movie, &addedMovie)
+ return &addedMovie, err
 }
 
 func (c *Client) UpdateMovie(ctx context.Context, movie *Movie) (*Movie, error) {
-	var updatedMovie Movie
-	endpoint := "/movie/" + strconv.Itoa(movie.ID)
-	err := c.makeRequest(ctx, "PUT", endpoint, movie, &updatedMovie)
-	return &updatedMovie, err
+ var updatedMovie Movie
+ endpoint := "/movie/" + strconv.Itoa(movie.ID)
+ err := c.makeRequest(ctx, "PUT", endpoint, movie, &updatedMovie)
+ return &updatedMovie, err
 }
 
 func (c *Client) DeleteMovie(ctx context.Context, movieID int, deleteFiles, addExclusion bool) error {
-	endpoint := fmt.Sprintf("/movie/%d?deleteFiles=%t&addExclusion=%t", movieID, deleteFiles, addExclusion)
-	return c.makeRequest(ctx, "DELETE", endpoint, nil, nil)
+ endpoint := fmt.Sprintf("/movie/%d?deleteFiles=%t&addExclusion=%t", movieID, deleteFiles, addExclusion)
+ return c.makeRequest(ctx, "DELETE", endpoint, nil, nil)
 }
 
 // Queue Operations
 func (c *Client) GetQueue(ctx context.Context) ([]QueueItem, error) {
-	var queue []QueueItem
-	err := c.makeRequest(ctx, "GET", "/queue", nil, &queue)
-	return queue, err
+ var queue []QueueItem
+ err := c.makeRequest(ctx, "GET", "/queue", nil, &queue)
+ return queue, err
 }
 
 func (c *Client) RemoveFromQueue(ctx context.Context, queueID int, removeFromClient, blacklist bool) error {
-	endpoint := fmt.Sprintf("/queue/%d?removeFromClient=%t&blacklist=%t", queueID, removeFromClient, blacklist)
-	return c.makeRequest(ctx, "DELETE", endpoint, nil, nil)
+ endpoint := fmt.Sprintf("/queue/%d?removeFromClient=%t&blacklist=%t", queueID, removeFromClient, blacklist)
+ return c.makeRequest(ctx, "DELETE", endpoint, nil, nil)
 }
 
 // Command Operations
 func (c *Client) ExecuteCommand(ctx context.Context, commandName string, parameters map[string]interface{}) (*Command, error) {
-	commandData := map[string]interface{}{
-		"name": commandName,
-	}
+ commandData := map[string]interface{}{
+  "name": commandName,
+ }
 
-	for key, value := range parameters {
-		commandData[key] = value
-	}
+ for key, value := range parameters {
+  commandData[key] = value
+ }
 
-	var command Command
-	err := c.makeRequest(ctx, "POST", "/command", commandData, &command)
-	return &command, err
+ var command Command
+ err := c.makeRequest(ctx, "POST", "/command", commandData, &command)
+ return &command, err
 }
 
 func (c *Client) RefreshMovie(ctx context.Context, movieID int) (*Command, error) {
-	parameters := map[string]interface{}{}
-	if movieID > 0 {
-		parameters["movieId"] = movieID
-	}
+ parameters := map[string]interface{}{}
+ if movieID > 0 {
+  parameters["movieId"] = movieID
+ }
 
-	return c.ExecuteCommand(ctx, "RefreshMovie", parameters)
+ return c.ExecuteCommand(ctx, "RefreshMovie", parameters)
 }
 
 func (c *Client) RefreshAllMovies(ctx context.Context) (*Command, error) {
-	return c.ExecuteCommand(ctx, "RefreshMovie", nil)
+ return c.ExecuteCommand(ctx, "RefreshMovie", nil)
 }
 
 // Example usage
 func ExampleUsage() {
-	// Create client
-	client, err := NewClient(Config{
-		BaseURL: "http://localhost:7878",
-		APIKey:  "your-api-key-here",
-		Timeout: 30 * time.Second,
-	})
-	if err != nil {
-		panic(err)
-	}
+ // Create client
+ client, err := NewClient(Config{
+  BaseURL: "http://localhost:7878",
+  APIKey:  "your-api-key-here",
+  Timeout: 30 * time.Second,
+ })
+ if err != nil {
+  panic(err)
+ }
 
-	ctx := context.Background()
+ ctx := context.Background()
 
-	// Check system health
-	if err := client.HealthCheck(ctx); err != nil {
-		fmt.Printf("Health check failed: %v\n", err)
-		return
-	}
+ // Check system health
+ if err := client.HealthCheck(ctx); err != nil {
+  fmt.Printf("Health check failed: %v\n", err)
+  return
+ }
 
-	// Get system status
-	status, err := client.GetSystemStatus(ctx)
-	if err != nil {
-		fmt.Printf("Failed to get system status: %v\n", err)
-		return
-	}
-	fmt.Printf("Radarr version: %s\n", status.Version)
+ // Get system status
+ status, err := client.GetSystemStatus(ctx)
+ if err != nil {
+  fmt.Printf("Failed to get system status: %v\n", err)
+  return
+ }
+ fmt.Printf("Radarr version: %s\n", status.Version)
 
-	// Search for movies
-	searchResults, err := client.SearchMovies(ctx, "The Matrix")
-	if err != nil {
-		fmt.Printf("Search failed: %v\n", err)
-		return
-	}
+ // Search for movies
+ searchResults, err := client.SearchMovies(ctx, "The Matrix")
+ if err != nil {
+  fmt.Printf("Search failed: %v\n", err)
+  return
+ }
 
-	fmt.Printf("Found %d search results\n", len(searchResults))
+ fmt.Printf("Found %d search results\n", len(searchResults))
 
-	// Add a movie
-	if len(searchResults) > 0 {
-		movieToAdd := &searchResults[0]
-		movieToAdd.QualityProfileID = 1
-		movieToAdd.Monitored = true
-		// Set other required fields...
+ // Add a movie
+ if len(searchResults) > 0 {
+  movieToAdd := &searchResults[0]
+  movieToAdd.QualityProfileID = 1
+  movieToAdd.Monitored = true
+  // Set other required fields...
 
-		addedMovie, err := client.AddMovie(ctx, movieToAdd)
-		if err != nil {
-			fmt.Printf("Failed to add movie: %v\n", err)
-		} else {
-			fmt.Printf("Added movie: %s (ID: %d)\n", addedMovie.Title, addedMovie.ID)
-		}
-	}
+  addedMovie, err := client.AddMovie(ctx, movieToAdd)
+  if err != nil {
+   fmt.Printf("Failed to add movie: %v\n", err)
+  } else {
+   fmt.Printf("Added movie: %s (ID: %d)\n", addedMovie.Title, addedMovie.ID)
+  }
+ }
 
-	// Get queue
-	queue, err := client.GetQueue(ctx)
-	if err != nil {
-		fmt.Printf("Failed to get queue: %v\n", err)
-		return
-	}
+ // Get queue
+ queue, err := client.GetQueue(ctx)
+ if err != nil {
+  fmt.Printf("Failed to get queue: %v\n", err)
+  return
+ }
 
-	fmt.Printf("Queue has %d items\n", len(queue))
+ fmt.Printf("Queue has %d items\n", len(queue))
 
-	// Refresh all movies
-	command, err := client.RefreshAllMovies(ctx)
-	if err != nil {
-		fmt.Printf("Failed to refresh movies: %v\n", err)
-	} else {
-		fmt.Printf("Refresh command queued (ID: %d)\n", command.ID)
-	}
+ // Refresh all movies
+ command, err := client.RefreshAllMovies(ctx)
+ if err != nil {
+  fmt.Printf("Failed to refresh movies: %v\n", err)
+ } else {
+  fmt.Printf("Refresh command queued (ID: %d)\n", command.ID)
+ }
 }
 ```
 

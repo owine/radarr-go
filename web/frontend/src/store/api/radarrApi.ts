@@ -35,15 +35,11 @@ import type {
   WantedMoviesStats,
   WantedMoviesSearchParams,
   ParseResult,
-  FileOrganization,
   DiscoverMovie,
   ConfigStats,
-  FileOperation,
   Command,
-  RenamePreview,
   Collection,
   CollectionStats,
-  BulkOperationResult,
   DiskSpace,
   SystemResources,
   PerformanceMetrics,
@@ -877,7 +873,7 @@ export const radarrApi = createApi({
       providesTags: (_, __, id) => [{ type: 'Command', id }],
     }),
 
-    queueCommand: builder.mutation<Command, { name: string; [key: string]: any }>({
+    queueCommand: builder.mutation<Command, { name: string; [key: string]: unknown }>({
       query: (command) => ({
         url: 'command',
         method: 'POST',

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import {
   useGetMoviesQuery,
@@ -23,7 +23,8 @@ import type { Movie, AddMovieRequest } from '../types/api';
 import styles from './MoviesPage.module.css';
 
 export const MoviesPage = () => {
-  const navigate = useNavigate();
+  // Navigation hook available for future use
+  // const navigate = useNavigate();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [selectedMovies, setSelectedMovies] = useState<number[]>([]);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
@@ -54,7 +55,7 @@ export const MoviesPage = () => {
 
   // Filter and sort movies
   const filteredAndSortedMovies = useMemo(() => {
-    let filtered = movies.filter((movie: Movie) => {
+    const filtered = movies.filter((movie: Movie) => {
       // Text filter
       if (filter.text) {
         const searchText = filter.text.toLowerCase();
@@ -117,8 +118,8 @@ export const MoviesPage = () => {
 
     // Sort movies
     filtered.sort((a: Movie, b: Movie) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: string | number | Date;
+      let bValue: string | number | Date;
 
       switch (sortBy) {
         case 'title':
@@ -285,7 +286,7 @@ export const MoviesPage = () => {
     }
   }, [addMovie]);
 
-  const handleSearchMovies = useCallback(async (query: string): Promise<DiscoverMovie[]> => {
+  const handleSearchMovies = useCallback(async (): Promise<DiscoverMovie[]> => {
     try {
       // This would need to be implemented in the API
       // For now, return empty array

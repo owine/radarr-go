@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { toggleSidebar, setTheme } from '../../store/slices/uiSlice';
 import { logout } from '../../store/slices/authSlice';
 import { useGetSystemStatusQuery, useGetHealthQuery } from '../../store/api/radarrApi';
-import { Button, Input } from '../common';
+import { Button } from '../common';
 import styles from './Header.module.css';
 
 export const Header = () => {
@@ -78,7 +78,7 @@ export const Header = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === '/' && !searchFocused) {
       e.preventDefault();
       searchInputRef.current?.focus();
@@ -87,7 +87,7 @@ export const Header = () => {
       searchInputRef.current?.blur();
       setUserMenuOpen(false);
     }
-  };
+  }, [searchFocused]);
 
   // Click outside handler for user menu
   useEffect(() => {
@@ -105,7 +105,7 @@ export const Header = () => {
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [searchFocused]);
+  }, [handleKeyDown]);
 
   const breadcrumbs = getBreadcrumbs();
   const healthStatus = getHealthStatus();

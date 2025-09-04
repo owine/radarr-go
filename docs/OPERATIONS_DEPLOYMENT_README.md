@@ -113,12 +113,14 @@ export ENABLE_MONITORING=true
 ### Key Features
 
 **Enterprise-Grade Performance:**
+
 - 60-80% lower memory usage vs .NET version
 - 3-5x faster API response times
 - Native Go performance optimizations
 - Multi-database support (PostgreSQL, MariaDB)
 
 **Production-Ready Security:**
+
 - Container security hardening
 - Network segmentation
 - Authentication and authorization
@@ -126,6 +128,7 @@ export ENABLE_MONITORING=true
 - Regular security scanning
 
 **Comprehensive Monitoring:**
+
 - Real-time metrics collection
 - Custom dashboards and alerts
 - Log aggregation and analysis
@@ -133,6 +136,7 @@ export ENABLE_MONITORING=true
 - Health checks and diagnostics
 
 **Automated Operations:**
+
 - Zero-downtime deployments
 - Automated backups with encryption
 - Rollback capabilities
@@ -185,16 +189,19 @@ kubectl apply -f ../docs/k8s/
 ### Daily Operations
 
 1. **Health Monitoring**
+
    ```bash
    ./deploy.sh health
    ```
 
 2. **Log Review**
+
    ```bash
    ./deploy.sh logs radarr-go 100
    ```
 
 3. **Performance Check**
+
    ```bash
    ./deploy.sh status
    ```
@@ -202,16 +209,19 @@ kubectl apply -f ../docs/k8s/
 ### Weekly Operations
 
 1. **Backup Verification**
+
    ```bash
    ./scripts/backup-database.sh verify
    ```
 
 2. **Security Updates**
+
    ```bash
    ./deploy.sh update latest
    ```
 
 3. **Resource Optimization**
+
    ```bash
    ./deploy.sh report
    ```
@@ -219,16 +229,19 @@ kubectl apply -f ../docs/k8s/
 ### Monthly Operations
 
 1. **Performance Analysis**
+
    ```bash
    ../docs/scripts/performance-benchmark.sh all
    ```
 
 2. **Security Audit**
+
    ```bash
    ../docs/scripts/security-scan.sh all
    ```
 
 3. **Backup Cleanup**
+
    ```bash
    ./scripts/cleanup-backups.sh all
    ```
@@ -238,6 +251,7 @@ kubectl apply -f ../docs/k8s/
 ### Common Issues
 
 1. **Service Won't Start**
+
    ```bash
    # Check logs
    ./deploy.sh logs radarr-go 50
@@ -250,6 +264,7 @@ kubectl apply -f ../docs/k8s/
    ```
 
 2. **Database Connection Issues**
+
    ```bash
    # Test database connectivity
    ./scripts/backup-database.sh verify
@@ -259,6 +274,7 @@ kubectl apply -f ../docs/k8s/
    ```
 
 3. **Performance Issues**
+
    ```bash
    # Run performance benchmark
    ../docs/scripts/performance-benchmark.sh all
@@ -270,6 +286,7 @@ kubectl apply -f ../docs/k8s/
 ### Recovery Procedures
 
 1. **Service Recovery**
+
    ```bash
    # Restart services
    ./deploy.sh restart
@@ -279,12 +296,14 @@ kubectl apply -f ../docs/k8s/
    ```
 
 2. **Database Recovery**
+
    ```bash
    # Restore from backup
    ./scripts/backup-database.sh test latest_backup.sql.gz
    ```
 
 3. **Full System Recovery**
+
    ```bash
    # Complete rollback
    ./deploy.sh rollback
@@ -392,6 +411,7 @@ BACKUP_RETENTION_DAYS=30
 ### Documentation Maintenance
 
 Keep documentation current with:
+
 - Regular review and updates
 - Version-specific guides
 - User feedback integration

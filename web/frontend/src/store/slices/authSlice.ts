@@ -1,6 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
+interface User {
+  username?: string;
+  permissions?: string[];
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   apiKey: string | null;
@@ -8,10 +13,7 @@ export interface AuthState {
   isLoading: boolean;
   rememberMe: boolean;
   lastValidated: number | null;
-  user: {
-    username?: string;
-    permissions?: string[];
-  } | null;
+  user: User | null;
 }
 
 const getStoredApiKey = (): string | null => {
@@ -49,7 +51,7 @@ const authSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     },
-    loginSuccess: (state, action: PayloadAction<{ apiKey: string; user?: any; rememberMe?: boolean }>) => {
+    loginSuccess: (state, action: PayloadAction<{ apiKey: string; user?: User; rememberMe?: boolean }>) => {
       state.isAuthenticated = true;
       state.apiKey = action.payload.apiKey;
       state.error = null;
@@ -107,7 +109,7 @@ const authSlice = createSlice({
       state.rememberMe = action.payload;
       localStorage.setItem('radarr_remember_me', action.payload.toString());
     },
-    updateUser: (state, action: PayloadAction<any>) => {
+    updateUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
     },
   },

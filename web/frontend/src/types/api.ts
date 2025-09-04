@@ -264,14 +264,14 @@ export interface IndexerField {
   name: string;
   label: string;
   helpText?: string;
-  value?: any;
+  value?: string | number | boolean | string[] | number[];
   type: string;
   advanced?: boolean;
   selectOptions?: SelectOption[];
 }
 
 export interface SelectOption {
-  value: any;
+  value: string | number | boolean;
   name: string;
   hint?: string;
 }
@@ -296,7 +296,7 @@ export interface DownloadClientField {
   name: string;
   label: string;
   helpText?: string;
-  value?: any;
+  value?: string | number | boolean | string[] | number[];
   type: string;
   advanced?: boolean;
   selectOptions?: SelectOption[];
@@ -332,7 +332,7 @@ export interface ImportListField {
   name: string;
   label: string;
   helpText?: string;
-  value?: any;
+  value?: string | number | boolean | string[] | number[];
   type: string;
   advanced?: boolean;
   selectOptions?: SelectOption[];
@@ -396,7 +396,7 @@ export interface History {
   date: string;
   downloadId?: string;
   eventType: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   sourceTitle?: string;
 }
 
@@ -419,7 +419,7 @@ export interface Activity {
   endTime?: string;
   duration?: number;
   message?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 // Custom Format Types
@@ -435,7 +435,7 @@ export interface CustomFormatSpecification {
   implementation: string;
   negate: boolean;
   required: boolean;
-  fields: Record<string, any>;
+  fields: Record<string, unknown>;
 }
 
 // Quality Definition Types
@@ -476,7 +476,7 @@ export interface NotificationField {
   name: string;
   label: string;
   helpText?: string;
-  value?: any;
+  value?: string | number | boolean | string[] | number[];
   type: string;
   advanced?: boolean;
   selectOptions?: SelectOption[];
@@ -492,7 +492,7 @@ export interface NotificationProvider {
 
 export interface NotificationPreset {
   name: string;
-  fields: Record<string, any>;
+  fields: Record<string, unknown>;
 }
 
 // Configuration Types
@@ -667,7 +667,7 @@ export interface ParseResult {
     releaseHash?: string;
     edition?: string;
   };
-  parsedEpisodeInfo?: any;
+  parsedEpisodeInfo?: Record<string, unknown>;
   languages?: Language[];
   releaseTitle: string;
 }
@@ -757,7 +757,7 @@ export interface Command {
   name: string;
   commandName: string;
   message?: string;
-  body: Record<string, any>;
+  body: Record<string, unknown>;
   priority: string;
   status: string;
   progress: number;

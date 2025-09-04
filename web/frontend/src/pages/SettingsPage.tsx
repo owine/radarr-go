@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '../components/common/Card/Card';
-import { useNotification } from '../hooks/useNotification';
+// import { useNotification } from '../hooks/useNotification';
 import { GeneralSettings } from '../components/settings/GeneralSettings';
 import { MediaManagementSettings } from '../components/settings/MediaManagementSettings';
 import styles from './SettingsPage.module.css';
@@ -122,7 +122,8 @@ function MetadataSettings() {
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
-  const { showNotification, showSuccess, showError } = useNotification();
+  // Notification hooks available for future use
+  // const { showNotification, showSuccess, showError } = useNotification();
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);

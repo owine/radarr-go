@@ -31,12 +31,12 @@ $$ LANGUAGE plpgsql;
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger 
+        SELECT 1 FROM pg_trigger
         WHERE tgname = 'update_quality_definitions_updated_at'
     ) THEN
-        CREATE TRIGGER update_quality_definitions_updated_at 
+        CREATE TRIGGER update_quality_definitions_updated_at
             BEFORE UPDATE ON quality_definitions
-            FOR EACH ROW 
+            FOR EACH ROW
             EXECUTE FUNCTION update_quality_definitions_updated_at();
     END IF;
 END $$;
@@ -87,7 +87,7 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'Quality definitions table is empty - wanted_movies foreign keys will fail';
     END IF;
-    
+
     -- Log success
     RAISE NOTICE 'Quality definitions migration completed successfully';
     RAISE NOTICE 'Foreign key dependencies for wanted_movies are now safe';

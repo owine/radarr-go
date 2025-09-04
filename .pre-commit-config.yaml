@@ -1,45 +1,221 @@
 ---
 repos:
-  # Go formatting
+  # =============================================================================
+  # Go Development Hooks
+  # =============================================================================
+
+  # Go formatting and imports (combined for efficiency)
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
       - id: go-fmt
+        name: Go Format
+        description: Format Go code with gofmt -s
         args: [-s]
-
-  # Go imports
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
       - id: go-imports
-
-  # Go mod tidy
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
+        name: Go Imports
+        description: Organize Go imports with goimports
       - id: go-mod-tidy
+        name: Go Mod Tidy
+        description: Tidy and verify Go modules
 
-  # Go linting with golangci-lint
+  # Go linting with golangci-lint (stable version)
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.2.2
+    rev: v1.55.2
     hooks:
       - id: golangci-lint
+        name: Go Lint
+        description: Lint Go code with golangci-lint
+        args: [--config=.golangci.yml]
 
-  # Go unit tests
+  # Go unit tests (lightweight check)
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
       - id: go-unit-tests
-        args: [-timeout=5m]
+        name: Go Unit Tests
+        description: Run Go unit tests
+        args: [-timeout=2m, -short]
+        stages: [manual]  # Run only when explicitly requested
 
-  # General hooks
+  # =============================================================================
+  # Frontend Development Hooks
+  # =============================================================================
+
+  # ESLint for TypeScript/React (using local config)
+  - repo: local
+    hooks:
+      - id: eslint-frontend
+        name: Frontend ESLint
+        description: Lint TypeScript/React files with ESLint
+        entry: bash -c 'cd web/frontend && npx eslint --fix'
+        language: system
+        files: 'web/frontend/src/.*\.(ts|tsx)$'
+        pass_filenames: false
+
+  # TypeScript compilation check
+  - repo: local
+    hooks:
+      - id: typescript-check
+        name: TypeScript Check
+        description: Check TypeScript compilation
+        entry: bash -c 'cd web/frontend && npx tsc --noEmit'
+        language: system
+        files: 'web/frontend/src/.*\.(ts|tsx)$'
+        pass_filenames: false
+
+  # =============================================================================
+  # Configuration and Documentation Hooks
+  # =============================================================================
+
+  # YAML linting with yamllint
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: YAML Lint
+        description: Lint YAML files with yamllint
+        args: [-c, .yamllint.yml]
+        types: [yaml]
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            \.github/workflows/.*\.yml$
+          )$
+
+  # JSON validation and formatting
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v4.6.0
+    hooks:
+      - id: check-json
+        name: JSON Syntax Check
+        description: Validate JSON file syntax
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            .*\.json\.example$|
+            .*tsconfig.*\.json$|
+            web/frontend/.*\.json$
+          )$
+
+  # Markdown linting with markdownlint
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        name: Markdown Lint
+        description: Lint Markdown files with markdownlint
+        args: [--config, .markdownlint.json, --fix]
+        types: [markdown]
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            CHANGELOG\.md$
+          )$
+
+  # =============================================================================
+  # Shell Script Hooks
+  # =============================================================================
+
+  # Shell script linting with shellcheck
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: Shell Script Lint
+        description: Lint shell scripts with shellcheck
+        args: [-x, -e, SC1091]  # Enable external sourcing, ignore SC1091
+        types: [shell]
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*
+          )$
+
+  # =============================================================================
+  # General File Hooks
+  # =============================================================================
+
+  # Basic file formatting and validation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        description: Remove trailing whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            .*\.patch$|
+            .*\.diff$
+          )$
+
       - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-      - id: check-merge-conflict
+        name: Fix End of Files
+        description: Ensure files end with a newline
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            .*\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
+          )$
+
       - id: mixed-line-ending
+        name: Fix Line Endings
+        description: Normalize line endings to LF
         args: [--fix=lf]
+        exclude: |
+          (?x)^(
+            web/frontend/node_modules/.*|
+            radarr-source/.*|
+            .*\.(bat|cmd)$
+          )$
+
+      - id: check-added-large-files
+        name: Check Large Files
+        description: Prevent large files from being committed
+        args: [--maxkb=1000]
+
+      - id: check-merge-conflict
+        name: Check Merge Conflicts
+        description: Check for merge conflict markers
+
+      - id: check-case-conflict
+        name: Check Case Conflicts
+        description: Check for case conflicts in filenames
+
+      - id: check-symlinks
+        name: Check Symlinks
+        description: Check for broken symlinks
+
+  # =============================================================================
+  # Security and Quality Hooks
+  # =============================================================================
+
+  # Git-related checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-vcs-permalinks
+        name: Check VCS Permalinks
+        description: Validate VCS permalinks
+
+      - id: forbid-new-submodules
+        name: Forbid Submodules
+        description: Prevent addition of new git submodules
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+
+# Skip hooks for specific scenarios
+fail_fast: false  # Continue running hooks even if one fails
+
+# Default language version
+default_language_version:
+  python: python3

@@ -16,12 +16,14 @@ Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API w
 ### Versioning and Compatibility Promise
 
 **Current Status** (v0.9.0-alpha):
+
 - **95% API parity** with Radarr v3 achieved
 - **100% endpoint compatibility** maintained
 - **Zero breaking changes** to existing endpoints
 - **Target**: 100% feature parity by v1.0.0 (Q2 2025)
 
 **Long-term Commitment**:
+
 - **Pre-1.0**: Minor versions may include new features; existing endpoints remain stable
 - **Post-1.0**: Strict semantic versioning with no breaking changes to v3 API
 - **Migration Path**: Direct drop-in replacement with performance benefits
@@ -60,6 +62,7 @@ Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API w
 **Overall API Compatibility**: **150+ endpoints** implemented with 100% compatibility
 
 **Progress to v1.0.0**:
+
 - ✅ Core API (100% complete)
 - ✅ Database integration (100% complete)
 - 🔄 WebSocket events (in progress)
@@ -92,6 +95,7 @@ Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API w
 ### 1. Advanced Health Monitoring
 
 **Radarr v3 Health**:
+
 ```json
 {
   "status": "healthy",
@@ -100,6 +104,7 @@ Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API w
 ```
 
 **Radarr Go Enhanced Health**:
+
 ```json
 {
   "status": "healthy",
@@ -127,6 +132,7 @@ Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API w
 ### 2. RFC 5545 Compliant Calendar
 
 **New iCal Features**:
+
 - Standards-compliant .ics format
 - Support for all major calendar applications
 - Configurable time ranges (past/future days)
@@ -156,6 +162,7 @@ END:VCALENDAR
 ### 3. Real-time WebSocket Updates
 
 **New WebSocket Events**:
+
 ```javascript
 // Connect to WebSocket
 const ws = new WebSocket('ws://localhost:7878/ws?apikey=your-key');
@@ -180,6 +187,7 @@ ws.onmessage = (event) => {
 ### 4. Enhanced Movie Collections
 
 **Complete Collection Management**:
+
 ```http
 # Get all collections with statistics
 GET /api/v3/collection
@@ -205,6 +213,7 @@ GET /api/v3/collection/1/statistics
 ### 5. Advanced Wanted Movies Analytics
 
 **Enhanced Wanted Tracking**:
+
 ```http
 # Get detailed wanted statistics
 GET /api/v3/wanted/stats
@@ -243,11 +252,13 @@ POST /api/v3/wanted/bulk
 ### Step 1: Pre-Migration Assessment
 
 **Check Current Radarr Version**:
+
 ```bash
 curl -H "X-API-Key: your-key" http://localhost:7878/api/v3/system/status
 ```
 
 **Backup Current System**:
+
 ```bash
 # Backup database
 cp ~/.config/Radarr/radarr.db ~/radarr-backup.db
@@ -259,6 +270,7 @@ cp -r ~/.config/Radarr ~/radarr-config-backup
 ### Step 2: Test Environment Setup
 
 **1. Install Radarr Go in parallel**:
+
 ```bash
 # Download Radarr Go
 wget https://github.com/radarr/radarr-go/releases/latest/radarr-linux-amd64
@@ -268,6 +280,7 @@ wget https://github.com/radarr/radarr-go/releases/latest/radarr-linux-amd64
 ```
 
 **2. Test API compatibility**:
+
 ```python
 import requests
 
@@ -286,6 +299,7 @@ print("Schema compatibility:", type(v3_movies) == type(go_movies))
 ### Step 3: Data Migration
 
 **Option A: Fresh Installation**
+
 ```bash
 # Export movie list from Radarr v3
 curl -H "X-API-Key: your-key" "http://localhost:7878/api/v3/movie" > movies.json
@@ -295,6 +309,7 @@ python import_movies.py movies.json
 ```
 
 **Option B: Database Migration**
+
 ```bash
 # Use built-in migration tool (when available)
 ./radarr-go migrate --from-radarr --database-path ~/.config/Radarr/radarr.db
@@ -303,6 +318,7 @@ python import_movies.py movies.json
 ### Step 4: Integration Testing
 
 **Test Critical Integrations**:
+
 ```bash
 # Test existing automation scripts
 python your-automation-script.py --dry-run
@@ -328,6 +344,7 @@ curl -X POST -H "Content-Type: application/json" \
 ### No Changes Required
 
 **Most integrations work unchanged**:
+
 ```python
 # This code works with both Radarr v3 and Radarr Go
 import requests
@@ -352,6 +369,7 @@ movies = api.get_movies()
 ### Optional Enhancements
 
 **Take advantage of new features**:
+
 ```python
 # Enhanced health monitoring (Radarr Go only)
 def get_detailed_health(api_url, api_key):
@@ -393,24 +411,28 @@ def connect_websocket(api_url, api_key):
 ### Common Issues and Solutions
 
 **1. Performance Differences**
+
 ```
 Issue: Responses seem slower than expected
 Solution: Check database optimization and connection pooling settings
 ```
 
 **2. Authentication Problems**
+
 ```
 Issue: API key not working
 Solution: Verify API key format and check for any URL encoding issues
 ```
 
 **3. Missing Features**
+
 ```
 Issue: Third-party tool reports missing endpoints
 Solution: Check if tool is using deprecated endpoints; update tool or use compatibility shims
 ```
 
 **4. Database Migration Issues**
+
 ```
 Issue: Data not migrating correctly
 Solution: Use the migration tool or manual export/import process

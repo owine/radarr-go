@@ -31,6 +31,7 @@ make dev-full        # Start complete development environment
 ```
 
 Access your development environment:
+
 - **Backend API**: http://localhost:7878
 - **Database Admin**: http://localhost:8081
 - **Frontend Dev**: http://localhost:3000 (when React is ready)
@@ -74,6 +75,7 @@ The development setup script installs all required tools and configures the envi
 ```
 
 This script:
+
 - Detects your OS (macOS/Linux)
 - Installs missing tools via package managers
 - Sets up Go development tools
@@ -116,6 +118,7 @@ log:
 ```
 
 Override any setting with environment variables:
+
 ```bash
 export RADARR_SERVER_PORT=8080
 export RADARR_LOG_LEVEL=info
@@ -127,6 +130,7 @@ export RADARR_DATABASE_TYPE=mariadb
 ### Backend Development
 
 #### Basic Backend Development
+
 ```bash
 # Start backend with hot reload
 make dev
@@ -139,6 +143,7 @@ go test ./internal/services -v
 ```
 
 #### Full Development Environment
+
 ```bash
 # Start complete environment (backend + databases + monitoring)
 make dev-full
@@ -153,6 +158,7 @@ make dev-full
 ```
 
 #### Database-Specific Development
+
 ```bash
 # Use MariaDB instead of PostgreSQL
 docker-compose -f docker-compose.dev.yml --profile mariadb up -d
@@ -165,6 +171,7 @@ make dev
 ### Build Workflows
 
 #### Multi-Platform Building
+
 ```bash
 # Build for all supported platforms
 make build-all
@@ -179,6 +186,7 @@ make build-all-with-frontend
 ```
 
 #### Development Builds
+
 ```bash
 # Quick local build
 make build
@@ -194,6 +202,7 @@ make build
 ### Code Quality Workflows
 
 #### Pre-commit Quality Checks
+
 ```bash
 # Install pre-commit hooks (recommended)
 pip install pre-commit
@@ -210,6 +219,7 @@ make all         # Format + lint + test + build
 ```
 
 #### Comprehensive Development Workflow
+
 ```bash
 make dev-all     # Format + lint + test + examples + bench + coverage + build
 ```
@@ -254,6 +264,7 @@ make dev-frontend       # React development server
 ### Frontend Development Environment
 
 The development environment includes:
+
 - **React Development Server**: http://localhost:3000
 - **API Proxy**: Configured to proxy API requests to backend
 - **Hot Module Replacement**: For fast development cycles
@@ -281,12 +292,14 @@ make dev
 Access database admin interface at http://localhost:8081 (Adminer) when running `make dev-full`.
 
 **PostgreSQL Connection**:
+
 - Server: `postgres-dev`
 - Username: `radarr_dev`
 - Password: `dev_password`
 - Database: `radarr_dev`
 
 **MariaDB Connection**:
+
 - Server: `mariadb-dev`
 - Username: `radarr_dev`
 - Password: `dev_password`
@@ -323,12 +336,14 @@ make test
 ### Test Types
 
 #### Unit Tests
+
 ```bash
 make test-unit          # Fast unit tests only
 go test -short ./...    # Skip integration tests
 ```
 
 #### Integration Tests
+
 ```bash
 make test               # Full integration tests
 make test-postgres      # PostgreSQL integration tests
@@ -336,12 +351,14 @@ make test-mariadb       # MariaDB integration tests
 ```
 
 #### Performance Tests
+
 ```bash
 make test-bench         # Benchmark tests
 make test-examples      # Example tests
 ```
 
 #### Coverage Analysis
+
 ```bash
 make test-coverage      # Generate HTML coverage report
 ```
@@ -376,22 +393,26 @@ make test-docker
 When running `make dev-full`, you get a complete monitoring stack:
 
 #### Prometheus Metrics
+
 - **URL**: http://localhost:9090
 - **Purpose**: Application metrics and monitoring
 - **Configuration**: `scripts/prometheus.yml`
 
 #### Grafana Dashboards
+
 - **URL**: http://localhost:3001
 - **Login**: admin/admin
 - **Purpose**: Visualization and alerting
 - **Configuration**: `scripts/grafana-datasources.yml`
 
 #### Distributed Tracing
+
 - **URL**: http://localhost:16686
 - **Purpose**: Request tracing and performance analysis
 - **Service**: Jaeger all-in-one
 
 #### Email Testing
+
 - **SMTP**: localhost:1025
 - **Web UI**: http://localhost:8025
 - **Purpose**: Test notification emails
@@ -400,6 +421,7 @@ When running `make dev-full`, you get a complete monitoring stack:
 ### Application Debugging
 
 #### Debug Port
+
 The backend exposes a debug port (8080) for profiling:
 
 ```bash
@@ -414,6 +436,7 @@ go tool pprof http://localhost:8080/debug/pprof/goroutine
 ```
 
 #### Logs
+
 ```bash
 # View backend logs
 docker-compose -f docker-compose.dev.yml logs -f radarr-backend
@@ -490,6 +513,7 @@ The development environment uses volumes for persistence:
 ### Common Issues
 
 #### Port Conflicts
+
 ```bash
 # Check for conflicting services
 lsof -i :7878
@@ -500,6 +524,7 @@ lsof -i :5432
 ```
 
 #### Database Connection Issues
+
 ```bash
 # Check database status
 make test-db-up
@@ -511,6 +536,7 @@ docker-compose -f docker-compose.dev.yml logs mariadb-dev
 ```
 
 #### Hot Reload Not Working
+
 ```bash
 # Ensure air is installed
 go install github.com/cosmtrek/air@latest
@@ -523,6 +549,7 @@ make dev
 ```
 
 #### Frontend Development Issues
+
 ```bash
 # Ensure Node.js and npm are installed
 node --version
@@ -536,6 +563,7 @@ ls -la web/frontend/
 ```
 
 #### Docker Issues
+
 ```bash
 # Check Docker daemon
 docker info
@@ -550,15 +578,18 @@ docker-compose -f docker-compose.dev.yml up --build --force-recreate
 ### Performance Issues
 
 #### Slow Database Queries
+
 - Check database logs in Adminer (http://localhost:8081)
 - Use Prometheus metrics (http://localhost:9090)
 - Enable query logging in development databases
 
 #### High Memory Usage
+
 - Use pprof for memory profiling: `go tool pprof http://localhost:8080/debug/pprof/heap`
 - Monitor with Grafana dashboard (http://localhost:3001)
 
 #### Build Performance
+
 ```bash
 # Use build cache
 export GOCACHE=/tmp/go-build-cache
@@ -586,6 +617,7 @@ make dev-full
 ### Code Quality Standards
 
 #### Pre-commit Checks
+
 Always run quality checks before committing:
 
 ```bash
@@ -600,6 +632,7 @@ make all           # Complete quality workflow
 ```
 
 #### Code Standards
+
 - Follow Go conventions and idioms
 - Use `gofmt` for formatting
 - Maximum line length: 120 characters
@@ -608,6 +641,7 @@ make all           # Complete quality workflow
 - Clear, descriptive variable names
 
 #### Documentation Standards
+
 - All exported functions must have documentation
 - Package-level documentation required
 - Update CLAUDE.md for significant changes
@@ -616,12 +650,14 @@ make all           # Complete quality workflow
 ### Testing Requirements
 
 #### Test Coverage
+
 - Aim for >80% test coverage
 - Unit tests for all business logic
 - Integration tests for API endpoints
 - Benchmark tests for performance-critical code
 
 #### Test Organization
+
 ```bash
 # Test structure
 internal/
@@ -636,7 +672,9 @@ internal/
 ### Git Workflow
 
 #### Commit Message Format
+
 Use conventional commits:
+
 ```
 feat(api): add movie search endpoint
 fix(database): resolve connection pool leak
@@ -645,6 +683,7 @@ test(services): add movie service benchmarks
 ```
 
 #### Branch Naming
+
 - `feature/description`: New features
 - `fix/description`: Bug fixes
 - `docs/description`: Documentation updates
@@ -662,18 +701,21 @@ test(services): add movie service benchmarks
 ### Development Best Practices
 
 #### Local Development
+
 - Use `make dev-full` for complete environment
 - Test both PostgreSQL and MariaDB
 - Run benchmarks for performance changes
 - Use pre-commit hooks for quality
 
 #### Code Organization
+
 - Follow clean architecture principles
 - Use dependency injection
 - Implement interfaces for testability
 - Keep functions focused and small
 
 #### Performance Considerations
+
 - Profile memory usage with pprof
 - Monitor database query performance
 - Use appropriate data structures

@@ -20,6 +20,7 @@ Radarr-Go's task scheduling system provides a sophisticated, multi-threaded appr
 ### Architecture Overview
 
 The task system operates with three distinct worker pools:
+
 - **High-Priority Pool**: 2 concurrent workers for urgent tasks
 - **Default Pool**: 3 concurrent workers for standard operations
 - **Background Pool**: 1 worker for low-priority maintenance tasks
@@ -27,18 +28,21 @@ The task system operates with three distinct worker pools:
 ### Task Types and Commands
 
 #### Core Movie Management Tasks
+
 - `RefreshMovieCommand`: Updates movie metadata from TMDB
 - `MovieSearchCommand`: Searches indexers for specific movies
 - `RssSearchCommand`: Performs RSS sync across all enabled indexers
 - `ImportListSyncCommand`: Synchronizes import lists with configured providers
 
 #### System Maintenance Tasks
+
 - `HealthCheckCommand`: Runs comprehensive system health checks
 - `CleanupCommand`: Removes old logs, metrics, and temporary files
 - `BackupCommand`: Creates database and configuration backups
 - `UpdateCheckCommand`: Checks for application updates
 
 #### File Management Tasks
+
 - `OrganizeFilesCommand`: Organizes downloaded files according to naming rules
 - `RenameMovieCommand`: Renames existing movie files
 - `RescanMovieCommand`: Rescans movie directories for changes
@@ -216,6 +220,7 @@ Radarr-Go features an extensive notification system supporting 21+ providers wit
 ### Supported Providers
 
 #### Chat & Messaging
+
 - **Discord**: Rich embed notifications with custom colors and thumbnails
 - **Slack**: Channel-based notifications with threading support
 - **Telegram**: Bot-based messaging with markdown formatting
@@ -223,11 +228,13 @@ Radarr-Go features an extensive notification system supporting 21+ providers wit
 - **Signal**: Privacy-focused messaging via Signal-CLI REST API
 
 #### Email Services
+
 - **SMTP**: Direct SMTP server integration
 - **Mailgun**: Transactional email service
 - **SendGrid**: Cloud email delivery platform
 
 #### Push Notifications
+
 - **Pushover**: Mobile and desktop push notifications
 - **Pushbullet**: Cross-device notification synchronization
 - **Gotify**: Self-hosted push notification server
@@ -235,12 +242,14 @@ Radarr-Go features an extensive notification system supporting 21+ providers wit
 - **Ntfy**: Simple HTTP-based push notifications
 
 #### Media Server Integration
+
 - **Plex**: Media server library updates and webhooks
 - **Emby**: Media server notifications
 - **Jellyfin**: Open-source media server integration
 - **Kodi**: Direct JSON-RPC notifications
 
 #### Advanced Integration
+
 - **Webhook**: Custom HTTP POST notifications
 - **Custom Script**: Execute custom scripts with notification data
 - **Apprise**: Universal notification library integration
@@ -343,6 +352,7 @@ Radarr-Go features an extensive notification system supporting 21+ providers wit
 ### Event Types and Triggers
 
 #### Available Events
+
 - `grab`: Movie grabbed from indexer
 - `download`: Movie downloaded and imported
 - `upgrade`: Movie upgraded to better quality
@@ -378,6 +388,7 @@ Configure which events trigger notifications for each provider:
 #### Template Variables
 
 Available variables for custom templates:
+
 - `{MovieTitle}`: Movie title
 - `{MovieYear}`: Release year
 - `{QualityName}`: Quality profile name
@@ -497,6 +508,7 @@ Radarr-Go's file organization system provides automated file processing with mul
 #### Template Variables
 
 Basic movie information:
+
 - `{MovieTitle}`: Movie title
 - `{MovieTitleClean}`: Movie title with special characters removed
 - `{MovieYear}`: Release year
@@ -504,6 +516,7 @@ Basic movie information:
 - `{TmdbId}`: TMDB identifier
 
 Quality and technical details:
+
 - `{Quality}`: Quality name (e.g., "Bluray-1080p")
 - `{QualityProper}`: Quality with proper/repack indicators
 - `{Resolution}`: Video resolution (e.g., "1080p")
@@ -511,6 +524,7 @@ Quality and technical details:
 - `{Codec}`: Video codec information
 
 Advanced metadata:
+
 - `{MediaInfo}`: Comprehensive media information
 - `{Edition}`: Movie edition (Director's Cut, Extended, etc.)
 - `{ReleaseGroup}`: Release group name
@@ -520,21 +534,27 @@ Advanced metadata:
 #### Naming Examples
 
 ##### Basic Template
+
 ```
 {MovieTitle} ({MovieYear}) [{Quality}]
 ```
+
 Result: `Avatar (2009) [Bluray-1080p].mkv`
 
 ##### Advanced Template with Media Info
+
 ```
 {MovieTitle} ({MovieYear}) [{Quality} {MediaInfo.VideoCodec} {MediaInfo.AudioCodec}]-{ReleaseGroup}
 ```
+
 Result: `Avatar (2009) [Bluray-1080p x264 DTS]-SPARKS.mkv`
 
 ##### Collection-Based Organization
+
 ```
 {Collection}/{MovieTitle} ({MovieYear}) [{Quality}]
 ```
+
 Result: `Avatar Collection/Avatar (2009) [Bluray-1080p].mkv`
 
 ### Organization Strategies
@@ -542,6 +562,7 @@ Result: `Avatar Collection/Avatar (2009) [Bluray-1080p].mkv`
 #### Folder Structure Templates
 
 ##### Year-Based Organization
+
 ```yaml
 naming:
   movie_folder_format: "{MovieTitle} ({MovieYear})"
@@ -549,6 +570,7 @@ naming:
 ```
 
 ##### Collection-Based Organization
+
 ```yaml
 naming:
   movie_folder_format: "{Collection}/{MovieTitle} ({MovieYear})"
@@ -556,6 +578,7 @@ naming:
 ```
 
 ##### Genre-Based Organization
+
 ```yaml
 naming:
   movie_folder_format: "{Genre}/{MovieTitle} ({MovieYear})"
@@ -698,6 +721,7 @@ Radarr-Go provides comprehensive health monitoring with real-time issue detectio
 ### Health Check Types
 
 #### System Health Checks
+
 - **Database Connectivity**: Monitors database response times and connection status
 - **Disk Space**: Tracks available space on root folders and data directories
 - **System Resources**: Monitors CPU, memory, and system load
@@ -705,6 +729,7 @@ Radarr-Go provides comprehensive health monitoring with real-time issue detectio
 - **Network Connectivity**: Tests internet connectivity and DNS resolution
 
 #### Application Health Checks
+
 - **Indexer Status**: Monitors indexer availability and response times
 - **Download Client Status**: Checks download client connectivity and queue status
 - **Import List Status**: Validates import list functionality
@@ -712,6 +737,7 @@ Radarr-Go provides comprehensive health monitoring with real-time issue detectio
 - **Task Queue Status**: Monitors background task execution
 
 #### Configuration Health Checks
+
 - **Root Folder Accessibility**: Verifies all root folders are accessible
 - **Quality Profile Validation**: Ensures quality profiles are properly configured
 - **Naming Configuration**: Validates naming templates and token usage
@@ -756,6 +782,7 @@ health_monitoring:
 ### Health Issue Types
 
 #### Critical Issues (Red)
+
 - Database connectivity lost
 - Disk space critically low (< 512MB)
 - All indexers failing
@@ -763,6 +790,7 @@ health_monitoring:
 - System resources exhausted
 
 #### Warning Issues (Yellow)
+
 - Disk space low (< 1GB)
 - Some indexers failing
 - High system resource usage
@@ -770,6 +798,7 @@ health_monitoring:
 - Configuration problems
 
 #### Information Issues (Blue)
+
 - System updates available
 - Configuration suggestions
 - Performance recommendations
@@ -780,6 +809,7 @@ health_monitoring:
 #### System Overview
 
 The health dashboard provides:
+
 - Overall system status indicator
 - Critical issue count and details
 - System resource utilization graphs
@@ -998,6 +1028,7 @@ file_system:
 **Issue**: Tasks stuck in "started" status
 
 **Solution**:
+
 ```bash
 # Check task queue status
 curl -H "X-API-Key: YOUR_API_KEY" \
@@ -1017,6 +1048,7 @@ curl -X POST -H "X-API-Key: YOUR_API_KEY" \
 **Issue**: Notifications not being sent
 
 **Troubleshooting Steps**:
+
 1. Test notification configuration
 2. Check notification history for error messages
 3. Verify network connectivity
@@ -1038,6 +1070,7 @@ curl -H "X-API-Key: YOUR_API_KEY" \
 **Issue**: Files not being organized automatically
 
 **Diagnosis**:
+
 ```bash
 # Check file organization logs
 tail -f /data/logs/radarr.log | grep "file-organization"
@@ -1056,6 +1089,7 @@ curl -X POST -H "X-API-Key: YOUR_API_KEY" \
 **Issue**: Health checks failing or missing
 
 **Resolution**:
+
 ```bash
 # Manually trigger health check
 curl -X POST -H "X-API-Key: YOUR_API_KEY" \
@@ -1096,6 +1130,7 @@ curl -H "X-API-Key: YOUR_API_KEY" \
 ### Log Analysis
 
 #### Key Log Locations
+
 - Application logs: `/data/logs/radarr.log`
 - Task logs: `/data/logs/tasks/`
 - Health check logs: `/data/logs/health/`

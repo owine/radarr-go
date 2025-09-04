@@ -10,12 +10,14 @@ This document provides a comprehensive inventory of all implemented API endpoint
 ## Authentication
 
 All API endpoints (except `/ping`) support authentication via:
+
 - **Header**: `X-API-Key: your-api-key`
 - **Query Parameter**: `?apikey=your-api-key`
 
 ## System Information
 
 ### System Status
+
 - **GET** `/api/v3/system/status` - Get system status and information
   - Returns: System version, build info, OS details, database type, runtime information
   - Authentication: Required
@@ -24,6 +26,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Movie Management
 
 ### Movies
+
 - **GET** `/api/v3/movie` - Get all movies with optional filtering
   - Query Parameters: `page`, `pageSize`, `sortKey`, `sortDirection`, `filterKey`, `filterValue`
   - Returns: Array of movie objects with metadata
@@ -52,6 +55,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Movie Discovery and Metadata
+
 - **GET** `/api/v3/movie/lookup` - Search for movies via TMDB
   - Query Parameters: `term` (string) - Search term
   - Returns: Array of movie search results from TMDB
@@ -78,6 +82,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Movie Files
+
 - **GET** `/api/v3/moviefile` - Get all movie files
   - Query Parameters: `movieId` (integer) - Filter by movie ID
   - Returns: Array of movie file objects with media info
@@ -96,6 +101,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Quality Management
 
 ### Quality Profiles
+
 - **GET** `/api/v3/qualityprofile` - Get all quality profiles
   - Returns: Array of quality profile objects
   - Authentication: Required
@@ -122,6 +128,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Quality Definitions
+
 - **GET** `/api/v3/qualitydefinition` - Get all quality definitions
   - Returns: Array of quality definition objects with size limits
   - Authentication: Required
@@ -138,6 +145,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Custom Formats
+
 - **GET** `/api/v3/customformat` - Get all custom formats
   - Returns: Array of custom format objects with specifications
   - Authentication: Required
@@ -166,6 +174,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Search and Acquisition
 
 ### Indexers
+
 - **GET** `/api/v3/indexer` - Get all configured indexers
   - Returns: Array of indexer objects with configurations
   - Authentication: Required
@@ -197,6 +206,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Releases and Search
+
 - **GET** `/api/v3/release` - Get release search results
   - Query Parameters: `movieId` (integer) - Movie ID to search for
   - Returns: Array of release objects from indexers
@@ -244,6 +254,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Download Management
 
 ### Download Clients
+
 - **GET** `/api/v3/downloadclient` - Get all download clients
   - Returns: Array of download client configurations
   - Authentication: Required
@@ -279,6 +290,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Queue Management
+
 - **GET** `/api/v3/queue` - Get download queue
   - Query Parameters: `page`, `pageSize`, `sortKey`, `sortDirection`
   - Returns: Array of queue items with download progress
@@ -306,6 +318,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Download History
+
 - **GET** `/api/v3/downloadhistory` - Get download history
   - Query Parameters: `page`, `pageSize`, `sortKey`, `sortDirection`
   - Returns: Array of historical download records
@@ -314,6 +327,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Import and Organization
 
 ### Import Lists
+
 - **GET** `/api/v3/importlist` - Get all import lists
   - Returns: Array of import list configurations
   - Authentication: Required
@@ -363,6 +377,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### File Organization
+
 - **GET** `/api/v3/fileorganization` - Get file organization history
   - Query Parameters: `page`, `pageSize`, `sortKey`, `sortDirection`
   - Returns: Array of file organization records
@@ -384,6 +399,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Import Processing
+
 - **POST** `/api/v3/import/process` - Process import operation
   - Body: Import processing request with files and settings
   - Returns: Import processing results
@@ -400,6 +416,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### File Operations
+
 - **GET** `/api/v3/fileoperation` - Get file operations history
   - Query Parameters: `page`, `pageSize`, `status` (string)
   - Returns: Array of file operation records
@@ -420,6 +437,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Media Information
+
 - **POST** `/api/v3/mediainfo/extract` - Extract media information
   - Body: Media file extraction request with file path
   - Returns: Extracted media information
@@ -428,6 +446,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Task Management
 
 ### Command System (Tasks)
+
 - **GET** `/api/v3/command` - Get all commands/tasks
   - Query Parameters: `page`, `pageSize`, `status` (string)
   - Returns: Array of command objects with status
@@ -449,6 +468,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### System Tasks
+
 - **GET** `/api/v3/system/task` - Get scheduled tasks
   - Returns: Array of scheduled task configurations
   - Authentication: Required
@@ -474,6 +494,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Movie Commands
+
 - **POST** `/api/v3/movie/{id}/refresh` - Refresh specific movie
   - Path Parameters: `id` (integer) - Movie ID
   - Returns: Refresh command ID
@@ -485,6 +506,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### System Commands
+
 - **POST** `/api/v3/system/health` - Run health check
   - Returns: Health check command ID
   - Authentication: Required
@@ -496,6 +518,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Health Monitoring
 
 ### Health Status
+
 - **GET** `/api/v3/health` - Get overall health status
   - Returns: System health overview with issues
   - Authentication: Required
@@ -510,6 +533,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Health Issues
+
 - **GET** `/api/v3/health/issue` - Get health issues
   - Query Parameters: `severity` (string), `category` (string)
   - Returns: Array of health issues with details
@@ -531,6 +555,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### System Resources
+
 - **GET** `/api/v3/health/system/resources` - Get system resources
   - Returns: Current CPU, memory, disk usage
   - Authentication: Required
@@ -540,6 +565,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Performance Metrics
+
 - **GET** `/api/v3/health/metrics` - Get performance metrics
   - Query Parameters: `startDate`, `endDate`, `interval` (string)
   - Returns: Performance metrics with time ranges
@@ -551,6 +577,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Health Monitoring Control
+
 - **POST** `/api/v3/health/monitoring/start` - Start health monitoring
   - Returns: Monitoring startup confirmation
   - Authentication: Required
@@ -567,6 +594,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Calendar and Scheduling
 
 ### Calendar Events
+
 - **GET** `/api/v3/calendar` - Get calendar events
   - Query Parameters: `start`, `end` (ISO date), `unmonitored` (boolean)
   - Returns: Array of calendar events for date range
@@ -590,6 +618,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Calendar Configuration
+
 - **GET** `/api/v3/calendar/config` - Get calendar configuration
   - Returns: Calendar configuration settings
   - Authentication: Required
@@ -602,6 +631,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Wanted Movies
 
 ### Wanted Movie Management
+
 - **GET** `/api/v3/wanted/missing` - Get missing movies
   - Query Parameters: `page`, `pageSize`, `sortKey`, `sortDirection`
   - Returns: Array of missing movies with details
@@ -654,6 +684,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Collections
 
 ### Movie Collections
+
 - **GET** `/api/v3/collection` - Get all collections
   - Query Parameters: `page`, `pageSize`, `sortKey`
   - Returns: Array of collection objects
@@ -698,6 +729,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Parsing and Renaming
 
 ### Parse Service
+
 - **GET** `/api/v3/parse` - Parse release title
   - Query Parameters: `title` (string) - Release title to parse
   - Returns: Parsed release information
@@ -713,6 +745,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Rename Operations
+
 - **GET** `/api/v3/rename/preview` - Preview file renames
   - Query Parameters: `movieId` (integer) - Movie ID for rename preview
   - Returns: Array of rename previews with old/new names
@@ -736,6 +769,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Configuration Management
 
 ### Host Configuration
+
 - **GET** `/api/v3/config/host` - Get host configuration
   - Returns: Host configuration settings
   - Authentication: Required
@@ -746,6 +780,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Naming Configuration
+
 - **GET** `/api/v3/config/naming` - Get naming configuration
   - Returns: File naming configuration with patterns
   - Authentication: Required
@@ -765,6 +800,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Media Management Configuration
+
 - **GET** `/api/v3/config/mediamanagement` - Get media management config
   - Returns: Media management configuration settings
   - Authentication: Required
@@ -775,6 +811,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Root Folders
+
 - **GET** `/api/v3/rootfolder` - Get all root folders
   - Returns: Array of root folder configurations
   - Authentication: Required
@@ -801,6 +838,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Configuration Statistics
+
 - **GET** `/api/v3/config/stats` - Get configuration statistics
   - Returns: Configuration statistics and metrics
   - Authentication: Required
@@ -808,6 +846,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Notifications
 
 ### Notification Management
+
 - **GET** `/api/v3/notification` - Get all notifications
   - Returns: Array of notification configurations
   - Authentication: Required
@@ -839,6 +878,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Notification Providers
+
 - **GET** `/api/v3/notification/schema` - Get notification providers
   - Returns: Array of available notification providers
   - Authentication: Required
@@ -856,6 +896,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## History and Activity
 
 ### History Management
+
 - **GET** `/api/v3/history` - Get activity history
   - Query Parameters: `page`, `pageSize`, `sortKey`, `eventType`
   - Returns: Array of history records
@@ -876,6 +917,7 @@ All API endpoints (except `/ping`) support authentication via:
   - Authentication: Required
 
 ### Activity Monitoring
+
 - **GET** `/api/v3/activity` - Get current activity
   - Returns: Array of current system activities
   - Authentication: Required
@@ -897,6 +939,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Health Check
 
 ### Basic Health Check
+
 - **GET** `/ping` - Basic health check endpoint
   - Returns: `{"message": "pong"}`
   - Authentication: Not required
@@ -905,6 +948,7 @@ All API endpoints (except `/ping`) support authentication via:
 ## Rate Limiting
 
 All API endpoints implement intelligent rate limiting:
+
 - **Default Limit**: 1000 requests per hour per API key
 - **Burst Limit**: 100 requests per minute
 - **Headers**: Rate limit information included in response headers
@@ -913,6 +957,7 @@ All API endpoints implement intelligent rate limiting:
 ## Response Formats
 
 ### Standard Response Structure
+
 ```json
 {
   "data": {}, // Response data
@@ -933,6 +978,7 @@ All API endpoints implement intelligent rate limiting:
 ```
 
 ### Error Response Structure
+
 ```json
 {
   "error": {
@@ -947,6 +993,7 @@ All API endpoints implement intelligent rate limiting:
 ```
 
 ### HTTP Status Codes
+
 - **200** - OK: Successful request
 - **201** - Created: Resource successfully created
 - **204** - No Content: Successful request with no response body

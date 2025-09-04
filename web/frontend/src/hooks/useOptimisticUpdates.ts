@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { radarrApi } from '../store/api/radarrApi';
-import type { Movie, QueueItem } from '../types/api';
+import type { Movie, QueueItem, WantedMovie, Activity, Tag } from '../types/api';
 
 // Optimistic update utilities for common operations
 export const useOptimisticUpdates = () => {
@@ -28,7 +28,6 @@ export const useOptimisticUpdates = () => {
       );
 
       // Update any paginated movies queries
-      const movieQueries = radarrApi.endpoints.getMovies.select(undefined);
       // This would need to be implemented for each possible query parameter combination
     },
     [dispatch]
@@ -72,7 +71,7 @@ export const useOptimisticUpdates = () => {
           radarrApi.util.updateQueryData('getMissingMovies', undefined, (draft) => {
             if (draft.records) {
               draft.records = draft.records.filter(
-                (wantedMovie: any) => wantedMovie.movieId !== movieId
+                (wantedMovie: WantedMovie) => wantedMovie.movieId !== movieId
               );
               draft.totalRecords = Math.max(0, draft.totalRecords - 1);
             }
@@ -117,8 +116,8 @@ export const useOptimisticUpdates = () => {
 
   // Optimistic activity addition
   const addActivityOptimistically = useCallback(
-    (activity: Partial<any>) => {
-      const newActivity = {
+    (activity: Partial<Activity>) => {
+      const newActivity: Activity = {
         id: Date.now(), // Temporary ID
         type: 'Unknown',
         status: 'running',
@@ -167,7 +166,7 @@ export const useOptimisticUpdates = () => {
     (tagId: number) => {
       dispatch(
         radarrApi.util.updateQueryData('getTags', undefined, (draft) => {
-          return draft.filter((tag: any) => tag.id !== tagId);
+          return draft.filter((tag: Tag) => tag.id !== tagId);
         })
       );
     },
@@ -176,7 +175,7 @@ export const useOptimisticUpdates = () => {
 
   // Rollback functions for when optimistic updates fail
   const rollbackOptimisticUpdate = useCallback(
-    (queryKey: string, args?: any) => {
+    (queryKey: string) => {
       // Force refetch the data to get the real state
       dispatch(radarrApi.util.invalidateTags([queryKey]));
     },
@@ -197,7 +196,6 @@ export const useOptimisticUpdates = () => {
 
 // Enhanced hooks that include optimistic updates
 export const useOptimisticMovieUpdate = () => {
-  const dispatch = useDispatch();
   const { updateMovieOptimistically, rollbackOptimisticUpdate } = useOptimisticUpdates();
   const [updateMovie] = radarrApi.useUpdateMovieMutation();
 
@@ -216,12 +214,11 @@ export const useOptimisticMovieUpdate = () => {
         throw error;
       }
     },
-    [dispatch, updateMovieOptimistically, rollbackOptimisticUpdate, updateMovie]
+    [updateMovieOptimistically, rollbackOptimisticUpdate, updateMovie]
   );
 };
 
 export const useOptimisticQueueRemoval = () => {
-  const dispatch = useDispatch();
   const { removeQueueItemOptimistically, rollbackOptimisticUpdate } = useOptimisticUpdates();
   const [removeQueueItem] = radarrApi.useRemoveQueueItemMutation();
 
@@ -239,12 +236,11 @@ export const useOptimisticQueueRemoval = () => {
         throw error;
       }
     },
-    [dispatch, removeQueueItemOptimistically, rollbackOptimisticUpdate, removeQueueItem]
+    [removeQueueItemOptimistically, rollbackOptimisticUpdate, removeQueueItem]
   );
 };
 
 export const useOptimisticMovieMonitoring = () => {
-  const dispatch = useDispatch();
   const { toggleMovieMonitoringOptimistically, rollbackOptimisticUpdate } = useOptimisticUpdates();
   const [updateMovie] = radarrApi.useUpdateMovieMutation();
 
@@ -264,7 +260,7 @@ export const useOptimisticMovieMonitoring = () => {
         throw error;
       }
     },
-    [dispatch, toggleMovieMonitoringOptimistically, rollbackOptimisticUpdate, updateMovie]
+    [toggleMovieMonitoringOptimistically, rollbackOptimisticUpdate, updateMovie]
   );
 };
 
@@ -286,7 +282,7 @@ export const useOptimisticTagManagement = () => {
         // Update with real ID
         dispatch(
           radarrApi.util.updateQueryData('getTags', undefined, (draft) => {
-            const tempIndex = draft.findIndex((tag: any) => tag.id === tempTag.id);
+            const tempIndex = draft.findIndex((tag: Tag) => tag.id === tempTag.id);
             if (tempIndex !== -1) {
               draft[tempIndex] = result;
             }
@@ -317,7 +313,7 @@ export const useOptimisticTagManagement = () => {
         throw error;
       }
     },
-    [dispatch, removeTagOptimistically, rollbackOptimisticUpdate, deleteTag]
+    [removeTagOptimistically, rollbackOptimisticUpdate, deleteTag]
   );
 
   return {

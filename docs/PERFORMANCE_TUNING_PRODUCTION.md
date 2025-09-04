@@ -20,6 +20,7 @@ This guide provides comprehensive performance optimization strategies for Radarr
 Radarr Go achieves significant performance improvements over the original .NET implementation through:
 
 ### Performance Advantages
+
 - **60-80% Lower Memory Usage**: Efficient garbage collection and memory pooling
 - **3-5x Faster API Responses**: Optimized HTTP handling and database queries
 - **Better Concurrency**: Native Go goroutines for parallel processing
@@ -27,6 +28,7 @@ Radarr Go achieves significant performance improvements over the original .NET i
 - **Optimized Database Queries**: Prepared statements and connection pooling
 
 ### Key Performance Metrics
+
 - **API Response Time**: Target <200ms for 95th percentile
 - **Memory Usage**: <500MB for libraries with 10,000+ movies
 - **Database Connection Pool**: Optimal utilization at 70-80%

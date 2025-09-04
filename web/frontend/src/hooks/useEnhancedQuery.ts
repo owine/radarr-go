@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import type {
-  QueryDefinition,
-  QueryHooks,
-  QueryActionCreatorResult,
-  QueryDefinition as RTKQueryDefinition
-} from '@reduxjs/toolkit/query/react';
-import { radarrApi } from '../store/api/radarrApi';
-import { cacheManager, cacheUtils } from '../utils/cacheManager';
+import { cacheManager } from '../utils/cacheManager';
 import { useWebSocketConnection } from '../store/middleware/websocketMiddleware';
 
 // Enhanced query options
@@ -34,25 +26,25 @@ export interface EnhancedQueryOptions {
 
   // Optimistic updates
   optimisticUpdate?: boolean;
-  optimisticData?: any;
+  optimisticData?: unknown;
 
   // Real-time updates
   subscribeToUpdates?: boolean;
   updateEvents?: string[];
 
   // Error handling
-  onError?: (error: any) => void;
-  onSuccess?: (data: any) => void;
+  onError?: (error: Error) => void;
+  onSuccess?: (data: unknown) => void;
 
   // Transform data
-  select?: (data: any) => any;
-  transformError?: (error: any) => any;
+  select?: (data: unknown) => unknown;
+  transformError?: (error: Error) => unknown;
 }
 
 // Enhanced query result
 export interface EnhancedQueryResult<T> {
   data: T | undefined;
-  error: any;
+  error: Error | null;
   isLoading: boolean;
   isFetching: boolean;
   isSuccess: boolean;
@@ -62,7 +54,7 @@ export interface EnhancedQueryResult<T> {
   lastFetchedAt?: Date;
 
   // Actions
-  refetch: () => Promise<any>;
+  refetch: () => Promise<void>;
   invalidate: () => void;
   reset: () => void;
 
@@ -77,16 +69,16 @@ export interface EnhancedQueryResult<T> {
 }
 
 // Enhanced mutation options
-export interface EnhancedMutationOptions<T> {
+export interface EnhancedMutationOptions<T, V = unknown> {
   // Optimistic updates
-  optimisticUpdate?: (currentData: any, variables: any) => any;
+  optimisticUpdate?: (currentData: unknown, variables: V) => unknown;
   rollbackOnError?: boolean;
 
   // Cache invalidation
   invalidatesTags?: string[];
   updatesCaches?: Array<{
     queryKey: string;
-    updater: (currentData: any, result: T, variables: any) => any;
+    updater: (currentData: unknown, result: T, variables: V) => unknown;
   }>;
 
   // UI feedback
@@ -94,10 +86,10 @@ export interface EnhancedMutationOptions<T> {
   showErrorMessage?: boolean | string;
 
   // Callbacks
-  onMutate?: (variables: any) => void;
-  onSuccess?: (result: T, variables: any) => void;
-  onError?: (error: any, variables: any) => void;
-  onSettled?: (result: T | undefined, error: any, variables: any) => void;
+  onMutate?: (variables: V) => void;
+  onSuccess?: (result: T, variables: V) => void;
+  onError?: (error: Error, variables: V) => void;
+  onSettled?: (result: T | undefined, error: Error | null, variables: V) => void;
 }
 
 // Enhanced mutation result
@@ -107,7 +99,7 @@ export interface EnhancedMutationResult<T, V> {
   reset: () => void;
 
   data: T | undefined;
-  error: any;
+  error: Error | null;
   isLoading: boolean;
   isSuccess: boolean;
   isError: boolean;
@@ -124,12 +116,11 @@ export function useEnhancedQuery<T>(
   queryFn: () => Promise<T>,
   options: EnhancedQueryOptions = {}
 ): EnhancedQueryResult<T> {
-  const dispatch = useDispatch();
   const wsConnection = useWebSocketConnection();
 
   // State management
   const [data, setData] = useState<T | undefined>(undefined);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -147,7 +138,7 @@ export function useEnhancedQuery<T>(
   const isSuccess = !isLoading && !error && data !== undefined;
   const isError = !isLoading && error !== null;
   const hasData = data !== undefined;
-  const isEmpty = hasData && (Array.isArray(data) ? data.length === 0 : Object.keys(data as any).length === 0);
+  const isEmpty = hasData && (Array.isArray(data) ? data.length === 0 : typeof data === 'object' && data !== null ? Object.keys(data).length === 0 : false);
   const canRetry = isError && retryCount < (options.maxRetries || 3);
   const isOffline = !isOnlineRef.current;
 
@@ -218,13 +209,13 @@ export function useEnhancedQuery<T>(
         options.onSuccess(transformedData);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Check if request was aborted
       if (abortControllerRef.current?.signal.aborted) {
         return;
       }
 
-      const transformedError = options.transformError ? options.transformError(err) : err;
+      const transformedError = options.transformError ? options.transformError(err as Error) : (err as Error);
       setError(transformedError);
       setIsLoading(false);
       setIsFetching(false);
@@ -374,7 +365,7 @@ export function useEnhancedQuery<T>(
     if (options.refetchOnMount !== false) {
       executeQuery();
     }
-  }, []);
+  }, [executeQuery, options.refetchOnMount]);
 
   // Cleanup
   useEffect(() => {
@@ -418,12 +409,11 @@ export function useEnhancedQuery<T>(
 // Enhanced mutation hook
 export function useEnhancedMutation<T, V>(
   mutationFn: (variables: V) => Promise<T>,
-  options: EnhancedMutationOptions<T> = {}
+  options: EnhancedMutationOptions<T, V> = {}
 ): EnhancedMutationResult<T, V> {
-  const dispatch = useDispatch();
 
   const [data, setData] = useState<T | undefined>(undefined);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isIdle, setIsIdle] = useState(true);
 
@@ -448,7 +438,7 @@ export function useEnhancedMutation<T, V>(
     try {
       // Apply optimistic updates
       if (options.optimisticUpdate && options.updatesCaches) {
-        options.updatesCaches.forEach(({ queryKey, updater }) => {
+        options.updatesCaches.forEach(({ queryKey }) => {
           const currentData = cacheManager.get(queryKey);
           if (currentData !== null) {
             originalCacheState.set(queryKey, currentData);
@@ -488,8 +478,9 @@ export function useEnhancedMutation<T, V>(
 
       return result;
 
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error);
       setIsLoading(false);
 
       // Rollback optimistic updates
@@ -501,10 +492,10 @@ export function useEnhancedMutation<T, V>(
 
       // Call error callback
       if (options.onError) {
-        options.onError(err, variables);
+        options.onError(error, variables);
       }
 
-      throw err;
+      throw error;
 
     } finally {
       // Call settled callback

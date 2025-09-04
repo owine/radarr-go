@@ -81,6 +81,7 @@ We recognize security researchers who help improve Radarr Go security:
 ## Contact
 
 For security-related questions or concerns:
+
 - Email: security@radarr-go.example.com
 - PGP Key: [Link to public key]
 

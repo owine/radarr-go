@@ -96,12 +96,14 @@ volumes:
 ### Docker Image Tags
 
 **Current Recommendations**:
+
 - `v0.9.0-alpha`: Stable alpha version (recommended)
 - `v0.9.0-alpha-postgres`: PostgreSQL optimized
 - `v0.9.0-alpha-mariadb`: MariaDB optimized
 - `testing`: Latest pre-release
 
 **Production Planning**:
+
 - `latest`: Available at v1.0.0 (Q2 2025)
 - `stable`: Production stable releases
 
@@ -275,6 +277,7 @@ sudo service radarr start
 ### Windows Service Setup
 
 1. **Download NSSM** (Non-Sucking Service Manager):
+
    ```powershell
    # Download from https://nssm.cc/download
    # Or via Chocolatey
@@ -282,6 +285,7 @@ sudo service radarr start
    ```
 
 2. **Install service**:
+
    ```cmd
    nssm install Radarr "C:\Program Files\Radarr\radarr.exe"
    nssm set Radarr Arguments "--data C:\ProgramData\Radarr --config C:\ProgramData\Radarr\config.yaml"
@@ -320,6 +324,7 @@ sudo make install
 ### PostgreSQL (Recommended)
 
 **Why PostgreSQL?**
+
 - Best performance with Radarr-go
 - Advanced features (JSON columns, complex queries)
 - Excellent concurrency support
@@ -328,6 +333,7 @@ sudo make install
 #### PostgreSQL Installation
 
 **Ubuntu/Debian**:
+
 ```bash
 sudo apt update
 sudo apt install postgresql postgresql-contrib
@@ -336,6 +342,7 @@ sudo systemctl enable postgresql
 ```
 
 **CentOS/RHEL/Fedora**:
+
 ```bash
 sudo dnf install postgresql postgresql-server postgresql-contrib
 sudo postgresql-setup --initdb
@@ -344,12 +351,14 @@ sudo systemctl enable postgresql
 ```
 
 **macOS**:
+
 ```bash
 brew install postgresql@17
 brew services start postgresql@17
 ```
 
 **FreeBSD**:
+
 ```bash
 sudo pkg install postgresql17-server
 echo 'postgresql_enable="YES"' | sudo tee -a /etc/rc.conf
@@ -405,6 +414,7 @@ log_min_duration_statement = 1000       # Log slow queries
 ```
 
 Restart PostgreSQL:
+
 ```bash
 sudo systemctl restart postgresql
 ```
@@ -412,6 +422,7 @@ sudo systemctl restart postgresql
 ### MariaDB/MySQL Alternative
 
 **Ubuntu/Debian**:
+
 ```bash
 sudo apt update
 sudo apt install mariadb-server mariadb-client
@@ -419,6 +430,7 @@ sudo mysql_secure_installation
 ```
 
 **CentOS/RHEL/Fedora**:
+
 ```bash
 sudo dnf install mariadb-server mariadb
 sudo systemctl start mariadb
@@ -608,6 +620,7 @@ TMDB_API_KEY=your_tmdb_api_key_here
 ### Security Configuration
 
 #### API Key Generation
+
 ```bash
 # Generate secure API key
 openssl rand -hex 32
@@ -619,6 +632,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 #### SSL/HTTPS Setup
 
 1. **Generate self-signed certificate** (development):
+
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout /etc/ssl/radarr.key \
@@ -630,6 +644,7 @@ sudo chmod 600 /etc/ssl/radarr.key
 ```
 
 2. **Update config**:
+
 ```yaml
 server:
   enable_ssl: true
@@ -640,6 +655,7 @@ server:
 #### Reverse Proxy Configuration
 
 **Nginx**:
+
 ```nginx
 server {
     listen 80;
@@ -666,6 +682,7 @@ server {
 ```
 
 **Traefik**:
+
 ```yaml
 services:
   radarr:
@@ -712,6 +729,7 @@ Follow the [Docker Installation](#docker-installation-recommended) or [Binary In
 #### Step 3: Configuration Migration
 
 1. **Server Settings**:
+
 ```yaml
 # Map from original Radarr UI settings
 server:
@@ -744,6 +762,7 @@ curl -X POST "http://localhost:7878/api/v3/command" \
 #### Step 5: Download Client Setup
 
 Reconfigure in UI:
+
 - Settings > Download Clients
 - Add your existing clients (qBittorrent, Transmission, etc.)
 - Test connections
@@ -751,6 +770,7 @@ Reconfigure in UI:
 #### Step 6: Notification Setup
 
 Reconfigure in UI:
+
 - Settings > Connect
 - 11 providers supported: Discord, Slack, Email, Webhook, etc.
 
@@ -773,6 +793,7 @@ curl -X POST -H "X-Api-Key: your-api-key" \
 ### Parallel Testing Approach (Recommended)
 
 1. **Install Radarr-go on different port**:
+
 ```yaml
 server:
   port: 7879  # Different port
@@ -791,6 +812,7 @@ server:
 #### Load Balancer Configuration
 
 **HAProxy**:
+
 ```
 backend radarr_backend
     balance roundrobin
@@ -802,6 +824,7 @@ backend radarr_backend
 #### Database High Availability
 
 **PostgreSQL with Patroni**:
+
 ```yaml
 # patroni.yml
 scope: radarr-cluster
@@ -937,12 +960,14 @@ sudo crontab -e
 #### Firewall Configuration
 
 **UFW (Ubuntu)**:
+
 ```bash
 sudo ufw allow 7878/tcp comment 'Radarr Go'
 sudo ufw allow from 192.168.1.0/24 to any port 7878 comment 'Radarr Go LAN only'
 ```
 
 **firewalld (CentOS/RHEL)**:
+
 ```bash
 sudo firewall-cmd --permanent --add-port=7878/tcp
 sudo firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" port protocol="tcp" port="7878" accept'
@@ -1059,6 +1084,7 @@ echo "Disk Usage: $disk_usage"
 **Symptoms**: `failed to connect to database`, `connection refused`
 
 **Diagnosis**:
+
 ```bash
 # Test database connectivity
 pg_isready -h localhost -p 5432 -U radarr  # PostgreSQL
@@ -1070,18 +1096,22 @@ netstat -tlnp | grep :5432  # or :3306
 ```
 
 **Solutions**:
+
 1. **Start database service**:
+
    ```bash
    sudo systemctl start postgresql
    sudo systemctl enable postgresql
    ```
 
 2. **Check credentials**:
+
    ```bash
    psql -h localhost -U radarr -d radarr  # Test manually
    ```
 
 3. **Verify network binding**:
+
    ```bash
    # PostgreSQL: Edit /etc/postgresql/17/main/postgresql.conf
    listen_addresses = 'localhost'
@@ -1091,6 +1121,7 @@ netstat -tlnp | grep :5432  # or :3306
    ```
 
 4. **Check firewall**:
+
    ```bash
    sudo ufw allow 5432  # PostgreSQL
    sudo ufw allow 3306  # MariaDB
@@ -1101,6 +1132,7 @@ netstat -tlnp | grep :5432  # or :3306
 **Symptoms**: `permission denied`, `cannot write to directory`
 
 **Solutions**:
+
 ```bash
 # Fix ownership
 sudo chown -R radarr:radarr /var/lib/radarr /var/log/radarr
@@ -1119,6 +1151,7 @@ sudo setsebool -P httpd_can_network_connect 1
 **Symptoms**: `bind: address already in use`
 
 **Diagnosis**:
+
 ```bash
 # Check what's using port 7878
 sudo lsof -i :7878
@@ -1129,6 +1162,7 @@ ps aux | grep radarr
 ```
 
 **Solutions**:
+
 ```bash
 # Kill conflicting process
 sudo pkill -f radarr
@@ -1146,6 +1180,7 @@ server:
 **Symptoms**: Application using defaults instead of config file
 
 **Diagnosis**:
+
 ```bash
 # Check config file exists and is readable
 ls -la /etc/radarr/config.yaml
@@ -1159,12 +1194,15 @@ env | grep RADARR_
 ```
 
 **Solutions**:
+
 1. **Specify config path explicitly**:
+
    ```bash
    ./radarr --config /etc/radarr/config.yaml
    ```
 
 2. **Fix YAML syntax**:
+
    ```bash
    # Common issues:
    # - Incorrect indentation (use spaces, not tabs)
@@ -1173,6 +1211,7 @@ env | grep RADARR_
    ```
 
 3. **Environment variable precedence**:
+
    ```bash
    # Unset conflicting env vars
    unset RADARR_SERVER_PORT
@@ -1183,7 +1222,9 @@ env | grep RADARR_
 **Symptoms**: Movies not appearing, metadata missing
 
 **Solutions**:
+
 1. **Force library scan**:
+
    ```bash
    curl -X POST "http://localhost:7878/api/v3/command" \
         -H "X-Api-Key: your-api-key" \
@@ -1196,6 +1237,7 @@ env | grep RADARR_
    - Verify paths are correct and accessible
 
 3. **Clear cache and restart**:
+
    ```bash
    sudo systemctl stop radarr
    sudo rm -rf /var/lib/radarr/cache/*
@@ -1207,12 +1249,15 @@ env | grep RADARR_
 **Symptoms**: `certificate verify failed`, SSL handshake errors
 
 **Solutions**:
+
 1. **Check certificate validity**:
+
    ```bash
    openssl x509 -in /etc/ssl/radarr.crt -text -noout
    ```
 
 2. **Verify file permissions**:
+
    ```bash
    sudo chown radarr:radarr /etc/ssl/radarr.*
    sudo chmod 600 /etc/ssl/radarr.key
@@ -1220,6 +1265,7 @@ env | grep RADARR_
    ```
 
 3. **Test without SSL first**:
+
    ```yaml
    server:
      enable_ssl: false
@@ -1230,6 +1276,7 @@ env | grep RADARR_
 #### High Memory Usage
 
 **Diagnosis**:
+
 ```bash
 # Check memory usage
 ps aux | grep radarr
@@ -1238,7 +1285,9 @@ top -p $(pgrep radarr)
 ```
 
 **Solutions**:
+
 1. **Reduce connection pool size**:
+
    ```yaml
    database:
      max_connections: 10
@@ -1246,12 +1295,14 @@ top -p $(pgrep radarr)
    ```
 
 2. **Tune garbage collection**:
+
    ```bash
    export GOGC=50  # More aggressive GC
    ./radarr
    ```
 
 3. **Check for memory leaks**:
+
    ```bash
    # Monitor over time
    watch 'ps aux | grep radarr | grep -v grep'
@@ -1260,6 +1311,7 @@ top -p $(pgrep radarr)
 #### Slow API Responses
 
 **Diagnosis**:
+
 ```bash
 # Test API response times
 time curl -H "X-Api-Key: your-api-key" "http://localhost:7878/api/v3/movie"
@@ -1269,7 +1321,9 @@ EXPLAIN ANALYZE SELECT * FROM movies LIMIT 10;
 ```
 
 **Solutions**:
+
 1. **Database optimization**:
+
    ```sql
    -- PostgreSQL
    VACUUM ANALYZE movies;
@@ -1280,12 +1334,14 @@ EXPLAIN ANALYZE SELECT * FROM movies LIMIT 10;
    ```
 
 2. **Increase worker count**:
+
    ```yaml
    performance:
      worker_count: 8  # Match CPU cores
    ```
 
 3. **Optimize logging**:
+
    ```yaml
    log:
      level: "warn"  # Reduce verbosity
@@ -1294,6 +1350,7 @@ EXPLAIN ANALYZE SELECT * FROM movies LIMIT 10;
 ### Diagnostic Commands
 
 #### System Information
+
 ```bash
 # Version check
 ./radarr --version
@@ -1309,6 +1366,7 @@ tail -f /var/log/radarr/radarr.log | jq -r '.msg'
 ```
 
 #### Database Health
+
 ```bash
 # PostgreSQL
 psql -h localhost -U radarr -d radarr -c "
@@ -1366,6 +1424,7 @@ echo "Diagnostic report saved to diagnostic.txt"
 - **Community**: Discord/Reddit (links in main repository)
 
 When reporting issues, include:
+
 1. Radarr-go version (`./radarr --version`)
 2. Operating system and architecture
 3. Database type and version
@@ -1402,6 +1461,7 @@ curl -H "X-Api-Key: your-api-key" "http://localhost:7878/api/v3/health"
 ### Performance Benchmarks
 
 Expected performance improvements over original Radarr:
+
 - **Memory Usage**: 60-80% reduction
 - **Startup Time**: 80-90% faster
 - **API Response**: <100ms average

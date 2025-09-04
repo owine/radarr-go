@@ -1,7 +1,9 @@
 .PHONY: build run test clean docker-build docker-run deps fmt lint \
 	build-frontend dev-frontend clean-frontend install-frontend \
 	build-all-with-frontend dev-full dev-env-start dev-env-stop \
-	dev-env-restart dev-env-status dev-env-info dev-monitor dev-logs dev-perf
+	dev-env-restart dev-env-status dev-env-info dev-monitor dev-logs dev-perf \
+	lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell \
+	lint-all lint-fix setup-lint-tools check-lint-tools
 
 # Go parameters
 GOCMD=go
@@ -19,6 +21,23 @@ FRONTEND_DIR=web/frontend
 NODE_CMD=npm
 FRONTEND_BUILD_DIR=$(FRONTEND_DIR)/dist
 STATIC_DIR=web/static
+
+# Linting tool commands
+YAMLLINT_CMD=yamllint
+JSONLINT_CMD=jsonlint-php
+MARKDOWNLINT_CMD=markdownlint
+SHELLCHECK_CMD=shellcheck
+ESLINT_CMD=npx eslint
+
+# Linting configuration files
+YAMLLINT_CONFIG=.yamllint.yml
+MARKDOWNLINT_CONFIG=.markdownlint.json
+
+# File patterns for linting
+YAML_FILES=$(shell find . -name '*.yml' -o -name '*.yaml' | grep -v node_modules | grep -v vendor)
+JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git')
+MARKDOWN_FILES=$(shell find . -name '*.md' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
+SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor)
 
 # Build variables
 VERSION ?= dev
@@ -266,9 +285,112 @@ deps:
 fmt:
 	$(GOFMT) ./...
 
-# Lint code (requires golangci-lint)
-lint:
+# Comprehensive Linting Targets
+# ===========================================
+
+# Lint Go code (requires golangci-lint)
+lint-go:
+	@echo "Linting Go code..."
+	@which golangci-lint > /dev/null || (echo "Error: golangci-lint not found. Run 'make setup-lint-tools'" && exit 1)
 	golangci-lint run
+
+# Lint frontend TypeScript/React code
+lint-frontend:
+	@echo "Linting frontend code..."
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		cd $(FRONTEND_DIR) && $(NODE_CMD) run lint; \
+	else \
+		echo "Frontend not found or package.json missing. Skipping frontend linting."; \
+	fi
+
+# Lint YAML files
+lint-yaml:
+	@echo "Linting YAML files..."
+	@if [ -z "$(YAML_FILES)" ]; then \
+		echo "No YAML files found to lint."; \
+	else \
+		if which $(YAMLLINT_CMD) > /dev/null 2>&1; then \
+			if [ -f "$(YAMLLINT_CONFIG)" ]; then \
+				$(YAMLLINT_CMD) -c $(YAMLLINT_CONFIG) $(YAML_FILES); \
+			else \
+				$(YAMLLINT_CMD) $(YAML_FILES); \
+			fi; \
+		else \
+			echo "Warning: yamllint not found. Install with 'make setup-lint-tools'"; \
+		fi; \
+	fi
+
+# Lint JSON files
+lint-json:
+	@echo "Linting JSON files..."
+	@if [ -z "$(JSON_FILES)" ]; then \
+		echo "No JSON files found to lint."; \
+	else \
+		if which $(JSONLINT_CMD) > /dev/null 2>&1; then \
+			for file in $(JSON_FILES); do \
+				echo "Checking $$file"; \
+				$(JSONLINT_CMD) "$$file" || exit 1; \
+			done; \
+		else \
+			echo "Warning: jsonlint not found. Install with 'make setup-lint-tools'"; \
+			for file in $(JSON_FILES); do \
+				echo "Checking $$file with python"; \
+				python3 -m json.tool "$$file" > /dev/null || exit 1; \
+			done; \
+		fi; \
+	fi
+
+# Lint Markdown files
+lint-markdown:
+	@echo "Linting Markdown files..."
+	@if [ -z "$(MARKDOWN_FILES)" ]; then \
+		echo "No Markdown files found to lint."; \
+	else \
+		if which $(MARKDOWNLINT_CMD) > /dev/null 2>&1; then \
+			if [ -f "$(MARKDOWNLINT_CONFIG)" ]; then \
+				$(MARKDOWNLINT_CMD) -c $(MARKDOWNLINT_CONFIG) $(MARKDOWN_FILES); \
+			else \
+				$(MARKDOWNLINT_CMD) $(MARKDOWN_FILES); \
+			fi; \
+		else \
+			echo "Warning: markdownlint not found. Install with 'make setup-lint-tools'"; \
+		fi; \
+	fi
+
+# Lint shell scripts
+lint-shell:
+	@echo "Linting shell scripts..."
+	@if [ -z "$(SHELL_FILES)" ]; then \
+		echo "No shell files found to lint."; \
+	else \
+		if which $(SHELLCHECK_CMD) > /dev/null 2>&1; then \
+			$(SHELLCHECK_CMD) $(SHELL_FILES); \
+		else \
+			echo "Warning: shellcheck not found. Install with 'make setup-lint-tools'"; \
+		fi; \
+	fi
+
+# Run all linting checks
+lint-all: lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell
+	@echo "All linting checks completed."
+
+# Attempt to auto-fix linting issues where possible
+lint-fix:
+	@echo "Attempting to auto-fix linting issues..."
+	@echo "Fixing Go code formatting..."
+	$(GOFMT) ./...
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+		echo "Fixing frontend code..."; \
+		cd $(FRONTEND_DIR) && $(NODE_CMD) run lint -- --fix 2>/dev/null || echo "Frontend auto-fix not available or failed"; \
+	fi
+	@if which $(MARKDOWNLINT_CMD) > /dev/null 2>&1; then \
+		echo "Fixing Markdown files..."; \
+		$(MARKDOWNLINT_CMD) --fix $(MARKDOWN_FILES) 2>/dev/null || echo "Markdown auto-fix completed with warnings"; \
+	fi
+	@echo "Auto-fix completed. Please review changes and re-run 'make lint-all'"
+
+# Legacy lint target (for backward compatibility)
+lint: lint-go
 
 # Production Environment Commands
 # ===========================================
@@ -340,10 +462,10 @@ init: deps
 	cp config.yaml data/
 
 # All-in-one build and test
-all: deps fmt lint test test-bench build
+all: deps fmt lint-all test test-bench build
 
 # Development workflow
-dev-all: deps fmt lint test test-examples test-bench test-coverage build
+dev-all: deps fmt lint-all test test-examples test-bench test-coverage build
 
 # Enhanced Development Environment Management
 dev-env-start:
@@ -372,7 +494,7 @@ dev-perf:
 	./scripts/dev-monitor.sh perf
 
 # CI/CD workflow (includes database testing)
-ci: deps fmt lint test-ci build-all
+ci: deps fmt lint-all test-ci build-all
 
 # Development setup
 setup: setup-backend setup-frontend
@@ -384,12 +506,66 @@ setup-backend:
 	$(GOGET) github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	mkdir -p data movies web/static web/templates
 
+# Linting Tools Setup and Verification
+# ===========================================
+
+# Install all linting tools
+setup-lint-tools:
+	@echo "Installing linting tools..."
+	@echo "Installing Go linting tools..."
+	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "Installing YAML linting tools..."
+	@if which pip3 > /dev/null 2>&1; then \
+		pip3 install yamllint; \
+	elif which pip > /dev/null 2>&1; then \
+		pip install yamllint; \
+	else \
+		echo "Warning: pip/pip3 not found. Please install yamllint manually: pip install yamllint"; \
+	fi
+	@echo "Installing JSON linting tools..."
+	@if which brew > /dev/null 2>&1; then \
+		brew install jsonlint; \
+	elif which apt-get > /dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y jsonlint; \
+	elif which yum > /dev/null 2>&1; then \
+		sudo yum install -y nodejs npm && sudo npm install -g jsonlint; \
+	else \
+		echo "Warning: Package manager not found. Using Python json.tool as fallback"; \
+	fi
+	@echo "Installing Markdown linting tools..."
+	@if which npm > /dev/null 2>&1; then \
+		npm install -g markdownlint-cli; \
+	else \
+		echo "Warning: npm not found. Please install Node.js and npm first"; \
+	fi
+	@echo "Installing Shell linting tools..."
+	@if which brew > /dev/null 2>&1; then \
+		brew install shellcheck; \
+	elif which apt-get > /dev/null 2>&1; then \
+		sudo apt-get update && sudo apt-get install -y shellcheck; \
+	elif which yum > /dev/null 2>&1; then \
+		sudo yum install -y ShellCheck; \
+	else \
+		echo "Warning: Package manager not found. Please install shellcheck manually"; \
+	fi
+	@echo "Linting tools installation completed!"
+	@echo "Run 'make check-lint-tools' to verify installation"
+
+# Check if all linting tools are installed
+check-lint-tools:
+	@echo "Checking linting tools installation..."
+	@which golangci-lint > /dev/null && echo "golangci-lint: ✓ Installed" || echo "golangci-lint: ✗ Not installed"
+	@which $(YAMLLINT_CMD) > /dev/null && echo "yamllint: ✓ Installed" || echo "yamllint: ✗ Not installed"
+	@which $(JSONLINT_CMD) > /dev/null && echo "jsonlint: ✓ Installed" || echo "jsonlint: ✗ Not installed (falling back to python json.tool)"
+	@which $(MARKDOWNLINT_CMD) > /dev/null && echo "markdownlint: ✓ Installed" || echo "markdownlint: ✗ Not installed"
+	@which $(SHELLCHECK_CMD) > /dev/null && echo "shellcheck: ✓ Installed" || echo "shellcheck: ✗ Not installed"
+	@echo "Linting tools check completed."
+
 # Check development environment
-check-env:
+check-env: check-lint-tools
 	@echo "Checking development environment..."
 	@echo "Go version: $(shell go version)"
 	@which air > /dev/null && echo "Air (hot reload): ✓ Installed" || echo "Air (hot reload): ✗ Not installed (run 'make setup-backend')"
-	@which golangci-lint > /dev/null && echo "golangci-lint: ✓ Installed" || echo "golangci-lint: ✗ Not installed (run 'make setup-backend')"
 	@which migrate > /dev/null && echo "migrate: ✓ Installed" || echo "migrate: ✗ Not installed (run 'make setup-backend')"
 	@which node > /dev/null && echo "Node.js: ✓ Installed ($(shell node --version))" || echo "Node.js: ✗ Not installed (required for frontend)"
 	@which npm > /dev/null && echo "npm: ✓ Installed ($(shell npm --version))" || echo "npm: ✗ Not installed (required for frontend)"

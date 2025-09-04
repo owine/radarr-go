@@ -5,7 +5,7 @@ import type { AppDispatch } from '../store';
 export interface InvalidationRule {
   triggerTags: string[];
   invalidateTags: string[];
-  condition?: (data?: any) => boolean;
+  condition?: (data?: unknown) => boolean;
   delay?: number; // Delay in milliseconds before invalidation
 }
 
@@ -241,7 +241,7 @@ export class CacheInvalidationManager {
   }
 
   // Execute invalidation for a specific operation
-  invalidateFor(operation: string, data?: any) {
+  invalidateFor(operation: string, data?: unknown) {
     const strategy = invalidationStrategies[operation];
     if (!strategy || !this.activeStrategies.has(operation)) {
       return;
@@ -269,7 +269,7 @@ export class CacheInvalidationManager {
   }
 
   // Batch invalidation for multiple operations
-  batchInvalidate(operations: Array<{ operation: string; data?: any }>) {
+  batchInvalidate(operations: Array<{ operation: string; data?: unknown }>) {
     const allTagsToInvalidate = new Set<string>();
     let maxDelay = 0;
 
@@ -433,14 +433,14 @@ export function initializeCacheInvalidation(dispatch: AppDispatch) {
 // Utility functions for common invalidation patterns
 export const invalidationUtils = {
   // Invalidate after successful mutation
-  afterMutation: (operation: string, data?: any) => {
+  afterMutation: (operation: string, data?: unknown) => {
     if (cacheInvalidationManager) {
       cacheInvalidationManager.invalidateFor(operation, data);
     }
   },
 
   // Invalidate based on WebSocket events
-  onWebSocketEvent: (eventType: string, eventData: any) => {
+  onWebSocketEvent: (eventType: string, eventData: unknown) => {
     if (!cacheInvalidationManager) return;
 
     const eventToOperationMap: Record<string, string> = {
@@ -458,7 +458,7 @@ export const invalidationUtils = {
   },
 
   // Bulk operations
-  onBulkOperation: (operationType: string, items: any[]) => {
+  onBulkOperation: (operationType: string, items: unknown[]) => {
     if (!cacheInvalidationManager) return;
 
     cacheInvalidationManager.batchInvalidate(

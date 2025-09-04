@@ -6,7 +6,7 @@ import type { RootState } from '../index';
 // WebSocket Event Types
 export interface WebSocketEvent {
   type: string;
-  data: any;
+  data: unknown;
   timestamp: string;
 }
 
@@ -106,11 +106,11 @@ class WebSocketManager {
     connectionTimeout: 10000,
   };
 
-  private dispatch: any = null;
+  private dispatch: ((action: unknown) => unknown) | null = null;
   private getState: (() => RootState) | null = null;
   private listeners: Map<string, ((event: WebSocketEvent) => void)[]> = new Map();
 
-  initialize(dispatch: any, getState: () => RootState, apiKey?: string) {
+  initialize(dispatch: (action: unknown) => unknown, getState: () => RootState, apiKey?: string) {
     this.dispatch = dispatch;
     this.getState = getState;
 
@@ -172,7 +172,7 @@ class WebSocketManager {
     this.state.reconnectAttempts = 0;
   }
 
-  send(data: any) {
+  send(data: unknown) {
     if (this.state.connectionState === 'connected' && this.state.connection) {
       try {
         this.state.connection.send(JSON.stringify(data));
@@ -264,7 +264,7 @@ class WebSocketManager {
     this.handleConnectionError(new Error('Connection timeout'));
   }
 
-  private handleConnectionError(error: Error) {
+  private handleConnectionError() {
     this.clearTimers();
     this.setState('error');
 
@@ -355,7 +355,7 @@ class WebSocketManager {
         this.dispatch(radarrApi.util.invalidateTags(['Health']));
         break;
 
-      case 'MovieUpdate':
+      case 'MovieUpdate': {
         // Invalidate specific movie and movies list
         const movieId = (event as MovieUpdateEvent).data.id;
         this.dispatch(radarrApi.util.invalidateTags([
@@ -363,6 +363,7 @@ class WebSocketManager {
           { type: 'Movie', id: 'LIST' }
         ]));
         break;
+      }
 
       case 'DownloadComplete':
         // Invalidate multiple caches for download completion
@@ -417,7 +418,7 @@ class WebSocketManager {
 export const webSocketManager = new WebSocketManager();
 
 // Redux middleware for WebSocket integration
-export const websocketMiddleware: Middleware<{}, RootState> =
+export const websocketMiddleware: Middleware<Record<string, never>, RootState> =
   (store) => (next) => (action) => {
     const { dispatch, getState } = store;
 

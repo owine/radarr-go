@@ -20,6 +20,7 @@ This guide provides comprehensive security hardening recommendations for Radarr 
 Security hardening for Radarr Go involves multiple layers of protection:
 
 ### Security Principles
+
 - **Defense in Depth**: Multiple security layers
 - **Least Privilege**: Minimal necessary permissions
 - **Zero Trust**: Verify all connections and requests
@@ -27,6 +28,7 @@ Security hardening for Radarr Go involves multiple layers of protection:
 - **Regular Updates**: Keep all components current
 
 ### Security Components
+
 - **Network Security**: Firewall rules and network segmentation
 - **Application Security**: Authentication, authorization, input validation
 - **Container Security**: Secure images and runtime configuration

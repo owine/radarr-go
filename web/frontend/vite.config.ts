@@ -14,14 +14,14 @@ export default defineConfig({
         target: 'http://localhost:7878',
         changeOrigin: true,
         secure: false,
-        configure: (proxy: any) => {
+        configure: (proxy: { on: (event: string, handler: (...args: unknown[]) => void) => void }) => {
           proxy.on('error', (err: Error) => {
             console.log('proxy error', err);
           });
-          proxy.on('proxyReq', (_proxyReq: any, req: any) => {
+          proxy.on('proxyReq', (_proxyReq: unknown, req: { method: string; url: string }) => {
             console.log('Sending Request to the Target:', req.method, req.url);
           });
-          proxy.on('proxyRes', (proxyRes: any, req: any) => {
+          proxy.on('proxyRes', (proxyRes: { statusCode: number }, req: { url: string }) => {
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },

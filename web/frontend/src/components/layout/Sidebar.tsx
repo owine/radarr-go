@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
-import { useGetQueueQuery, useGetHealthQuery, useGetSystemStatusQuery } from '../../store/api/radarrApi';
+import { useGetQueueQuery, useGetHealthQuery } from '../../store/api/radarrApi';
 import styles from './Sidebar.module.css';
 
 interface NavigationItem {

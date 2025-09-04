@@ -54,7 +54,7 @@ export interface PersistedAppState {
   recentlyViewedMovies: number[];
   bookmarks: Array<{ id: string; name: string; url: string; timestamp: number }>;
   dashboardLayout: Array<{ id: string; x: number; y: number; w: number; h: number }>;
-  filterPresets: Record<string, any>;
+  filterPresets: Record<string, unknown>;
   sortPreferences: Record<string, { key: string; direction: 'asc' | 'desc' }>;
 }
 
@@ -62,9 +62,9 @@ export interface PersistedAppState {
 export interface SessionData {
   currentPage: string;
   scrollPositions: Record<string, number>;
-  formDrafts: Record<string, any>;
+  formDrafts: Record<string, unknown>;
   expandedSections: Record<string, boolean>;
-  activeFilters: Record<string, any>;
+  activeFilters: Record<string, unknown>;
   selectedItems: Record<string, number[]>;
 }
 
@@ -268,7 +268,7 @@ export class PersistenceLayer {
   }
 
   // Filter presets
-  async saveFilterPreset(name: string, filters: any, context: string) {
+  async saveFilterPreset(name: string, filters: unknown, context: string) {
     const presets = { ...this.appState.filterPresets };
     if (!presets[context]) {
       presets[context] = {};
@@ -330,7 +330,7 @@ export class PersistenceLayer {
   }
 
   // Form draft management
-  async saveFormDraft(formId: string, data: any) {
+  async saveFormDraft(formId: string, data: unknown) {
     const formDrafts = { ...this.sessionData.formDrafts };
     formDrafts[formId] = { data, timestamp: Date.now() };
     await this.updateSessionData({ formDrafts });
@@ -503,7 +503,7 @@ export const persistenceUtils = {
   },
 
   // Auto-save form drafts
-  setupAutoSave: (formId: string, getFormData: () => any, interval = 30000) => {
+  setupAutoSave: (formId: string, getFormData: () => unknown, interval = 30000) => {
     let autoSaveTimer: NodeJS.Timeout;
 
     const save = async () => {

@@ -20,6 +20,7 @@ This comprehensive troubleshooting guide covers common issues and solutions when
 ### Problem: 401 Unauthorized Error
 
 **Symptoms:**
+
 - API requests return HTTP 401
 - Error message: "Invalid API key" or "Authentication required"
 
@@ -36,6 +37,7 @@ curl -I -H "X-API-Key: YOUR_API_KEY" http://localhost:7878/api/v3/system/status
 ```
 
 **Solution:**
+
 ```python
 # Python - Verify API key format and value
 import requests
@@ -128,6 +130,7 @@ curl "http://localhost:7878/api/v3/system/status?apikey=your-key" | jq '.authent
 ```
 
 **Solution for Disabled Authentication:**
+
 ```python
 # When authentication is disabled, don't send API key
 import requests
@@ -164,6 +167,7 @@ def adaptive_request(base_url, endpoint, api_key=None):
 ### Problem: Connection Refused or Timeout
 
 **Symptoms:**
+
 - `Connection refused` errors
 - Request timeouts
 - DNS resolution failures
@@ -187,6 +191,7 @@ curl -I http://192.168.1.100:7878/ping
 **Common Solutions:**
 
 #### 1. Service Not Running
+
 ```bash
 # Check if Radarr Go is running
 ps aux | grep radarr
@@ -197,6 +202,7 @@ netstat -tlnp | grep :7878
 ```
 
 #### 2. Firewall Issues
+
 ```bash
 # Check firewall rules (Linux)
 sudo iptables -L | grep 7878
@@ -210,6 +216,7 @@ New-NetFirewallRule -DisplayName "Radarr Go" -Direction Inbound -Port 7878 -Prot
 ```
 
 #### 3. Binding/Listen Address Issues
+
 ```yaml
 # config.yaml - Make sure server binds to correct address
 server:
@@ -285,6 +292,7 @@ client.test_ssl_connection()
 ### Problem: HTTP 429 Too Many Requests
 
 **Understanding Rate Limits:**
+
 - Default: 100 requests per minute per API key
 - Applies to all endpoints except `/ping`
 - Rate limit headers included in responses
@@ -725,6 +733,7 @@ wsTroubleshooter.connect();
 ### Problem: CORS Policy Violations
 
 **Symptoms:**
+
 - Browser console shows CORS errors
 - Requests work in backend but fail in browser
 - "Access-Control-Allow-Origin" errors

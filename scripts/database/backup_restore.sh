@@ -67,7 +67,7 @@ setup_backup_dir() {
 # Test database connectivity
 test_connection() {
     log "Testing database connectivity..."
-    
+
     case "$1" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
@@ -96,17 +96,17 @@ get_backup_filename() {
 backup_database() {
     local db_type="$1"
     local backup_file=$(get_backup_filename "$db_type")
-    
+
     setup_backup_dir
     check_dependencies "$db_type"
     test_connection "$db_type"
-    
+
     log "Starting backup of $db_type database to $backup_file"
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
-            
+
             # Create backup with full schema and data, optimized for large datasets
             if ! pg_dump \
                 -h "$POSTGRES_HOST" \
@@ -146,7 +146,7 @@ backup_database() {
             fi
             ;;
     esac
-    
+
     # Compress backup if large
     local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo 0)
     if [ "$file_size" -gt 52428800 ]; then  # 50MB
@@ -154,16 +154,16 @@ backup_database() {
         gzip "$backup_file"
         backup_file="${backup_file}.gz"
     fi
-    
+
     log "Backup completed successfully: $backup_file"
     log "Backup size: $(du -h "$backup_file" | cut -f1)"
-    
+
     # Validate backup
     validate_backup "$backup_file" "$db_type"
-    
+
     # Clean up old backups
     cleanup_old_backups
-    
+
     echo "$backup_file"
 }
 
@@ -171,9 +171,9 @@ backup_database() {
 validate_backup() {
     local backup_file="$1"
     local db_type="$2"
-    
+
     log "Validating backup integrity..."
-    
+
     # Check if file is compressed
     if [[ "$backup_file" == *.gz ]]; then
         if ! gzip -t "$backup_file" >/dev/null 2>&1; then
@@ -189,7 +189,7 @@ validate_backup() {
             error_exit "Backup file appears to be empty or invalid"
         fi
     fi
-    
+
     log "Backup validation successful"
 }
 
@@ -197,16 +197,16 @@ validate_backup() {
 restore_database() {
     local db_type="$1"
     local backup_file="$2"
-    
+
     if [ ! -f "$backup_file" ]; then
         error_exit "Backup file not found: $backup_file"
     fi
-    
+
     check_dependencies "$db_type"
     test_connection "$db_type"
-    
+
     log "Starting restore of $db_type database from $backup_file"
-    
+
     # Confirm before restore
     read -p "WARNING: This will overwrite the current database. Continue? (y/N): " -n 1 -r
     echo
@@ -214,17 +214,17 @@ restore_database() {
         log "Restore cancelled by user"
         exit 0
     fi
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
-            
+
             # Drop and recreate database for clean restore
             log "Dropping and recreating PostgreSQL database"
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
                 -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\";" \
                 -c "CREATE DATABASE \"$POSTGRES_DB\";" 2>>"$LOG_FILE" || error_exit "Failed to recreate database"
-            
+
             # Restore from backup
             if [[ "$backup_file" == *.gz ]]; then
                 if ! zcat "$backup_file" | psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" 2>>"$LOG_FILE"; then
@@ -241,7 +241,7 @@ restore_database() {
             log "Dropping and recreating MariaDB/MySQL database"
             mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
                 -e "DROP DATABASE IF EXISTS \`$MYSQL_DB\`; CREATE DATABASE \`$MYSQL_DB\`;" 2>>"$LOG_FILE" || error_exit "Failed to recreate database"
-            
+
             # Restore from backup
             if [[ "$backup_file" == *.gz ]]; then
                 if ! zcat "$backup_file" | mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" 2>>"$LOG_FILE"; then
@@ -254,9 +254,9 @@ restore_database() {
             fi
             ;;
     esac
-    
+
     log "Database restore completed successfully"
-    
+
     # Run post-restore validation
     validate_restored_database "$db_type"
 }
@@ -264,17 +264,17 @@ restore_database() {
 # Validate restored database
 validate_restored_database() {
     local db_type="$1"
-    
+
     log "Validating restored database..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
-            
+
             # Check critical tables exist
             local table_count=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
                 -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('movies', 'quality_definitions', 'quality_profiles');" | tr -d ' ')
-            
+
             if [ "$table_count" -ne 3 ]; then
                 error_exit "Critical tables missing after restore (found $table_count/3)"
             fi
@@ -283,20 +283,20 @@ validate_restored_database() {
             # Check critical tables exist
             local table_count=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" \
                 -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$MYSQL_DB' AND table_name IN ('movies', 'quality_definitions', 'quality_profiles');" -s)
-            
+
             if [ "$table_count" -ne 3 ]; then
                 error_exit "Critical tables missing after restore (found $table_count/3)"
             fi
             ;;
     esac
-    
+
     log "Database validation successful"
 }
 
 # Clean up old backups based on retention policy
 cleanup_old_backups() {
     log "Cleaning up backups older than $BACKUP_RETENTION_DAYS days"
-    
+
     if [ -d "$BACKUP_DIR" ]; then
         find "$BACKUP_DIR" -name "radarr_*.sql*" -mtime +$BACKUP_RETENTION_DAYS -type f -exec rm -f {} \;
         log "Old backups cleaned up"
@@ -306,7 +306,7 @@ cleanup_old_backups() {
 # Validate current database schema
 validate_schema() {
     log "Validating current database schema..."
-    
+
     # Check both databases if available
     for db_type in postgresql mariadb; do
         if check_dependencies_quiet "$db_type" && test_connection_quiet "$db_type"; then
@@ -344,24 +344,24 @@ test_connection_quiet() {
 validate_schema_specific() {
     local db_type="$1"
     log "Validating $db_type schema..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
-            
+
             # Check for foreign key constraint violations
             local fk_violations=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "
                 SELECT COUNT(*) FROM (
-                    SELECT tc.table_name, tc.constraint_name 
+                    SELECT tc.table_name, tc.constraint_name
                     FROM information_schema.table_constraints tc
                     JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
                     WHERE tc.constraint_type = 'FOREIGN KEY'
                     AND NOT EXISTS (
-                        SELECT 1 FROM information_schema.tables t 
+                        SELECT 1 FROM information_schema.tables t
                         WHERE t.table_name = rc.unique_constraint_schema
                     )
                 ) violations;" | tr -d ' ')
-            
+
             if [ "$fk_violations" -gt 0 ]; then
                 error_exit "$db_type has $fk_violations foreign key constraint violations"
             fi
@@ -370,28 +370,28 @@ validate_schema_specific() {
             # Check for foreign key constraint violations
             local fk_violations=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" -e "
                 SELECT COUNT(*) FROM (
-                    SELECT CONSTRAINT_NAME 
-                    FROM information_schema.REFERENTIAL_CONSTRAINTS 
+                    SELECT CONSTRAINT_NAME
+                    FROM information_schema.REFERENTIAL_CONSTRAINTS
                     WHERE CONSTRAINT_SCHEMA = '$MYSQL_DB'
                     AND REFERENCED_TABLE_NAME NOT IN (
-                        SELECT TABLE_NAME FROM information_schema.TABLES 
+                        SELECT TABLE_NAME FROM information_schema.TABLES
                         WHERE TABLE_SCHEMA = '$MYSQL_DB'
                     )
                 ) violations;" -s)
-            
+
             if [ "$fk_violations" -gt 0 ]; then
                 error_exit "$db_type has $fk_violations foreign key constraint violations"
             fi
             ;;
     esac
-    
+
     log "$db_type schema validation successful"
 }
 
 # Performance test with synthetic data
 performance_test() {
     log "Running database performance test..."
-    
+
     for db_type in postgresql mariadb; do
         if check_dependencies_quiet "$db_type" && test_connection_quiet "$db_type"; then
             log "Testing $db_type performance..."
@@ -406,31 +406,31 @@ performance_test() {
 performance_test_specific() {
     local db_type="$1"
     local temp_db="radarr_perf_test_$(date +%s)"
-    
+
     log "Creating temporary database $temp_db for performance testing..."
-    
+
     case "$db_type" in
         "postgresql")
             export PGPASSWORD="$POSTGRES_PASSWORD"
-            
+
             # Create temporary database
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
                 -c "CREATE DATABASE \"$temp_db\";" >/dev/null 2>&1 || error_exit "Failed to create test database"
-            
+
             # Run migrations
             cd "$PROJECT_ROOT"
             RADARR_DATABASE_NAME="$temp_db" ./radarr migrate-up >/dev/null 2>&1 || {
                 psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE \"$temp_db\";" >/dev/null 2>&1
                 error_exit "Migration failed during performance test"
             }
-            
+
             # Insert test data (10k movies)
             log "Inserting 10,000 test movies for performance testing..."
             local start_time=$(date +%s)
-            
+
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$temp_db" -c "
                 INSERT INTO movies (tmdb_id, title, title_slug, year, monitored, quality_profile_id, added)
-                SELECT 
+                SELECT
                     generate_series(1, 10000) as tmdb_id,
                     'Test Movie ' || generate_series(1, 10000) as title,
                     'test-movie-' || generate_series(1, 10000) as title_slug,
@@ -439,10 +439,10 @@ performance_test_specific() {
                     1 as quality_profile_id,
                     NOW() - (generate_series(1, 10000) || ' days')::interval as added;
             " >/dev/null 2>&1
-            
+
             local insert_time=$(($(date +%s) - start_time))
             log "PostgreSQL: Inserted 10k movies in ${insert_time}s"
-            
+
             # Test query performance
             local query_start=$(date +%s)
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$temp_db" -c "
@@ -450,35 +450,35 @@ performance_test_specific() {
             " >/dev/null 2>&1
             local query_time=$(($(date +%s) - query_start))
             log "PostgreSQL: Query performance test completed in ${query_time}s"
-            
+
             # Cleanup
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres \
                 -c "DROP DATABASE \"$temp_db\";" >/dev/null 2>&1
             ;;
-        
+
         "mariadb"|"mysql")
             # Create temporary database
             mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
                 -e "CREATE DATABASE \`$temp_db\`;" >/dev/null 2>&1 || error_exit "Failed to create test database"
-            
+
             # Run migrations (note: this requires app to be built)
             cd "$PROJECT_ROOT"
             RADARR_DATABASE_NAME="$temp_db" ./radarr migrate-up >/dev/null 2>&1 || {
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "DROP DATABASE \`$temp_db\`;" >/dev/null 2>&1
                 error_exit "Migration failed during performance test"
             }
-            
+
             # Insert test data (10k movies)
             log "Inserting 10,000 test movies for performance testing..."
             local start_time=$(date +%s)
-            
+
             # Generate test data in batches for better performance
             for i in $(seq 1 100 10000); do
                 local end=$((i + 99))
                 if [ $end -gt 10000 ]; then
                     end=10000
                 fi
-                
+
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$temp_db" -e "
                     INSERT INTO movies (tmdb_id, title, title_slug, year, monitored, quality_profile_id, added) VALUES
                     $(for j in $(seq $i $end); do
@@ -487,10 +487,10 @@ performance_test_specific() {
                     done)
                 " >/dev/null 2>&1
             done
-            
+
             local insert_time=$(($(date +%s) - start_time))
             log "MariaDB: Inserted 10k movies in ${insert_time}s"
-            
+
             # Test query performance
             local query_start=$(date +%s)
             mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$temp_db" -e "
@@ -498,22 +498,22 @@ performance_test_specific() {
             " >/dev/null 2>&1
             local query_time=$(($(date +%s) - query_start))
             log "MariaDB: Query performance test completed in ${query_time}s"
-            
+
             # Cleanup
             mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" \
                 -e "DROP DATABASE \`$temp_db\`;" >/dev/null 2>&1
             ;;
     esac
-    
+
     log "Performance test completed for $db_type"
 }
 
 # Main function
 main() {
     local command="$1"
-    
+
     setup_backup_dir
-    
+
     case "$command" in
         "backup")
             if [ $# -lt 2 ]; then

@@ -46,12 +46,14 @@ Access the application at: `http://localhost:7878`
 ## System Requirements
 
 ### Minimum Requirements
+
 - **CPU**: 1 core, 1GHz
 - **RAM**: 512MB
 - **Disk**: 1GB free space (plus space for movies)
 - **Network**: Internet connection for movie metadata
 
 ### Recommended Requirements
+
 - **CPU**: 2+ cores, 2GHz+
 - **RAM**: 2GB+
 - **Disk**: 10GB+ free space (SSD preferred)
@@ -60,16 +62,19 @@ Access the application at: `http://localhost:7878`
 ### Supported Platforms
 
 **Operating Systems**:
+
 - Linux (Ubuntu 20.04+, RHEL 8+, Debian 11+, Alpine 3.15+)
 - macOS 11.0+ (Big Sur)
 - Windows 10/11, Windows Server 2019/2022
 - FreeBSD 13.0+
 
 **Architectures**:
+
 - x86_64 (AMD64)
 - ARM64 (AArch64)
 
 **Database Support**:
+
 - PostgreSQL 12+ (Recommended)
 - MariaDB 10.5+ / MySQL 8.0+
 
@@ -238,30 +243,37 @@ volumes:
 Radarr Go follows a comprehensive [versioning strategy](../VERSIONING.md) with automated Docker tag management:
 
 ##### Current Phase (Pre-1.0)
+
 **Recommended for Testing/Development**:
+
 - `:v0.9.0-alpha` - **Specific alpha version** (recommended for stability)
 - `:testing` - Latest pre-release version (may include newer alphas/betas)
 - `:alpha` - Latest alpha release
 
 **Database-Optimized Tags**:
+
 - `:v0.9.0-alpha-postgres` - PostgreSQL optimized (recommended)
 - `:v0.9.0-alpha-mariadb` - MariaDB/MySQL optimized
 - `:postgres` - Latest with PostgreSQL optimizations
 - `:mariadb` - Latest with MariaDB optimizations
 
 ##### Future Production Tags (v1.0.0+)
+
 Once v1.0.0 is released (Q2 2025), production tags will be available:
+
 - `:latest` - Latest stable release (assigned starting with v1.0.0)
 - `:stable` - Stable release pointer
 - `:v1.0.0` - Immutable version pinning
 - `:2025.04` - Calendar-based releases
 
 ##### Version Migration Strategy
+
 - **Current users**: Use `:v0.9.0-alpha` for stability
 - **Existing v0.0.x users**: See [MIGRATION.md](../MIGRATION.md) for upgrade path
 - **Production deployment**: Wait for v1.0.0 or use `:v0.9.0-alpha` with caution
 
 ##### Security Recommendations
+
 ```bash
 # Pin to specific digest for production-style deployment
 docker pull ghcr.io/radarr/radarr-go@sha256:abc123...
@@ -277,6 +289,7 @@ Binary installation provides maximum performance and minimal resource usage.
 #### Download and Install
 
 **Linux (x86_64):**
+
 ```bash
 # Download latest release
 wget https://github.com/radarr/radarr-go/releases/latest/download/radarr-linux-amd64.tar.gz
@@ -291,6 +304,7 @@ sudo chown -R radarr:radarr /var/lib/radarr /var/log/radarr
 ```
 
 **Linux (ARM64):**
+
 ```bash
 wget https://github.com/radarr/radarr-go/releases/latest/download/radarr-linux-arm64.tar.gz
 tar -xzf radarr-linux-arm64.tar.gz
@@ -298,6 +312,7 @@ sudo mv radarr-linux-arm64 /usr/local/bin/radarr
 ```
 
 **macOS (Intel):**
+
 ```bash
 wget https://github.com/radarr/radarr-go/releases/latest/download/radarr-darwin-amd64.tar.gz
 tar -xzf radarr-darwin-amd64.tar.gz
@@ -305,6 +320,7 @@ sudo mv radarr-darwin-amd64 /usr/local/bin/radarr
 ```
 
 **macOS (Apple Silicon):**
+
 ```bash
 wget https://github.com/radarr/radarr-go/releases/latest/download/radarr-darwin-arm64.tar.gz
 tar -xzf radarr-darwin-arm64.tar.gz
@@ -312,6 +328,7 @@ sudo mv radarr-darwin-arm64 /usr/local/bin/radarr
 ```
 
 **Windows:**
+
 ```powershell
 # Download from releases page or use PowerShell
 Invoke-WebRequest -Uri "https://github.com/radarr/radarr-go/releases/latest/download/radarr-windows-amd64.zip" -OutFile "radarr-windows-amd64.zip"
@@ -319,6 +336,7 @@ Expand-Archive -Path "radarr-windows-amd64.zip" -DestinationPath "C:\Program Fil
 ```
 
 **FreeBSD:**
+
 ```bash
 wget https://github.com/radarr/radarr-go/releases/latest/download/radarr-freebsd-amd64.tar.gz
 tar -xzf radarr-freebsd-amd64.tar.gz
@@ -810,6 +828,7 @@ sudo journalctl -u radarr.service -n 100      # Last 100 lines
 #### Using NSSM (Non-Sucking Service Manager)
 
 1. **Download and Install NSSM**:
+
    ```powershell
    # Download from https://nssm.cc/download
    # Extract to C:\nssm
@@ -817,6 +836,7 @@ sudo journalctl -u radarr.service -n 100      # Last 100 lines
 
 2. **Create Configuration File**:
    Create `C:\Program Files\Radarr\config.yaml`:
+
    ```yaml
    server:
      host: "0.0.0.0"
@@ -841,6 +861,7 @@ sudo journalctl -u radarr.service -n 100      # Last 100 lines
    ```
 
 3. **Install Service**:
+
    ```powershell
    # Run as Administrator
    C:\nssm\nssm.exe install Radarr
@@ -965,6 +986,7 @@ sudo launchctl list | grep radarr
 ### Pre-Migration Preparation
 
 1. **Backup Original Radarr Data**:
+
    ```bash
    # Stop original Radarr service
    sudo systemctl stop radarr
@@ -988,6 +1010,7 @@ sudo launchctl list | grep radarr
 #### From SQLite to PostgreSQL
 
 1. **Export SQLite data**:
+
    ```bash
    # Install sqlite3 tools
    sudo apt install sqlite3
@@ -998,6 +1021,7 @@ sudo launchctl list | grep radarr
    ```
 
 2. **Convert to PostgreSQL**:
+
    ```bash
    # Use conversion tool (install first)
    pip install sqlite3-to-postgres
@@ -1009,6 +1033,7 @@ sudo launchctl list | grep radarr
    ```
 
 3. **Manual Configuration Transfer**:
+
    ```bash
    # Extract important configuration
    sqlite3 ~/.config/Radarr/radarr.db "SELECT * FROM Config;" > config_export.csv
@@ -1046,6 +1071,7 @@ auth:
 ### Step-by-Step Migration Process
 
 1. **Setup Radarr Go with New Database**:
+
    ```bash
    # Install and configure Radarr Go (as per installation section)
    # Start with fresh PostgreSQL/MariaDB database
@@ -1062,6 +1088,7 @@ auth:
    - Import quality definitions if needed
 
 4. **Migrate Indexers**:
+
    ```bash
    # Use API to add indexers
    curl -X POST http://localhost:7878/api/v3/indexer \
@@ -1078,6 +1105,7 @@ auth:
    ```
 
 5. **Import Movie Library**:
+
    ```bash
    # Trigger library scan
    curl -X POST http://localhost:7878/api/v3/command \
@@ -1149,6 +1177,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
 ### API Security
 
 1. **Generate Strong API Key**:
+
    ```bash
    # Generate secure API key
    openssl rand -hex 16  # 32-character hex string
@@ -1158,6 +1187,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
    ```
 
 2. **Configure Authentication**:
+
    ```yaml
    auth:
      method: "apikey"
@@ -1166,6 +1196,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
    ```
 
 3. **Restrict CORS Origins**:
+
    ```yaml
    security:
      enable_cors: true
@@ -1178,6 +1209,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
 ### Network Security
 
 1. **Bind to Specific Interface**:
+
    ```yaml
    server:
      host: "127.0.0.1"  # Localhost only
@@ -1186,6 +1218,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
    ```
 
 2. **Enable SSL/TLS**:
+
    ```yaml
    server:
      enable_ssl: true
@@ -1194,6 +1227,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
    ```
 
 3. **Generate SSL Certificate**:
+
    ```bash
    # Self-signed certificate (for testing)
    openssl req -x509 -newkey rsa:4096 -keyout radarr.key -out radarr.pem -days 365 -nodes
@@ -1205,6 +1239,7 @@ echo "After configuring Radarr Go, run a library scan to import movies."
 ### Firewall Configuration
 
 **Ubuntu/Debian (ufw)**:
+
 ```bash
 # Allow only specific IP ranges
 sudo ufw allow from 10.0.0.0/8 to any port 7878
@@ -1215,6 +1250,7 @@ sudo ufw allow from 192.168.1.100 to any port 7878
 ```
 
 **CentOS/RHEL (firewalld)**:
+
 ```bash
 # Create custom service
 sudo firewall-cmd --permanent --new-service=radarr
@@ -1345,6 +1381,7 @@ services:
 #### PostgreSQL Optimization
 
 1. **Connection Pooling**:
+
    ```yaml
    database:
      type: "postgres"
@@ -1355,6 +1392,7 @@ services:
    ```
 
 2. **Query Optimization**:
+
    ```yaml
    database:
      enable_prepared_statements: true
@@ -1363,6 +1401,7 @@ services:
    ```
 
 3. **PostgreSQL Server Settings** (`postgresql.conf`):
+
    ```ini
    # Memory settings (adjust based on available RAM)
    shared_buffers = 512MB                  # 25% of RAM
@@ -1383,6 +1422,7 @@ services:
 #### MariaDB Optimization
 
 1. **Configuration**:
+
    ```yaml
    database:
      type: "mariadb"
@@ -1392,6 +1432,7 @@ services:
    ```
 
 2. **Server Settings** (`my.cnf`):
+
    ```ini
    [mysqld]
    # Memory settings
@@ -1416,6 +1457,7 @@ services:
 ### Application Performance
 
 1. **Response Caching**:
+
    ```yaml
    performance:
      enable_response_caching: true
@@ -1424,6 +1466,7 @@ services:
    ```
 
 2. **File System Optimization**:
+
    ```yaml
    file_organization:
      use_hardlinks_instead_of_copy: true
@@ -1433,6 +1476,7 @@ services:
    ```
 
 3. **Health Monitoring Optimization**:
+
    ```yaml
    health:
      interval: "10m"                       # Reduce frequency
@@ -1444,6 +1488,7 @@ services:
 ### System Level Optimization
 
 1. **File System**:
+
    ```bash
    # For movie storage, use XFS or ext4
    mkfs.xfs -f /dev/sdb1
@@ -1454,6 +1499,7 @@ services:
    ```
 
 2. **Network Optimization**:
+
    ```bash
    # Increase network buffer sizes
    echo 'net.core.rmem_max = 134217728' >> /etc/sysctl.conf
@@ -1464,6 +1510,7 @@ services:
    ```
 
 3. **Memory Management**:
+
    ```bash
    # Adjust swappiness for better performance
    echo 'vm.swappiness = 10' >> /etc/sysctl.conf
@@ -1475,6 +1522,7 @@ services:
 ### Monitoring Performance
 
 1. **Enable Metrics**:
+
    ```yaml
    health:
      enabled: true
@@ -1482,6 +1530,7 @@ services:
    ```
 
 2. **Performance Monitoring Script**:
+
    ```bash
    #!/bin/bash
    # Monitor Radarr Go performance
@@ -1511,6 +1560,7 @@ services:
 #### 1. Database Connection Issues
 
 **Symptoms**:
+
 - "Connection refused" errors
 - "Authentication failed" messages
 - Application fails to start
@@ -1532,6 +1582,7 @@ radarr --config /etc/radarr/config.yaml --test-db-connection
 ```
 
 **PostgreSQL specific**:
+
 ```bash
 # Check PostgreSQL logs
 sudo tail -f /var/log/postgresql/postgresql-17-main.log
@@ -1546,11 +1597,13 @@ psql -h localhost -U radarr -d radarr -v ON_ERROR_STOP=1
 #### 2. Permission Issues
 
 **Symptoms**:
+
 - "Permission denied" errors
 - Files cannot be created or moved
 - Database migration failures
 
 **Solutions**:
+
 ```bash
 # Fix ownership and permissions
 sudo chown -R radarr:radarr /var/lib/radarr /var/log/radarr /media/movies
@@ -1568,10 +1621,12 @@ sudo mount -o uid=radarr,gid=radarr /dev/sdb1 /media/movies
 #### 3. Port Binding Issues
 
 **Symptoms**:
+
 - "Address already in use" error
 - Cannot start server on port 7878
 
 **Solutions**:
+
 ```bash
 # Check what's using the port
 sudo netstat -tulnp | grep :7878
@@ -1587,11 +1642,13 @@ RADARR_SERVER_PORT=7879 radarr --config config.yaml
 #### 4. Memory Issues
 
 **Symptoms**:
+
 - Application crashes with "out of memory"
 - Slow performance during large operations
 - Database connection timeouts
 
 **Solutions**:
+
 ```bash
 # Check system memory
 free -h
@@ -1611,11 +1668,13 @@ RADARR_DATABASE_MAX_CONNECTIONS=5 radarr --config config.yaml
 #### 1. API Errors
 
 **Symptoms**:
+
 - 401 Unauthorized responses
 - 500 Internal Server Error
 - Timeout errors
 
 **Diagnostics**:
+
 ```bash
 # Check API health
 curl -H "X-API-Key: your-api-key" http://localhost:7878/api/v3/health
@@ -1628,6 +1687,7 @@ tail -f /var/log/radarr/radarr.log | jq '.'
 ```
 
 **Solutions**:
+
 ```bash
 # Verify API key configuration
 grep -i api_key /etc/radarr/config.yaml
@@ -1642,11 +1702,13 @@ sudo systemctl restart radarr.service
 #### 2. Movie Import Issues
 
 **Symptoms**:
+
 - Movies not found during scan
 - Import failures
 - Metadata not updated
 
 **Diagnostics**:
+
 ```bash
 # Check file permissions on movie directory
 ls -la /media/movies/
@@ -1659,6 +1721,7 @@ grep -i "import" /var/log/radarr/radarr.log
 ```
 
 **Solutions**:
+
 ```bash
 # Verify TMDB API key
 RADARR_TMDB_API_KEY=your-key radarr --test-tmdb
@@ -1676,11 +1739,13 @@ curl -X POST -H "X-API-Key: your-api-key" \
 #### 3. Performance Issues
 
 **Symptoms**:
+
 - Slow web interface
 - Database query timeouts
 - High CPU usage
 
 **Diagnostics**:
+
 ```bash
 # Check system resources
 top -p $(pgrep radarr)
@@ -1695,6 +1760,7 @@ mysql -u radarr -p -e "SHOW PROCESSLIST;"
 ```
 
 **Solutions**:
+
 ```bash
 # Optimize database connections
 RADARR_DATABASE_MAX_CONNECTIONS=10 radarr --config config.yaml
@@ -1711,11 +1777,13 @@ RADARR_HEALTH_INTERVAL=15m radarr --config config.yaml
 #### 1. Container Startup Issues
 
 **Symptoms**:
+
 - Container exits immediately
 - "No such file or directory" errors
 - Volume mount issues
 
 **Solutions**:
+
 ```bash
 # Check container logs
 docker logs radarr-go
@@ -1733,11 +1801,13 @@ docker run -u 1000:1000 ghcr.io/radarr/radarr-go:latest
 #### 2. Network Issues
 
 **Symptoms**:
+
 - Cannot connect to database container
 - DNS resolution failures
 - External API timeouts
 
 **Solutions**:
+
 ```bash
 # Test container networking
 docker exec radarr-go ping postgres
@@ -1796,6 +1866,7 @@ tail -20 "$LOG_FILE"
    - [API Documentation](API_ENDPOINTS.md)
 
 2. **Enable Debug Mode**:
+
    ```yaml
    log:
      level: "debug"
@@ -1804,6 +1875,7 @@ tail -20 "$LOG_FILE"
    ```
 
 3. **Collect System Information**:
+
    ```bash
    # System info
    uname -a

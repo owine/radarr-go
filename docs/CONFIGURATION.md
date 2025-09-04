@@ -369,6 +369,7 @@ development:
 All configuration options can be overridden using environment variables with the `RADARR_` prefix. Nested configuration uses underscores to separate levels.
 
 ### Server Configuration
+
 ```bash
 RADARR_SERVER_HOST=0.0.0.0
 RADARR_SERVER_PORT=7878
@@ -379,6 +380,7 @@ RADARR_SERVER_SSL_KEY_PATH=/path/to/key.pem
 ```
 
 ### Database Configuration
+
 ```bash
 RADARR_DATABASE_TYPE=postgres          # or mariadb
 RADARR_DATABASE_HOST=localhost
@@ -391,6 +393,7 @@ RADARR_DATABASE_CONNECTION_URL="postgres://user:pass@host:port/db"
 ```
 
 ### Logging Configuration
+
 ```bash
 RADARR_LOG_LEVEL=info                  # debug, info, warn, error
 RADARR_LOG_FORMAT=json                 # json, text
@@ -398,6 +401,7 @@ RADARR_LOG_OUTPUT=stdout               # stdout, stderr, or file path
 ```
 
 ### Authentication Configuration
+
 ```bash
 RADARR_AUTH_METHOD=apikey              # none, basic, apikey
 RADARR_AUTH_API_KEY=your-api-key-here
@@ -406,6 +410,7 @@ RADARR_AUTH_PASSWORD=password
 ```
 
 ### Storage Configuration
+
 ```bash
 RADARR_STORAGE_DATA_DIRECTORY=./data
 RADARR_STORAGE_MOVIE_DIRECTORY=./movies
@@ -414,6 +419,7 @@ RADARR_STORAGE_TEMP_DIRECTORY=/tmp
 ```
 
 ### TMDB Configuration
+
 ```bash
 RADARR_TMDB_API_KEY=your-tmdb-api-key
 RADARR_TMDB_LANGUAGE=en-US
@@ -421,6 +427,7 @@ RADARR_TMDB_REGION=US
 ```
 
 ### Health Monitoring Configuration
+
 ```bash
 RADARR_HEALTH_ENABLED=true
 RADARR_HEALTH_INTERVAL=5m
@@ -434,6 +441,7 @@ RADARR_HEALTH_NOTIFY_CRITICAL_ISSUES=true
 ## Database-Specific Configuration
 
 ### PostgreSQL Configuration
+
 ```yaml
 database:
   type: "postgres"
@@ -452,6 +460,7 @@ database:
 ```
 
 ### MariaDB Configuration
+
 ```yaml
 database:
   type: "mariadb"
@@ -498,6 +507,7 @@ RADARR_TMDB_API_KEY=your-tmdb-api-key
 ## Configuration Validation
 
 The application validates configuration at startup and will:
+
 - Report validation errors with helpful messages
 - Create missing directories with appropriate permissions
 - Generate secure API keys if not provided
@@ -506,6 +516,7 @@ The application validates configuration at startup and will:
 ## Configuration File Location
 
 The configuration file is searched in the following locations:
+
 1. Path specified by `--config` command line flag
 2. `./config.yaml` (current directory)
 3. `./data/config.yaml`
@@ -514,6 +525,7 @@ The configuration file is searched in the following locations:
 ## Performance Tuning
 
 ### Database Performance
+
 ```yaml
 database:
   max_connections: 25          # Increase for high load
@@ -524,6 +536,7 @@ database:
 ```
 
 ### File System Performance
+
 ```yaml
 file_organization:
   use_hardlinks_instead_of_copy: true   # Faster, less disk usage
@@ -532,6 +545,7 @@ file_organization:
 ```
 
 ### Health Monitoring Performance
+
 ```yaml
 health:
   interval: "10m"                       # Reduce frequency for less overhead
@@ -543,6 +557,7 @@ health:
 ## Security Configuration
 
 ### API Security
+
 ```yaml
 auth:
   method: "apikey"                      # Always use API key authentication
@@ -551,6 +566,7 @@ auth:
 ```
 
 ### Network Security
+
 ```yaml
 server:
   host: "127.0.0.1"                    # Bind to localhost only if behind reverse proxy
@@ -587,6 +603,7 @@ security:
    - Review health check intervals
 
 ### Debug Configuration
+
 ```yaml
 log:
   level: "debug"

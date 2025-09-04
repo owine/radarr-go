@@ -1,4 +1,5 @@
 # 🚀 **Radarr-Go Complete Implementation Roadmap**
+
 *Project Plan for Achieving Full Production Readiness*
 
 ## 📊 **Executive Summary**
@@ -13,14 +14,17 @@
 ---
 
 ## 🎯 **Phase 0: Immediate Critical Fixes**
+
 **Duration**: 2-3 weeks | **Priority**: CRITICAL | **Risk**: HIGH
 
 ### **Objectives**
+
 Fix blocking issues that prevent stable operation and prepare foundation for subsequent phases.
 
 ### **Sprint 0.1: Critical Backend Fixes** (Week 1)
 
 **Tasks:**
+
 ```yaml
 Database Fixes:
   - Fix foreign key reference in migration 007 (wanted_movies table)
@@ -39,6 +43,7 @@ Testing Infrastructure:
 ```
 
 **Deliverables:**
+
 - [x] All critical linter issues resolved ✅ **COMPLETED** - `make lint` returns 0 issues
 - [x] Database migrations validated and fixed ✅ **COMPLETED** - Migration 007 (wanted_movies) properly structured, cross-database compatibility verified
 - [x] Integration test suite operational ✅ **COMPLETED** - Containerized database testing infrastructure
@@ -48,13 +53,15 @@ Testing Infrastructure:
 ✅ **Task 0.1.1**: Database Migration Fixes - COMPLETED
 ✅ **Task 0.1.2**: Code Quality Fixes - COMPLETED
 ✅ **Task 0.1.3**: Testing Infrastructure Setup - COMPLETED
-  - Created comprehensive testing infrastructure with containerized databases
-  - Enhanced test utilities with automatic container management
-  - Enabled integration tests with PostgreSQL and MariaDB support
-  - Added performance benchmarking with realistic test datasets
-  - Created test-runner.sh script for CI/CD integration
+
+- Created comprehensive testing infrastructure with containerized databases
+- Enhanced test utilities with automatic container management
+- Enabled integration tests with PostgreSQL and MariaDB support
+- Added performance benchmarking with realistic test datasets
+- Created test-runner.sh script for CI/CD integration
 
 ### **Sprint 0.2: Foundation Preparation** (Weeks 2-3)
+
 ```yaml
 Documentation Foundation:
   - Update CLAUDE.md with current architecture
@@ -74,18 +81,21 @@ Release Preparation:
 
 **🎉 Sprint 0.2 Status: COMPLETED (December 2024)**
 ✅ **Task 0.2.1**: Development Environment Enhancement - COMPLETED
-  - Enhanced Makefile with frontend build targets
-  - Created comprehensive docker-compose.dev.yml with monitoring stack
-  - Added development scripts (dev-monitor.sh, dev-environment.sh)
-  - Created DEVELOPMENT.md guide for new developers
+
+- Enhanced Makefile with frontend build targets
+- Created comprehensive docker-compose.dev.yml with monitoring stack
+- Added development scripts (dev-monitor.sh, dev-environment.sh)
+- Created DEVELOPMENT.md guide for new developers
 
 ✅ **Task 0.2.2**: Release and Documentation Foundation - COMPLETED
-  - Updated CLAUDE.md with comprehensive feature documentation (21+ notification providers, advanced health monitoring)
-  - Created complete API endpoint inventory (150+ endpoints documented)
-  - Generated configuration reference with production-ready examples
-  - Prepared v0.9.0-alpha release materials with performance benchmarks
+
+- Updated CLAUDE.md with comprehensive feature documentation (21+ notification providers, advanced health monitoring)
+- Created complete API endpoint inventory (150+ endpoints documented)
+- Generated configuration reference with production-ready examples
+- Prepared v0.9.0-alpha release materials with performance benchmarks
 
 **Deliverables:**
+
 - [x] Enhanced development environment with monitoring stack ✅
 - [x] Comprehensive API documentation (150+ endpoints) ✅
 - [x] Complete configuration reference guide ✅
@@ -95,9 +105,11 @@ Release Preparation:
 ---
 
 ## 🎉 **PHASE 0 COMPLETE: Critical Fixes and Foundation**
+
 **Duration**: 2-3 weeks | **Status**: ✅ **COMPLETED** (December 2024)
 
 ### **Major Achievements:**
+
 - **Database Architecture**: Fixed migrations, added performance enhancements, created operational scripts
 - **Code Quality**: Zero linter issues, modern Go best practices throughout
 - **Testing Infrastructure**: Enterprise-grade testing with containerized databases
@@ -105,6 +117,7 @@ Release Preparation:
 - **Documentation Foundation**: Comprehensive API docs, configuration guides, release materials
 
 ### **Technical Excellence Delivered:**
+
 - **150+ API Endpoints** fully documented
 - **21+ Notification Providers** with comprehensive setup guides
 - **Multi-Database Support** (PostgreSQL/MariaDB) with optimizations
@@ -117,12 +130,15 @@ Release Preparation:
 ---
 
 ## 📚 **Phase 1: Documentation and User Experience**
+
 **Duration**: 4-6 weeks | **Priority**: HIGH | **Risk**: MEDIUM
 
 ### **Objectives**
+
 Create comprehensive documentation to enable user adoption and developer contribution.
 
 ### **Sprint 1.1: Core User Documentation** ✅ **COMPLETED** (Weeks 1-2)
+
 ```yaml
 Installation & Setup:
   - Complete installation guide (Docker, binary, source)
@@ -139,18 +155,21 @@ Feature Documentation:
 
 **🎉 Sprint 1.1 Status: COMPLETED (December 2024)**
 ✅ **Task 1.1.1**: Installation and Setup Documentation - COMPLETED
-  - Multi-platform installation guide (Docker, binary, source)
-  - Database setup for PostgreSQL/MariaDB with performance tuning
-  - Complete configuration reference with security hardening
-  - Migration guide with parallel testing approach
+
+- Multi-platform installation guide (Docker, binary, source)
+- Database setup for PostgreSQL/MariaDB with performance tuning
+- Complete configuration reference with security hardening
+- Migration guide with parallel testing approach
 
 ✅ **Task 1.1.2**: Feature Documentation - COMPLETED
-  - Task scheduling system with worker pools and priorities
-  - 21+ notification providers with template customization
-  - Advanced file organization with conflict resolution
-  - Comprehensive health monitoring with predictive analytics
+
+- Task scheduling system with worker pools and priorities
+- 21+ notification providers with template customization
+- Advanced file organization with conflict resolution
+- Comprehensive health monitoring with predictive analytics
 
 ### **Sprint 1.2: API Documentation** ✅ **COMPLETED** (Weeks 3-4)
+
 ```yaml
 API Reference:
   - OpenAPI/Swagger specification for all 150+ endpoints
@@ -167,18 +186,21 @@ Integration Guides:
 
 **🎉 Sprint 1.2 Status: COMPLETED (December 2024)**
 ✅ **Task 1.2.1**: OpenAPI Specification Generation - COMPLETED
-  - Complete OpenAPI 3.1.0 specification for all 150+ endpoints
-  - Interactive Swagger UI with authentication testing
-  - 100% Radarr v3 API compatibility documentation
-  - Developer-friendly examples with TypeScript SDK
+
+- Complete OpenAPI 3.1.0 specification for all 150+ endpoints
+- Interactive Swagger UI with authentication testing
+- 100% Radarr v3 API compatibility documentation
+- Developer-friendly examples with TypeScript SDK
 
 ✅ **Task 1.2.2**: Integration Guides and Examples - COMPLETED
-  - Multi-language client examples (JavaScript, Python, Go, TypeScript)
-  - Production-ready patterns with error handling and rate limiting
-  - Real-time WebSocket integration documentation
-  - Comprehensive migration guide from original Radarr API
+
+- Multi-language client examples (JavaScript, Python, Go, TypeScript)
+- Production-ready patterns with error handling and rate limiting
+- Real-time WebSocket integration documentation
+- Comprehensive migration guide from original Radarr API
 
 ### **Sprint 1.3: Developer Documentation** ✅ **COMPLETED** (Weeks 5-6)
+
 ```yaml
 Development Guides:
   - Architecture deep-dive documentation
@@ -195,18 +217,21 @@ Operations Documentation:
 
 **🎉 Sprint 1.3 Status: COMPLETED (December 2024)**
 ✅ **Task 1.3.1**: Architecture and Development Guides - COMPLETED
-  - Comprehensive developer guide with architecture deep-dive
-  - Service container and dependency injection documentation
-  - Testing strategies with database container integration
-  - Extension development guides with working examples
+
+- Comprehensive developer guide with architecture deep-dive
+- Service container and dependency injection documentation
+- Testing strategies with database container integration
+- Extension development guides with working examples
 
 ✅ **Task 1.3.2**: Operations and Deployment Documentation - COMPLETED
-  - Production deployment guides (Docker, Kubernetes)
-  - Complete monitoring stack (Prometheus, Grafana, AlertManager)
-  - Performance tuning for database, Go runtime, and storage
-  - Security hardening with automated scripts and validation
+
+- Production deployment guides (Docker, Kubernetes)
+- Complete monitoring stack (Prometheus, Grafana, AlertManager)
+- Performance tuning for database, Go runtime, and storage
+- Security hardening with automated scripts and validation
 
 **Deliverables:**
+
 - [x] Complete user documentation website ✅ **COMPLETED**
 - [x] Interactive API documentation ✅ **COMPLETED**
 - [x] Developer contribution guide ✅ **COMPLETED**
@@ -215,9 +240,11 @@ Operations Documentation:
 ---
 
 ## 🎉 **PHASE 1 COMPLETE: Documentation and User Experience**
+
 **Duration**: 4-6 weeks | **Status**: ✅ **100% COMPLETE** (December 2024)
 
 ### **Major Achievements:**
+
 - **User Documentation**: Complete installation guides, feature documentation, configuration reference
 - **API Documentation**: Interactive Swagger UI with 150+ documented endpoints, TypeScript SDK
 - **Integration Support**: Multi-language examples, migration guides, production patterns
@@ -225,6 +252,7 @@ Operations Documentation:
 - **Operations Excellence**: Production deployment automation and monitoring
 
 ### **Documentation Excellence Delivered:**
+
 - **Installation Guide**: Multi-platform deployment in 30 minutes
 - **Feature Documentation**: 21+ notification providers, advanced task scheduling, health monitoring
 - **API Documentation**: OpenAPI 3.1.0 spec with interactive testing and TypeScript SDK
@@ -234,6 +262,7 @@ Operations Documentation:
 - **Operations Guide**: Production deployment with Docker, Kubernetes, monitoring, and security
 
 ### **Complete Phase 1 Deliverables:**
+
 ✅ **Sprint 1.1**: Core User Documentation (Installation + Features)
 ✅ **Sprint 1.2**: API Documentation (OpenAPI + Interactive tools + Integration guides)
 ✅ **Sprint 1.3**: Developer Documentation (Architecture + Operations guides)
@@ -243,12 +272,15 @@ Operations Documentation:
 ---
 
 ## 🎨 **Phase 2: Frontend Foundation**
+
 **Duration**: 8-10 weeks | **Priority**: HIGH | **Risk**: HIGH
 
 ### **Objectives**
+
 Establish frontend architecture and implement core user interface components.
 
 ### **Sprint 2.1: Frontend Architecture Setup** ✅ **COMPLETED** (Weeks 1-2)
+
 ```yaml
 Project Structure:
   - Set up React 18 + TypeScript project in web/frontend/
@@ -271,29 +303,34 @@ Design System:
 
 **🎉 Sprint 2.1 Status: COMPLETED (December 2024)**
 ✅ **Task 2.1.1**: React 18 + TypeScript Project Structure - COMPLETED
-  - Professional React 18 project with strict TypeScript configuration
-  - Organized directory structure with components, pages, hooks, store, types, and styles
-  - Path aliases for clean imports (@components, @hooks, etc.)
+
+- Professional React 18 project with strict TypeScript configuration
+- Organized directory structure with components, pages, hooks, store, types, and styles
+- Path aliases for clean imports (@components, @hooks, etc.)
 
 ✅ **Task 2.1.2**: Vite Build System with Go Backend Integration - COMPLETED
-  - Advanced Vite configuration with development proxy to Go backend (port 7878)
-  - Code splitting with vendor chunks and optimization
-  - PostCSS integration with autoprefixer and modern CSS features
-  - Hot module replacement for instant development feedback
+
+- Advanced Vite configuration with development proxy to Go backend (port 7878)
+- Code splitting with vendor chunks and optimization
+- PostCSS integration with autoprefixer and modern CSS features
+- Hot module replacement for instant development feedback
 
 ✅ **Task 2.1.3**: Redux Toolkit + RTK Query State Management - COMPLETED
-  - Complete Redux store setup with proper TypeScript integration
-  - RTK Query API slice with authentication and UI slices
-  - Typed hooks for Redux usage throughout the app
-  - Persistent authentication state with localStorage integration
+
+- Complete Redux store setup with proper TypeScript integration
+- RTK Query API slice with authentication and UI slices
+- Typed hooks for Redux usage throughout the app
+- Persistent authentication state with localStorage integration
 
 ✅ **Task 2.1.4**: Professional Component Library and Design System - COMPLETED
-  - Button, Input, Modal, Card components with comprehensive variants
-  - Advanced theme system with CSS variables and 3 themes (light, dark, auto)
-  - Responsive design framework with mobile-first approach
-  - CSS Modules with scoped styling and theme integration
+
+- Button, Input, Modal, Card components with comprehensive variants
+- Advanced theme system with CSS variables and 3 themes (light, dark, auto)
+- Responsive design framework with mobile-first approach
+- CSS Modules with scoped styling and theme integration
 
 ### **Sprint 2.2: Authentication and Core Layout** ✅ **COMPLETED** (Weeks 3-4)
+
 ```yaml
 Authentication:
   - Implement API key authentication flow
@@ -316,30 +353,35 @@ Error Handling:
 
 **🎉 Sprint 2.2 Status: COMPLETED (December 2024)**
 ✅ **Task 2.2.1**: Enhanced Authentication Flow - COMPLETED
-  - Professional login form with validation and error handling
-  - API key authentication with remember me functionality
-  - Session persistence with localStorage and logout functionality
-  - Authentication status display in header with user feedback
+
+- Professional login form with validation and error handling
+- API key authentication with remember me functionality
+- Session persistence with localStorage and logout functionality
+- Authentication status display in header with user feedback
 
 ✅ **Task 2.2.2**: Professional Application Shell - COMPLETED
-  - Responsive main layout with collapsible sidebar navigation
-  - Advanced header with breadcrumb navigation, search, and user controls
-  - Real-time activity indicators and health status monitoring
-  - Mobile-responsive design with touch-friendly interfaces
+
+- Responsive main layout with collapsible sidebar navigation
+- Advanced header with breadcrumb navigation, search, and user controls
+- Real-time activity indicators and health status monitoring
+- Mobile-responsive design with touch-friendly interfaces
 
 ✅ **Task 2.2.3**: Advanced Navigation and UX - COMPLETED
-  - Navigation menu with proper routing and active states
-  - Keyboard shortcuts for navigation and accessibility (/ for search)
-  - Protected route system with proper authentication checks
-  - Professional 404 page with helpful navigation options
+
+- Navigation menu with proper routing and active states
+- Keyboard shortcuts for navigation and accessibility (/ for search)
+- Protected route system with proper authentication checks
+- Professional 404 page with helpful navigation options
 
 ✅ **Task 2.2.4**: Comprehensive Error Handling - COMPLETED
-  - Global error boundary with user-friendly error messages and recovery
-  - Toast notifications for API errors and success messages
-  - Loading skeleton components for all major content types
-  - Offline detection with user feedback and retry mechanisms
+
+- Global error boundary with user-friendly error messages and recovery
+- Toast notifications for API errors and success messages
+- Loading skeleton components for all major content types
+- Offline detection with user feedback and retry mechanisms
 
 ### **Sprint 2.3: API Integration Layer** ✅ **COMPLETED** (Weeks 5-6)
+
 ```yaml
 RTK Query Setup:
   - Configure API slice with all 150+ endpoints
@@ -362,30 +404,35 @@ Data Management:
 
 **🎉 Sprint 2.3 Status: COMPLETED (December 2024)**
 ✅ **Task 2.3.1**: Comprehensive RTK Query API Integration - COMPLETED
-  - Complete API slice with 150+ Radarr endpoints and full TypeScript coverage
-  - Advanced cache invalidation with 24 tag types for data consistency
-  - CRUD operations for all entities (movies, quality profiles, indexers, download clients)
-  - Optimistic updates with automatic rollback on error
+
+- Complete API slice with 150+ Radarr endpoints and full TypeScript coverage
+- Advanced cache invalidation with 24 tag types for data consistency
+- CRUD operations for all entities (movies, quality profiles, indexers, download clients)
+- Optimistic updates with automatic rollback on error
 
 ✅ **Task 2.3.2**: WebSocket Real-Time Integration - COMPLETED
-  - Complete WebSocket middleware with connection state management
-  - Automatic reconnection with exponential backoff and heartbeat system
-  - Real-time event processing for queue, activity, health, and movie updates
-  - Future-proof implementation ready for backend WebSocket support
+
+- Complete WebSocket middleware with connection state management
+- Automatic reconnection with exponential backoff and heartbeat system
+- Real-time event processing for queue, activity, health, and movie updates
+- Future-proof implementation ready for backend WebSocket support
 
 ✅ **Task 2.3.3**: Advanced Data Management and Transformation - COMPLETED
-  - Comprehensive data transformation utilities for all entity types
-  - Smart data enhancement with computed properties and statistics
-  - Client-side caching with TTL and intelligent invalidation strategies
-  - User preference persistence with import/export functionality
+
+- Comprehensive data transformation utilities for all entity types
+- Smart data enhancement with computed properties and statistics
+- Client-side caching with TTL and intelligent invalidation strategies
+- User preference persistence with import/export functionality
 
 ✅ **Task 2.3.4**: Enhanced Query and Mutation Hooks - COMPLETED
-  - Advanced query hooks with polling, retry logic, and offline support
-  - Enhanced mutation hooks with optimistic updates and cache invalidation
-  - Performance-optimized hooks with memoization and smart re-renders
-  - WebSocket subscription integration for real-time data updates
+
+- Advanced query hooks with polling, retry logic, and offline support
+- Enhanced mutation hooks with optimistic updates and cache invalidation
+- Performance-optimized hooks with memoization and smart re-renders
+- WebSocket subscription integration for real-time data updates
 
 ### **Sprint 2.4: Core Movie Management** ✅ **COMPLETED** (Weeks 7-8)
+
 ```yaml
 Movie Library:
   - Implement movie grid view with poster display
@@ -408,30 +455,35 @@ Basic Search:
 
 **🎉 Sprint 2.4 Status: COMPLETED (December 2024)**
 ✅ **Task 2.4.1**: Professional Movie Library Views - COMPLETED
-  - Dual-mode movie display (grid with posters, list with detailed columns)
-  - Advanced filtering by genre, year, rating, status, and tags
-  - Real-time search with debouncing and instant results
-  - Performance-optimized rendering with memoization for large libraries
+
+- Dual-mode movie display (grid with posters, list with detailed columns)
+- Advanced filtering by genre, year, rating, status, and tags
+- Real-time search with debouncing and instant results
+- Performance-optimized rendering with memoization for large libraries
 
 ✅ **Task 2.4.2**: Comprehensive Movie Detail Page - COMPLETED
-  - Tabbed interface with Overview, Files, History, and Search sections
-  - Rich metadata display with poster, ratings, external links (TMDB, IMDb)
-  - File management interface with media information display
-  - Quick actions for monitoring, searching, editing, and deletion
+
+- Tabbed interface with Overview, Files, History, and Search sections
+- Rich metadata display with poster, ratings, external links (TMDB, IMDb)
+- File management interface with media information display
+- Quick actions for monitoring, searching, editing, and deletion
 
 ✅ **Task 2.4.3**: TMDB Search and Add Movie Workflow - COMPLETED
-  - Professional add movie modal with TMDB search integration
-  - Real-time movie search with detailed preview information
-  - Quality profile and root folder selection for new movies
-  - Bulk add operations with progress tracking
+
+- Professional add movie modal with TMDB search integration
+- Real-time movie search with detailed preview information
+- Quality profile and root folder selection for new movies
+- Bulk add operations with progress tracking
 
 ✅ **Task 2.4.4**: Bulk Operations Interface - COMPLETED
-  - Multi-select functionality across all movie views
-  - Bulk monitoring toggle, search, and delete operations
-  - Visual feedback for selected movies and operation progress
-  - Safe deletion workflow with user confirmation dialogs
+
+- Multi-select functionality across all movie views
+- Bulk monitoring toggle, search, and delete operations
+- Visual feedback for selected movies and operation progress
+- Safe deletion workflow with user confirmation dialogs
 
 **Deliverables:**
+
 - [x] Functional React application with authentication ✅ **COMPLETED**
 - [x] Movie library browsing and basic management ✅ **COMPLETED**
 - [x] Real-time updates from backend ✅ **COMPLETED**
@@ -440,9 +492,11 @@ Basic Search:
 ---
 
 ## 🎉 **PHASE 2 COMPLETE: Frontend Foundation**
+
 **Duration**: 8-10 weeks | **Status**: ✅ **100% COMPLETE** (December 2024)
 
 ### **Major Achievements:**
+
 - **React Frontend Architecture**: Professional React 18 + TypeScript application with modern development practices
 - **Authentication System**: Complete API key authentication with session management and protected routes
 - **Professional UI/UX**: Responsive design with advanced theming, navigation, and error handling
@@ -451,6 +505,7 @@ Basic Search:
 - **Performance Optimization**: Advanced caching, data transformation, and optimistic updates
 
 ### **Technical Excellence Delivered:**
+
 - **Frontend Architecture**: React 18, TypeScript, Vite, Redux Toolkit with professional component library
 - **Development Environment**: Hot reload, Docker multi-stage builds, Makefile integration
 - **Authentication Flow**: API key authentication with remember me, session persistence, and logout
@@ -461,6 +516,7 @@ Basic Search:
 - **Mobile Support**: Fully responsive design optimized for all device sizes
 
 ### **Complete Phase 2 Deliverables:**
+
 ✅ **Sprint 2.1**: Frontend Architecture Setup (React + TypeScript + Vite + Redux)
 ✅ **Sprint 2.2**: Authentication and Core Layout (Login + Navigation + Error Handling)
 ✅ **Sprint 2.3**: API Integration Layer (150+ endpoints + WebSocket + Data Management)
@@ -471,12 +527,15 @@ Basic Search:
 ---
 
 ## ⚡ **Phase 3: Core Feature Implementation**
+
 **Duration**: 10-12 weeks | **Priority**: HIGH | **Risk**: MEDIUM
 
 ### **Objectives**
+
 Implement primary user-facing features that match original Radarr functionality.
 
 ### **Sprint 3.1: Settings and Configuration** ✅ **COMPLETED** (Weeks 1-3)
+
 ```yaml
 Settings Architecture:
   - Create settings page structure and navigation
@@ -502,30 +561,35 @@ Advanced Settings:
 
 **🎉 Sprint 3.1 Status: COMPLETED (January 2025)**
 ✅ **Task 3.1.1**: Settings Page Infrastructure - COMPLETED
-  - Professional React Settings page with tabbed navigation (7 categories)
-  - Comprehensive settings components (SettingsForm, SettingsSection, SettingsField, SettingsActions)
-  - Mobile-responsive design with optimized layouts for all screen sizes
-  - Complete TypeScript integration with type-safe form handling
+
+- Professional React Settings page with tabbed navigation (7 categories)
+- Comprehensive settings components (SettingsForm, SettingsSection, SettingsField, SettingsActions)
+- Mobile-responsive design with optimized layouts for all screen sizes
+- Complete TypeScript integration with type-safe form handling
 
 ✅ **Task 3.1.2**: Settings API Enhancement - COMPLETED
-  - Enhanced configuration API endpoints with comprehensive management
-  - Application settings with UI, security, performance, and feature toggles
-  - Configuration validation, backup/restore, and import/export functionality
-  - Complete integration test suite with 100% endpoint coverage
+
+- Enhanced configuration API endpoints with comprehensive management
+- Application settings with UI, security, performance, and feature toggles
+- Configuration validation, backup/restore, and import/export functionality
+- Complete integration test suite with 100% endpoint coverage
 
 ✅ **Task 3.1.3**: Navigation and Integration - COMPLETED
-  - Settings page integrated into sidebar navigation with proper routing
-  - Real-time form validation and error handling with user feedback
-  - Optimistic updates with server synchronization and rollback support
-  - Complete API integration with RTK Query and configuration caching
+
+- Settings page integrated into sidebar navigation with proper routing
+- Real-time form validation and error handling with user feedback
+- Optimistic updates with server synchronization and rollback support
+- Complete API integration with RTK Query and configuration caching
 
 **Deliverables:**
+
 - [x] Professional Settings page infrastructure with 7 configuration categories ✅
 - [x] Enhanced backend API with validation, backup, and import/export ✅
 - [x] Mobile-responsive design with accessibility support ✅
 - [x] Comprehensive testing suite for all settings functionality ✅
 
 ### **Sprint 3.2: Queue and Activity Monitoring** (Weeks 4-6)
+
 ```yaml
 Queue Management:
   - Real-time queue display with progress indicators
@@ -547,6 +611,7 @@ Health Monitoring:
 ```
 
 ### **Sprint 3.3: Calendar and Scheduling** (Weeks 7-9)
+
 ```yaml
 Calendar Views:
   - Month view with release events
@@ -568,6 +633,7 @@ Integration Features:
 ```
 
 ### **Sprint 3.4: Search and Downloads** (Weeks 10-12)
+
 ```yaml
 Interactive Search:
   - Manual search interface with release selection
@@ -589,6 +655,7 @@ Wanted Movies:
 ```
 
 **Deliverables:**
+
 - [ ] Complete settings management interface
 - [ ] Real-time queue and activity monitoring
 - [ ] Calendar functionality with external integration
@@ -597,12 +664,15 @@ Wanted Movies:
 ---
 
 ## 🔧 **Phase 4: Advanced Features and Polish**
+
 **Duration**: 8-10 weeks | **Priority**: MEDIUM | **Risk**: LOW
 
 ### **Objectives**
+
 Implement advanced features and optimize user experience for production deployment.
 
 ### **Sprint 4.1: Collections and Advanced Management** (Weeks 1-3)
+
 ```yaml
 Collections:
   - Collection browsing and management interface
@@ -624,6 +694,7 @@ Parse Tools:
 ```
 
 ### **Sprint 4.2: Performance and Mobile Optimization** (Weeks 4-6)
+
 ```yaml
 Performance Optimization:
   - Virtual scrolling for large datasets
@@ -645,6 +716,7 @@ Accessibility:
 ```
 
 ### **Sprint 4.3: Statistics and Reporting** (Weeks 7-8)
+
 ```yaml
 Dashboard:
   - System overview with key metrics
@@ -666,6 +738,7 @@ Reporting:
 ```
 
 ### **Sprint 4.4: Testing and Quality Assurance** (Weeks 9-10)
+
 ```yaml
 Frontend Testing:
   - Unit tests for all components
@@ -687,6 +760,7 @@ Bug Fixes:
 ```
 
 **Deliverables:**
+
 - [ ] Complete feature set matching original Radarr
 - [ ] Mobile-optimized responsive design
 - [ ] Comprehensive testing coverage
@@ -695,12 +769,15 @@ Bug Fixes:
 ---
 
 ## 🚀 **Phase 5: Production Readiness and Launch**
+
 **Duration**: 4-6 weeks | **Priority**: HIGH | **Risk**: MEDIUM
 
 ### **Objectives**
+
 Prepare for production deployment and establish release processes.
 
 ### **Sprint 5.1: Deployment Infrastructure** (Weeks 1-2)
+
 ```yaml
 Release Automation:
   - Automated frontend build in CI/CD pipeline
@@ -722,6 +799,7 @@ Security Review:
 ```
 
 ### **Sprint 5.2: Beta Release and Community Testing** (Weeks 3-4)
+
 ```yaml
 Beta Release:
   - v1.0.0-beta.1 release with complete feature set
@@ -743,6 +821,7 @@ Monitoring and Analytics:
 ```
 
 ### **Sprint 5.3: Release Candidate and Production Launch** (Weeks 5-6)
+
 ```yaml
 Release Candidate:
   - v1.0.0-rc.1 with beta feedback incorporated
@@ -764,6 +843,7 @@ Post-Launch:
 ```
 
 **Deliverables:**
+
 - [ ] Production-ready v1.0.0 release
 - [ ] Complete user and developer documentation
 - [ ] Established community and support processes
@@ -774,6 +854,7 @@ Post-Launch:
 ## 📊 **Resource Requirements and Team Structure**
 
 ### **Recommended Team Composition**
+
 ```yaml
 Core Team (4 FTE):
   - 1x Technical Lead/Architect (Go + Frontend experience)
@@ -788,6 +869,7 @@ Extended Team (0.5 FTE each):
 ```
 
 ### **Technology Stack Requirements**
+
 ```yaml
 Frontend:
   - React 18+ with TypeScript 5+
@@ -814,6 +896,7 @@ Infrastructure:
 ## 🎯 **Success Metrics and Milestones**
 
 ### **Phase Success Criteria**
+
 ```yaml
 Phase 0: Immediate Fixes
   ✓ All linter issues resolved
@@ -847,6 +930,7 @@ Phase 5: Production Launch
 ```
 
 ### **Key Performance Indicators**
+
 ```yaml
 Technical Metrics:
   - Initial page load time: <3 seconds
@@ -873,6 +957,7 @@ Business Metrics:
 ## ⚠️ **Risk Management**
 
 ### **High-Risk Items**
+
 ```yaml
 Frontend Complexity:
   Risk: React application complexity grows beyond maintainability
@@ -892,6 +977,7 @@ Community Adoption:
 ```
 
 ### **Mitigation Strategies**
+
 ```yaml
 Technical Risks:
   - Maintain comprehensive test coverage
@@ -940,6 +1026,7 @@ Key Milestones:
 ## 🔄 **Project Review and Updates**
 
 ### **Review Schedule**
+
 ```yaml
 Weekly Reviews:
   - Sprint progress assessment
@@ -961,6 +1048,7 @@ Quarterly Reviews:
 ```
 
 ### **Document Maintenance**
+
 ```yaml
 Update Triggers:
   - Phase completion
@@ -989,6 +1077,7 @@ Archive Strategy:
 This comprehensive roadmap transforms radarr-go from an excellent backend implementation to a complete, production-ready movie management system. The plan acknowledges the significant frontend development effort while building upon the exceptional backend foundation already established.
 
 **Key Success Factors:**
+
 1. **Incremental Delivery**: Each phase delivers user value
 2. **Risk Management**: Early identification and mitigation of risks
 3. **Quality Focus**: Testing and documentation integrated throughout

@@ -75,7 +75,7 @@ type Container struct {
 }
 ```
 
-#### Key Architectural Benefits:
+#### Key Architectural Benefits
 
 1. **Explicit Dependencies**: All service dependencies are declared explicitly
 2. **Single Responsibility**: Each service has a focused domain responsibility
@@ -114,7 +114,7 @@ The project implements a **hybrid database strategy** combining GORM and sqlc:
    (Primary)   (Alternative)   Pooling
 ```
 
-#### Database Features:
+#### Database Features
 
 - **Multi-Database Support**: PostgreSQL (primary) and MariaDB with database-specific optimizations
 - **Connection Pooling**: Configurable pool sizes with efficient connection management
@@ -151,7 +151,7 @@ The task service implements a sophisticated worker pool pattern:
               └───────────────────┘
 ```
 
-#### Worker Pool Features:
+#### Worker Pool Features
 
 1. **Prioritized Execution**: High, normal, and background priority queues
 2. **Graceful Cancellation**: Context-based task cancellation with status monitoring
@@ -187,6 +187,7 @@ Client Browser ←─── WebSocket ←─── API Server
 #### Project-Specific Standards
 
 1. **Package Structure**:
+
    ```
    internal/
    ├── api/          # HTTP handlers and routing
@@ -204,6 +205,7 @@ Client Browser ←─── WebSocket ←─── API Server
    - **Interfaces**: Use descriptive names without "I" prefix (e.g., `TaskHandler`)
 
 3. **Error Handling**:
+
    ```go
    // ✅ Good - Wrapped errors with context
    if err != nil {
@@ -221,6 +223,7 @@ Client Browser ←─── WebSocket ←─── API Server
 **CRITICAL**: All code must pass these quality checks before committing:
 
 1. **Pre-commit Hooks** (Recommended):
+
    ```bash
    pip install pre-commit
    pre-commit install
@@ -228,6 +231,7 @@ Client Browser ←─── WebSocket ←─── API Server
    ```
 
 2. **Manual Quality Checks**:
+
    ```bash
    make lint    # Run golangci-lint
    make fmt     # Format code
@@ -245,12 +249,14 @@ Client Browser ←─── WebSocket ←─── API Server
 ### Git Workflow and Commit Standards
 
 #### Branch Strategy
+
 - **main**: Production-ready code
 - **feature/**: New feature development
 - **fix/**: Bug fixes
 - **refactor/**: Code improvements without functionality changes
 
 #### Commit Message Format
+
 Follow conventional commits:
 
 ```
@@ -262,6 +268,7 @@ Follow conventional commits:
 ```
 
 Examples:
+
 ```
 feat(api): add movie search endpoint with TMDB integration
 fix(database): resolve connection pool exhaustion under high load
@@ -281,6 +288,7 @@ refactor(services): extract common validation logic into shared utilities
 ### Development Environment Setup
 
 #### Required Tools
+
 ```bash
 # Core development tools
 make setup                    # Install air, golangci-lint, migrate
@@ -294,6 +302,7 @@ brew install postgresql mariadb  # For local database testing
 ```
 
 #### Development Workflow
+
 ```bash
 # 1. Start development server with hot reload
 make dev
@@ -881,6 +890,7 @@ func (CustomResource) TableName() string {
 #### 1. Database Performance
 
 **Query Optimization:**
+
 ```go
 // ✅ Good - Use indexes and limit results
 func (s *MovieService) GetMoviesByTitle(ctx context.Context, title string, limit int) ([]*models.Movie, error) {
@@ -899,6 +909,7 @@ func (s *MovieService) GetAllMoviesByTitle(ctx context.Context, title string) ([
 ```
 
 **Connection Pool Management:**
+
 ```go
 // Configure connection pools based on workload
 func configureConnectionPool(cfg *config.DatabaseConfig, sqlDB *sql.DB, pgxPool *pgxpool.Pool) {
@@ -913,6 +924,7 @@ func configureConnectionPool(cfg *config.DatabaseConfig, sqlDB *sql.DB, pgxPool 
 #### 2. Memory Management
 
 **Efficient Data Structures:**
+
 ```go
 // ✅ Good - Use appropriate data types
 type MovieSummary struct {
@@ -928,6 +940,7 @@ func (s *MovieService) GetMovieSummaries(ctx context.Context) ([]*models.Movie, 
 ```
 
 **Context Usage:**
+
 ```go
 // ✅ Good - Proper context usage with timeouts
 func (s *MovieService) GetMovie(ctx context.Context, id int) (*models.Movie, error) {
@@ -942,6 +955,7 @@ func (s *MovieService) GetMovie(ctx context.Context, id int) (*models.Movie, err
 #### 3. Goroutine Management
 
 **Worker Pool Pattern:**
+
 ```go
 // Use bounded worker pools to prevent resource exhaustion
 type TaskWorkerPool struct {
@@ -968,6 +982,7 @@ func (pool *TaskWorkerPool) worker(ctx context.Context, service *TaskService) {
 #### 1. Input Validation and Sanitization
 
 **API Input Validation:**
+
 ```go
 type CreateMovieRequest struct {
     Title           string `json:"title" validate:"required,min=1,max=255"`
@@ -996,6 +1011,7 @@ func (s *Server) handleCreateMovie(c *gin.Context) {
 #### 2. SQL Injection Prevention
 
 **Parameterized Queries:**
+
 ```go
 // ✅ Good - Parameterized queries (GORM automatically handles this)
 func (s *MovieService) SearchMovies(ctx context.Context, title string) ([]*models.Movie, error) {
@@ -1013,6 +1029,7 @@ func (s *MovieService) GetMovieByTMDBID(ctx context.Context, tmdbID int) (*model
 #### 3. Authentication and Authorization
 
 **API Key Middleware:**
+
 ```go
 func apiKeyMiddleware(apiKey string) gin.HandlerFunc {
     return func(c *gin.Context) {
@@ -1040,6 +1057,7 @@ func compareAPIKeys(provided, expected string) bool {
 #### 4. Secure Configuration Management
 
 **Environment Variable Handling:**
+
 ```go
 // ✅ Good - Secure defaults and validation
 func setDefaults(vip *viper.Viper, dataDir string) {
@@ -1059,6 +1077,7 @@ func validateConfig(config *Config) error {
 #### 5. Error Handling Security
 
 **Safe Error Messages:**
+
 ```go
 func (s *Server) handleGetMovie(c *gin.Context) {
     id, err := strconv.Atoi(c.Param("id"))

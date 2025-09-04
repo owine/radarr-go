@@ -5,11 +5,13 @@ Welcome to the comprehensive API documentation for Radarr Go! This documentation
 ## 📚 Documentation Overview
 
 ### 🚀 Quick Start
+
 - **[Interactive API Documentation](../web/static/swagger-ui.html)** - Live Swagger UI with authentication support
 - **[OpenAPI 3.0 Specification](openapi-complete.yaml)** - Complete machine-readable API specification
 - **[Compatibility & Migration Guide](API_COMPATIBILITY_MIGRATION_GUIDE.md)** - Seamless migration from original Radarr
 
 ### 👨‍💻 Developer Resources
+
 - **[Developer Integration Examples](DEVELOPER_INTEGRATION_EXAMPLES.md)** - Comprehensive code examples in multiple languages
 - **[Client Libraries](#client-libraries)** - Ready-to-use SDK examples
 - **[Advanced Patterns](#advanced-integration-patterns)** - Production-ready integration patterns
@@ -17,16 +19,19 @@ Welcome to the comprehensive API documentation for Radarr Go! This documentation
 ## 🎯 Key Features
 
 ### ✅ Complete API Coverage
+
 - **150+ Endpoints**: Full coverage of all Radarr Go functionality
 - **100% Radarr v3 Compatibility**: Drop-in replacement for existing integrations
 - **Enhanced Features**: Advanced monitoring, metrics, and diagnostics
 
 ### ✅ Developer-Friendly
+
 - **Interactive Testing**: Built-in Swagger UI with live API testing
 - **Authentication Support**: API key management with connection testing
 - **Real-time Updates**: WebSocket integration for live status updates
 
 ### ✅ Production-Ready
+
 - **Error Handling**: Comprehensive error handling patterns
 - **Rate Limiting**: Built-in rate limiting with retry logic
 - **Performance Optimized**: 3-4x faster than original Radarr API
@@ -42,6 +47,7 @@ http://your-radarr-go-instance:7878/static/swagger-ui.html
 ```
 
 Features:
+
 - 🔑 **Authentication**: Built-in API key management
 - 🧪 **Live Testing**: Try out API calls directly in the browser
 - 📖 **Complete Documentation**: All 150+ endpoints with examples
@@ -53,11 +59,13 @@ Features:
 2. Use the API key in one of two ways:
 
 **Header (Recommended):**
+
 ```http
 X-API-Key: your_api_key_here
 ```
 
 **Query Parameter:**
+
 ```http
 GET /api/v3/movie?apikey=your_api_key_here
 ```
@@ -75,27 +83,32 @@ curl -H "X-API-Key: your_key" http://localhost:7878/api/v3/system/status
 ## 📋 API Categories
 
 ### 🎬 Core Movie Management
+
 - **Movies**: `/movie/*` - Complete CRUD operations, search, metadata
 - **Movie Files**: `/moviefile/*` - File management, media info, organization
 - **Collections**: `/collection/*` - Movie collection management with TMDB sync
 
 ### 🔍 Search & Acquisition
+
 - **Search**: `/search/*` - Movie discovery, release search, interactive search
 - **Releases**: `/release/*` - Release management, grabbing, statistics
 - **Indexers**: `/indexer/*` - Search provider configuration and testing
 
 ### ⬇️ Download Management
+
 - **Queue**: `/queue/*` - Download queue monitoring and control
 - **Download Clients**: `/downloadclient/*` - Client configuration and statistics
 - **Import Lists**: `/importlist/*` - Automated import list management
 
 ### ⚙️ System & Configuration
+
 - **System**: `/system/*` - Status, tasks, configuration
 - **Quality**: `/qualityprofile/*`, `/qualitydefinition/*`, `/customformat/*`
 - **Health**: `/health/*` - Comprehensive system monitoring
 - **Notifications**: `/notification/*` - 11+ notification providers
 
 ### 📅 Monitoring & Analytics
+
 - **Calendar**: `/calendar/*` - Release calendar with iCal feeds
 - **History**: `/history/*` - Activity tracking and analytics
 - **Wanted**: `/wanted/*` - Missing and cutoff unmet movie tracking
@@ -103,6 +116,7 @@ curl -H "X-API-Key: your_key" http://localhost:7878/api/v3/system/status
 ## 🛠️ Client Libraries
 
 ### JavaScript/TypeScript
+
 ```javascript
 import { RadarrGoSDK } from './radarr-go-sdk';
 
@@ -121,6 +135,7 @@ const newMovie = await radarr.addMovie({
 ```
 
 ### Python
+
 ```python
 from radarr_client import RadarrAPI
 
@@ -135,6 +150,7 @@ results = radarr.get('/movie/lookup', {'term': 'The Matrix'})
 ```
 
 ### Go
+
 ```go
 import "github.com/your-org/radarr-go-client"
 
@@ -150,6 +166,7 @@ if err != nil {
 ## 🔄 Migration from Original Radarr
 
 ### Zero-Code Migration
+
 Most existing API clients work immediately with Radarr Go:
 
 ```javascript
@@ -164,7 +181,9 @@ const response = await fetch('http://radarr-go:7878/api/v3/movie', {
 ```
 
 ### Enhanced Features Available
+
 While maintaining full compatibility, Radarr Go adds:
+
 - **Advanced Health Monitoring**: `/health/dashboard`, `/health/metrics`
 - **Enhanced Performance Metrics**: Real-time system monitoring
 - **Improved Calendar Integration**: RFC 5545 compliant iCal feeds
@@ -184,6 +203,7 @@ See the **[Migration Guide](API_COMPATIBILITY_MIGRATION_GUIDE.md)** for complete
 ## 🧪 Advanced Integration Patterns
 
 ### Real-time Updates
+
 ```javascript
 // WebSocket integration for live updates
 const ws = new WebSocket('ws://radarr-go:7878/signalr');
@@ -196,6 +216,7 @@ ws.onmessage = (event) => {
 ```
 
 ### Batch Operations
+
 ```python
 # Process multiple movies with rate limiting
 async def bulk_monitor_movies(movie_ids):
@@ -207,6 +228,7 @@ async def bulk_monitor_movies(movie_ids):
 ```
 
 ### Health Monitoring
+
 ```javascript
 // Automated health monitoring
 setInterval(async () => {
@@ -222,6 +244,7 @@ setInterval(async () => {
 ## 🛡️ Security Best Practices
 
 ### API Key Management
+
 ```javascript
 // Store API keys securely
 const apiKey = process.env.RADARR_API_KEY; // Use environment variables
@@ -238,6 +261,7 @@ try {
 ```
 
 ### Error Handling
+
 ```javascript
 // Robust error handling with retries
 async function safeApiCall(operation, maxRetries = 3) {
@@ -260,6 +284,7 @@ async function safeApiCall(operation, maxRetries = 3) {
 ## 🎯 Common Use Cases
 
 ### Movie Collection Manager
+
 ```javascript
 // Complete movie collection management
 class MovieCollectionManager {
@@ -297,6 +322,7 @@ class MovieCollectionManager {
 ```
 
 ### Automated Quality Upgrader
+
 ```python
 class QualityUpgrader:
     def __init__(self, radarr_client):
@@ -316,12 +342,14 @@ class QualityUpgrader:
 ## 📖 Additional Resources
 
 ### Documentation Files
+
 - **[OpenAPI Specification](openapi-complete.yaml)** - Machine-readable API spec
 - **[Migration Guide](API_COMPATIBILITY_MIGRATION_GUIDE.md)** - Detailed migration instructions
 - **[Integration Examples](DEVELOPER_INTEGRATION_EXAMPLES.md)** - Comprehensive code examples
 - **[API Endpoints Reference](API_ENDPOINTS.md)** - Complete endpoint listing
 
 ### External Resources
+
 - **[Radarr Go GitHub](https://github.com/radarr/radarr-go)** - Source code and issues
 - **[Community Wiki](https://github.com/radarr/radarr-go/wiki)** - Community documentation
 - **[Discord Support](https://discord.gg/radarr-go)** - Real-time community support
@@ -329,17 +357,21 @@ class QualityUpgrader:
 ## ❓ Getting Help
 
 ### 1. Interactive Documentation
+
 Start with the **[Swagger UI](../web/static/swagger-ui.html)** for live API exploration and testing.
 
 ### 2. Example Code
+
 Check the **[Integration Examples](DEVELOPER_INTEGRATION_EXAMPLES.md)** for practical, working code in multiple languages.
 
 ### 3. Community Support
+
 - **GitHub Issues**: Bug reports and feature requests
 - **GitHub Discussions**: General questions and integration help
 - **Discord**: Real-time community chat and support
 
 ### 4. Migration Support
+
 If migrating from original Radarr, see the **[Migration Guide](API_COMPATIBILITY_MIGRATION_GUIDE.md)** for step-by-step instructions.
 
 ---

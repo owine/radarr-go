@@ -59,70 +59,87 @@ func NewContainer(db *database.Database, cfg *config.Config, logger *logger.Logg
 		Logger: logger,
 	}
 
-	// Initialize core services
-	container.MovieService = NewMovieService(db, logger)
-	container.MovieFileService = NewMovieFileService(db, logger)
-	container.QualityService = NewQualityService(db, logger)
-	container.IndexerService = NewIndexerService(db, logger)
-	container.DownloadService = NewDownloadService(db, logger)
-	container.NotificationService = NewNotificationService(db, logger)
-	container.MetadataService = NewMetadataService(db, cfg, logger)
-	container.QueueService = NewQueueService(db, logger)
-	container.ImportListService = NewImportListService(db, logger, container.MetadataService, container.MovieService)
-	container.HistoryService = NewHistoryService(db, logger)
-	container.ConfigService = NewConfigService(db, logger)
-	container.SearchService = NewSearchService(db, logger, container.IndexerService, container.QualityService,
-		container.MovieService, container.DownloadService, container.NotificationService)
-	container.WantedMoviesService = NewWantedMoviesService(db, logger, container.MovieService, container.QualityService)
-
-	// Initialize file management services
-	container.NamingService = NewNamingService(db, logger)
-	container.MediaInfoService = NewMediaInfoService(db, logger)
-	container.FileOperationService = NewFileOperationService(db, logger)
-	container.FileOrganizationService = NewFileOrganizationService(db, logger, container.NamingService,
-		container.MediaInfoService)
-	container.ImportService = NewImportService(db, logger, container.MovieService, container.MovieFileService,
-		container.FileOrganizationService, container.MediaInfoService, container.NamingService)
-
-	// Initialize task service and register handlers
-	container.TaskService = NewTaskService(db, logger)
-
-	// Initialize health monitoring services
-	container.PerformanceMonitor = NewPerformanceMonitor(db, logger)
-	container.HealthIssueService = NewHealthIssueService(db, logger)
-	container.HealthService = NewHealthService(db, cfg, logger)
-
-	// Initialize calendar services
-	container.CalendarService = NewCalendarService(db, logger)
-	container.ICalService = NewICalService(db, logger, container.CalendarService)
-
-	// Initialize collection and parse services
-	container.CollectionService = NewCollectionService(db, logger)
-	container.ParseService = NewParseService(db, logger)
-	container.RenameService = NewRenameService(db, logger, container.NamingService)
+	// Initialize services in logical groups
+	container.initializeCoreServices(db, cfg, logger)
+	container.initializeFileServices(db, logger)
+	container.initializeMonitoringServices(db, cfg, logger)
+	container.initializeCalendarServices(db, logger)
+	container.initializeCollectionServices(db, logger)
 
 	// Set service container reference for ConfigService
 	container.ConfigService.SetServiceContainer(container)
 
-	// Register task handlers
-	container.TaskService.RegisterHandler(NewRefreshMovieHandler(container.MovieService, container.MetadataService))
-	container.TaskService.RegisterHandler(NewRefreshAllMoviesHandler(container.MovieService, container.MetadataService))
-	container.TaskService.RegisterHandler(NewSyncImportListHandler(container.ImportListService))
-	container.TaskService.RegisterHandler(NewRefreshWantedMoviesHandler(container.WantedMoviesService))
-	container.TaskService.RegisterHandler(NewAutoWantedSearchHandler(container.WantedMoviesService,
-		container.SearchService))
-
-	// Register health monitoring task handlers
-	container.TaskService.RegisterHandler(NewHealthCheckTaskHandler(container.HealthService))
-	container.TaskService.RegisterHandler(NewPerformanceMetricsTaskHandler(container.HealthService))
-	container.TaskService.RegisterHandler(NewHealthMaintenanceTaskHandler(container.HealthService,
-		nil))
-	container.TaskService.RegisterHandler(NewHealthReportTaskHandler(container.HealthService,
-		nil))
-
-	// Keep the legacy health check handler for compatibility
-	container.TaskService.RegisterHandler(NewHealthCheckHandler(container))
-	container.TaskService.RegisterHandler(NewCleanupHandler(container))
+	// Register all task handlers
+	container.registerTaskHandlers()
 
 	return container
+}
+
+// initializeCoreServices initializes the core business logic services
+func (c *Container) initializeCoreServices(db *database.Database, cfg *config.Config, logger *logger.Logger) {
+	c.MovieService = NewMovieService(db, logger)
+	c.MovieFileService = NewMovieFileService(db, logger)
+	c.QualityService = NewQualityService(db, logger)
+	c.IndexerService = NewIndexerService(db, logger)
+	c.DownloadService = NewDownloadService(db, logger)
+	c.NotificationService = NewNotificationService(db, logger)
+	c.MetadataService = NewMetadataService(db, cfg, logger)
+	c.QueueService = NewQueueService(db, logger)
+	c.ImportListService = NewImportListService(db, logger, c.MetadataService, c.MovieService)
+	c.HistoryService = NewHistoryService(db, logger)
+	c.ConfigService = NewConfigService(db, logger)
+	c.SearchService = NewSearchService(db, logger, c.IndexerService, c.QualityService,
+		c.MovieService, c.DownloadService, c.NotificationService)
+	c.WantedMoviesService = NewWantedMoviesService(db, logger, c.MovieService, c.QualityService)
+}
+
+// initializeFileServices initializes file management and organization services
+func (c *Container) initializeFileServices(db *database.Database, logger *logger.Logger) {
+	c.NamingService = NewNamingService(db, logger)
+	c.MediaInfoService = NewMediaInfoService(db, logger)
+	c.FileOperationService = NewFileOperationService(db, logger)
+	c.FileOrganizationService = NewFileOrganizationService(db, logger, c.NamingService, c.MediaInfoService)
+	c.ImportService = NewImportService(db, logger, c.MovieService, c.MovieFileService,
+		c.FileOrganizationService, c.MediaInfoService, c.NamingService)
+}
+
+// initializeMonitoringServices initializes health monitoring and performance services
+func (c *Container) initializeMonitoringServices(db *database.Database, cfg *config.Config, logger *logger.Logger) {
+	c.TaskService = NewTaskService(db, logger)
+	c.PerformanceMonitor = NewPerformanceMonitor(db, logger)
+	c.HealthIssueService = NewHealthIssueService(db, logger)
+	c.HealthService = NewHealthService(db, cfg, logger)
+}
+
+// initializeCalendarServices initializes calendar and scheduling services
+func (c *Container) initializeCalendarServices(db *database.Database, logger *logger.Logger) {
+	c.CalendarService = NewCalendarService(db, logger)
+	c.ICalService = NewICalService(db, logger, c.CalendarService)
+}
+
+// initializeCollectionServices initializes collection management and parsing services
+func (c *Container) initializeCollectionServices(db *database.Database, logger *logger.Logger) {
+	c.CollectionService = NewCollectionService(db, logger)
+	c.ParseService = NewParseService(db, logger)
+	c.RenameService = NewRenameService(db, logger, c.NamingService)
+}
+
+// registerTaskHandlers registers all task handlers with the task service
+func (c *Container) registerTaskHandlers() {
+	// Register movie and metadata task handlers
+	c.TaskService.RegisterHandler(NewRefreshMovieHandler(c.MovieService, c.MetadataService))
+	c.TaskService.RegisterHandler(NewRefreshAllMoviesHandler(c.MovieService, c.MetadataService))
+	c.TaskService.RegisterHandler(NewSyncImportListHandler(c.ImportListService))
+	c.TaskService.RegisterHandler(NewRefreshWantedMoviesHandler(c.WantedMoviesService))
+	c.TaskService.RegisterHandler(NewAutoWantedSearchHandler(c.WantedMoviesService, c.SearchService))
+
+	// Register health monitoring task handlers
+	c.TaskService.RegisterHandler(NewHealthCheckTaskHandler(c.HealthService))
+	c.TaskService.RegisterHandler(NewPerformanceMetricsTaskHandler(c.HealthService))
+	c.TaskService.RegisterHandler(NewHealthMaintenanceTaskHandler(c.HealthService, nil))
+	c.TaskService.RegisterHandler(NewHealthReportTaskHandler(c.HealthService, nil))
+
+	// Register legacy handlers for compatibility
+	c.TaskService.RegisterHandler(NewHealthCheckHandler(c))
+	c.TaskService.RegisterHandler(NewCleanupHandler(c))
 }

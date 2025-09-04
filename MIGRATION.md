@@ -7,16 +7,19 @@ This guide helps users navigate the versioning changes in Radarr Go and provides
 ## 🚨 Critical Version Information
 
 ### Version Timeline
+
 - **v0.0.x Series** (Deprecated): Experimental releases - discontinued
 - **v0.9.0-alpha+**: Current active development - production-ready alpha
 - **v1.0.0** (Future): Stable production release (Q2 2025)
 
 ### Current Recommendation
+
 **Use v0.9.0-alpha or later** for all new installations and testing.
 
 ## Migration Scenarios
 
 ### Scenario 1: New Installation
+
 **Recommended**: Start with v0.9.0-alpha
 
 ```bash
@@ -31,12 +34,15 @@ chmod +x radarr-linux-amd64
 ```
 
 ### Scenario 2: Upgrading from v0.0.x (Experimental Series)
+
 **⚠️ No Automatic Migration Available**
 
 The v0.0.x series was experimental and the architecture has significantly evolved. A fresh installation is required.
 
-#### Migration Steps:
+#### Migration Steps
+
 1. **Backup Current Data** (if desired):
+
    ```bash
    # Backup your current data directory
    cp -r ./data ./data-v0.0.x-backup
@@ -46,6 +52,7 @@ The v0.0.x series was experimental and the architecture has significantly evolve
    ```
 
 2. **Fresh Installation**:
+
    ```bash
    # Stop old version
    docker-compose down  # or stop your binary
@@ -63,17 +70,20 @@ The v0.0.x series was experimental and the architecture has significantly evolve
    - Re-add movie library paths and quality profiles
    - Import movies will require re-scanning
 
-#### What You'll Lose:
+#### What You'll Lose
+
 - Movie history and statistics
 - Download history
 - Custom quality profiles (need manual recreation)
 - Notification configurations (need manual recreation)
 
-#### What You Can Preserve:
+#### What You Can Preserve
+
 - Movie files themselves (just re-scan library)
 - Custom scripts and configurations (manual port)
 
 ### Scenario 3: Moving Between v0.9.x Versions
+
 **✅ Standard Upgrade Process**
 
 Future upgrades within the v0.9.x series will support standard migration:
@@ -93,12 +103,14 @@ docker-compose up -d
 ## Database Migration Strategy
 
 ### Supported Databases
+
 - **PostgreSQL** (Recommended): Best performance and feature support
 - **MariaDB**: Full compatibility with MySQL ecosystem
 
 ### Database Setup for v0.9.0-alpha+
 
-#### PostgreSQL Setup:
+#### PostgreSQL Setup
+
 ```bash
 # Using Docker
 docker run --name radarr-postgres \
@@ -109,7 +121,8 @@ docker run --name radarr-postgres \
   -d postgres:17
 ```
 
-#### MariaDB Setup:
+#### MariaDB Setup
+
 ```bash
 # Using Docker
 docker run --name radarr-mariadb \
@@ -122,6 +135,7 @@ docker run --name radarr-mariadb \
 ```
 
 ### Configuration Example
+
 ```yaml
 server:
   port: 7878
@@ -143,24 +157,29 @@ log:
 ## Docker Migration
 
 ### Docker Tag Strategy
+
 Understanding the new Docker tagging strategy:
 
-#### Production Tags (Future):
+#### Production Tags (Future)
+
 - `latest`: Latest stable release
 - `stable`: Alias for latest stable
 - `v1.2.3`: Specific version pinning
 
-#### Testing Tags (Current):
+#### Testing Tags (Current)
+
 - `testing`: Latest pre-release
 - `v0.9.0-alpha`: Specific alpha version
 - `prerelease`: Latest pre-release alias
 
-#### Database-Specific Tags:
+#### Database-Specific Tags
+
 - `postgres`: Latest with PostgreSQL optimizations
 - `mariadb`: Latest with MariaDB optimizations
 - `multi-db`: Supports both databases
 
-### Docker Upgrade Process:
+### Docker Upgrade Process
+
 ```bash
 # Current alpha users
 docker pull ghcr.io/radarr/radarr-go:testing
@@ -178,6 +197,7 @@ services:
 ## Configuration Migration
 
 ### Environment Variables
+
 The new version supports comprehensive environment variable configuration:
 
 ```bash
@@ -199,6 +219,7 @@ RADARR_LOG_FORMAT=json
 ```
 
 ### Configuration File Evolution
+
 The configuration format has evolved but maintains backward compatibility where possible:
 
 ```yaml
@@ -226,6 +247,7 @@ log:
 ## Performance Considerations
 
 ### Resource Requirements
+
 v0.9.0-alpha has significantly improved performance:
 
 | Component | v0.0.x (Est.) | v0.9.0-alpha | Improvement |
@@ -235,7 +257,8 @@ v0.9.0-alpha has significantly improved performance:
 | API Response | Variable | <100ms avg | Consistent performance |
 | Database Connections | Basic | Pooled | Optimized |
 
-### Recommended Resources:
+### Recommended Resources
+
 - **CPU**: 1-2 cores minimum
 - **RAM**: 512MB minimum, 1GB recommended
 - **Storage**: 10GB minimum for database and logs
@@ -244,8 +267,10 @@ v0.9.0-alpha has significantly improved performance:
 ## Troubleshooting Common Migration Issues
 
 ### Issue: Database Connection Failures
+
 **Symptoms**: Cannot connect to database
 **Solutions**:
+
 ```bash
 # Check database is running
 docker ps | grep postgres
@@ -258,8 +283,10 @@ docker network ls
 ```
 
 ### Issue: Configuration Not Loading
+
 **Symptoms**: Default values being used instead of config
 **Solutions**:
+
 ```bash
 # Verify config file path
 ls -la config.yaml
@@ -272,8 +299,10 @@ python -c "import yaml; yaml.safe_load(open('config.yaml'))"
 ```
 
 ### Issue: Port Conflicts
+
 **Symptoms**: Cannot bind to port 7878
 **Solutions**:
+
 ```bash
 # Check what's using the port
 lsof -i :7878
@@ -285,7 +314,8 @@ RADARR_SERVER_PORT=8989 ./radarr
 
 ## Pre-Release Upgrade Path
 
-### Following Alpha/Beta Releases:
+### Following Alpha/Beta Releases
+
 ```bash
 # Subscribe to releases
 gh repo set-default radarr/radarr-go
@@ -296,7 +326,8 @@ docker pull ghcr.io/radarr/radarr-go:testing
 docker-compose down && docker-compose up -d
 ```
 
-### When v1.0.0 Releases:
+### When v1.0.0 Releases
+
 ```bash
 # Upgrade to stable
 docker pull ghcr.io/radarr/radarr-go:latest
@@ -308,7 +339,8 @@ docker pull ghcr.io/radarr/radarr-go:v1.0.0
 
 ## Rollback Procedures
 
-### Rolling Back from v0.9.x:
+### Rolling Back from v0.9.x
+
 If you need to rollback (not recommended):
 
 ```bash
@@ -326,12 +358,14 @@ docker pull ghcr.io/radarr/radarr-go:v0.0.10
 
 ## Support and Community
 
-### Getting Help:
+### Getting Help
+
 - **GitHub Issues**: Report bugs and request features
 - **Documentation**: Check README.md and VERSIONING.md
 - **Discord/Community**: Links in main repository
 
-### Before Reporting Issues:
+### Before Reporting Issues
+
 1. Check current version: `./radarr --version`
 2. Review logs: `docker logs radarr-container`
 3. Verify configuration: Check config.yaml and environment variables
@@ -340,18 +374,23 @@ docker pull ghcr.io/radarr/radarr-go:v0.0.10
 ## FAQ
 
 ### Q: Why was v0.0.x deprecated?
+
 A: The v0.0.x series was experimental. The project has evolved significantly and v0.9.0-alpha represents the true maturity level with 95% feature parity.
 
 ### Q: When will v1.0.0 be released?
+
 A: Target is Q2 2025 after achieving 100% feature parity and completing production testing.
 
 ### Q: Can I use this in production now?
+
 A: v0.9.0-alpha is near production-ready but still in alpha. Use in testing environments first. Production use is at your own risk.
 
 ### Q: What's the difference between PostgreSQL and MariaDB support?
+
 A: Both are fully supported. PostgreSQL is recommended for best performance due to native Go driver and advanced features.
 
 ### Q: How do I migrate my existing Radarr (.NET) data?
+
 A: Direct migration from original Radarr is not currently supported. This is a rewrite focused on API compatibility, not data compatibility.
 
 ---

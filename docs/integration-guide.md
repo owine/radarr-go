@@ -12,6 +12,7 @@ This comprehensive guide provides practical examples and integration patterns fo
 ## Overview
 
 Radarr Go provides a complete REST API compatible with Radarr v3. The API includes:
+
 - **150+ endpoints** for comprehensive movie management
 - **Real-time WebSocket updates**
 - **Multi-database support** (PostgreSQL/MariaDB)

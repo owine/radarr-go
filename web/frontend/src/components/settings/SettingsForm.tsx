@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '../common/Button/Button';
 import { SettingsActions } from './SettingsActions';
+import { SettingsFormProvider } from './useSettingsForm';
 import styles from './SettingsForm.module.css';
 
-export interface SettingsFormProps<T extends Record<string, any>> {
+export interface SettingsFormProps<T extends Record<string, unknown>> {
   data: T;
   originalData?: T;
   onSave: (data: T) => Promise<void>;
@@ -19,7 +19,7 @@ export interface SettingsFormProps<T extends Record<string, any>> {
   };
 }
 
-export function SettingsForm<T extends Record<string, any>>({
+export function SettingsForm<T extends Record<string, unknown>>({
   data,
   originalData,
   onSave,
@@ -40,7 +40,7 @@ export function SettingsForm<T extends Record<string, any>>({
     return JSON.stringify(formData) !== JSON.stringify(originalData);
   }, [formData, originalData, isDirty]);
 
-  const updateField = (field: keyof T, value: any) => {
+  const updateField = React.useCallback((field: keyof T, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -48,14 +48,15 @@ export function SettingsForm<T extends Record<string, any>>({
     setIsDirty(true);
 
     // Clear field error when user starts typing
-    if (errors[field as string]) {
-      setErrors(prev => {
+    setErrors(prev => {
+      if (prev[field as string]) {
         const newErrors = { ...prev };
         delete newErrors[field as string];
         return newErrors;
-      });
-    }
-  };
+      }
+      return prev;
+    });
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -63,10 +64,13 @@ export function SettingsForm<T extends Record<string, any>>({
       setErrors({});
       await onSave(formData);
       setIsDirty(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle validation errors
-      if (error?.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { errors?: Record<string, string> } } };
+        if (apiError.response?.data?.errors) {
+          setErrors(apiError.response.data.errors);
+        }
       } else {
         console.error('Failed to save settings:', error);
       }
@@ -92,7 +96,7 @@ export function SettingsForm<T extends Record<string, any>>({
       errors,
       loading: loading || isSaving,
     }),
-    [formData, errors, loading, isSaving]
+    [formData, updateField, errors, loading, isSaving]
   );
 
   return (
@@ -127,24 +131,3 @@ export function SettingsForm<T extends Record<string, any>>({
   );
 }
 
-// Context for form state
-export interface SettingsFormContextValue<T = any> {
-  data: T;
-  updateField: (field: keyof T, value: any) => void;
-  errors: Record<string, string>;
-  loading: boolean;
-}
-
-const SettingsFormContext = React.createContext<SettingsFormContextValue | null>(null);
-
-export const SettingsFormProvider = SettingsFormContext.Provider;
-
-export function useSettingsForm<T = any>(): SettingsFormContextValue<T> {
-  const context = React.useContext(SettingsFormContext);
-  if (!context) {
-    throw new Error('useSettingsForm must be used within a SettingsForm');
-  }
-  return context as SettingsFormContextValue<T>;
-}
-
-SettingsForm.displayName = 'SettingsForm';

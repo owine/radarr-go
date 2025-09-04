@@ -32,21 +32,25 @@ Radarr Go maintains **100% backward compatibility** with Radarr v3 API while int
 While maintaining full compatibility, Radarr Go adds several enhancements:
 
 #### 1. **Extended Health Monitoring**
+
 - **New endpoints**: `/health/dashboard`, `/health/metrics`, `/health/issue/*`
 - **Enhanced diagnostics**: Real-time system monitoring, performance metrics
 - **Health issue management**: Track, dismiss, and resolve health issues
 
 #### 2. **Advanced Performance Metrics**
+
 - **New endpoints**: `/health/metrics/record`, `/health/system/resources`
 - **Real-time monitoring**: CPU, memory, disk space tracking
 - **Performance analytics**: Response times, error rates, database performance
 
 #### 3. **Comprehensive Task Management**
+
 - **Enhanced endpoints**: Extended task status information
 - **Background monitoring**: Task queue status and performance
 - **Better error handling**: Detailed failure information
 
 #### 4. **Calendar Integration**
+
 - **RFC 5545 compliant**: Fully compliant iCal feeds
 - **Feed management**: `/calendar/feed/url` for shareable feeds
 - **Enhanced configuration**: `/calendar/config` for customization
@@ -196,6 +200,7 @@ Unlike original Radarr, Radarr Go supports multiple database backends:
 Popular Radarr client libraries work immediately with Radarr Go:
 
 #### Python (PyArr)
+
 ```python
 from pyarr import RadarrAPI
 
@@ -207,6 +212,7 @@ movies = radarr.get_movie()
 ```
 
 #### JavaScript/Node.js
+
 ```javascript
 // Existing Radarr clients work unchanged
 const RadarrAPI = require('radarr-api');
@@ -220,6 +226,7 @@ const movies = await radarr.getMovies();
 ```
 
 #### Go
+
 ```go
 // Existing Go clients work with just URL change
 client := radarr.New("http://radarr-go:7878", "your_api_key")
@@ -396,12 +403,14 @@ cp -r /var/lib/radarr /var/lib/radarr.backup
 ### 1. **Interactive API Documentation**
 
 Use the built-in Swagger UI:
+
 - **URL**: `http://radarr-go:7878/static/swagger-ui.html`
 - **Features**: Live API testing, authentication support, comprehensive documentation
 
 ### 2. **Compatibility Issues**
 
 Report compatibility issues:
+
 - **GitHub Issues**: https://github.com/radarr/radarr-go/issues
 - **Template**: Use "API Compatibility" issue template
 - **Include**: Original Radarr version, API endpoint, expected vs actual behavior
@@ -409,6 +418,7 @@ Report compatibility issues:
 ### 3. **Migration Support**
 
 Get migration help:
+
 - **Documentation**: https://github.com/radarr/radarr-go/wiki/migration
 - **Discord**: Radarr Go community channel
 - **GitHub Discussions**: https://github.com/radarr/radarr-go/discussions

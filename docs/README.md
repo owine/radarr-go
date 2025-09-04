@@ -5,32 +5,38 @@ Welcome to the comprehensive API documentation for Radarr Go - a high-performanc
 ## 📚 Documentation Overview
 
 ### 🚀 Getting Started
+
 - **[Interactive API Documentation](http://localhost:7878/docs/swagger)** - Try out all API endpoints in your browser
 - **[Quick API Guide](http://localhost:7878/docs/api-guide)** - Essential API usage patterns and examples
 - **[Developer Integration Guide](./DEVELOPER_INTEGRATION_GUIDE.md)** - Comprehensive guide for building integrations
 
 ### 📖 Reference Documentation
+
 - **[OpenAPI 3.0 Specification](./openapi.yaml)** - Complete API specification for code generation
 - **[API Endpoints Catalog](./API_ENDPOINTS.md)** - Detailed list of all 150+ endpoints
 - **[API Compatibility Guide](./API_COMPATIBILITY.md)** - Migration guide and compatibility matrix
 
 ### 🔧 Technical Documentation
+
 - **[Configuration Guide](./CONFIGURATION.md)** - Complete configuration reference
 - **[Release Notes](./RELEASE_NOTES_v0.9.0-alpha.md)** - Latest version changelog
 
 ## 🎯 Key Features
 
 ### ✅ 100% Radarr v3 Compatible
+
 - **Identical API Structure** - Same endpoints, same responses
 - **Drop-in Replacement** - Existing integrations work unchanged
 - **Authentication Compatible** - Same API key methods
 
 ### 🚀 Enhanced Performance
+
 - **3x Faster Responses** - Go-based performance improvements
 - **60% Less Memory** - Efficient resource usage
 - **Multi-Database Support** - PostgreSQL and MariaDB options
 
 ### 🆕 Advanced Features
+
 - **Real-time WebSocket Updates** - Live status notifications
 - **RFC 5545 iCal Calendar** - Standards-compliant calendar feeds
 - **Advanced Health Monitoring** - Comprehensive system metrics
@@ -39,6 +45,7 @@ Welcome to the comprehensive API documentation for Radarr Go - a high-performanc
 ## 🌐 Interactive Documentation
 
 Access the interactive API documentation at:
+
 - **Swagger UI**: [http://localhost:7878/docs/swagger](http://localhost:7878/docs/swagger)
 - **API Guide**: [http://localhost:7878/docs/api-guide](http://localhost:7878/docs/api-guide)
 - **Integration Guide**: [http://localhost:7878/docs/integration](http://localhost:7878/docs/integration)
@@ -75,6 +82,7 @@ curl "http://localhost:7878/api/v3/movie?apikey=your-api-key"
 ## 🛠️ Common Integration Patterns
 
 ### Simple Movie Operations
+
 ```python
 import requests
 
@@ -102,6 +110,7 @@ added = requests.post(f"{base_url}/movie", json=movie_data, headers=headers).jso
 ```
 
 ### Real-time Updates via WebSocket
+
 ```javascript
 const ws = new WebSocket('ws://localhost:7878/ws?apikey=your-api-key');
 
@@ -112,6 +121,7 @@ ws.onmessage = (event) => {
 ```
 
 ### Calendar Integration
+
 ```bash
 # Get calendar events
 curl -H "X-API-Key: your-key" \
@@ -159,11 +169,13 @@ curl -H "X-API-Key: your-key" http://localhost:7878/api/v3/health/system/resourc
 ## 📅 Calendar Features
 
 ### Standard Calendar Events
+
 - **In Cinemas** - Theatre release dates
 - **Physical Release** - Blu-ray/DVD availability
 - **Digital Release** - Streaming/digital availability
 
 ### iCal Integration
+
 ```bash
 # Generate calendar subscription URL
 curl -H "X-API-Key: your-key" \
@@ -185,6 +197,7 @@ curl -H "X-API-Key: your-key" \
 ## 📝 Quick Reference
 
 ### Essential Endpoints
+
 - `GET /api/v3/system/status` - System information
 - `GET /api/v3/movie` - List movies
 - `POST /api/v3/movie` - Add movie
@@ -194,7 +207,9 @@ curl -H "X-API-Key: your-key" \
 - `GET /api/v3/qualityprofile` - Quality profiles
 
 ### Response Format
+
 All responses are JSON with consistent structure:
+
 ```json
 {
   "data": [...],
@@ -207,6 +222,7 @@ All responses are JSON with consistent structure:
 ```
 
 ### Rate Limits
+
 - **Default**: 100 requests per minute per API key
 - **Health check**: `/ping` endpoint not rate limited
 - **Headers**: Rate limit info in response headers

@@ -2,15 +2,9 @@ import type {
   Movie,
   QueueItem,
   History,
-  Activity,
-  WantedMovie,
   CalendarEvent,
   Release,
-  Collection,
-  Indexer,
-  DownloadClient,
-  Notification,
-  Tag
+  Collection
 } from '../types/api';
 
 // Generic transformation utilities
@@ -41,7 +35,7 @@ export const transformers = {
   },
 
   // Sort items by multiple criteria
-  sortBy: <T>(items: T[], ...sortFns: ((item: T) => any)[]): T[] => {
+  sortBy: <T>(items: T[], ...sortFns: ((item: T) => string | number | boolean)[]): T[] => {
     return [...items].sort((a, b) => {
       for (const sortFn of sortFns) {
         const aVal = sortFn(a);
@@ -247,7 +241,7 @@ export const calendarTransforms = {
   // Group events by date
   groupByDate: (events: CalendarEvent[]) => {
     const enriched = events.map(calendarTransforms.enrichCalendarEvent);
-    return transformers.groupBy(enriched, 'displayDate' as any);
+    return transformers.groupBy(enriched, 'displayDate' as keyof typeof enriched[0]);
   },
 
   // Filter events by date range

@@ -15,7 +15,9 @@ This directory contains the comprehensive settings infrastructure for Radarr-Go.
 ### Core Components
 
 #### `SettingsForm`
+
 Main form wrapper that provides:
+
 - Form state management with dirty tracking
 - Save/reset functionality with confirmation
 - Error handling and validation
@@ -24,14 +26,18 @@ Main form wrapper that provides:
 - Context for child components
 
 #### `SettingsSection`
+
 Collapsible section container that provides:
+
 - Title and description with optional icons
 - Collapsible functionality
 - Consistent spacing and styling
 - Badge support for notifications
 
 #### `SettingsField`
+
 Individual form field wrapper that provides:
+
 - Integration with existing Input component
 - Multiple input types (text, password, number, select, checkbox, textarea)
 - Label, description, and help text support
@@ -40,7 +46,9 @@ Individual form field wrapper that provides:
 - Required field indication
 
 #### `SettingsActions`
+
 Sticky footer with action buttons:
+
 - Save Changes (enabled when form is dirty)
 - Reset (revert to original values)
 - Test Configuration (optional, for validating settings)
@@ -180,6 +188,7 @@ export const AdvancedSettings: React.FC = () => {
 ## Field Types
 
 ### Text Input
+
 ```tsx
 <SettingsField
   name="serverName"
@@ -190,6 +199,7 @@ export const AdvancedSettings: React.FC = () => {
 ```
 
 ### Number Input
+
 ```tsx
 <SettingsField
   name="port"
@@ -201,6 +211,7 @@ export const AdvancedSettings: React.FC = () => {
 ```
 
 ### Select Dropdown
+
 ```tsx
 <SettingsField
   name="logLevel"
@@ -215,6 +226,7 @@ export const AdvancedSettings: React.FC = () => {
 ```
 
 ### Checkbox
+
 ```tsx
 <SettingsField
   name="enableFeature"
@@ -225,6 +237,7 @@ export const AdvancedSettings: React.FC = () => {
 ```
 
 ### Textarea
+
 ```tsx
 <SettingsField
   name="description"
@@ -235,6 +248,7 @@ export const AdvancedSettings: React.FC = () => {
 ```
 
 ### Password Input
+
 ```tsx
 <SettingsField
   name="password"
@@ -247,6 +261,7 @@ export const AdvancedSettings: React.FC = () => {
 ## Adding New Settings Categories
 
 1. **Create API Endpoints** (if needed):
+
    ```tsx
    // In radarrApi.ts
    getMyConfig: builder.query<MyConfig, void>({
@@ -265,6 +280,7 @@ export const AdvancedSettings: React.FC = () => {
    ```
 
 2. **Create Settings Component**:
+
    ```tsx
    // MySettings.tsx
    export const MySettings: React.FC = () => {
@@ -276,6 +292,7 @@ export const AdvancedSettings: React.FC = () => {
    ```
 
 3. **Add to Settings Navigation**:
+
    ```tsx
    // In SettingsPage.tsx
    {
