@@ -35,7 +35,7 @@ MARKDOWNLINT_CONFIG=.markdownlint.json
 
 # File patterns for linting
 YAML_FILES=$(shell find . -name '*.yml' -o -name '*.yaml' | grep -v node_modules | grep -v vendor)
-JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git')
+JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git' | grep -v 'tsconfig')
 MARKDOWN_FILES=$(shell find . -name '*.md' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
 SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor)
 

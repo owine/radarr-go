@@ -280,6 +280,37 @@
       "minimumReleaseAge": "5 days"
     },
     {
+      "description": "Python major updates - separate PRs, manual review",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "python",
+        "major"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Python dependencies - group minor and patch updates",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Python dependencies",
+      "automerge": true,
+      "addLabels": [
+        "python"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
       "description": "Security updates - immediate processing with highest priority",
       "matchPackageNames": [
         "*"
