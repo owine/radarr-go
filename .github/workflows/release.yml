@@ -288,7 +288,7 @@ jobs:
         done
 
     - name: Upload all release artifacts
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: release-archives-all
         path: archives/
@@ -305,7 +305,7 @@ jobs:
 
     steps:
     - name: Download release artifacts
-      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      uses: actions/download-artifact@v5.0.0
       with:
         name: release-archives-all
         path: release-artifacts
@@ -575,7 +575,7 @@ jobs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      uses: docker/setup-buildx-action@v3.11.1
 
     - name: Log in to registries in parallel
       run: |
@@ -642,7 +642,7 @@ jobs:
         fi
 
     - name: Download build artifacts
-      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      uses: actions/download-artifact@v5.0.0
       with:
         name: release-archives-all
         path: ./artifacts
@@ -670,7 +670,7 @@ jobs:
         chmod +x radarr-linux-*
 
     - name: Build and push Docker images with enhanced caching (using pre-built binaries)
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+      uses: docker/build-push-action@v6.18.0
       with:
         context: .
         file: ./Dockerfile.artifacts
