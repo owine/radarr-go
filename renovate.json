@@ -128,13 +128,6 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Docker-compose - force disable digest pinning for all updates",
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "pinDigests": false
-    },
-    {
       "description": "npm major updates - separate PRs, manual review",
       "matchManagers": [
         "npm"
