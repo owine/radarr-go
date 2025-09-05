@@ -108,7 +108,7 @@
         "docker",
         "major"
       ],
-      "pinDigests": false,
+      "pinDigests": true,
       "minimumReleaseAge": "7 days"
     },
     {
