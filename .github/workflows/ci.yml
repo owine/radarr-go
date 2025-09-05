@@ -8,18 +8,8 @@ on:
     branches: [main, develop]
 
 env:
-  # renovate: datasource=golang-version depName=golang
   GO_VERSION: '1.25'
-  # renovate: datasource=node-version depName=node
   NODE_VERSION: '22'
-  # renovate: datasource=docker depName=postgres versioning=docker
-  POSTGRES_VERSION: '17'
-  # renovate: datasource=docker depName=mariadb versioning=docker
-  MARIADB_VERSION: '12.1'
-  # renovate: datasource=docker depName=alpine versioning=docker
-  ALPINE_VERSION: '3.22'
-  # renovate: datasource=docker depName=redis versioning=docker
-  REDIS_VERSION: '8'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
