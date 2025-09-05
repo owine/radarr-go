@@ -72,11 +72,13 @@
       "addLabels": [
         "docker"
       ],
-      "pinDigests": true,
-      "minimumReleaseAge": "2 days"
+      "pinDigests": true
     },
     {
       "description": "Docker-compose minor/patch updates - grouped without digest pinning",
+      "matchDatasources": [
+        "docker"
+      ],
       "matchManagers": [
         "docker-compose"
       ],
@@ -89,8 +91,7 @@
       "addLabels": [
         "docker"
       ],
-      "pinDigests": false,
-      "minimumReleaseAge": "2 days"
+      "pinDigests": false
     },
     {
       "description": "Dockerfile major updates - separate PRs with digest pinning",
@@ -105,11 +106,13 @@
         "docker",
         "major"
       ],
-      "pinDigests": true,
-      "minimumReleaseAge": "7 days"
+      "pinDigests": true
     },
     {
       "description": "Docker-compose major updates - separate PRs without digest pinning",
+      "matchDatasources": [
+        "docker"
+      ],
       "matchManagers": [
         "docker-compose"
       ],
@@ -121,8 +124,7 @@
         "docker",
         "major"
       ],
-      "pinDigests": false,
-      "minimumReleaseAge": "7 days"
+      "pinDigests": false
     },
     {
       "description": "npm major updates - separate PRs, manual review",
