@@ -144,7 +144,7 @@ services:
 
   # Database Administration Interface
   adminer:
-    image: adminer:4.8.1-standalone
+    image: adminer:4.17.1-standalone
     container_name: radarr-adminer
     restart: unless-stopped
     ports:
