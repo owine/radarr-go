@@ -19,7 +19,7 @@ COPY web/frontend ./
 RUN npm run build
 
 # Backend build stage
-FROM golang:1.25-alpine AS backend-builder
+FROM golang:1.25-alpine@sha256:b6ed3fd0452c0e9bcdef5597f29cc1418f61672e9d3a2f55bf02e7222c014abd AS backend-builder
 
 # Build arguments for version information
 ARG VERSION="dev"
