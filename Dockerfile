@@ -1,9 +1,5 @@
-# Build arguments for version control
-ARG GO_VERSION=1.25
-ARG ALPINE_VERSION=3.22
-
 # Build stage
-FROM golang:${GO_VERSION}-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Build arguments for version information
 ARG VERSION="dev"
@@ -27,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o radarr ./cmd/radarr
 
 # Final stage
-FROM alpine:${ALPINE_VERSION}
+FROM alpine:3.22
 
 RUN apk --no-cache add ca-certificates tzdata sqlite
 

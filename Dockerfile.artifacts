@@ -1,8 +1,7 @@
 # Optimized Dockerfile using pre-built artifacts
 # This avoids rebuilding Go binaries during Docker build
-ARG ALPINE_VERSION=3.22
 
-FROM alpine:${ALPINE_VERSION}
+FROM alpine:3.22
 
 RUN apk --no-cache add ca-certificates tzdata sqlite
 
