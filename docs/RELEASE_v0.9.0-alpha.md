@@ -215,7 +215,7 @@ services:
       - postgres
 
   postgres:
-    image: postgres:15
+    image: postgres:17-alpine
     container_name: radarr-postgres
     environment:
       - POSTGRES_DB=radarr

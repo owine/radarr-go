@@ -420,7 +420,7 @@ The project uses testcontainers for isolated database testing:
 func SetupPostgresContainer(ctx context.Context) (*testcontainers.Container, *database.Database, error) {
     // Create PostgreSQL container
     req := testcontainers.ContainerRequest{
-        Image:        "postgres:15-alpine",
+        Image:        "postgres:17-alpine",
         ExposedPorts: []string{"5432/tcp"},
         Env: map[string]string{
             "POSTGRES_DB":       "radarr_test",

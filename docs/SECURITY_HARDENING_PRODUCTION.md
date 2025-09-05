@@ -202,7 +202,7 @@ services:
       - SETUID
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     networks:
       - backend       # Database network only
       - monitoring    # Metrics only
@@ -1112,7 +1112,7 @@ func (ddos *DDoSProtection) cleanup() {
 
 ```dockerfile
 # Dockerfile.secure - Security-hardened container
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install security updates
 RUN apk update && apk upgrade && apk add --no-cache \
@@ -1261,7 +1261,7 @@ services:
         labels: "service=radarr-go"
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: radarr-postgres-secure
     restart: unless-stopped
 
