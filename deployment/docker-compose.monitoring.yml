@@ -4,7 +4,7 @@
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:3.2.1
+    image: prom/prometheus:3.5.0
     container_name: radarr-prometheus
     restart: unless-stopped
 
@@ -81,7 +81,7 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:11.4.2
+    image: grafana/grafana:12.1.0
     container_name: radarr-grafana
     restart: unless-stopped
 
@@ -261,7 +261,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:3.4.2
+    image: grafana/loki:3.5.4
     container_name: radarr-loki
     restart: unless-stopped
 
@@ -322,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:3.4.2
+    image: grafana/promtail:3.5.4
     container_name: radarr-promtail
     restart: unless-stopped
 
@@ -551,7 +551,7 @@ services:
 
   # Redis Exporter - Cache metrics
   redis-exporter:
-    image: oliver006/redis_exporter:1.70.0
+    image: oliver006/redis_exporter:1.76.0
     container_name: radarr-redis-exporter
     restart: unless-stopped
 
