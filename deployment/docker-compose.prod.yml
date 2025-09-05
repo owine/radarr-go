@@ -139,7 +139,7 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-postgres
     restart: unless-stopped
 
@@ -246,7 +246,7 @@ services:
 
   # Redis cache
   redis:
-    image: redis:8-alpine
+    image: redis:8-alpine@sha256:987c376c727652f99625c7d205a1cba3cb2c53b92b0b62aade2bd48ee1593232
     container_name: radarr-redis
     restart: unless-stopped
 
@@ -314,7 +314,7 @@ services:
 
   # Nginx reverse proxy
   nginx:
-    image: nginx:alpine
+    image: nginx:alpine@sha256:42a516af16b852e33b7682d5ef8acbd5d13fe08fecadc7ed98605ba5e3b26ab8
     container_name: radarr-nginx
     restart: unless-stopped
 
@@ -397,7 +397,7 @@ services:
 
   # Automated backup service
   backup:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-backup
     restart: unless-stopped
 
@@ -460,7 +460,7 @@ services:
 
   # SSL certificate management (Let's Encrypt)
   certbot:
-    image: certbot/certbot
+    image: certbot/certbot@sha256:09c5c6e899adc7d0c422c73ad181a6747cfe7399b2ecd8f61095ccb5740ef202
     container_name: radarr-certbot
     restart: "no"
 

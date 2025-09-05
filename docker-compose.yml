@@ -37,7 +37,7 @@ services:
 
   # PostgreSQL Database (Primary)
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-postgres
     restart: unless-stopped
     environment:
@@ -91,7 +91,7 @@ services:
 
   # Redis Cache (Optional)
   redis:
-    image: redis:8-alpine
+    image: redis:8-alpine@sha256:987c376c727652f99625c7d205a1cba3cb2c53b92b0b62aade2bd48ee1593232
     container_name: radarr-redis
     restart: unless-stopped
     ports:
@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:22-alpine
+    image: node:22-alpine@sha256:d2166de198f26e17e5a442f537754dd616ab069c47cc57b889310a717e0abbf9
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
@@ -144,7 +144,7 @@ services:
 
   # Database Administration Interface
   adminer:
-    image: adminer:5.3.0-standalone
+    image: adminer:5.3.0-standalone@sha256:2b845b0e8e89245afd5bce48c20f3348581021492a64667a2c38a8e7e1096c46
     container_name: radarr-adminer
     restart: unless-stopped
     ports:
@@ -161,7 +161,7 @@ services:
 
   # Email Testing (Development)
   mailhog:
-    image: mailhog/mailhog:v1.0.1
+    image: mailhog/mailhog:v1.0.1@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea
     container_name: radarr-mailhog
     restart: unless-stopped
     ports:
@@ -174,7 +174,7 @@ services:
 
   # Basic Monitoring - Prometheus
   prometheus:
-    image: prom/prometheus:v3.5.0
+    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
     container_name: radarr-prometheus
     restart: unless-stopped
     ports:
@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.1.1
+    image: grafana/grafana:12.1.1@sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
@@ -218,7 +218,7 @@ services:
 
   # Distributed Tracing - Jaeger
   jaeger:
-    image: jaegertracing/all-in-one:1.60
+    image: jaegertracing/all-in-one:1.60@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
     container_name: radarr-jaeger
     restart: unless-stopped
     ports:
@@ -235,7 +235,7 @@ services:
 
   # Test Database Services (Separate Ports)
   postgres-test:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: radarr-postgres-test
     environment:
       - POSTGRES_DB=radarr_test

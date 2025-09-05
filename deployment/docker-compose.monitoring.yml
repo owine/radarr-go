@@ -261,7 +261,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:3.5.4
+    image: grafana/loki:3.5.4@sha256:0b9846377113bc6a56eea2e56fe5963afdea2962178bd171190e30fa25157542
     container_name: radarr-loki
     restart: unless-stopped
 
@@ -322,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:3.5.4
+    image: grafana/promtail:3.5.4@sha256:11b3ef0bd371bdddd65ed49bc35773412a24de9d022b105eb14a35bd5a827408
     container_name: radarr-promtail
     restart: unless-stopped
 
