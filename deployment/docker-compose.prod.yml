@@ -139,7 +139,7 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:${POSTGRES_VERSION:-17-alpine}
+    image: postgres:17-alpine
     container_name: radarr-postgres
     restart: unless-stopped
 
