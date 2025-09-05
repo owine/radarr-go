@@ -29,8 +29,7 @@
       "addLabels": [
         "go",
         "major"
-      ],
-      "minimumReleaseAge": "7 days"
+      ]
     },
     {
       "description": "Go dependencies - group minor and patch updates",
@@ -45,8 +44,7 @@
       "automerge": true,
       "addLabels": [
         "go"
-      ],
-      "minimumReleaseAge": "3 days"
+      ]
     },
     {
       "description": "GitHub Actions - group all updates with SHA pinning",
@@ -58,7 +56,6 @@
       "addLabels": [
         "github-actions"
       ],
-      "minimumReleaseAge": "2 days",
       "pinDigests": true
     },
     {
@@ -139,8 +136,7 @@
       "addLabels": [
         "npm",
         "major"
-      ],
-      "minimumReleaseAge": "7 days"
+      ]
     },
     {
       "description": "npm dependencies - group minor and patch updates",
@@ -155,8 +151,7 @@
       "automerge": true,
       "addLabels": [
         "npm"
-      ],
-      "minimumReleaseAge": "3 days"
+      ]
     },
     {
       "description": "React ecosystem - separate group for React, React-DOM, and related packages",
@@ -174,12 +169,11 @@
         "@types/react-router-dom"
       ],
       "groupName": "React ecosystem",
-      "automerge": false,
+      "automerge": true,
       "addLabels": [
         "npm",
         "react"
-      ],
-      "minimumReleaseAge": "5 days"
+      ]
     },
     {
       "description": "Frontend build tools - group Vite, TypeScript, ESLint, PostCSS",
@@ -204,8 +198,7 @@
       "addLabels": [
         "npm",
         "build-tools"
-      ],
-      "minimumReleaseAge": "3 days"
+      ]
     },
     {
       "description": "Redux toolkit updates - separate group for state management",
@@ -216,12 +209,11 @@
         "@reduxjs/toolkit"
       ],
       "groupName": "Redux ecosystem",
-      "automerge": false,
+      "automerge": true,
       "addLabels": [
         "npm",
         "redux"
-      ],
-      "minimumReleaseAge": "5 days"
+      ]
     },
     {
       "description": "Security updates - immediate processing with highest priority",
