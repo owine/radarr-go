@@ -4,7 +4,7 @@
 services:
   # Main Radarr Go application
   radarr-go:
-    image: ghcr.io/radarr/radarr-go:${RADARR_VERSION:-latest}
+    image: ghcr.io/radarr/radarr-go:latest
     container_name: radarr-go
     restart: unless-stopped
 
@@ -139,7 +139,7 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:${POSTGRES_VERSION:-15-alpine}
+    image: postgres:${POSTGRES_VERSION:-17-alpine}
     container_name: radarr-postgres
     restart: unless-stopped
 

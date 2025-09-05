@@ -9,8 +9,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-      args:
-        - GO_VERSION=1.25
     container_name: radarr-dev-backend
     ports:
       - "7878:7878"  # Main API

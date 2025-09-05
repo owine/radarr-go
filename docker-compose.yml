@@ -3,18 +3,6 @@
 # This file contains core services that are shared across all environments
 # Use profiles to activate optional services and override files for environment-specific settings
 
-# Version variables for Renovate
-# DOCKER_NODE_VERSION: 22
-# renovate: datasource=node-version depName=node
-# POSTGRES_VERSION: 17
-# renovate: datasource=docker depName=postgres versioning=docker
-# MARIADB_VERSION: 12.1
-# renovate: datasource=docker depName=mariadb versioning=docker
-# REDIS_VERSION: 8
-# renovate: datasource=docker depName=redis versioning=docker
-# ALPINE_VERSION: 3.22
-# renovate: datasource=docker depName=alpine versioning=docker
-
 services:
   # Main Radarr Go Application
   radarr-go:
@@ -49,7 +37,7 @@ services:
 
   # PostgreSQL Database (Primary)
   postgres:
-    image: postgres:${POSTGRES_VERSION:-17}-alpine
+    image: postgres:17-alpine
     container_name: radarr-postgres
     restart: unless-stopped
     environment:
@@ -72,7 +60,7 @@ services:
 
   # MariaDB Database (Alternative)
   mariadb:
-    image: mariadb:${MARIADB_VERSION:-12.1}
+    image: mariadb:12.1
     container_name: radarr-mariadb
     restart: unless-stopped
     environment:
@@ -103,7 +91,7 @@ services:
 
   # Redis Cache (Optional)
   redis:
-    image: redis:${REDIS_VERSION:-8}-alpine
+    image: redis:8-alpine
     container_name: radarr-redis
     restart: unless-stopped
     ports:
@@ -130,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:${DOCKER_NODE_VERSION:-22}-alpine
+    image: node:22-alpine
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
@@ -156,7 +144,7 @@ services:
 
   # Database Administration Interface
   adminer:
-    image: adminer:${ADMINER_VERSION:-4.8.1-standalone}
+    image: adminer:4.8.1-standalone
     container_name: radarr-adminer
     restart: unless-stopped
     ports:
@@ -173,7 +161,7 @@ services:
 
   # Email Testing (Development)
   mailhog:
-    image: mailhog/mailhog:${MAILHOG_VERSION:-v1.0.1}
+    image: mailhog/mailhog:v1.0.1
     container_name: radarr-mailhog
     restart: unless-stopped
     ports:
@@ -186,7 +174,7 @@ services:
 
   # Basic Monitoring - Prometheus
   prometheus:
-    image: prom/prometheus:${PROMETHEUS_VERSION:-v3.5.0}
+    image: prom/prometheus:v3.5.0
     container_name: radarr-prometheus
     restart: unless-stopped
     ports:
@@ -209,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:${GRAFANA_VERSION:-12.1.1}
+    image: grafana/grafana:12.1.1
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
@@ -230,7 +218,7 @@ services:
 
   # Distributed Tracing - Jaeger
   jaeger:
-    image: jaegertracing/all-in-one:${JAEGER_VERSION:-1.60}
+    image: jaegertracing/all-in-one:1.60
     container_name: radarr-jaeger
     restart: unless-stopped
     ports:
@@ -247,7 +235,7 @@ services:
 
   # Test Database Services (Separate Ports)
   postgres-test:
-    image: postgres:${POSTGRES_VERSION:-17}-alpine
+    image: postgres:17-alpine
     container_name: radarr-postgres-test
     environment:
       - POSTGRES_DB=radarr_test
@@ -274,7 +262,7 @@ services:
       - test-network
 
   mariadb-test:
-    image: mariadb:${MARIADB_VERSION:-12.1}
+    image: mariadb:12.1
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test

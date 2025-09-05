@@ -5,7 +5,7 @@
 services:
   # Production Radarr Go with security hardening
   radarr-go:
-    image: ghcr.io/radarr/radarr-go:${RADARR_VERSION:-latest}
+    image: ghcr.io/radarr/radarr-go:latest
     user: "1000:1000"
     read_only: true
     cap_drop:
@@ -73,11 +73,11 @@ services:
       - "prometheus.io/port=7878"
       - "prometheus.io/path=/metrics"
       - "service.name=radarr-go"
-      - "service.version=${RADARR_VERSION:-latest}"
+      - "service.version=latest"
 
   # Production PostgreSQL with optimizations
   postgres:
-    image: postgres:${POSTGRES_VERSION:-15-alpine}
+    image: postgres:17-alpine
     user: "999:999"
     cap_drop:
       - ALL

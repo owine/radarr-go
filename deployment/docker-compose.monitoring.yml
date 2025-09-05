@@ -1,30 +1,10 @@
 # docker-compose.monitoring.yml - Monitoring stack for Radarr Go
 # Complete observability stack with Prometheus, Grafana, AlertManager, and Loki
 
-# Version variables for monitoring stack
-# PROMETHEUS_VERSION: 3.1.0
-# renovate: datasource=docker depName=prom/prometheus versioning=docker
-# GRAFANA_VERSION: 11.4.0
-# renovate: datasource=docker depName=grafana/grafana versioning=docker
-# ALERTMANAGER_VERSION: 0.27.0
-# renovate: datasource=docker depName=prom/alertmanager versioning=docker
-# LOKI_VERSION: 3.4.0
-# renovate: datasource=docker depName=grafana/loki versioning=docker
-# PROMTAIL_VERSION: 3.4.0
-# renovate: datasource=docker depName=grafana/promtail versioning=docker
-# NODE_EXPORTER_VERSION: 1.9.0
-# renovate: datasource=docker depName=prom/node-exporter versioning=docker
-# CADVISOR_VERSION: 0.52.0
-# renovate: datasource=docker depName=gcr.io/cadvisor/cadvisor versioning=docker
-# POSTGRES_EXPORTER_VERSION: 0.16.0
-# renovate: datasource=docker depName=prometheuscommunity/postgres-exporter versioning=docker
-# REDIS_EXPORTER_VERSION: 1.68.0
-# renovate: datasource=docker depName=oliver006/redis_exporter versioning=docker
-
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:${PROMETHEUS_VERSION:-3.1.0}
+    image: prom/prometheus:3.1.0
     container_name: radarr-prometheus
     restart: unless-stopped
 
@@ -101,7 +81,7 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:${GRAFANA_VERSION:-11.4.0}
+    image: grafana/grafana:11.4.0
     container_name: radarr-grafana
     restart: unless-stopped
 
@@ -209,7 +189,7 @@ services:
 
   # AlertManager - Alert routing and notification
   alertmanager:
-    image: prom/alertmanager:${ALERTMANAGER_VERSION:-0.27.0}
+    image: prom/alertmanager:0.27.0
     container_name: radarr-alertmanager
     restart: unless-stopped
 
@@ -281,7 +261,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:${LOKI_VERSION:-3.4.0}
+    image: grafana/loki:3.4.0
     container_name: radarr-loki
     restart: unless-stopped
 
@@ -342,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:${PROMTAIL_VERSION:-3.4.0}
+    image: grafana/promtail:3.4.0
     container_name: radarr-promtail
     restart: unless-stopped
 
@@ -399,7 +379,7 @@ services:
 
   # Node Exporter - System metrics
   node-exporter:
-    image: prom/node-exporter:${NODE_EXPORTER_VERSION:-1.9.0}
+    image: prom/node-exporter:1.9.0
     container_name: radarr-node-exporter
     restart: unless-stopped
 
@@ -457,7 +437,7 @@ services:
 
   # cAdvisor - Container metrics
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:${CADVISOR_VERSION:-0.52.0}
+    image: gcr.io/cadvisor/cadvisor:0.52.0
     container_name: radarr-cadvisor
     restart: unless-stopped
 
@@ -512,7 +492,7 @@ services:
 
   # PostgreSQL Exporter - Database metrics
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:${POSTGRES_EXPORTER_VERSION:-0.16.0}
+    image: prometheuscommunity/postgres-exporter:0.16.0
     container_name: radarr-postgres-exporter
     restart: unless-stopped
 
@@ -571,7 +551,7 @@ services:
 
   # Redis Exporter - Cache metrics
   redis-exporter:
-    image: oliver006/redis_exporter:${REDIS_EXPORTER_VERSION:-1.68.0}
+    image: oliver006/redis_exporter:1.68.0
     container_name: radarr-redis-exporter
     restart: unless-stopped
 
