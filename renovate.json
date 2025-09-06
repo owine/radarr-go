@@ -1,7 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices",
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":configMigration",
+    ":pinDevDependencies",
+    "abandonments:recommended",
     "customManagers:githubActionsVersions"
   ],
   "schedule": [
@@ -17,6 +21,16 @@
     "gomodUpdateImportPaths"
   ],
   "packageRules": [
+    {
+      "description": "Pin Docker image digests in Dockerfiles for security",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "pinDigests": true
+    },
     {
       "description": "Go major updates - separate PRs, manual review",
       "matchManagers": [
@@ -71,14 +85,10 @@
       "automerge": true,
       "addLabels": [
         "docker"
-      ],
-      "pinDigests": true
+      ]
     },
     {
       "description": "Docker-compose minor/patch updates - grouped without digest pinning",
-      "matchDatasources": [
-        "docker"
-      ],
       "matchManagers": [
         "docker-compose"
       ],
@@ -105,14 +115,10 @@
       "addLabels": [
         "docker",
         "major"
-      ],
-      "pinDigests": true
+      ]
     },
     {
       "description": "Docker-compose major updates - separate PRs without digest pinning",
-      "matchDatasources": [
-        "docker"
-      ],
       "matchManagers": [
         "docker-compose"
       ],
