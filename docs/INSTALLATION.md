@@ -217,7 +217,7 @@ services:
       - mariadb
 
   mariadb:
-    image: mariadb:11.4
+    image: mariadb:12.0.2
     container_name: radarr-mariadb
     restart: unless-stopped
     environment:

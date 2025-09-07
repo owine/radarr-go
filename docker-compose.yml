@@ -60,7 +60,7 @@ services:
 
   # MariaDB Database (Alternative)
   mariadb:
-    image: mariadb:12.1
+    image: mariadb:12.0.2
     container_name: radarr-mariadb
     restart: unless-stopped
     environment:
@@ -262,7 +262,7 @@ services:
       - test-network
 
   mariadb-test:
-    image: mariadb:12.1
+    image: mariadb:12.0.2
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test

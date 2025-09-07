@@ -350,7 +350,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:11.6
+        image: mariadb:12.0.2
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
