@@ -8,7 +8,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DEPLOYMENT_DIR="$SCRIPT_DIR"
-CONFIG_DIR="$DEPLOYMENT_DIR/config"
 COMPOSE_FILE="$DEPLOYMENT_DIR/docker-compose.prod.yml"
 MONITORING_COMPOSE_FILE="$DEPLOYMENT_DIR/docker-compose.monitoring.yml"
 ENV_FILE="$DEPLOYMENT_DIR/.env"
@@ -19,7 +18,6 @@ LOG_FILE="$DEPLOYMENT_DIR/deploy.log"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Logging functions
@@ -27,7 +25,8 @@ log() {
     local level="$1"
     shift
     local message="$*"
-    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date +'%Y-%m-%d %H:%M:%S')
     echo -e "${GREEN}[$timestamp] [$level]${NC} $message" | tee -a "$LOG_FILE"
 }
 
@@ -76,7 +75,8 @@ validate_environment() {
     fi
 
     # Check Docker Compose version
-    local compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    local compose_version
+    compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     if [ -z "$compose_version" ]; then
         # Try docker compose (newer syntax)
         compose_version=$(docker compose version --short 2>/dev/null || echo "")
@@ -89,13 +89,15 @@ validate_environment() {
     fi
 
     # Check available disk space
-    local free_space=$(df "$DEPLOYMENT_DIR" | awk 'NR==2 {print $4}')
+    local free_space
+    free_space=$(df "$DEPLOYMENT_DIR" | awk 'NR==2 {print $4}')
     if [ "$free_space" -lt 5000000 ]; then # 5GB
-        warn "Low disk space: $(($free_space / 1024 / 1024))GB available"
+        warn "Low disk space: $((free_space / 1024 / 1024))GB available"
     fi
 
     # Check memory
-    local available_memory=$(free -m | awk 'NR==2{print $7}')
+    local available_memory
+    available_memory=$(free -m | awk 'NR==2{print $7}')
     if [ "$available_memory" -lt 2048 ]; then # 2GB
         warn "Low available memory: ${available_memory}MB"
     fi
@@ -105,6 +107,7 @@ validate_environment() {
         warn "Environment file not found, creating template"
         create_env_template
     else
+        # shellcheck source=/dev/null
         source "$ENV_FILE"
         validate_env_variables
     fi
@@ -244,7 +247,8 @@ pre_deployment_checks() {
 backup_current_deployment() {
     info "Creating backup of current deployment..."
 
-    local backup_timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_timestamp
+    backup_timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_path="$BACKUP_DIR/deployment_backup_$backup_timestamp"
 
     mkdir -p "$backup_path"
@@ -282,7 +286,7 @@ backup_current_deployment() {
 Backup created: $(date)
 Version: $VERSION
 Git commit: $(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || echo "unknown")
-Environment: $(cat "$ENV_FILE" | grep -v "PASSWORD\|KEY\|SECRET" || true)
+Environment: $(grep -v "PASSWORD\|KEY\|SECRET" "$ENV_FILE" || true)
 Docker info: $(docker version --format json | jq -r '.Server.Version' 2>/dev/null || echo "unknown")
 EOF
 
@@ -300,7 +304,8 @@ cleanup_old_backups() {
 
     find "$BACKUP_DIR" -name "deployment_backup_*" -type d -mtime "+$retention_days" -exec rm -rf {} \; 2>/dev/null || true
 
-    local remaining_backups=$(find "$BACKUP_DIR" -name "deployment_backup_*" -type d | wc -l)
+    local remaining_backups
+    remaining_backups=$(find "$BACKUP_DIR" -name "deployment_backup_*" -type d | wc -l)
     info "Remaining backups: $remaining_backups"
 }
 
@@ -345,8 +350,9 @@ wait_for_services() {
     while [ $attempt -lt $max_attempts ]; do
         local all_healthy=true
 
-        for service in "${services[@]}"; do
-            local health_status=$(docker inspect "$service" --format='{{.State.Health.Status}}' 2>/dev/null || echo "none")
+        for service in ${services}; do
+            local health_status
+            health_status=$(docker inspect "$service" --format='{{.State.Health.Status}}' 2>/dev/null || echo "none")
 
             if [ "$health_status" != "healthy" ]; then
                 all_healthy=false
@@ -435,7 +441,8 @@ post_deployment_verification() {
 
     # Check service logs for errors
     info "Checking service logs for errors..."
-    local error_count=$(docker-compose -f "$COMPOSE_FILE" logs --tail=100 radarr-go | grep -i error | wc -l)
+    local error_count
+    error_count=$(docker-compose -f "$COMPOSE_FILE" logs --tail=100 radarr-go | grep -ci error)
 
     if [ "$error_count" -gt 0 ]; then
         warn "Found $error_count error messages in logs (this may be normal during startup)"
@@ -494,7 +501,8 @@ rollback_deployment() {
     info "Rolling back deployment..."
 
     # Find latest backup
-    local latest_backup=$(find "$BACKUP_DIR" -name "deployment_backup_*" -type d | sort -r | head -1)
+    local latest_backup
+    latest_backup=$(find "$BACKUP_DIR" -name "deployment_backup_*" -type d | sort -r | head -1)
 
     if [ -z "$latest_backup" ]; then
         error "No backup found for rollback"
@@ -597,9 +605,11 @@ health_check() {
     local exit_code=0
 
     # Check service status
-    local services=$(docker-compose -f "$COMPOSE_FILE" ps --services)
-    for service in $services; do
-        local status=$(docker-compose -f "$COMPOSE_FILE" ps "$service" | tail -n1 | awk '{print $4}')
+    local services
+    services=$(docker-compose -f "$COMPOSE_FILE" ps --services)
+    for service in ${services}; do
+        local status
+        status=$(docker-compose -f "$COMPOSE_FILE" ps "$service" | tail -n1 | awk '{print $4}')
 
         if [[ "$status" == "Up"* ]]; then
             echo "✓ $service: $status"
@@ -626,7 +636,8 @@ health_check() {
     fi
 
     # Check disk space
-    local disk_usage=$(df "${DATA_ROOT:-/opt/radarr}" | awk 'NR==2 {print int($5)}')
+    local disk_usage
+    disk_usage=$(df "${DATA_ROOT:-/opt/radarr}" | awk 'NR==2 {print int($5)}')
     if [ "$disk_usage" -lt 90 ]; then
         echo "✓ Disk Space: ${disk_usage}% used"
     else
@@ -645,7 +656,8 @@ health_check() {
 
 # Generate deployment report
 generate_deployment_report() {
-    local report_file="$DEPLOYMENT_DIR/deployment_report_$(date +%Y%m%d_%H%M%S).txt"
+    local report_file
+    report_file="$DEPLOYMENT_DIR/deployment_report_$(date +%Y%m%d_%H%M%S).txt"
 
     {
         echo "Radarr Go Deployment Report"
@@ -686,7 +698,7 @@ generate_deployment_report() {
 
         echo "Configuration Summary:"
         echo "====================="
-        cat "$ENV_FILE" | grep -v "PASSWORD\|KEY\|SECRET" | sort
+        grep -v "PASSWORD\|KEY\|SECRET" "$ENV_FILE" | sort
         echo ""
 
         echo "Recent Application Logs:"

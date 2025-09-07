@@ -232,7 +232,7 @@ run_unit_tests() {
     flags=$(build_test_flags)
 
     # Run tests that don't require database
-    if go test $flags ./internal/models ./internal/config ./internal/logger; then
+    if go test "$flags" ./internal/models ./internal/config ./internal/logger; then
         print_success "Unit tests passed"
         return 0
     else
@@ -255,7 +255,7 @@ run_integration_tests() {
     fi
 
     # Run integration tests
-    if env $db_env go test $flags ./internal/services ./internal/database ./internal/api; then
+    if env "$db_env" go test "$flags" ./internal/services ./internal/database ./internal/api; then
         print_success "Integration tests passed"
         return 0
     else
@@ -281,7 +281,7 @@ run_benchmark_tests() {
     fi
 
     # Run benchmark tests
-    if env $db_env go test $flags ./internal/services; then
+    if env "$db_env" go test "$flags" ./internal/services; then
         print_success "Benchmark tests completed"
         return 0
     else
@@ -396,7 +396,7 @@ main() {
                 shift
                 ;;
             --ci)
-                CI_MODE=true
+                export CI_MODE=true
                 PARALLEL=true
                 COVERAGE=true
                 shift

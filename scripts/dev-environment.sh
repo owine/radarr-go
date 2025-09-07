@@ -14,7 +14,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
@@ -43,15 +42,15 @@ check_prerequisites() {
     command -v make >/dev/null 2>&1 || missing_tools+=("make")
 
     if [ ${#missing_tools[@]} -gt 0 ]; then
-        print_status $RED "Missing required tools: ${missing_tools[*]}"
-        print_status $YELLOW "Run './scripts/dev-setup.sh' to install missing tools"
+        print_status "$RED" "Missing required tools: ${missing_tools[*]}"
+        print_status "$YELLOW" "Run './scripts/dev-setup.sh' to install missing tools"
         return 1
     fi
 
     # Check Docker daemon
     if ! docker info >/dev/null 2>&1; then
-        print_status $RED "Docker daemon is not running"
-        print_status $YELLOW "Please start Docker and try again"
+        print_status "$RED" "Docker daemon is not running"
+        print_status "$YELLOW" "Please start Docker and try again"
         return 1
     fi
 
@@ -60,7 +59,7 @@ check_prerequisites() {
 
 # Function to create development directories
 create_dev_directories() {
-    print_status $BLUE "Creating development directories..."
+    print_status "$BLUE" "Creating development directories..."
 
     local dirs=(
         "data"
@@ -78,18 +77,20 @@ create_dev_directories() {
 
     for dir in "${dirs[@]}"; do
         mkdir -p "$PROJECT_DIR/$dir"
-        print_status $GREEN "✓ Created $dir"
+        print_status "$GREEN" "✓ Created $dir"
     done
 }
 
 # Function to setup development configuration
 setup_dev_config() {
     if [ ! -f "$PROJECT_DIR/config.yaml" ]; then
-        print_status $BLUE "Creating development configuration..."
+        print_status "$BLUE" "Creating development configuration..."
 
         # Generate secure credentials
-        local dev_password=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24 2>/dev/null || echo "dev_password_123")
-        local dev_api_key=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64 2>/dev/null || echo "dev_api_key_123")
+        local dev_password
+        dev_password=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24 2>/dev/null || echo "dev_password_123")
+        local dev_api_key
+        dev_api_key=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64 2>/dev/null || echo "dev_api_key_123")
 
         cat > "$PROJECT_DIR/config.yaml" << EOF
 # Development configuration for Radarr Go
@@ -125,11 +126,11 @@ storage:
   movies_directory: "./movies"
 EOF
 
-        print_status $GREEN "✓ Development configuration created"
-        print_status $CYAN "Database Password: $dev_password"
-        print_status $CYAN "API Key: $dev_api_key"
+        print_status "$GREEN" "✓ Development configuration created"
+        print_status "$CYAN" "Database Password: $dev_password"
+        print_status "$CYAN" "API Key: $dev_api_key"
     else
-        print_status $GREEN "✓ Configuration already exists"
+        print_status "$GREEN" "✓ Configuration already exists"
     fi
 }
 
@@ -149,39 +150,39 @@ start_environment() {
     setup_dev_config
 
     # Build backend development tools
-    print_status $BLUE "Setting up Go development tools..."
+    print_status "$BLUE" "Setting up Go development tools..."
     cd "$PROJECT_DIR"
     make setup-backend >/dev/null 2>&1 || true
 
     # Start services based on profile
     case $profile in
         "minimal")
-            print_status $BLUE "Starting minimal environment (backend + PostgreSQL)..."
+            print_status "$BLUE" "Starting minimal environment (backend + PostgreSQL)..."
             docker-compose -f "$DEV_COMPOSE_FILE" up -d postgres-dev
             sleep 5
             make dev &
             ;;
         "full"|"default")
-            print_status $BLUE "Starting full development environment..."
+            print_status "$BLUE" "Starting full development environment..."
             docker-compose -f "$DEV_COMPOSE_FILE" --profile monitoring up -d
             ;;
         "mariadb")
-            print_status $BLUE "Starting with MariaDB..."
+            print_status "$BLUE" "Starting with MariaDB..."
             docker-compose -f "$DEV_COMPOSE_FILE" --profile mariadb --profile monitoring up -d
             ;;
         "frontend")
-            print_status $BLUE "Starting with frontend support..."
+            print_status "$BLUE" "Starting with frontend support..."
             docker-compose -f "$DEV_COMPOSE_FILE" --profile frontend --profile monitoring up -d
             ;;
         *)
-            print_status $RED "Unknown profile: $profile"
+            print_status "$RED" "Unknown profile: $profile"
             echo "Available profiles: minimal, full, mariadb, frontend"
             return 1
             ;;
     esac
 
     # Wait for services to start
-    print_status $YELLOW "Waiting for services to start..."
+    print_status "$YELLOW" "Waiting for services to start..."
     sleep 10
 
     # Display service information
@@ -230,14 +231,14 @@ stop_environment() {
     print_header "Stopping Development Environment"
 
     if [ "$clean" = "true" ]; then
-        print_status $YELLOW "Stopping and cleaning all services..."
+        print_status "$YELLOW" "Stopping and cleaning all services..."
         docker-compose -f "$DEV_COMPOSE_FILE" down -v --remove-orphans
         make test-db-clean >/dev/null 2>&1 || true
-        print_status $GREEN "✓ Environment stopped and cleaned"
+        print_status "$GREEN" "✓ Environment stopped and cleaned"
     else
-        print_status $YELLOW "Stopping services..."
+        print_status "$YELLOW" "Stopping services..."
         docker-compose -f "$DEV_COMPOSE_FILE" down
-        print_status $GREEN "✓ Environment stopped"
+        print_status "$GREEN" "✓ Environment stopped"
     fi
 }
 
@@ -247,12 +248,12 @@ restart_environment() {
 
     print_header "Restarting Development Environment"
 
-    print_status $YELLOW "Stopping current environment..."
+    print_status "$YELLOW" "Stopping current environment..."
     stop_environment
 
     sleep 2
 
-    print_status $BLUE "Starting environment with profile: $profile"
+    print_status "$BLUE" "Starting environment with profile: $profile"
     start_environment "$profile"
 }
 
@@ -263,33 +264,33 @@ run_tests() {
     cd "$PROJECT_DIR"
 
     # Ensure test databases are running
-    print_status $BLUE "Starting test databases..."
+    print_status "$BLUE" "Starting test databases..."
     make test-db-up
 
     # Run tests
-    print_status $BLUE "Running comprehensive test suite..."
+    print_status "$BLUE" "Running comprehensive test suite..."
 
     if make test-unit; then
-        print_status $GREEN "✓ Unit tests passed"
+        print_status "$GREEN" "✓ Unit tests passed"
     else
-        print_status $RED "✗ Unit tests failed"
+        print_status "$RED" "✗ Unit tests failed"
         return 1
     fi
 
     if make test; then
-        print_status $GREEN "✓ Integration tests passed"
+        print_status "$GREEN" "✓ Integration tests passed"
     else
-        print_status $RED "✗ Integration tests failed"
+        print_status "$RED" "✗ Integration tests failed"
         return 1
     fi
 
     if make test-bench; then
-        print_status $GREEN "✓ Benchmark tests completed"
+        print_status "$GREEN" "✓ Benchmark tests completed"
     else
-        print_status $YELLOW "⚠ Benchmark tests had issues"
+        print_status "$YELLOW" "⚠ Benchmark tests had issues"
     fi
 
-    print_status $GREEN "✅ All tests completed successfully"
+    print_status "$GREEN" "✅ All tests completed successfully"
 }
 
 # Function to show status
@@ -302,10 +303,10 @@ show_status() {
     else
         # Fallback status check
         if docker ps --filter "name=radarr-dev-" --format "table {{.Names}}\t{{.Status}}" | grep -q "radarr-dev-"; then
-            print_status $GREEN "✓ Development environment is running"
+            print_status "$GREEN" "✓ Development environment is running"
             docker ps --filter "name=radarr-dev-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
         else
-            print_status $YELLOW "Development environment is not running"
+            print_status "$YELLOW" "Development environment is not running"
         fi
     fi
 }
@@ -371,7 +372,7 @@ case "${1:-help}" in
         show_help
         ;;
     *)
-        print_status $RED "Unknown command: $1"
+        print_status "$RED" "Unknown command: $1"
         show_help
         exit 1
         ;;

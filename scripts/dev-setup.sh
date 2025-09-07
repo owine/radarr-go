@@ -78,7 +78,7 @@ install_linux() {
         echo "Installing Docker..."
         curl -fsSL https://get.docker.com -o get-docker.sh
         sudo sh get-docker.sh
-        sudo usermod -aG docker $USER
+        sudo usermod -aG docker "$USER"
         rm get-docker.sh
         echo "⚠️  Please log out and back in for Docker group changes to take effect"
     fi
@@ -135,8 +135,8 @@ mkdir -p web/frontend/src/services web/frontend/src/utils web/frontend/public
 # Function to generate secure random password
 generate_password() {
     local length=${1:-32}
-    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length 2>/dev/null || \
-    cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $length | head -n 1
+    openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length" 2>/dev/null || \
+    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w "$length" | head -n 1
 }
 
 # Function to generate secure API key

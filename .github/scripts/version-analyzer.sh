@@ -95,9 +95,11 @@ elif [[ "$IS_PRE_1_0" == "true" ]]; then
 fi
 
 # Generate Docker tags based on VERSIONING.md strategy
+# shellcheck disable=SC2317  # Function called indirectly via command-line argument
 generate_docker_tags() {
   local base_image="${1:-ghcr.io/owner/repo}"
-  local current_date=$(date +%Y.%m)
+  local current_date
+  current_date=$(date +%Y.%m)
 
   # Always include version-specific tags
   local tags=(
