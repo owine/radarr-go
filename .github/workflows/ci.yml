@@ -353,7 +353,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:12.0.2
+        image: mariadb:12.0.2@sha256:a5af517d52262da1583cebe6b7c970d7bbeaf1f016938c2fc3cf2e95c52d8c08
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
