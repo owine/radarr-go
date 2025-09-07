@@ -26,8 +26,6 @@ rules:
   # Allow comment indentation flexibility
   comments-indentation: disable
 
-  # Allow duplicate keys (common in Docker Compose overrides)
-  key-duplicates: disable
 
   # Be more lenient with trailing spaces
   trailing-spaces: disable
