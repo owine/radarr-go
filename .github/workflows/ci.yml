@@ -44,14 +44,17 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
 
-      # Minimal explicit caching for custom binaries only (leverages setup action caching)
-      - name: Cache Go binary tools
+      # Cache linting tools across installation paths
+      - name: Cache linting tools
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
-          path: ~/go/bin/golangci-lint
-          key: go-binary-tools-${{ runner.os }}-${{ hashFiles('.golangci.yml') }}
+          path: |
+            ~/go/bin
+            ~/.local/bin
+            ~/.npm/_global
+          key: lint-tools-${{ runner.os }}-${{ hashFiles('.golangci.yml', 'package*.json') }}
           restore-keys: |
-            go-binary-tools-${{ runner.os }}-
+            lint-tools-${{ runner.os }}-
 
       - name: Install dependencies and tools (optimized)
         run: |
