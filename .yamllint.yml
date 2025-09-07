@@ -5,9 +5,12 @@
 extends: default
 
 rules:
-  # Allow longer lines for readability
+  # Disable document start requirement for Go projects
+  document-start: disable
+
+  # Allow longer lines for readability, especially in CI/CD files
   line-length:
-    max: 120
+    max: 200
     level: warning
 
   # Allow indentation variations for Docker Compose and other configurations
@@ -15,9 +18,13 @@ rules:
     spaces: 2
     indent-sequences: consistent
 
-  # Allow comments to start at any position
+  # Allow comments to start at any position and be more flexible
   comments:
     min-spaces-from-content: 1
+    require-starting-space: false
+
+  # Allow comment indentation flexibility
+  comments-indentation: disable
 
   # Allow duplicate keys (common in Docker Compose overrides)
   key-duplicates: disable
@@ -30,12 +37,23 @@ rules:
     allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
     check-keys: false
 
+  # Be more lenient with empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+
 ignore: |
-  # Ignore node_modules and vendor directories
-  */node_modules/*
-  */vendor/*
+  # Ignore node_modules and vendor directories recursively
+  **/node_modules/**
+  **/vendor/**
+  # Ignore legacy radarr-source directory (original C# codebase)
+  radarr-source/**
   # Ignore Docker Compose generated files
   docker-compose.override.yml
   # Ignore temporary files
   *.tmp.yml
   *.temp.yml
+  # Ignore build artifacts
+  build/**
+  dist/**

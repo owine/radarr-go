@@ -376,7 +376,8 @@ jobs:
             platform=$(echo "$base" | sed 's/radarr-v[0-9.]*-//' | cut -d'-' -f1)
             arch=$(echo "$base" | sed 's/radarr-v[0-9.]*-//' | cut -d'-' -f2)
 
-            echo "| $platform | $arch | [$archive](https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/$archive) |" >> ../RELEASE_NOTES.md
+            echo "| $platform | $arch | [$archive](https://github.com/${{ github.repository }}/releases/download/${{ needs.validate.outputs.tag_name }}/$archive) |" >> \
+              ../RELEASE_NOTES.md
           fi
         done
 
@@ -813,7 +814,17 @@ jobs:
         echo "📋 Available tags (automated from VERSIONING.md):"
         echo "$AVAILABLE_TAGS" | tr ',' '\n' | sed 's/^ */   - /'
         echo ""
-        echo "🎯 Tagging strategy applied: $(if [[ "$IS_PRERELEASE" == "false" ]]; then if [[ "$IS_PRE_1_0" == "false" ]]; then echo "Full Production"; else echo "Pre-1.0 Production"; fi; else echo "Prerelease ($PRERELEASE_TYPE)"; fi)"
+        # Determine tagging strategy message
+        if [[ "$IS_PRERELEASE" == "false" ]]; then
+          if [[ "$IS_PRE_1_0" == "false" ]]; then
+            STRATEGY="Full Production"
+          else
+            STRATEGY="Pre-1.0 Production"
+          fi
+        else
+          STRATEGY="Prerelease ($PRERELEASE_TYPE)"
+        fi
+        echo "🎯 Tagging strategy applied: $STRATEGY"
 
         echo "available_tags=${AVAILABLE_TAGS}" >> $GITHUB_OUTPUT
         echo "📋 Digest: ${DIGEST}"
