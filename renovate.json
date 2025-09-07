@@ -14,7 +14,6 @@
   "labels": [
     "dependencies"
   ],
-  "platformAutomerge": true,
   "dependencyDashboard": true,
   "postUpdateOptions": [
     "gomodTidy",
@@ -39,7 +38,6 @@
       "matchUpdateTypes": [
         "major"
       ],
-      "automerge": false,
       "addLabels": [
         "go",
         "major"
@@ -55,7 +53,6 @@
         "patch"
       ],
       "groupName": "Go dependencies",
-      "automerge": true,
       "addLabels": [
         "go"
       ]
@@ -66,7 +63,6 @@
         "github-actions"
       ],
       "groupName": "GHA",
-      "automerge": true,
       "addLabels": [
         "github-actions"
       ],
@@ -82,7 +78,6 @@
         "patch"
       ],
       "groupName": "Dockerfile dependencies",
-      "automerge": true,
       "addLabels": [
         "docker"
       ]
@@ -97,7 +92,6 @@
         "patch"
       ],
       "groupName": "Docker Compose dependencies",
-      "automerge": true,
       "addLabels": [
         "docker"
       ],
@@ -111,7 +105,6 @@
       "matchUpdateTypes": [
         "major"
       ],
-      "automerge": false,
       "addLabels": [
         "docker",
         "major"
@@ -125,7 +118,6 @@
       "matchUpdateTypes": [
         "major"
       ],
-      "automerge": false,
       "addLabels": [
         "docker",
         "major"
@@ -140,7 +132,6 @@
       "matchUpdateTypes": [
         "major"
       ],
-      "automerge": false,
       "addLabels": [
         "npm",
         "major"
@@ -156,7 +147,6 @@
         "patch"
       ],
       "groupName": "npm dependencies",
-      "automerge": true,
       "addLabels": [
         "npm"
       ]
@@ -177,7 +167,6 @@
         "@types/react-router-dom"
       ],
       "groupName": "React ecosystem",
-      "automerge": true,
       "addLabels": [
         "npm",
         "react"
@@ -202,7 +191,6 @@
         "autoprefixer"
       ],
       "groupName": "Frontend build tools",
-      "automerge": true,
       "addLabels": [
         "npm",
         "build-tools"
@@ -217,7 +205,6 @@
         "@reduxjs/toolkit"
       ],
       "groupName": "Redux ecosystem",
-      "automerge": true,
       "addLabels": [
         "npm",
         "redux"
@@ -232,7 +219,6 @@
       "addLabels": [
         "security"
       ],
-      "automerge": true,
       "schedule": [
         "at any time"
       ],
