@@ -7,7 +7,7 @@
     ":pinDevDependencies",
     "abandonments:recommended",
     "customManagers:githubActionsVersions",
-    ":golang"
+    ":gomod"
   ],
   "schedule": [
     "at any time"
