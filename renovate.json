@@ -6,7 +6,8 @@
     ":configMigration",
     ":pinDevDependencies",
     "abandonments:recommended",
-    "customManagers:githubActionsVersions"
+    "customManagers:githubActionsVersions",
+    ":golang"
   ],
   "schedule": [
     "at any time"
