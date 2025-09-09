@@ -42,20 +42,7 @@
       "addLabels": [
         "go",
         "major"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "go mod tidy -v",
-          "go work sync -v",
-          "go mod verify"
-        ],
-        "fileFilters": [
-          "go.mod",
-          "go.sum",
-          "go.work.sum"
-        ],
-        "executionMode": "branch"
-      }
+      ]
     },
     {
       "description": "Go dependencies - group minor and patch updates with enhanced module sync",
@@ -69,20 +56,7 @@
       "groupName": "Go dependencies",
       "addLabels": [
         "go"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "go mod tidy -v",
-          "go work sync -v",
-          "go mod verify"
-        ],
-        "fileFilters": [
-          "go.mod",
-          "go.sum",
-          "go.work.sum"
-        ],
-        "executionMode": "branch"
-      }
+      ]
     },
     {
       "description": "GitHub Actions - group all updates with SHA pinning",
