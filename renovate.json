@@ -17,7 +17,8 @@
   "dependencyDashboard": true,
   "postUpdateOptions": [
     "gomodTidy",
-    "gomodUpdateImportPaths"
+    "gomodUpdateImportPaths",
+    "gomodMassage"
   ],
   "packageRules": [
     {
@@ -31,7 +32,7 @@
       "pinDigests": true
     },
     {
-      "description": "Go major updates - separate PRs, manual review",
+      "description": "Go major updates - separate PRs, manual review with enhanced module sync",
       "matchManagers": [
         "gomod"
       ],
@@ -41,10 +42,23 @@
       "addLabels": [
         "go",
         "major"
-      ]
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "go mod tidy -v",
+          "go work sync -v",
+          "go mod verify"
+        ],
+        "fileFilters": [
+          "go.mod",
+          "go.sum",
+          "go.work.sum"
+        ],
+        "executionMode": "branch"
+      }
     },
     {
-      "description": "Go dependencies - group minor and patch updates",
+      "description": "Go dependencies - group minor and patch updates with enhanced module sync",
       "matchManagers": [
         "gomod"
       ],
@@ -55,7 +69,20 @@
       "groupName": "Go dependencies",
       "addLabels": [
         "go"
-      ]
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "go mod tidy -v",
+          "go work sync -v",
+          "go mod verify"
+        ],
+        "fileFilters": [
+          "go.mod",
+          "go.sum",
+          "go.work.sum"
+        ],
+        "executionMode": "branch"
+      }
     },
     {
       "description": "GitHub Actions - group all updates with SHA pinning",
