@@ -15,7 +15,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/react-window": "^1.8.8",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.542.0",
+    "lucide-react": "^0.543.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-redux": "^9.2.0",
