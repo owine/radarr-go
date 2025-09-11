@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.25.0-alpine3.22 AS builder
+FROM golang:1.25.0-alpine3.22@sha256:f18a072054848d87a8077455f0ac8a25886f2397f88bfdd222d6fafbb5bba440 AS builder
 
 # Build arguments for version information
 ARG VERSION="dev"
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o radarr ./cmd/radarr
 
 # Final stage
-FROM alpine:3.22.0
+FROM alpine:3.22.0@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715
 
 RUN apk --no-cache add ca-certificates tzdata sqlite
 
