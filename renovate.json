@@ -11,9 +11,7 @@
     ":enableVulnerabilityAlerts",
     ":rebaseStalePrs",
     ":semanticCommits",
-    ":automergeStableNonMajor",
-    "group:react",
-    "group:vite"
+    ":automergeStableNonMajor"
   ],
   "labels": [
     "dependencies"
@@ -36,183 +34,74 @@
       "pinDigests": true
     },
     {
-      "description": "Go major updates - separate PRs, manual review with enhanced module sync",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "addLabels": [
-        "go",
-        "major"
-      ]
-    },
-    {
-      "description": "Go dependencies - group minor and patch updates with enhanced module sync",
-      "matchManagers": [
-        "gomod"
-      ],
+      "description": "All non-major updates - grouped together across all ecosystems",
       "matchUpdateTypes": [
         "minor",
         "patch"
       ],
-      "groupName": "Go dependencies",
+      "groupName": "Non-major dependencies",
+      "addLabels": [
+        "dependencies"
+      ]
+    },
+    {
+      "description": "Go ecosystem labels",
+      "matchManagers": [
+        "gomod"
+      ],
       "addLabels": [
         "go"
       ]
     },
     {
-      "description": "GitHub Actions - group all updates with SHA pinning",
+      "description": "npm ecosystem labels",
+      "matchManagers": [
+        "npm"
+      ],
+      "addLabels": [
+        "npm"
+      ]
+    },
+    {
+      "description": "Docker ecosystem labels",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "addLabels": [
+        "docker"
+      ]
+    },
+    {
+      "description": "GitHub Actions ecosystem labels",
       "matchManagers": [
         "github-actions"
       ],
-      "groupName": "GHA",
       "addLabels": [
+        "github-actions"
+      ]
+    },
+    {
+      "description": "Docker-compose updates - disable digest pinning",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "pinDigests": false
+    },
+    {
+      "description": "GitHub Actions updates - enable digest pinning",
+      "matchManagers": [
         "github-actions"
       ],
       "pinDigests": true
     },
     {
-      "description": "Dockerfile minor/patch updates - grouped with digest pinning",
-      "matchManagers": [
-        "dockerfile"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Dockerfile dependencies",
-      "addLabels": [
-        "docker"
-      ]
-    },
-    {
-      "description": "Docker-compose minor/patch updates - grouped without digest pinning",
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Docker Compose dependencies",
-      "addLabels": [
-        "docker"
-      ],
-      "pinDigests": false
-    },
-    {
-      "description": "Dockerfile major updates - separate PRs with digest pinning",
-      "matchManagers": [
-        "dockerfile"
-      ],
+      "description": "Major updates - separate PRs for manual review",
       "matchUpdateTypes": [
         "major"
       ],
       "addLabels": [
-        "docker",
         "major"
-      ]
-    },
-    {
-      "description": "Docker-compose major updates - separate PRs without digest pinning",
-      "matchManagers": [
-        "docker-compose"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "addLabels": [
-        "docker",
-        "major"
-      ],
-      "pinDigests": false
-    },
-    {
-      "description": "npm major updates - separate PRs, manual review",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "addLabels": [
-        "npm",
-        "major"
-      ]
-    },
-    {
-      "description": "npm dependencies - group minor and patch updates",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "npm dependencies",
-      "addLabels": [
-        "npm"
-      ]
-    },
-    {
-      "description": "React ecosystem - separate group for React, React-DOM, and related packages",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchPackageNames": [
-        "react",
-        "react-dom",
-        "@types/react",
-        "@types/react-dom",
-        "react-redux",
-        "react-router-dom",
-        "@types/react-redux",
-        "@types/react-router-dom"
-      ],
-      "groupName": "React ecosystem",
-      "addLabels": [
-        "npm",
-        "react"
-      ]
-    },
-    {
-      "description": "Frontend build tools - group Vite, TypeScript, ESLint, PostCSS",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchPackageNames": [
-        "vite",
-        "@vitejs/plugin-react",
-        "typescript",
-        "typescript-eslint",
-        "eslint",
-        "@eslint/js",
-        "eslint-plugin-react-hooks",
-        "eslint-plugin-react-refresh",
-        "postcss",
-        "postcss-preset-env",
-        "autoprefixer"
-      ],
-      "groupName": "Frontend build tools",
-      "addLabels": [
-        "npm",
-        "build-tools"
-      ]
-    },
-    {
-      "description": "Redux toolkit updates - separate group for state management",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchPackageNames": [
-        "@reduxjs/toolkit"
-      ],
-      "groupName": "Redux ecosystem",
-      "addLabels": [
-        "npm",
-        "redux"
       ]
     },
     {
