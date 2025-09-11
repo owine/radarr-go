@@ -15,9 +15,6 @@
     "group:react",
     "group:vite"
   ],
-  "schedule": [
-    "at any time"
-  ],
   "labels": [
     "dependencies"
   ],
@@ -226,9 +223,6 @@
       "isVulnerabilityAlert": true,
       "addLabels": [
         "security"
-      ],
-      "schedule": [
-        "at any time"
       ],
       "prPriority": 10
     }
