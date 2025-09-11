@@ -449,7 +449,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17.5-alpine3.22@sha256:6567bca8d7bc8c82c5922425a0baee57be8402df92bae5eacad5f01ae9544daa
+        image: postgres:17.6-alpine3.22@sha256:d5f196a551b5cef1c70853c6dd588f456d16ca4ea733e3f31c75bc1ae2f65f3f
         env:
           POSTGRES_PASSWORD: radarr_test
           POSTGRES_USER: radarr_test
