@@ -2,7 +2,7 @@
 # This Dockerfile builds both the Go backend and React frontend in a single image
 
 # Frontend build stage
-FROM node:22.18.0-alpine3.22 AS frontend-builder
+FROM node:22.19.0-alpine3.22@sha256:d2166de198f26e17e5a442f537754dd616ab069c47cc57b889310a717e0abbf9 AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -19,7 +19,7 @@ COPY web/frontend ./
 RUN npm run build
 
 # Backend build stage
-FROM golang:1.25.0-alpine3.22 AS backend-builder
+FROM golang:1.25.1-alpine3.22@sha256:b6ed3fd0452c0e9bcdef5597f29cc1418f61672e9d3a2f55bf02e7222c014abd AS backend-builder
 
 # Build arguments for version information
 ARG VERSION="dev"
@@ -46,7 +46,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o radarr ./cmd/radarr
 
 # Final runtime stage
-FROM alpine:3.22.0
+FROM alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
 
 RUN apk --no-cache add ca-certificates tzdata sqlite
 
