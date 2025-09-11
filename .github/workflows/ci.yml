@@ -9,7 +9,7 @@ on:
 
 env:
   # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.25.0'
+  GO_VERSION: '1.25.1'
   # renovate: datasource=node-version depName=node
   NODE_VERSION: '22.18.0'
   REGISTRY: ghcr.io
