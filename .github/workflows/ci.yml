@@ -8,8 +8,10 @@ on:
     branches: [main, develop]
 
 env:
-  GO_VERSION: '1.25'
-  NODE_VERSION: '22'
+  # renovate: datasource=golang-version depName=golang
+  GO_VERSION: '1.25.0'
+  # renovate: datasource=node-version depName=node
+  NODE_VERSION: '22.18.0'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -252,7 +254,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine@sha256:d5f196a551b5cef1c70853c6dd588f456d16ca4ea733e3f31c75bc1ae2f65f3f
+        image: postgres:17.0-alpine3.22
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
@@ -353,7 +355,7 @@ jobs:
 
     services:
       mariadb:
-        image: mariadb:12.0.2@sha256:a5af517d52262da1583cebe6b7c970d7bbeaf1f016938c2fc3cf2e95c52d8c08
+        image: mariadb:12.0.2
         env:
           MYSQL_ROOT_PASSWORD: test_root_password_123
           MYSQL_DATABASE: radarr_test
