@@ -91,7 +91,7 @@ services:
 
   # Redis Cache (Optional)
   redis:
-    image: redis:8.2.0-alpine3.22
+    image: redis:8.2.1-alpine3.22
     container_name: radarr-redis
     restart: unless-stopped
     ports:
@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:22.18.0-alpine3.22
+    image: node:22.19.0-alpine3.22
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
