@@ -13,7 +13,7 @@ require (
 	golang.org/x/sys v0.36.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.5
+	gorm.io/gorm v1.31.0
 	gorm.io/hints v1.1.2
 )
 
