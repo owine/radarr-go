@@ -11,7 +11,9 @@
     ":enableVulnerabilityAlerts",
     ":rebaseStalePrs",
     ":semanticCommits",
-    ":automergeStableNonMajor"
+    ":automergeMinor",
+    ":automergeLinters",
+    ":automergeDigest"
   ],
   "labels": [
     "dependencies"
