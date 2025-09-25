@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:22.19.0-alpine3.22
+    image: node:22.20.0-alpine3.22
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.1.1
+    image: grafana/grafana:12.1.2
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
