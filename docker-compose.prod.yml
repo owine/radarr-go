@@ -77,7 +77,7 @@ services:
 
   # Production PostgreSQL with optimizations
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     user: "999:999"
     cap_drop:
       - ALL
