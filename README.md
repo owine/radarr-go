@@ -155,7 +155,7 @@ Environment variables use the `RADARR_` prefix:
 
 - Enterprise-grade relational database
 - Recommended for all environments from single-user to high-load
-- Requires PostgreSQL 12+ server
+- Requires PostgreSQL 16+ server
 - Advanced features like JSON columns, complex queries, and excellent concurrency
 - Uses native Go driver (no CGO required)
 - Automatic timestamp triggers and proper constraint handling

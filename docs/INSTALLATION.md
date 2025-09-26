@@ -75,7 +75,7 @@ Access the application at: `http://localhost:7878`
 
 **Database Support**:
 
-- PostgreSQL 12+ (Recommended)
+- PostgreSQL 16+ (Recommended)
 - MariaDB 10.5+ / MySQL 8.0+
 
 ## Installation Methods

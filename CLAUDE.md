@@ -34,7 +34,7 @@ Discord, Slack, Email, Telegram, Pushover, Webhooks, Plex/Emby/Jellyfin integrat
 
 - **150+ API Endpoints**: Complete REST API with Radarr v3 compatibility
 - **Authentication**: API key-based with header/query support
-- **Database Support**: PostgreSQL (default) and MariaDB with optimizations
+- **Database Support**: PostgreSQL 16+ (default) and MariaDB with optimizations
 
 ## Development Commands
 
@@ -131,6 +131,17 @@ RADARR_DATABASE_TYPE=mariadb go test -v ./...
 - **Secondary**: MariaDB/MySQL support
 - **ORM**: GORM with prepared statements and connection pooling
 - **Migrations**: Version-controlled schema with rollback support
+
+### Supported PostgreSQL Versions
+
+| PostgreSQL Version | Support Status | Notes |
+|-------------------|----------------|--------|
+| 18.x | ✅ Supported | Latest, recommended for new installations |
+| 17.x | ✅ Supported | Previous stable, production-ready |
+| 16.x | ✅ Supported | Minimum supported version, LTS release |
+| 15.x and below | ❌ Not supported | Use PostgreSQL 16+ for optimal performance |
+
+**Recommendation**: Use PostgreSQL 16+ for new installations for best performance and security.
 
 ## Configuration System
 
