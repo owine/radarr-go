@@ -492,7 +492,7 @@ services:
 
   # PostgreSQL Exporter - Database metrics
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:0.18.0
+    image: prometheuscommunity/postgres-exporter:0.18.1
     container_name: radarr-postgres-exporter
     restart: unless-stopped
 
