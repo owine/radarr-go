@@ -551,7 +551,7 @@ services:
 
   # Redis Exporter - Cache metrics
   redis-exporter:
-    image: oliver006/redis_exporter:1.77.0
+    image: oliver006/redis_exporter:1.78.0
     container_name: radarr-redis-exporter
     restart: unless-stopped
 
