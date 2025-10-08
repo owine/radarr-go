@@ -23,7 +23,7 @@ permissions:
 
 env:
   # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.25.1'
+  GO_VERSION: '1.25.2'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   # Security: Use secure build flags
