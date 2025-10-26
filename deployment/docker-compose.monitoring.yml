@@ -379,7 +379,7 @@ services:
 
   # Node Exporter - System metrics
   node-exporter:
-    image: prom/node-exporter:1.10.0
+    image: prom/node-exporter:1.10.1
     container_name: radarr-node-exporter
     restart: unless-stopped
 
