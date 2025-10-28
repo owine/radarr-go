@@ -21,8 +21,52 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Stage 0: Detect which files changed to skip unnecessary jobs
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - 'go.work*'
+              - 'internal/**'
+              - 'cmd/**'
+              - 'migrations/**'
+              - 'config*.yml'
+            frontend:
+              - 'web/frontend/**'
+              - '**/package*.json'
+            workflows:
+              - '.github/workflows/**'
+            docker:
+              - 'Dockerfile*'
+              - 'docker-compose*.yml'
+              - '.dockerignore'
+
   # Stage 1: Quality checks and build (optimized for cost and speed)
   quality-and-build:
+    needs: detect-changes
+    # Run if backend, workflows, or docker files changed
+    if: |
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.workflows == 'true' ||
+      needs.detect-changes.outputs.docker == 'true'
     name: Quality & Build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -51,7 +95,7 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
 
-      # Cache linting tools with version-aware keys for better cache hits
+      # Cache linting tools with version-aware keys (v3 for cache cleanup)
       - name: Cache linting tools (version-aware)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         id: lint-tools-cache
@@ -61,10 +105,10 @@ jobs:
             ~/.local/bin
             ~/.npm/_global
             ~/.cache/golangci-lint
-          key: lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-${{ hashFiles('.golangci*.yml', 'web/frontend/package*.json') }}-v2
+          key: lint-tools-v3-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-${{ hashFiles('.golangci*.yml', 'web/frontend/package*.json') }}
           restore-keys: |
-            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-
-            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
+            lint-tools-v3-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-
+            lint-tools-v3-${{ runner.os }}-go${{ env.GO_VERSION }}-
 
       - name: Install dependencies and tools (cache-aware optimized)
         run: |
@@ -74,13 +118,18 @@ jobs:
           go mod download -x
           go work sync
 
-          # Install frontend dev dependencies (required for ESLint with proper peer deps)
+          # Install minimal ESLint dependencies for CI (faster than full npm ci)
           if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
-            echo "Installing frontend dev dependencies for linting..."
+            echo "Installing minimal ESLint dependencies for CI..."
             cd web/frontend
-            # Use npm ci to ensure peer dependencies are properly installed
-            # Skip scripts and audit for faster installation
-            npm ci --only=dev --prefer-offline --no-audit --no-fund --ignore-scripts
+            # Extract exact versions from package.json and install only what's needed
+            npm install --no-save --no-audit --no-fund --prefer-offline --ignore-scripts \
+              eslint@$(node -p "require('./package.json').devDependencies.eslint.replace(/[\^~]/g,'')") \
+              @eslint/js@$(node -p "require('./package.json').devDependencies['@eslint/js'].replace(/[\^~]/g,'')") \
+              eslint-plugin-react-hooks@$(node -p "require('./package.json').devDependencies['eslint-plugin-react-hooks'].replace(/[\^~]/g,'')") \
+              eslint-plugin-react-refresh@$(node -p "require('./package.json').devDependencies['eslint-plugin-react-refresh'].replace(/[\^~]/g,'')") \
+              typescript-eslint@$(node -p "require('./package.json').devDependencies['typescript-eslint'].replace(/[\^~]/g,'')") \
+              globals@$(node -p "require('./package.json').devDependencies.globals.replace(/[\^~]/g,'')")
             cd ../..
           fi
 
@@ -202,16 +251,18 @@ jobs:
             git diff --stat go.work.sum
           fi
 
-      # Cache Go build artifacts for faster compilation (shared across commits)
+      # Cache Go build artifacts with hybrid strategy (v3 for cleanup)
+      # Save with unique run_id, restore from most recent matching cache
       - name: Cache Go build artifacts
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
           restore-keys: |
-            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       # Build all artifacts in single job (major cost savings)
       - name: Build multi-platform artifacts
@@ -281,7 +332,9 @@ jobs:
   test-postgres:
     name: Database Tests (postgres)
     runs-on: ubuntu-24.04
-    needs: [quality-and-build]
+    needs: [detect-changes, quality-and-build]
+    # Run if backend code changed
+    if: needs.detect-changes.outputs.backend == 'true'
     timeout-minutes: 20
 
     services:
@@ -319,43 +372,39 @@ jobs:
           name: build-artifacts
           path: ./artifacts
 
-      # Restore build cache for faster test compilation
+      # Restore build cache for faster test compilation (read-only, v3)
       - name: Restore Go build cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
           restore-keys: |
-            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       - name: Setup test environment
         run: |
           mkdir -p data movies web/static web/templates
           cp config.ci.postgres.yml data/config.yml
 
-      - name: Run comprehensive tests with parallelization
+      - name: Run comprehensive tests with optimized parallelization
         run: |
-          # Run tests with parallel execution for faster completion
-          echo "Running parallel unit tests..."
+          # Run unit tests with package parallelization only (faster for small test suites)
+          echo "Running unit tests with package parallelization..."
           go test -v -race \
-            -p 4 -parallel 4 \
+            -p 4 \
             -coverprofile=coverage-postgres.out \
             -timeout 10m \
             ./...
 
-          # Run benchmarks and examples in parallel (background)
-          echo "Running benchmark tests in parallel..."
-          go test -bench=. -benchmem -run=^$ -p 2 ./... &
-          BENCH_PID=$!
+          # Run benchmarks and examples sequentially (avoid background overhead)
+          echo "Running benchmark tests..."
+          go test -bench=. -benchmem -run=^$ -p 2 ./...
 
-          echo "Running example tests in parallel..."
-          go test -run=Example -p 2 ./... &
-          EXAMPLE_PID=$!
-
-          # Wait for parallel tests to complete
-          wait $BENCH_PID $EXAMPLE_PID
+          echo "Running example tests..."
+          go test -run=Example -p 2 ./...
         env:
           RADARR_DATABASE_TYPE: postgres
           RADARR_DATABASE_HOST: localhost
@@ -404,7 +453,9 @@ jobs:
   test-mariadb:
     name: Database Tests (mariadb)
     runs-on: ubuntu-24.04
-    needs: [quality-and-build]
+    needs: [detect-changes, quality-and-build]
+    # Run if backend code changed
+    if: needs.detect-changes.outputs.backend == 'true'
     timeout-minutes: 20
 
     services:
@@ -443,16 +494,17 @@ jobs:
           name: build-artifacts
           path: ./artifacts
 
-      # Restore build cache for faster test compilation
+      # Restore build cache for faster test compilation (read-only, v3)
       - name: Restore Go build cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
           restore-keys: |
-            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}-
+            go-build-v3-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       - name: Setup test environment
         run: |
