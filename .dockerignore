@@ -23,7 +23,7 @@ tests/
 
 # Build artifacts
 dist/
-artifacts/
+# artifacts/ - DO NOT EXCLUDE: needed for Docker build
 coverage*.out
 *.prof
 *.test
