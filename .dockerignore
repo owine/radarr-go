@@ -1,0 +1,94 @@
+# Git files
+.git
+.github
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+CLAUDE.md
+VERSIONING.md
+MIGRATION.md
+docs/
+radarr-source/
+
+# Test files
+*_test.go
+**/*_test.go
+internal/testutil/
+cmd/testapp/
+test/
+tests/
+
+# Build artifacts
+dist/
+artifacts/
+coverage*.out
+*.prof
+*.test
+*.bench
+
+# Node modules and frontend development files
+node_modules/
+web/frontend/node_modules/
+web/frontend/dist/
+web/frontend/.vite/
+web/frontend/coverage/
+web/frontend/.eslintcache
+
+# Development tools and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+tmp/
+
+# CI/CD files (not needed in container)
+.github/workflows/
+.github/scripts/
+.github/dependabot.yml
+renovate.json
+
+# Development and migration files
+migrations/*.down.sql
+scripts/dev-*.sh
+scripts/test-*.sh
+
+# OS-specific files
+.DS_Store
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Editor backups
+*~
+*.bak
+*.orig
+
+# Environment files (security)
+.env
+.env.*
+!.env.example
+
+# License and contribution files
+LICENSE
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+
+# Docker files (recursive build not needed)
+docker-compose*.yml
+Dockerfile*
+!Dockerfile.artifacts
+
+# Makefile and development scripts
+Makefile
+scripts/

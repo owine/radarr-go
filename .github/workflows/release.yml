@@ -230,15 +230,19 @@ jobs:
         echo "🧪 Testing Linux binaries..."
         timeout 10s ./dist/radarr-linux-amd64 --version || echo "Linux amd64 version check completed"
 
-    - name: Create optimized release archives
+    - name: Create optimized release archives with parallel compression
       env:
         VERSION: ${{ needs.validate.outputs.version }}
       run: |
         echo "🗂️ Creating release archives for all platforms..."
+        echo "Installing parallel compression tools..."
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq pigz
+
         mkdir -p archives
         cd dist
 
-        # Function to create archive and checksum
+        # Function to create archive and checksum with parallel compression
         create_archive() {
           local binary="$1"
           local platform="$2"
@@ -249,9 +253,11 @@ jobs:
             local archive_name="radarr-v${VERSION}-${platform}-${arch}.${ext}"
 
             if [[ "$ext" == "zip" ]]; then
+              # Use standard zip for Windows archives
               zip -9 "../archives/${archive_name}" "$binary"
             else
-              tar -czf "../archives/${archive_name}" "$binary"
+              # Use pigz for parallel gzip compression (much faster than tar -czf)
+              tar -cf - "$binary" | pigz -9 -p 2 > "../archives/${archive_name}"
             fi
 
             # Generate checksum
@@ -262,7 +268,7 @@ jobs:
           fi
         }
 
-        # Create archives for all platforms
+        # Create archives for all platforms in parallel
         create_archive "radarr-linux-amd64" "linux" "amd64" "tar.gz" &
         create_archive "radarr-linux-arm64" "linux" "arm64" "tar.gz" &
         create_archive "radarr-darwin-amd64" "darwin" "amd64" "tar.gz" &

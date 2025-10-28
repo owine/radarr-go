@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Cancel in-progress runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # renovate: datasource=golang-version depName=golang
   GO_VERSION: '1.25.3'
@@ -46,46 +51,62 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
 
-      # Cache linting tools across installation paths
-      - name: Cache linting tools
+      # Cache linting tools with version-aware keys for better cache hits
+      - name: Cache linting tools (version-aware)
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: lint-tools-cache
         with:
           path: |
             ~/go/bin
             ~/.local/bin
             ~/.npm/_global
-          key: lint-tools-${{ runner.os }}-${{ hashFiles('.golangci.yml', 'package*.json') }}
+            ~/.cache/golangci-lint
+          key: lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-${{ hashFiles('.golangci*.yml', 'web/frontend/package*.json') }}-v2
           restore-keys: |
-            lint-tools-${{ runner.os }}-
+            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-node${{ env.NODE_VERSION }}-
+            lint-tools-${{ runner.os }}-go${{ env.GO_VERSION }}-
 
-      - name: Install dependencies and tools (optimized)
+      - name: Install dependencies and tools (cache-aware optimized)
         run: |
-          # Download Go dependencies (cached)
-          go mod download
+          # Optimize Go module downloads with parallel fetching
+          echo "Downloading Go modules with optimizations..."
+          go env -w GOPROXY="https://proxy.golang.org,direct"
+          go mod download -x
           go work sync
 
-          # Install frontend dependencies if frontend exists (required for ESLint)
+          # Install frontend dev dependencies (required for ESLint with proper peer deps)
           if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
-            echo "Installing frontend dependencies for ESLint..."
-            cd web/frontend && npm ci --only=dev && cd ../..
+            echo "Installing frontend dev dependencies for linting..."
+            cd web/frontend
+            # Use npm ci to ensure peer dependencies are properly installed
+            # Skip scripts and audit for faster installation
+            npm ci --only=dev --prefer-offline --no-audit --no-fund --ignore-scripts
+            cd ../..
           fi
 
-          # Install security tools in parallel (background)
-          echo "Installing security tools in parallel..."
+      # Install Go tools only if not cached (using step-level conditional)
+      - name: Install Go security and linting tools
+        if: steps.lint-tools-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "Installing Go tools (not in cache)..."
+
+          # Install security tools in parallel
           go install github.com/securego/gosec/v2/cmd/gosec@latest &
           GOSEC_PID=$!
           go install golang.org/x/vuln/cmd/govulncheck@latest &
           VULN_PID=$!
 
-          # Install linting tools optimized for CI (parallel, cache-aware)
-          echo "Installing optimized CI linting tools..."
+          # Install linting tools
           make setup-lint-tools-ci &
           LINT_PID=$!
 
-          # Wait for all installations to complete
-          echo "Waiting for all tool installations..."
+          # Wait for all installations
           wait $GOSEC_PID $VULN_PID $LINT_PID
-          echo "All tool installations completed"
+          echo "✅ Tool installations completed"
+
+      - name: Confirm cached tools
+        if: steps.lint-tools-cache.outputs.cache-hit == 'true'
+        run: echo "✅ Using cached linting tools (skipping installation)"
 
       - name: Validate linting tools installation
         run: |
@@ -180,6 +201,17 @@ jobs:
             echo "go.work.sum was updated by workspace sync (this is expected)"
             git diff --stat go.work.sum
           fi
+
+      # Cache Go build artifacts for faster compilation (shared across commits)
+      - name: Cache Go build artifacts
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg
+          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       # Build all artifacts in single job (major cost savings)
       - name: Build multi-platform artifacts
@@ -287,22 +319,43 @@ jobs:
           name: build-artifacts
           path: ./artifacts
 
+      # Restore build cache for faster test compilation
+      - name: Restore Go build cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg
+          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
+
       - name: Setup test environment
         run: |
           mkdir -p data movies web/static web/templates
           cp config.ci.postgres.yml data/config.yml
 
-      - name: Run comprehensive tests
+      - name: Run comprehensive tests with parallelization
         run: |
-          # Run all test types in sequence for efficiency
-          echo "Running unit tests..."
-          go test -v -race -coverprofile=coverage-postgres.out ./...
+          # Run tests with parallel execution for faster completion
+          echo "Running parallel unit tests..."
+          go test -v -race \
+            -p 4 -parallel 4 \
+            -coverprofile=coverage-postgres.out \
+            -timeout 10m \
+            ./...
 
-          echo "Running benchmark tests..."
-          go test -bench=. -benchmem ./...
+          # Run benchmarks and examples in parallel (background)
+          echo "Running benchmark tests in parallel..."
+          go test -bench=. -benchmem -run=^$ -p 2 ./... &
+          BENCH_PID=$!
 
-          echo "Running example tests..."
-          go test -run=Example ./...
+          echo "Running example tests in parallel..."
+          go test -run=Example -p 2 ./... &
+          EXAMPLE_PID=$!
+
+          # Wait for parallel tests to complete
+          wait $BENCH_PID $EXAMPLE_PID
         env:
           RADARR_DATABASE_TYPE: postgres
           RADARR_DATABASE_HOST: localhost
@@ -310,6 +363,7 @@ jobs:
           RADARR_DATABASE_DATABASE: radarr_test
           RADARR_DATABASE_USERNAME: test_user
           RADARR_DATABASE_PASSWORD: test_password_123
+          GOMAXPROCS: 4
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
@@ -389,22 +443,43 @@ jobs:
           name: build-artifacts
           path: ./artifacts
 
+      # Restore build cache for faster test compilation
+      - name: Restore Go build cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg
+          key: go-build-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-build-${{ runner.os }}-${{ env.GO_VERSION }}-
+
       - name: Setup test environment
         run: |
           mkdir -p data movies web/static web/templates
           cp config.ci.mariadb.yml data/config.yml
 
-      - name: Run comprehensive tests
+      - name: Run comprehensive tests with parallelization
         run: |
-          # Run all test types in sequence for efficiency
-          echo "Running unit tests..."
-          go test -v -race -coverprofile=coverage-mariadb.out ./...
+          # Run tests with parallel execution for faster completion
+          echo "Running parallel unit tests..."
+          go test -v -race \
+            -p 4 -parallel 4 \
+            -coverprofile=coverage-mariadb.out \
+            -timeout 10m \
+            ./...
 
-          echo "Running benchmark tests..."
-          go test -bench=. -benchmem ./...
+          # Run benchmarks and examples in parallel (background)
+          echo "Running benchmark tests in parallel..."
+          go test -bench=. -benchmem -run=^$ -p 2 ./... &
+          BENCH_PID=$!
 
-          echo "Running example tests..."
-          go test -run=Example ./...
+          echo "Running example tests in parallel..."
+          go test -run=Example -p 2 ./... &
+          EXAMPLE_PID=$!
+
+          # Wait for parallel tests to complete
+          wait $BENCH_PID $EXAMPLE_PID
         env:
           RADARR_DATABASE_TYPE: mariadb
           RADARR_DATABASE_HOST: localhost
@@ -412,6 +487,7 @@ jobs:
           RADARR_DATABASE_DATABASE: radarr_test
           RADARR_DATABASE_USERNAME: test_user
           RADARR_DATABASE_PASSWORD: test_password_123
+          GOMAXPROCS: 4
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
