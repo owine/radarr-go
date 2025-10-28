@@ -36,6 +36,63 @@
       "pinDigests": true
     },
     {
+      "description": "Group all Node.js version updates together",
+      "matchDatasources": [
+        "docker",
+        "node-version"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
+      "groupName": "Node.js version updates",
+      "addLabels": [
+        "node"
+      ]
+    },
+    {
+      "description": "Group all Go version updates together",
+      "matchDatasources": [
+        "docker",
+        "golang-version"
+      ],
+      "matchPackageNames": [
+        "golang",
+        "go"
+      ],
+      "groupName": "Go version updates",
+      "addLabels": [
+        "go"
+      ]
+    },
+    {
+      "description": "Group PostgreSQL version updates across dev and CI",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "postgres"
+      ],
+      "groupName": "PostgreSQL version updates",
+      "addLabels": [
+        "database",
+        "postgres"
+      ]
+    },
+    {
+      "description": "Group MariaDB version updates across dev and CI",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mariadb"
+      ],
+      "groupName": "MariaDB version updates",
+      "addLabels": [
+        "database",
+        "mariadb"
+      ]
+    },
+    {
       "description": "All non-major updates - grouped together across all ecosystems",
       "matchUpdateTypes": [
         "minor",
