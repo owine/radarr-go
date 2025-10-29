@@ -2,7 +2,7 @@
 # This Dockerfile builds both the Go backend and React frontend in a single image
 
 # Frontend build stage
-FROM node:24.0.2-alpine@sha256:2e6c7937cb36d1e4af3c261b29e862205beb7a409de01f12b6df34800cc108ec AS frontend-builder
+FROM node:24.1.0-alpine@sha256:91aa1bb6b5f57ec5109155332f4af2aa5d73ff7b4512c8e5dfce5dc88dbbae0e AS frontend-builder
 
 WORKDIR /app/frontend
 
