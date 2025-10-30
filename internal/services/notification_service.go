@@ -598,6 +598,10 @@ func (s *NotificationService) formatBytes(bytes int64) string {
 	}
 
 	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	// Bounds check to prevent index out of range
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
 	return fmt.Sprintf("%.1f %s", float64(bytes)/float64(div), units[exp])
 }
 
