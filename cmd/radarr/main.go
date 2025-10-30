@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/radarr/radarr-go/internal/api"
@@ -27,14 +28,14 @@ func main() {
 
 	// Handle version flag
 	if *showVersion {
-		log.Printf("Radarr Go v%s (commit: %s, built: %s)", version, commit, date)
+		fmt.Printf("Radarr Go v%s (commit: %s, built: %s)\n", version, commit, date)
 		return
 	}
 
 	// Check for --version argument (also support this format)
 	for _, arg := range flag.Args() {
 		if arg == "--version" {
-			log.Printf("Radarr Go v%s (commit: %s, built: %s)", version, commit, date)
+			fmt.Printf("Radarr Go v%s (commit: %s, built: %s)\n", version, commit, date)
 			return
 		}
 	}
