@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:24.2.0-alpine
+    image: node:24.3.0-alpine
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
