@@ -189,7 +189,7 @@ services:
 
   # AlertManager - Alert routing and notification
   alertmanager:
-    image: prom/alertmanager:0.28.1
+    image: prom/alertmanager:0.29.0
     container_name: radarr-alertmanager
     restart: unless-stopped
 
