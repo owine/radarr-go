@@ -225,7 +225,7 @@ jobs:
 
       - name: Upload SARIF file
         if: always() && hashFiles('gosec.sarif') != ''
-        uses: github/codeql-action/upload-sarif@0499de31b99561a6d14a36a5f662c2a54f91beee # v4.31.2
+        uses: github/codeql-action/upload-sarif@014f16e7ab1402f30e7c3329d33797e7948572db # v4.31.3
         with:
           sarif_file: gosec.sarif
         continue-on-error: true
@@ -332,7 +332,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18.0-alpine@sha256:48c8ad3a7284b82be4482a52076d47d879fd6fb084a1cbfccbd551f9331b0e40
+        image: postgres:18.1-alpine@sha256:655a411a84c1d7af7a21473c2eda3d8d24d7a9ff38ca279c897871b34acc0ce1
         env:
           POSTGRES_PASSWORD: test_password_123
           POSTGRES_USER: test_user
