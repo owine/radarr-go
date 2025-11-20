@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.2.2
+    image: grafana/grafana:12.3.0
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
