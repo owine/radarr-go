@@ -174,7 +174,7 @@ services:
 
   # Basic Monitoring - Prometheus
   prometheus:
-    image: prom/prometheus:v3.7.3
+    image: prom/prometheus:v3.8.0
     container_name: radarr-prometheus
     restart: unless-stopped
     ports:
