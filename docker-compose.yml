@@ -174,7 +174,7 @@ services:
 
   # Basic Monitoring - Prometheus
   prometheus:
-    image: prom/prometheus:v3.8.0
+    image: prom/prometheus:v3.8.1
     container_name: radarr-prometheus
     restart: unless-stopped
     ports:
@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.3.0
+    image: grafana/grafana:12.3.1
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
