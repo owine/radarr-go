@@ -4,7 +4,7 @@
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:3.8.1
+    image: prom/prometheus:3.9.0
     container_name: radarr-prometheus
     restart: unless-stopped
 
@@ -437,7 +437,7 @@ services:
 
   # cAdvisor - Container metrics
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:0.54.1
+    image: gcr.io/cadvisor/cadvisor:0.55.1
     container_name: radarr-cadvisor
     restart: unless-stopped
 
