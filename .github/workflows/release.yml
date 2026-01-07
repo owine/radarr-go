@@ -67,8 +67,10 @@ jobs:
           IS_PRERELEASE="${{ github.event.release.prerelease }}"
         fi
 
-        echo "prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
-        echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        {
+          echo "prerelease=${IS_PRERELEASE}"
+          echo "tag_name=${TAG_NAME}"
+        } >> "$GITHUB_OUTPUT"
         echo "🏷️ Release tag: ${TAG_NAME}"
         echo "🔄 Pre-release: ${IS_PRERELEASE}"
 
@@ -86,17 +88,19 @@ jobs:
         eval "$(./.github/scripts/version-analyzer.sh "$TAG_NAME" --env)"
 
         # Set all outputs for downstream jobs
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-        echo "prerelease_type=$PRERELEASE_TYPE" >> $GITHUB_OUTPUT
-        echo "maturity_level=$MATURITY_LEVEL" >> $GITHUB_OUTPUT
-        echo "release_stability=$RELEASE_STABILITY" >> $GITHUB_OUTPUT
-        echo "is_pre_1_0=$IS_PRE_1_0" >> $GITHUB_OUTPUT
+        {
+          echo "version=$VERSION"
+          echo "is_prerelease=$IS_PRERELEASE"
+          echo "prerelease_type=$PRERELEASE_TYPE"
+          echo "maturity_level=$MATURITY_LEVEL"
+          echo "release_stability=$RELEASE_STABILITY"
+          echo "is_pre_1_0=$IS_PRE_1_0"
+        } >> "$GITHUB_OUTPUT"
 
         # Generate Docker tags based on VERSIONING.md strategy
         BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
         DOCKER_TAGS=$(./.github/scripts/version-analyzer.sh "$TAG_NAME" --docker-tags "$BASE_IMAGE")
-        echo "docker_tags=$DOCKER_TAGS" >> $GITHUB_OUTPUT
+        echo "docker_tags=$DOCKER_TAGS" >> "$GITHUB_OUTPUT"
 
         echo "🎯 Release Classification:"
         echo "   Version: $VERSION"
@@ -130,8 +134,10 @@ jobs:
         BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
         COMMIT_SHA=$(git rev-parse --short=12 HEAD)
 
-        echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-        echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+        {
+          echo "build_date=${BUILD_DATE}"
+          echo "commit_sha=${COMMIT_SHA}"
+        } >> "$GITHUB_OUTPUT"
         echo "🕒 Build date: ${BUILD_DATE}"
         echo "📝 Commit: ${COMMIT_SHA}"
 
@@ -282,7 +288,7 @@ jobs:
 
         cd ../archives
         echo "📊 Archive summary:"
-        ls -lh *.tar.gz *.zip *.sha256
+        ls -lh -- *.tar.gz *.zip *.sha256
 
         # Verify archive integrity
         echo "🔍 Verifying archive integrity..."
@@ -346,8 +352,10 @@ jobs:
         done
 
         # Set outputs
-        echo "artifact_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
-        echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+        {
+          echo "artifact_count=$TOTAL_COUNT"
+          echo "total_size=$TOTAL_SIZE"
+        } >> "$GITHUB_OUTPUT"
 
         # Create release manifest using safe method (avoid YAML parsing issues)
         {
@@ -429,22 +437,24 @@ jobs:
 
     - name: Create release summary
       run: |
-        echo "## 🎉 Release Published Successfully" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 💰 Cost Optimizations Applied" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Single Linux runner instead of 7 different OS runners (85% cost reduction)" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Parallel cross-compilation instead of native builds" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Consolidated artifact handling and release publishing" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ⚡ Speed Improvements Applied" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Parallel binary builds (7 platforms simultaneously)" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Enhanced Go module caching" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Streamlined workflow dependencies" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 Release Statistics" >> $GITHUB_STEP_SUMMARY
-        echo "- **Total Artifacts**: ${{ steps.prepare.outputs.artifact_count }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Total Size**: ${{ steps.prepare.outputs.total_size }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 🎉 Release Published Successfully"
+          echo ""
+          echo "### 💰 Cost Optimizations Applied"
+          echo "- ✅ Single Linux runner instead of 7 different OS runners (85% cost reduction)"
+          echo "- ✅ Parallel cross-compilation instead of native builds"
+          echo "- ✅ Consolidated artifact handling and release publishing"
+          echo ""
+          echo "### ⚡ Speed Improvements Applied"
+          echo "- ✅ Parallel binary builds (7 platforms simultaneously)"
+          echo "- ✅ Enhanced Go module caching"
+          echo "- ✅ Streamlined workflow dependencies"
+          echo ""
+          echo "### 📊 Release Statistics"
+          echo "- **Total Artifacts**: ${{ steps.prepare.outputs.artifact_count }}"
+          echo "- **Total Size**: ${{ steps.prepare.outputs.total_size }}"
+          echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}"
+        } >> "$GITHUB_STEP_SUMMARY"
 
   # Integration testing (runs before Docker publishing)
   integration-test:
@@ -543,33 +553,35 @@ jobs:
 
     - name: Create comprehensive summary
       run: |
-        echo "## 🎉 Optimized Release Pipeline Completed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 💰 Cost Savings Achieved" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **85% runner cost reduction**: 1 Linux runner instead of 7 OS-specific runners" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Parallel cross-compilation**: All 7 platforms built simultaneously" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Consolidated workflows**: Combined Docker build with integration testing" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Optimized caching**: Enhanced Go module and Docker layer caching" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ⚡ Speed Improvements" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **60% faster builds**: Parallel execution instead of sequential matrix" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Smart caching**: Aggressive Go build and module caching" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ **Reduced overhead**: Fewer job transitions and artifact transfers" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
-        echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        if [[ "${{ needs.validate.outputs.is_prerelease }}" == "false" ]]; then
-          echo "- **Release Tags**: \`:latest\`, \`:release\` (full release)" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- **Prerelease Tag**: \`:testing\` (prerelease)" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🚀 Release Assets" >> $GITHUB_STEP_SUMMARY
-        echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Integration Test**: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "---" >> $GITHUB_STEP_SUMMARY
-        echo "**Optimized GitHub Actions Pipeline** - Massive cost savings with improved speed and reliability" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 🎉 Optimized Release Pipeline Completed"
+          echo ""
+          echo "### 💰 Cost Savings Achieved"
+          echo "- ✅ **85% runner cost reduction**: 1 Linux runner instead of 7 OS-specific runners"
+          echo "- ✅ **Parallel cross-compilation**: All 7 platforms built simultaneously"
+          echo "- ✅ **Consolidated workflows**: Combined Docker build with integration testing"
+          echo "- ✅ **Optimized caching**: Enhanced Go module and Docker layer caching"
+          echo ""
+          echo "### ⚡ Speed Improvements"
+          echo "- ✅ **60% faster builds**: Parallel execution instead of sequential matrix"
+          echo "- ✅ **Smart caching**: Aggressive Go build and module caching"
+          echo "- ✅ **Reduced overhead**: Fewer job transitions and artifact transfers"
+          echo ""
+          echo "### 🐳 Docker Images Published"
+          echo "- **GitHub Container Registry**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.validate.outputs.version }}\`"
+          if [[ "${{ needs.validate.outputs.is_prerelease }}" == "false" ]]; then
+            echo "- **Release Tags**: \`:latest\`, \`:release\` (full release)"
+          else
+            echo "- **Prerelease Tag**: \`:testing\` (prerelease)"
+          fi
+          echo ""
+          echo "### 🚀 Release Assets"
+          echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}"
+          echo "- **Integration Test**: ✅ Passed"
+          echo ""
+          echo "---"
+          echo "**Optimized GitHub Actions Pipeline** - Massive cost savings with improved speed and reliability"
+        } >> "$GITHUB_STEP_SUMMARY"
 
   # Docker publishing (only runs after successful integration test)
   docker-publish:
@@ -609,7 +621,7 @@ jobs:
         MATURITY_LEVEL="${{ needs.validate.outputs.maturity_level }}"
         IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
 
-        echo "docker_tags=${DOCKER_TAGS}" >> $GITHUB_OUTPUT
+        echo "docker_tags=${DOCKER_TAGS}" >> "$GITHUB_OUTPUT"
 
         echo "🏷️ Automated Docker Tagging Strategy (VERSIONING.md)"
         echo "   Version: v${VERSION}"
@@ -699,57 +711,59 @@ jobs:
         VERSION="${{ needs.validate.outputs.version }}"
         IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
         BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-
-        echo "## 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📦 Multi-Platform Images" >> $GITHUB_STEP_SUMMARY
-        echo "- **Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-        echo "- **Registry**: \`${{ env.REGISTRY }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🏷️ Available Tags" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version**: \`v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Database Compatibility**: \`v${VERSION}-multi-db\`, \`v${VERSION}-postgres\`, \`v${VERSION}-mariadb\`" >> $GITHUB_STEP_SUMMARY
         MATURITY_LEVEL="${{ needs.validate.outputs.maturity_level }}"
         IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
+        PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
 
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          if [[ "${IS_PRE_1_0}" == "false" ]]; then
-            echo "- **Production Tags**: \`:latest\`, \`:release\`, \`:stable-v${VERSION}\`, \`:stable\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Pre-1.0 Production**: \`:release\`, \`:stable-v${VERSION}\` (no \`:latest\` until v1.0.0)" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "- **Database Focus**: \`:multi-db\`, \`:postgres\`, \`:mariadb\`" >> $GITHUB_STEP_SUMMARY
-        else
-          PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
-          echo "- **Prerelease Tags**: \`:testing\`, \`:testing-v${VERSION}\`, \`:prerelease\`" >> $GITHUB_STEP_SUMMARY
-          if [[ -n "$PRERELEASE_TYPE" && "$PRERELEASE_TYPE" != "custom" ]]; then
-            echo "- **Type-Specific**: \`:${PRERELEASE_TYPE}\` (${MATURITY_LEVEL})" >> $GITHUB_STEP_SUMMARY
-          fi
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🚀 Quick Start" >> $GITHUB_STEP_SUMMARY
-        IS_PRE_1_0="${{ needs.validate.outputs.is_pre_1_0 }}"
+        {
+          echo "## 🐳 Docker Images Published"
+          echo ""
+          echo "### 📦 Multi-Platform Images"
+          echo "- **Platforms**: linux/amd64, linux/arm64"
+          echo "- **Registry**: \`${{ env.REGISTRY }}\`"
+          echo ""
+          echo "### 🏷️ Available Tags"
+          echo "- **Version**: \`v${VERSION}\`"
+          echo "- **Database Compatibility**: \`v${VERSION}-multi-db\`, \`v${VERSION}-postgres\`, \`v${VERSION}-mariadb\`"
 
-        if [[ "${IS_PRERELEASE}" == "false" ]]; then
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          if [[ "${IS_PRE_1_0}" == "false" ]]; then
-            echo "# Post-1.0 production release" >> $GITHUB_STEP_SUMMARY
-            echo "docker run -d ${BASE_IMAGE}:latest" >> $GITHUB_STEP_SUMMARY
+          if [[ "${IS_PRERELEASE}" == "false" ]]; then
+            if [[ "${IS_PRE_1_0}" == "false" ]]; then
+              echo "- **Production Tags**: \`:latest\`, \`:release\`, \`:stable-v${VERSION}\`, \`:stable\`"
+            else
+              echo "- **Pre-1.0 Production**: \`:release\`, \`:stable-v${VERSION}\` (no \`:latest\` until v1.0.0)"
+            fi
+            echo "- **Database Focus**: \`:multi-db\`, \`:postgres\`, \`:mariadb\`"
           else
-            echo "# Pre-1.0 production release (use specific version)" >> $GITHUB_STEP_SUMMARY
-            echo "docker run -d ${BASE_IMAGE}:v${VERSION}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Prerelease Tags**: \`:testing\`, \`:testing-v${VERSION}\`, \`:prerelease\`"
+            if [[ -n "$PRERELEASE_TYPE" && "$PRERELEASE_TYPE" != "custom" ]]; then
+              echo "- **Type-Specific**: \`:${PRERELEASE_TYPE}\` (${MATURITY_LEVEL})"
+            fi
           fi
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        else
-          PRERELEASE_TYPE="${{ needs.validate.outputs.prerelease_type }}"
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Prerelease (${PRERELEASE_TYPE})" >> $GITHUB_STEP_SUMMARY
-          echo "docker run -d ${BASE_IMAGE}:testing" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "---" >> $GITHUB_STEP_SUMMARY
-        echo "**🔒 Security**: Images built with SBOM and provenance attestation" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "### 🚀 Quick Start"
+
+          if [[ "${IS_PRERELEASE}" == "false" ]]; then
+            echo "\`\`\`bash"
+            if [[ "${IS_PRE_1_0}" == "false" ]]; then
+              echo "# Post-1.0 production release"
+              echo "docker run -d ${BASE_IMAGE}:latest"
+            else
+              echo "# Pre-1.0 production release (use specific version)"
+              echo "docker run -d ${BASE_IMAGE}:v${VERSION}"
+            fi
+            echo "\`\`\`"
+          else
+            echo "\`\`\`bash"
+            echo "# Prerelease (${PRERELEASE_TYPE})"
+            echo "docker run -d ${BASE_IMAGE}:testing"
+            echo "\`\`\`"
+          fi
+
+          echo ""
+          echo "---"
+          echo "**🔒 Security**: Images built with SBOM and provenance attestation"
+        } >> "$GITHUB_STEP_SUMMARY"
 
   # Update release description with Docker image details
   update-release-description:
@@ -768,7 +782,6 @@ jobs:
         BASE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
         VERSION="${{ needs.validate.outputs.version }}"
         IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
-        BUILD_DATE="${{ needs.validate.outputs.build_date }}"
         COMMIT_SHA="${{ needs.validate.outputs.commit_sha }}"
 
         # Get image digest from registry
@@ -805,9 +818,11 @@ jobs:
           DIGEST="sha256:${COMMIT_SHA}"
         fi
 
-        echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-        echo "base_image=${BASE_IMAGE}" >> $GITHUB_OUTPUT
+        {
+          echo "digest=${DIGEST}"
+          echo "image_tag=${IMAGE_TAG}"
+          echo "base_image=${BASE_IMAGE}"
+        } >> "$GITHUB_OUTPUT"
 
         # Generate all available tags based on release type
         # Extract available tags from the automated Docker tags
@@ -833,7 +848,7 @@ jobs:
         fi
         echo "🎯 Tagging strategy applied: $STRATEGY"
 
-        echo "available_tags=${AVAILABLE_TAGS}" >> $GITHUB_OUTPUT
+        echo "available_tags=${AVAILABLE_TAGS}" >> "$GITHUB_OUTPUT"
         echo "📋 Digest: ${DIGEST}"
         echo "🏷️ Available tags: ${AVAILABLE_TAGS}"
 
@@ -892,20 +907,22 @@ jobs:
         BASE_IMAGE="${{ steps.docker_info.outputs.base_image }}"
         VERSION="${{ needs.validate.outputs.version }}"
 
-        echo "## 🎉 Release Updated with Docker Details" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🐳 Docker Information Added" >> $GITHUB_STEP_SUMMARY
-        echo "- **Image**: \`${BASE_IMAGE}:v${VERSION}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Digest**: \`${DIGEST}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Pinned Reference**: \`${BASE_IMAGE}@${DIGEST}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📋 Release Enhanced With" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Complete Docker tag listing" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Image digest for secure pinning" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Production deployment examples" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Security verification commands" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Docker Compose and Kubernetes examples" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Quick Access" >> $GITHUB_STEP_SUMMARY
-        echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Registry URL**: https://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 🎉 Release Updated with Docker Details"
+          echo ""
+          echo "### 🐳 Docker Information Added"
+          echo "- **Image**: \`${BASE_IMAGE}:v${VERSION}\`"
+          echo "- **Digest**: \`${DIGEST}\`"
+          echo "- **Pinned Reference**: \`${BASE_IMAGE}@${DIGEST}\`"
+          echo ""
+          echo "### 📋 Release Enhanced With"
+          echo "- ✅ Complete Docker tag listing"
+          echo "- ✅ Image digest for secure pinning"
+          echo "- ✅ Production deployment examples"
+          echo "- ✅ Security verification commands"
+          echo "- ✅ Docker Compose and Kubernetes examples"
+          echo ""
+          echo "### 🔗 Quick Access"
+          echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag_name }}"
+          echo "- **Registry URL**: https://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+        } >> "$GITHUB_STEP_SUMMARY"

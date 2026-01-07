@@ -160,6 +160,7 @@ jobs:
 
       # Fast parallel linting optimized for CI performance
       - name: Run fast parallel linting (optimized)
+        id: critical-linting
         run: |
           echo "🚀 Running optimized fast parallel linting for CI..."
           # Use our new CI-optimized fast linting target
@@ -167,46 +168,92 @@ jobs:
           echo "✅ Critical linting completed successfully"
 
       - name: Run comprehensive linting validation (optional)
+        id: comprehensive-linting
         continue-on-error: true
         run: |
           echo "🔍 Running comprehensive linting validation (non-blocking)..."
+
+          # Initialize status tracking
+          YAML_STATUS="✅"
+          JSON_STATUS="✅"
+          MARKDOWN_STATUS="✅"
+          SHELL_STATUS="✅"
+
           # Run additional checks that may have warnings but shouldn't fail CI
-          make lint-yaml || echo "⚠️  YAML linting issues found (non-blocking)"
-          make lint-json || echo "⚠️  JSON linting issues found (non-blocking)"
-          make lint-markdown || echo "⚠️  Markdown linting issues found (non-blocking)"
-          make lint-shell || echo "⚠️  Shell script linting issues found (non-blocking)"
+          if ! make lint-yaml; then
+            echo "⚠️  YAML linting issues found (non-blocking)"
+            YAML_STATUS="⚠️"
+          fi
+
+          if ! make lint-json; then
+            echo "⚠️  JSON linting issues found (non-blocking)"
+            JSON_STATUS="⚠️"
+          fi
+
+          if ! make lint-markdown; then
+            echo "⚠️  Markdown linting issues found (non-blocking)"
+            MARKDOWN_STATUS="⚠️"
+          fi
+
+          if ! make lint-shell; then
+            echo "⚠️  Shell script linting issues found (non-blocking)"
+            SHELL_STATUS="⚠️"
+          fi
+
+          # Export status for summary
+          {
+            echo "YAML_STATUS=${YAML_STATUS}"
+            echo "JSON_STATUS=${JSON_STATUS}"
+            echo "MARKDOWN_STATUS=${MARKDOWN_STATUS}"
+            echo "SHELL_STATUS=${SHELL_STATUS}"
+          } >> "$GITHUB_ENV"
           echo "📋 Comprehensive validation completed"
 
       - name: Generate linting summary
         if: always()
+        env:
+          CRITICAL_OUTCOME: ${{ steps.critical-linting.outcome }}
         run: |
-          echo "## 🔍 Comprehensive Linting Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Critical Linting (Must Pass)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Go code linting (golangci-lint)" >> $GITHUB_STEP_SUMMARY
-          if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
-            echo "- ✅ Frontend TypeScript/React linting (ESLint)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ⏭️ Frontend linting skipped (no frontend detected)" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Additional Linting (Warnings Only)" >> $GITHUB_STEP_SUMMARY
-          echo "- 📄 YAML files (yamllint)" >> $GITHUB_STEP_SUMMARY
-          echo "- 📄 JSON files (jsonlint/python)" >> $GITHUB_STEP_SUMMARY
-          echo "- 📝 Markdown files (markdownlint)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🐚 Shell scripts (shellcheck)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🛠️ Available Linting Commands" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Run all linting" >> $GITHUB_STEP_SUMMARY
-          echo "make lint-all" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Run specific linting" >> $GITHUB_STEP_SUMMARY
-          echo "make lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Auto-fix linting issues" >> $GITHUB_STEP_SUMMARY
-          echo "make lint-fix" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🔍 Comprehensive Linting Results"
+            echo ""
+            echo "### Critical Linting (Must Pass)"
+
+            # Check critical linting status
+            if [ "$CRITICAL_OUTCOME" == "success" ]; then
+              echo "- ✅ Go code linting (golangci-lint)"
+            else
+              echo "- ❌ Go code linting (golangci-lint) - FAILED"
+            fi
+
+            if [ -d "web/frontend" ] && [ -f "web/frontend/package.json" ]; then
+              echo "- ✅ Frontend TypeScript/React linting (ESLint)"
+            else
+              echo "- ⏭️ Frontend linting skipped (no frontend detected)"
+            fi
+
+            echo ""
+            echo "### Additional Linting (Warnings Only)"
+
+            # Use captured status from comprehensive linting
+            echo "- ${YAML_STATUS:-📄} YAML files (yamllint)"
+            echo "- ${JSON_STATUS:-📄} JSON files (jsonlint/python)"
+            echo "- ${MARKDOWN_STATUS:-📄} Markdown files (markdownlint)"
+            echo "- ${SHELL_STATUS:-📄} Shell scripts (shellcheck)"
+
+            echo ""
+            echo "### 🛠️ Available Linting Commands"
+            echo "\`\`\`bash"
+            echo "# Run all linting"
+            echo "make lint-all"
+            echo ""
+            echo "# Run specific linting"
+            echo "make lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell"
+            echo ""
+            echo "# Auto-fix linting issues"
+            echo "make lint-fix"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run security checks in parallel
         run: |
@@ -641,66 +688,62 @@ jobs:
 
       - name: Create deployment summary
         run: |
-          echo "## 🚀 Optimized CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 💰 Cost Optimizations Applied" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Consolidated 6 separate test jobs into 2 efficient database tests" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Eliminated expensive macOS runners (savings: ~80% on runner costs)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Combined quality checks, security, and builds in single job" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Parallel cross-compilation replaces multiple platform-specific jobs" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ⚡ Speed Optimizations Applied" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Enhanced Go module and build caching across jobs" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Parallel security checks and tool installation" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Parallel cross-compilation of all platform binaries" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Reduced job dependencies and setup overhead" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Published Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Images**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔍 Available Binaries" >> $GITHUB_STEP_SUMMARY
-          ls -la artifacts/ >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🐳 Docker Usage" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "**Development Build (Latest from main):**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "# Latest nightly build" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "# Specific commit build" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "**Pull Request Build:**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> \
-              $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🏷️ Available Tags" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "- \`:nightly\` - Latest development build" >> $GITHUB_STEP_SUMMARY
-            echo "- \`:dev-latest\` - Alias for latest development build" >> $GITHUB_STEP_SUMMARY
-            echo "- \`:commit-${{ github.sha }}\` - This specific commit" >> $GITHUB_STEP_SUMMARY
-            echo "- \`:$(date +%Y.%m.%d)-nightly\` - Dated nightly build" >> $GITHUB_STEP_SUMMARY
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "- \`:pr-${{ github.event.number }}\` - Pull request build" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## 🚀 Optimized CI Pipeline Results"
+            echo ""
+            echo "### 💰 Cost Optimizations Applied"
+            echo "- ✅ Consolidated 6 separate test jobs into 2 efficient database tests"
+            echo "- ✅ Eliminated expensive macOS runners (savings: ~80% on runner costs)"
+            echo "- ✅ Combined quality checks, security, and builds in single job"
+            echo "- ✅ Parallel cross-compilation replaces multiple platform-specific jobs"
+            echo ""
+            echo "### ⚡ Speed Optimizations Applied"
+            echo "- ✅ Enhanced Go module and build caching across jobs"
+            echo "- ✅ Parallel security checks and tool installation"
+            echo "- ✅ Parallel cross-compilation of all platform binaries"
+            echo "- ✅ Reduced job dependencies and setup overhead"
+            echo ""
+            echo "### 📦 Published Artifacts"
+            echo "- **Branch**: ${{ github.ref_name }}"
+            echo "- **Commit**: ${{ github.sha }}"
+            echo "- **Docker Images**: ${{ steps.meta.outputs.tags }}"
+            echo ""
+            echo "### 🔍 Available Binaries"
+            ls -la artifacts/
+            echo ""
+            echo "### 🐳 Docker Usage"
+            echo ""
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+              echo "**Development Build (Latest from main):**"
+              echo "\`\`\`bash"
+              echo "# Latest nightly build"
+              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly"
+              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly"
+              echo ""
+              echo "# Specific commit build"
+              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}"
+              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}"
+              echo "\`\`\`"
+            elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "**Pull Request Build:**"
+              echo "\`\`\`bash"
+              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}"
+              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}"
+              echo "\`\`\`"
+            else
+              echo "\`\`\`bash"
+              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+              echo "\`\`\`"
+            fi
+            echo ""
+            echo "### 🏷️ Available Tags"
+            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+              echo "- \`:nightly\` - Latest development build"
+              echo "- \`:dev-latest\` - Alias for latest development build"
+              echo "- \`:commit-${{ github.sha }}\` - This specific commit"
+              echo "- \`:$(date +%Y.%m.%d)-nightly\` - Dated nightly build"
+            elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "- \`:pr-${{ github.event.number }}\` - Pull request build"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
