@@ -87,7 +87,8 @@ linters-settings:
 
 output:
   formats:
-    - format: colored-line-number
+    colored-line-number:
+      path: stdout
   print-issued-lines: false  # Reduce output for CI performance
   print-linter-name: true
   uniq-by-line: true
