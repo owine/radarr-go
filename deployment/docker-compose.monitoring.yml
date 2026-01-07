@@ -4,7 +4,7 @@
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:3.8.0
+    image: prom/prometheus:3.8.1
     container_name: radarr-prometheus
     restart: unless-stopped
 
@@ -81,7 +81,7 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:12.3.0@sha256:70d9599b186ce287be0d2c5ba9a78acb2e86c1a68c9c41449454d0fc3eeb84e8
+    image: grafana/grafana:12.3.1@sha256:2175aaa91c96733d86d31cf270d5310b278654b03f5718c59de12a865380a31f
     container_name: radarr-grafana
     restart: unless-stopped
 
@@ -189,7 +189,7 @@ services:
 
   # AlertManager - Alert routing and notification
   alertmanager:
-    image: prom/alertmanager:0.29.0
+    image: prom/alertmanager:0.30.0
     container_name: radarr-alertmanager
     restart: unless-stopped
 
@@ -437,7 +437,7 @@ services:
 
   # cAdvisor - Container metrics
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:0.52.1
+    image: gcr.io/cadvisor/cadvisor:0.54.1
     container_name: radarr-cadvisor
     restart: unless-stopped
 
