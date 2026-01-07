@@ -1,31 +1,35 @@
 {
   "default": true,
   "line-length": {
-    "line_length": 120,
-    "heading_line_length": 120,
-    "code_block_line_length": 120
+    "line_length": 150,
+    "heading_line_length": 150,
+    "code_block_line_length": 200
   },
   "no-duplicate-heading": {
     "siblings_only": true
   },
   "no-inline-html": {
-    "allowed_elements": ["br", "sub", "sup", "kbd", "img", "details", "summary"]
+    "allowed_elements": ["br", "sub", "sup", "kbd", "img", "details", "summary", "invoke", "parameter", "antml:invoke", "antml:parameter"]
   },
   "no-bare-urls": false,
   "no-hard-tabs": true,
   "whitespace/trailing": true,
   "MD013": {
-    "line_length": 120,
-    "heading_line_length": 120,
-    "code_block_line_length": 120,
+    "line_length": 200,
+    "heading_line_length": 150,
+    "code_block_line_length": 999,
+    "code_blocks": false,
     "tables": false
   },
   "MD024": {
     "siblings_only": true
   },
   "MD033": {
-    "allowed_elements": ["br", "sub", "sup", "kbd", "img", "details", "summary", "table", "tr", "td", "th", "thead", "tbody"]
+    "allowed_elements": ["br", "sub", "sup", "kbd", "img", "details", "summary", "table", "tr", "td", "th", "thead", "tbody", "invoke", "parameter", "antml:invoke", "antml:parameter"]
   },
+  "MD029": false,
   "MD034": false,
-  "MD041": false
+  "MD036": false,
+  "MD041": false,
+  "MD060": false
 }

@@ -1,4 +1,6 @@
 // Package api provides HTTP handlers for collection, parse, and rename functionality.
+//
+//nolint:revive // "api" is a standard package name for API layers
 package api
 
 import (

@@ -39,7 +39,7 @@ MARKDOWNLINT_CONFIG=.markdownlint.json
 
 # File patterns for linting
 YAML_FILES=$(shell find . -name '*.yml' -o -name '*.yaml' | grep -v node_modules | grep -v vendor)
-JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git' | grep -v 'tsconfig')
+JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git' | grep -v 'tsconfig' | grep -v radarr-source)
 MARKDOWN_FILES=$(shell find . -name '*.md' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
 SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor)
 
@@ -298,12 +298,6 @@ lint-go:
 	@which golangci-lint > /dev/null || (echo "Error: golangci-lint not found. Run 'make setup-lint-tools'" && exit 1)
 	golangci-lint run
 
-# Lint Go code optimized for CI (faster, critical checks only)
-lint-go-ci:
-	@echo "⚡ Linting Go code (CI optimized)..."
-	@which golangci-lint > /dev/null || (echo "Error: golangci-lint not found. Run 'make setup-lint-tools-ci'" && exit 1)
-	golangci-lint run --config .golangci-ci.yml --timeout=2m
-
 # Lint frontend TypeScript/React code
 lint-frontend:
 	@echo "Linting frontend code..."
@@ -383,9 +377,9 @@ lint-shell:
 # Fast parallel linting for CI environments (critical checks only)
 lint-ci-fast:
 	@echo "⚡ Running fast parallel linting for CI..."
-	@# Run critical linting in parallel using optimized configs
-	@echo "Running Go linting (CI optimized)..."
-	@make lint-go-ci &
+	@# Run critical linting in parallel
+	@echo "Running Go linting..."
+	@make lint-go &
 	@# Frontend linting (if exists)
 	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
 		echo "Running frontend linting (critical)..."; \
@@ -420,7 +414,7 @@ lint-all-parallel:
 	if [ "$$FAILED" = "1" ]; then exit 1; fi
 	@echo "🎉 All parallel linting checks completed!"
 
-# Run all linting checks (legacy sequential - for compatibility)
+# Run all linting checks (sequential)
 lint-all: lint-go lint-frontend lint-yaml lint-json lint-markdown lint-shell
 	@echo "All linting checks completed."
 

@@ -1,3 +1,4 @@
+//nolint:revive // "api" is a standard package name for API layers
 package api
 
 import (

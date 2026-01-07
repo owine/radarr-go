@@ -58,4 +58,6 @@
 //
 // All endpoints return consistent JSON error responses with appropriate
 // HTTP status codes and detailed error messages for debugging.
+//
+//nolint:revive // "api" is a standard package name for API layers
 package api

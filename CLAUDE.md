@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Radarr Go** is a complete rewrite of the Radarr movie collection manager from C#/.NET to Go. It maintains 100% API compatibility with Radarr's v3 API while providing significant performance improvements and simplified deployment.
+**Radarr Go** is a complete rewrite of the Radarr movie collection manager from C#/.NET to Go. It maintains 100% API compatibility with Radarr's v3 API
+while providing significant performance improvements and simplified deployment.
 
 **Current Status: v0.9.0-alpha** - Near production-ready with 95% feature parity to original Radarr.
 
-**Versioning Strategy**: Follows [Semantic Versioning 2.0.0](https://semver.org/) with automated Docker tag management. See [VERSIONING.md](VERSIONING.md) and [MIGRATION.md](MIGRATION.md) for complete details.
+**Versioning Strategy**: Follows [Semantic Versioning 2.0.0](https://semver.org/) with automated Docker tag management.
+See [VERSIONING.md](VERSIONING.md) and [MIGRATION.md](MIGRATION.md) for complete details.
 
 ## Key Features
 
@@ -201,11 +203,12 @@ pip install pre-commit && pre-commit install
 make setup-lint-tools
 
 # Comprehensive linting (all file types)
-make lint-all               # Run all linting checks
+make lint-all               # Run all linting checks (sequential)
+make lint-all-parallel      # Run all linting checks (parallel, faster)
 make lint-fix               # Auto-fix issues where possible
 
 # Individual linting by file type
-make lint-go                # Go code (golangci-lint)
+make lint-go                # Go code (9 critical linters)
 make lint-frontend          # TypeScript/React (ESLint)
 make lint-yaml              # YAML files (yamllint)
 make lint-json              # JSON files (jsonlint/python)

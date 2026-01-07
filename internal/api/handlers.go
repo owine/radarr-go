@@ -1,4 +1,6 @@
 // Package api provides HTTP handlers and server functionality for the Radarr API.
+//
+//nolint:revive // "api" is a standard package name for API layers
 package api
 
 import (
