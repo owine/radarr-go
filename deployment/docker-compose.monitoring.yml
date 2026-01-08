@@ -4,7 +4,7 @@
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:3.9.0
+    image: prom/prometheus:3.9.1
     container_name: radarr-prometheus
     restart: unless-stopped
 
