@@ -72,4 +72,4 @@ require (
 // Security: Force update to quic-go v0.57.0 to fix GO-2025-4233 (CVE-2025-64702)
 // HTTP/3 QPACK Header Expansion DoS vulnerability
 // See: https://github.com/quic-go/quic-go/security/advisories/GHSA-g754-hx8w-x2g6
-replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.58.0
+replace github.com/quic-go/quic-go => github.com/quic-go/quic-go v0.58.1
