@@ -99,7 +99,7 @@ jobs:
 
       # Cache linting tools with version-aware keys (v3 for cache cleanup)
       - name: Cache linting tools (version-aware)
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         id: lint-tools-cache
         with:
           path: |
@@ -295,7 +295,7 @@ jobs:
 
       # Cache Go build artifacts (v3 for cache cleanup)
       - name: Cache Go build artifacts
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -414,7 +414,7 @@ jobs:
 
       # Restore build cache for faster test compilation (read-only, v3)
       - name: Restore Go build cache
-        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -535,7 +535,7 @@ jobs:
 
       # Restore build cache for faster test compilation (read-only, v3)
       - name: Restore Go build cache
-        uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
