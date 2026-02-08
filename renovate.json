@@ -22,8 +22,13 @@
   "postUpdateOptions": [
     "gomodTidy",
     "gomodUpdateImportPaths",
-    "gomodMassage"
+    "gomodMassage",
+    "npmDedupe"
   ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
   "packageRules": [
     {
       "description": "Pin Docker image digests in Dockerfiles for security",
@@ -162,6 +167,56 @@
       "addLabels": [
         "major"
       ]
+    },
+    {
+      "description": "Group ESLint ecosystem major updates to avoid peer dependency conflicts",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "matchPackageNames": [
+        "eslint",
+        "@eslint/js",
+        "typescript-eslint",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh"
+      ],
+      "groupName": "ESLint major ecosystem"
+    },
+    {
+      "description": "Group Vite ecosystem major updates to keep plugins compatible",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "matchPackageNames": [
+        "vite",
+        "@vitejs/plugin-react"
+      ],
+      "groupName": "Vite major ecosystem"
+    },
+    {
+      "description": "Group PostCSS ecosystem major updates together",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "matchPackageNames": [
+        "postcss",
+        "autoprefixer",
+        "postcss-preset-env"
+      ],
+      "groupName": "PostCSS major ecosystem"
+    },
+    {
+      "description": "Group GORM ecosystem major updates to keep drivers in sync",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "matchPackageNames": [
+        "gorm.io/gorm",
+        "gorm.io/driver/postgres",
+        "gorm.io/driver/mysql",
+        "gorm.io/hints"
+      ],
+      "groupName": "GORM major ecosystem"
     },
     {
       "description": "Security updates - immediate processing with highest priority",
