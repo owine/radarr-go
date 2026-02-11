@@ -14,9 +14,9 @@ concurrency:
 
 env:
   # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.25.7'
+  GO_VERSION: '1.26.0'
   # renovate: datasource=node-version depName=node
-  NODE_VERSION: '24.13.0'
+  NODE_VERSION: '24.13.1'
   CACHE_VERSION: 'v3'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
