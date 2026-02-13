@@ -139,7 +139,7 @@ services:
 
   # PostgreSQL database
   postgres:
-    image: postgres:18.1-alpine
+    image: postgres:18.2-alpine
     container_name: radarr-postgres
     restart: unless-stopped
 
@@ -397,7 +397,7 @@ services:
 
   # Automated backup service
   backup:
-    image: postgres:18.1-alpine
+    image: postgres:18.2-alpine
     container_name: radarr-backup
     restart: unless-stopped
 

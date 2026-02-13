@@ -60,7 +60,7 @@ services:
 
   # MariaDB Database (Alternative)
   mariadb:
-    image: mariadb:12.1.2
+    image: mariadb:12.2.2
     container_name: radarr-mariadb
     restart: unless-stopped
     environment:
@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:24.13.0-alpine
+    image: node:24.13.1-alpine
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.3.2
+    image: grafana/grafana:12.3.3
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
@@ -262,7 +262,7 @@ services:
       - test-network
 
   mariadb-test:
-    image: mariadb:12.1.2
+    image: mariadb:12.2.2
     container_name: radarr-mariadb-test
     environment:
       - MARIADB_DATABASE=radarr_test
