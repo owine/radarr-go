@@ -45,14 +45,15 @@ jobs:
               - '**/*.go'
               - 'go.mod'
               - 'go.sum'
-              - 'go.work*'
+              - 'go.work'
+              - 'go.work.sum'
               - 'internal/**'
               - 'cmd/**'
               - 'migrations/**'
               - 'config*.yml'
             frontend:
               - 'web/frontend/**'
-              - '**/package*.json'
+              - 'web/frontend/package*.json'
             workflows:
               - '.github/workflows/**'
             docker:
