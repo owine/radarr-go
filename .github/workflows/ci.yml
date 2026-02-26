@@ -329,7 +329,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('go.sum', 'go.work.sum') }}
           restore-keys: |
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
@@ -450,7 +450,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('go.sum', 'go.work.sum') }}
           restore-keys: |
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
@@ -573,7 +573,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('go.sum', 'go.work.sum') }}
           restore-keys: |
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
