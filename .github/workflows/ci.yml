@@ -60,8 +60,8 @@ jobs:
               - 'docker-compose*.yml'
               - '.dockerignore'
 
-  # Stage 1: Quality checks and build (optimized for cost and speed)
-  quality-and-build:
+  # Stage 1: Quality checks (linting, security, module validation)
+  quality:
     needs: detect-changes
     # Run if backend, frontend, workflows, or docker files changed
     if: |
@@ -69,7 +69,7 @@ jobs:
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.workflows == 'true' ||
       needs.detect-changes.outputs.docker == 'true'
-    name: Quality & Build
+    name: Quality
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -293,7 +293,35 @@ jobs:
             git diff --stat go.work.sum
           fi
 
-      # Cache Go build artifacts (v3 for cache cleanup)
+  # Stage 2: Build cross-platform artifacts (only when backend code changes)
+  build:
+    needs: [detect-changes, quality]
+    # Run only when backend code changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    name: Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go with enhanced caching
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            go.work.sum
+
+      - name: Download Go modules
+        run: |
+          echo "Downloading Go modules with optimizations..."
+          go env -w GOPROXY="https://proxy.golang.org,direct"
+          go mod download -x
+          go work sync
+
+      # Cache Go build artifacts
       - name: Cache Go build artifacts
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
@@ -370,11 +398,11 @@ jobs:
           retention-days: 7
           compression-level: 9
 
-  # Stage 2: PostgreSQL Database Tests
+  # Stage 3: PostgreSQL Database Tests
   test-postgres:
     name: Database Tests (postgres)
     runs-on: ubuntu-24.04
-    needs: [detect-changes, quality-and-build]
+    needs: [detect-changes, build]
     # Run if backend code changed
     if: needs.detect-changes.outputs.backend == 'true'
     timeout-minutes: 20
@@ -492,11 +520,11 @@ jobs:
           RADARR_DATABASE_USERNAME: test_user
           RADARR_DATABASE_PASSWORD: test_password_123
 
-  # Stage 3: MariaDB Database Tests
+  # Stage 4: MariaDB Database Tests
   test-mariadb:
     name: Database Tests (mariadb)
     runs-on: ubuntu-24.04
-    needs: [detect-changes, quality-and-build]
+    needs: [detect-changes, build]
     # Run if backend code changed
     if: needs.detect-changes.outputs.backend == 'true'
     timeout-minutes: 20
@@ -620,7 +648,7 @@ jobs:
           RADARR_DATABASE_USERNAME: test_user
           RADARR_DATABASE_PASSWORD: test_password_123
 
-  # Stage 4: Streamlined publish (major cost savings)
+  # Stage 5: Streamlined publish (major cost savings)
   publish:
     name: Publish Test Images and Artifacts
     runs-on: ubuntu-24.04
