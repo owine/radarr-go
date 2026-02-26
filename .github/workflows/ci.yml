@@ -17,7 +17,7 @@ env:
   GO_VERSION: '1.26.0'
   # renovate: datasource=node-version depName=node
   NODE_VERSION: '24.14.0'
-  CACHE_VERSION: 'v3'
+  CACHE_VERSION: 'v4'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -300,8 +300,10 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       # Build all artifacts in single job (major cost savings)
@@ -419,8 +421,10 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       - name: Setup test environment
@@ -540,8 +544,10 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg
-          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          key: go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-${{ github.ref_name }}-
+            go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-main-
             go-build-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ env.GO_VERSION }}-
 
       - name: Setup test environment
