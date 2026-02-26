@@ -94,7 +94,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache-dependency-path: 'web/frontend/package-lock.json'
 
 
       # Cache linting tools with version-aware keys (v3 for cache cleanup)
