@@ -15,6 +15,7 @@
     ":automergeLinters",
     ":automergeDigest"
   ],
+  "timezone": "America/Chicago",
   "labels": [
     "dependencies"
   ],
