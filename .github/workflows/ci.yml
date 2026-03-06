@@ -14,7 +14,7 @@ concurrency:
 
 env:
   # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.26.0'
+  GO_VERSION: '1.26.1'
   # renovate: datasource=node-version depName=node
   NODE_VERSION: '24.14.0'
   CACHE_VERSION: 'v4'
@@ -273,7 +273,7 @@ jobs:
 
       - name: Upload SARIF file
         if: always() && hashFiles('gosec.sarif') != ''
-        uses: github/codeql-action/upload-sarif@c793b717bc78562f491db7b0e93a3a178b099162 # v4.32.5
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
         with:
           sarif_file: gosec.sarif
         continue-on-error: true
