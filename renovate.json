@@ -11,11 +11,15 @@
     ":enableVulnerabilityAlerts",
     ":rebaseStalePrs",
     ":semanticCommits",
+    ":semanticPrefixFixDepsChoreOthers",
     ":automergeMinor",
     ":automergeLinters",
     ":automergeDigest"
   ],
   "timezone": "America/Chicago",
+  "schedule": [
+    "on monday"
+  ],
   "labels": [
     "dependencies"
   ],
@@ -99,17 +103,6 @@
       ]
     },
     {
-      "description": "All non-major updates - grouped together across all ecosystems",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Non-major dependencies",
-      "addLabels": [
-        "dependencies"
-      ]
-    },
-    {
       "description": "Go ecosystem labels",
       "matchManagers": [
         "gomod"
@@ -145,6 +138,48 @@
       "addLabels": [
         "github-actions"
       ]
+    },
+    {
+      "description": "Group all GitHub Actions updates into a single PR",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Group all Docker image digest and version updates",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "Docker non-major updates"
+    },
+    {
+      "description": "Group all Go module non-major updates into a single PR",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Go module non-major updates"
+    },
+    {
+      "description": "Group all npm non-major updates into a single PR",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "npm non-major updates"
     },
     {
       "description": "Docker-compose updates - disable digest pinning",
