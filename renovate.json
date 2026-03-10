@@ -28,9 +28,9 @@
     {
       "customType": "regex",
       "description": "Go tool versions in Dockerfiles and Makefile",
-      "fileMatch": [
-        "(^|/)Dockerfile[^/]*$",
-        "(^|/)Makefile$"
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/",
+        "/(^|/)Makefile$/"
       ],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\n[^@]*@(?<currentValue>v[\\d.]+)"
