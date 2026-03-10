@@ -43,6 +43,14 @@ JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor
 MARKDOWN_FILES=$(shell find . -name '*.md' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
 SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor)
 
+# Tool versions (renovate-managed)
+# renovate: datasource=go depName=github.com/air-verse/air
+AIR_VERSION ?= v1.64.5
+# renovate: datasource=go depName=github.com/golangci/golangci-lint
+GOLANGCI_LINT_VERSION ?= v2.11.2
+# renovate: datasource=go depName=github.com/golang-migrate/migrate/v4
+MIGRATE_VERSION ?= v4.19.1
+
 # Build variables
 VERSION ?= dev
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -92,7 +100,7 @@ build-all-with-frontend: build-frontend build-all
 run: build
 	./$(BINARY_NAME)
 
-# Run with hot reload using air (install with: go install github.com/cosmtrek/air@latest)
+# Run with hot reload using air (install with: go install github.com/air-verse/air@$(AIR_VERSION))
 dev-air:
 	air
 
@@ -564,9 +572,9 @@ setup: setup-backend setup-frontend
 
 # Backend development setup
 setup-backend:
-	$(GOGET) github.com/cosmtrek/air@latest
-	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	$(GOGET) github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	$(GOGET) github.com/air-verse/air@$(AIR_VERSION)
+	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	$(GOGET) github.com/golang-migrate/migrate/v4/cmd/migrate@$(MIGRATE_VERSION)
 	mkdir -p data movies web/static web/templates
 
 # Linting Tools Setup and Verification (Performance Optimized)
@@ -578,7 +586,7 @@ setup-lint-tools-ci:
 	@mkdir -p ~/.local/bin
 	@# Install Go tools in parallel
 	@echo "Installing Go linting tools in parallel..."
-	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest &
+	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) &
 	@# Install Python tools (essential only)
 	@echo "Installing Python yamllint..."
 	@if which pip3 > /dev/null 2>&1; then \
@@ -608,7 +616,7 @@ setup-lint-tools-ci:
 setup-lint-tools:
 	@echo "Installing linting tools for local development..."
 	@echo "Installing Go linting tools..."
-	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 	@echo "Installing YAML linting tools..."
 	@if which pip3 > /dev/null 2>&1; then \
 		pip3 install yamllint; \
@@ -702,7 +710,7 @@ setup-lint-tools-minimal:
 	@# Only install absolutely critical tools
 	@if [ ! -f "$(shell go env GOPATH)/bin/golangci-lint" ]; then \
 		echo "Installing golangci-lint..."; \
-		$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
 	else \
 		echo "✅ golangci-lint already cached"; \
 	fi

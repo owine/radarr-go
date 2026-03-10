@@ -24,6 +24,20 @@
     "dependencies"
   ],
   "dependencyDashboard": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Go tool versions in Dockerfiles and Makefile",
+      "fileMatch": [
+        "(^|/)Dockerfile[^/]*$",
+        "(^|/)Makefile$"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\n[^@]*@(?<currentValue>v[\\d.]+)"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
   "postUpdateOptions": [
     "gomodTidy",
     "gomodUpdateImportPaths",

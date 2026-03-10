@@ -9,7 +9,8 @@ services:
       context: .
       dockerfile: Dockerfile.dev
       args:
-        - GO_VERSION=1.25
+        # renovate: datasource=golang-version depName=golang
+        - GO_VERSION=1.26.1
     container_name: radarr-dev
     volumes:
       # Override with workspace mount for hot reload

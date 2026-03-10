@@ -37,7 +37,7 @@ services:
 
   # PostgreSQL Database (Primary)
   postgres:
-    image: postgres:18-alpine
+    image: postgres:18.3-alpine
     container_name: radarr-postgres
     restart: unless-stopped
     environment:
@@ -218,7 +218,7 @@ services:
 
   # Distributed Tracing - Jaeger
   jaeger:
-    image: jaegertracing/all-in-one:1.60
+    image: jaegertracing/all-in-one:1.60.0
     container_name: radarr-jaeger
     restart: unless-stopped
     ports:
@@ -235,7 +235,7 @@ services:
 
   # Test Database Services (Separate Ports)
   postgres-test:
-    image: postgres:18-alpine
+    image: postgres:18.3-alpine
     container_name: radarr-postgres-test
     environment:
       - POSTGRES_DB=radarr_test

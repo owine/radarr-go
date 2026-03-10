@@ -17,10 +17,12 @@ RUN apk add --no-cache \
 ENV TZ=UTC
 
 # Install air for hot reload
-RUN go install github.com/air-verse/air@latest
+# renovate: datasource=go depName=github.com/air-verse/air
+RUN go install github.com/air-verse/air@v1.64.5
 
 # Install other development tools
-RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+# renovate: datasource=go depName=github.com/golang-migrate/migrate/v4
+RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1
 
 # Create app directory
 WORKDIR /workspace
