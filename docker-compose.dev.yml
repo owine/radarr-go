@@ -112,7 +112,7 @@ services:
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
 
-  mailhog:
+  mailpit:
     profiles:
       - dev
 
