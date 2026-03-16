@@ -56,7 +56,7 @@ services:
   adminer:
     profiles: []  # Remove profile requirement - always available in dev
 
-  mailhog:
+  mailpit:
     profiles: []  # Remove profile requirement - always available in dev
 
   # Enable frontend by default in development

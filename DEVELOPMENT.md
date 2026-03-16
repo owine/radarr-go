@@ -154,7 +154,7 @@ make dev-full
 # - Redis cache
 # - Monitoring tools (Prometheus, Grafana, Jaeger)
 # - Database admin interface (Adminer)
-# - Email testing (MailHog)
+# - Email testing (Mailpit)
 ```
 
 #### Database-Specific Development
@@ -416,7 +416,7 @@ When running `make dev-full`, you get a complete monitoring stack:
 - **SMTP**: localhost:1025
 - **Web UI**: http://localhost:8025
 - **Purpose**: Test notification emails
-- **Service**: MailHog
+- **Service**: Mailpit
 
 ### Application Debugging
 
@@ -484,7 +484,7 @@ docker-compose -f docker-compose.dev.yml --profile redis up -d
 | prometheus | 9090 | Metrics | monitoring |
 | grafana | 3001 | Dashboards | monitoring |
 | jaeger | 16686 | Tracing | monitoring |
-| mailhog | 8025 | Email testing | monitoring |
+| mailpit | 8025 | Email testing | monitoring |
 
 ### Docker Build Development
 
@@ -675,7 +675,7 @@ internal/
 
 Use conventional commits:
 
-```bash
+```text
 feat(api): add movie search endpoint
 fix(database): resolve connection pool leak
 docs(readme): update installation instructions

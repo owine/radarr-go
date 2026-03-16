@@ -72,7 +72,7 @@ show_service_urls() {
     echo -e "${BLUE}Prometheus:${NC}         http://localhost:9090"
     echo -e "${BLUE}Grafana:${NC}            http://localhost:3001 (admin/admin)"
     echo -e "${BLUE}Jaeger Tracing:${NC}     http://localhost:16686"
-    echo -e "${BLUE}MailHog:${NC}            http://localhost:8025"
+    echo -e "${BLUE}Mailpit:${NC}            http://localhost:8025"
     echo -e ""
     echo -e "${BLUE}Frontend (Phase 2):${NC} http://localhost:3000"
     echo -e "${BLUE}Storybook (Future):${NC} http://localhost:3001"
@@ -112,8 +112,8 @@ check_system_status() {
         check_service "localhost" "16686" "Jaeger Tracing"
     fi
 
-    if check_docker_service "radarr-dev-mailhog" "MailHog"; then
-        check_service "localhost" "8025" "MailHog Email Testing"
+    if check_docker_service "radarr-dev-mailpit" "Mailpit"; then
+        check_service "localhost" "8025" "Mailpit Email Testing"
     fi
 
     # Check frontend (when implemented)

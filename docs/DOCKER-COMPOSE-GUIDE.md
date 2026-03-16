@@ -80,7 +80,7 @@ The base `docker-compose.yml` now includes ALL services organized by profiles:
 - `default` - Main application + PostgreSQL (always available)
 - `dev` - Development-specific services with hot reload
 - `frontend` - React development server (Phase 2)
-- `admin` - Database administration tools (Adminer, MailHog)
+- `admin` - Database administration tools (Adminer, Mailpit)
 - `monitoring` - Observability stack (Prometheus, Grafana, Jaeger)
 - `mariadb` - MariaDB alternative database
 - `redis` - Redis caching layer
@@ -90,7 +90,7 @@ The base `docker-compose.yml` now includes ALL services organized by profiles:
 
 ```bash
 # Use specific profiles
-docker-compose up --profile admin          # Add Adminer + MailHog
+docker-compose up --profile admin          # Add Adminer + Mailpit
 docker-compose up --profile monitoring     # Add Prometheus + Grafana + Jaeger
 docker-compose up --profile mariadb        # Add MariaDB database
 docker-compose up --profile frontend       # Add React development server
@@ -124,7 +124,7 @@ docker-compose up --profile admin --profile monitoring --profile redis
 #### Basic Development (Default)
 
 ```bash
-# Starts: Backend (hot reload) + PostgreSQL + Adminer + MailHog
+# Starts: Backend (hot reload) + PostgreSQL + Adminer + Mailpit
 make dev
 # or
 docker-compose up --build
@@ -134,7 +134,7 @@ docker-compose up --build
 - Backend hot reloads with Air
 - PostgreSQL with development-friendly logging
 - Adminer for database management
-- MailHog for email testing
+- Mailpit for email testing
 
 #### Full Development Environment
 
