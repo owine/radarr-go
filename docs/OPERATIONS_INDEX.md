@@ -4,7 +4,9 @@
 
 ## 📋 Documentation Overview
 
-This comprehensive operations documentation suite provides everything needed to deploy, monitor, secure, and maintain Radarr Go in production environments. The documentation is organized into focused guides covering all aspects of production operations.
+This comprehensive operations documentation suite provides everything needed to deploy, monitor, secure, and maintain
+Radarr Go in production environments. The documentation is organized into focused guides covering all aspects of
+production operations.
 
 ## 📚 Documentation Structure
 
@@ -195,7 +197,7 @@ This comprehensive operations documentation suite provides everything needed to 
 
 ### Deployment Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    Load Balancer                        │
 │                   (SSL Termination)                     │
@@ -225,7 +227,7 @@ This comprehensive operations documentation suite provides everything needed to 
 
 ### Monitoring Architecture
 
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Application   │───▶│   Prometheus     │───▶│    Grafana      │
 │   (Metrics)     │    │  (Collection)    │    │ (Visualization) │
@@ -338,7 +340,8 @@ This comprehensive operations documentation suite provides everything needed to 
 
 ## 🚀 Ready to Deploy?
 
-This documentation suite provides everything needed for enterprise-grade Radarr Go deployments. Start with the [Production Deployment Guide](./PRODUCTION_DEPLOYMENT.md) and follow the documentation in order for best results.
+This documentation suite provides everything needed for enterprise-grade Radarr Go deployments. Start with the
+[Production Deployment Guide](./PRODUCTION_DEPLOYMENT.md) and follow the documentation in order for best results.
 
 **Remember**: Radarr Go offers significant advantages over the original version:
 

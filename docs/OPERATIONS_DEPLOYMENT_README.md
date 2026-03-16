@@ -92,7 +92,7 @@ export ENABLE_MONITORING=true
 
 ### Production Architecture
 
-```
+```text
 [Internet]
     ↓ (HTTPS/SSL)
 [Load Balancer/Proxy]

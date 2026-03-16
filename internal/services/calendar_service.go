@@ -207,28 +207,28 @@ func (s *CalendarService) generateEventDescription(movie *models.Movie, eventTyp
 
 	switch eventType {
 	case models.CalendarEventCinemaRelease:
-		description.WriteString(fmt.Sprintf("%s is released in cinemas", movie.Title))
+		fmt.Fprintf(&description, "%s is released in cinemas", movie.Title)
 	case models.CalendarEventPhysicalRelease:
-		description.WriteString(fmt.Sprintf("%s physical release", movie.Title))
+		fmt.Fprintf(&description, "%s physical release", movie.Title)
 		if movie.PhysicalReleaseNote != "" {
-			description.WriteString(fmt.Sprintf(" - %s", movie.PhysicalReleaseNote))
+			fmt.Fprintf(&description, " - %s", movie.PhysicalReleaseNote)
 		}
 	case models.CalendarEventDigitalRelease:
-		description.WriteString(fmt.Sprintf("%s digital release", movie.Title))
+		fmt.Fprintf(&description, "%s digital release", movie.Title)
 	case models.CalendarEventAvailability:
-		description.WriteString(fmt.Sprintf("%s becomes available for download", movie.Title))
+		fmt.Fprintf(&description, "%s becomes available for download", movie.Title)
 	case models.CalendarEventAnnouncement:
-		description.WriteString(fmt.Sprintf("%s announcement", movie.Title))
+		fmt.Fprintf(&description, "%s announcement", movie.Title)
 	case models.CalendarEventMonitoring:
 		if movie.Monitored {
-			description.WriteString(fmt.Sprintf("%s is being monitored", movie.Title))
+			fmt.Fprintf(&description, "%s is being monitored", movie.Title)
 		} else {
-			description.WriteString(fmt.Sprintf("%s monitoring disabled", movie.Title))
+			fmt.Fprintf(&description, "%s monitoring disabled", movie.Title)
 		}
 	}
 
 	if movie.Overview != "" && len(movie.Overview) < 200 {
-		description.WriteString(fmt.Sprintf("\n\n%s", movie.Overview))
+		fmt.Fprintf(&description, "\n\n%s", movie.Overview)
 	}
 
 	return description.String()
@@ -449,7 +449,7 @@ func (s *CalendarService) setDefaultDateRange(request *models.CalendarRequest) *
 
 // generateCacheKey creates a cache key for the calendar request
 func (s *CalendarService) generateCacheKey(request *models.CalendarRequest) string {
-	data, _ := json.Marshal(request)
+	data, _ := json.Marshal(request) //nolint:errcheck // CalendarRequest is always marshalable
 	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
 }
@@ -526,7 +526,7 @@ func (s *CalendarService) GetCalendarConfiguration() (*models.CalendarConfigurat
 		if err == gorm.ErrRecordNotFound {
 			// Return default configuration if none exists
 			defaultConfig := models.DefaultCalendarConfiguration()
-			if err := s.db.GORM.Create(defaultConfig).Error; err != nil {
+			if err = s.db.GORM.Create(defaultConfig).Error; err != nil {
 				return nil, fmt.Errorf("failed to create default calendar configuration: %w", err)
 			}
 			return defaultConfig, nil

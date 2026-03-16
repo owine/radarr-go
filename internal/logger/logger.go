@@ -65,5 +65,5 @@ func (l *Logger) Fatal(msg string, keysAndValues ...interface{}) {
 
 // Close flushes any buffered log entries
 func (l *Logger) Close() {
-	_ = l.Sync()
+	_ = l.Sync() //nolint:errcheck // Sync on shutdown, error is non-critical
 }

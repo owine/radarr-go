@@ -19,9 +19,9 @@ repos:
         name: Go Mod Tidy
         description: Tidy and verify Go modules
 
-  # Go linting with golangci-lint (stable version)
+  # Go linting with golangci-lint (v2)
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.62.2
+    rev: v2.11.3
     hooks:
       - id: golangci-lint
         name: Go Lint

@@ -9,7 +9,7 @@ interface OfflineDetectorProps {
 
 export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [showOfflineBanner, setShowOfflineBanner] = useState(!navigator.onLine);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -39,11 +39,6 @@ export const OfflineDetector: React.FC<OfflineDetectorProps> = ({ children }) =>
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    // Initial check
-    if (!navigator.onLine) {
-      setShowOfflineBanner(true);
-    }
 
     return () => {
       window.removeEventListener('online', handleOnline);

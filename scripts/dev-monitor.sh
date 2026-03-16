@@ -9,14 +9,13 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
-    local color=$1
-    local message=$2
+    local color="$1"
+    local message="$2"
     echo -e "${color}${message}${NC}"
 }
 
@@ -28,35 +27,36 @@ print_header() {
 
 # Function to check if a service is running
 check_service() {
-    local service=$1
-    local port=$2
-    local name=$3
+    local service="$1"
+    local port="$2"
+    local name="$3"
 
-    if curl -s -f http://localhost:$port > /dev/null 2>&1; then
-        print_status $GREEN "✓ $name is running on port $port"
+    if curl -s -f "http://localhost:$port" > /dev/null 2>&1; then
+        print_status "$GREEN" "✓ $name is running on port $port"
         return 0
     else
-        print_status $RED "✗ $name is not responding on port $port"
+        print_status "$RED" "✗ $name is not responding on port $port"
         return 1
     fi
 }
 
 # Function to check Docker service
 check_docker_service() {
-    local container=$1
-    local name=$2
+    local container="$1"
+    local name="$2"
 
-    if docker ps --format "table {{.Names}}" | grep -q $container; then
-        local status=$(docker inspect -f '{{.State.Status}}' $container 2>/dev/null)
+    if docker ps --format "table {{.Names}}" | grep -q "$container"; then
+        local status
+        status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null)
         if [ "$status" = "running" ]; then
-            print_status $GREEN "✓ $name container is running"
+            print_status "$GREEN" "✓ $name container is running"
             return 0
         else
-            print_status $YELLOW "⚠ $name container exists but status: $status"
+            print_status "$YELLOW" "⚠ $name container exists but status: $status"
             return 1
         fi
     else
-        print_status $RED "✗ $name container not found"
+        print_status "$RED" "✗ $name container not found"
         return 1
     fi
 }
@@ -127,20 +127,20 @@ show_docker_status() {
     print_header "Docker Container Status"
 
     if ! command -v docker >/dev/null 2>&1; then
-        print_status $RED "Docker is not installed or not in PATH"
+        print_status "$RED" "Docker is not installed or not in PATH"
         return 1
     fi
 
     echo "Development containers:"
     docker ps --filter "name=radarr-dev-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || {
-        print_status $YELLOW "No development containers found"
+        print_status "$YELLOW" "No development containers found"
         echo "Run 'make dev-full' to start the development environment"
     }
 }
 
 # Function to display logs
 show_logs() {
-    local service=${1:-"all"}
+    local service="${1:-all}"
 
     print_header "Development Environment Logs"
 
@@ -149,7 +149,7 @@ show_logs() {
         docker-compose -f docker-compose.dev.yml logs -f --tail=50
     else
         echo "Showing logs for $service (press Ctrl+C to stop):"
-        docker-compose -f docker-compose.dev.yml logs -f --tail=50 $service
+        docker-compose -f docker-compose.dev.yml logs -f --tail=50 "$service"
     fi
 }
 
@@ -159,7 +159,7 @@ run_dev_tests() {
 
     # Check if test databases are running
     if ! docker ps --format "table {{.Names}}" | grep -q "postgres-test\|mariadb-test"; then
-        print_status $YELLOW "Starting test databases..."
+        print_status "$YELLOW" "Starting test databases..."
         make test-db-up
         sleep 5
     fi
@@ -167,25 +167,25 @@ run_dev_tests() {
     # Run different types of tests
     echo -e "${BLUE}Running unit tests...${NC}"
     if make test-unit; then
-        print_status $GREEN "✓ Unit tests passed"
+        print_status "$GREEN" "✓ Unit tests passed"
     else
-        print_status $RED "✗ Unit tests failed"
+        print_status "$RED" "✗ Unit tests failed"
         return 1
     fi
 
     echo -e "${BLUE}Running integration tests...${NC}"
     if make test; then
-        print_status $GREEN "✓ Integration tests passed"
+        print_status "$GREEN" "✓ Integration tests passed"
     else
-        print_status $RED "✗ Integration tests failed"
+        print_status "$RED" "✗ Integration tests failed"
         return 1
     fi
 
     echo -e "${BLUE}Running benchmark tests...${NC}"
     if make test-bench; then
-        print_status $GREEN "✓ Benchmark tests completed"
+        print_status "$GREEN" "✓ Benchmark tests completed"
     else
-        print_status $YELLOW "⚠ Benchmark tests had issues"
+        print_status "$YELLOW" "⚠ Benchmark tests had issues"
     fi
 }
 
@@ -195,7 +195,7 @@ show_performance() {
 
     # Check if backend is running
     if ! check_service "radarr-backend" "7878" "Backend" > /dev/null; then
-        print_status $RED "Backend not running. Start with 'make dev' or 'make dev-full'"
+        print_status "$RED" "Backend not running. Start with 'make dev' or 'make dev-full'"
         return 1
     fi
 
@@ -223,33 +223,33 @@ show_performance() {
 
 # Function to start specific development environment
 start_environment() {
-    local env_type=${1:-"full"}
+    local env_type="${1:-full}"
 
     print_header "Starting Development Environment: $env_type"
 
-    case $env_type in
+    case "$env_type" in
         "backend-only")
-            print_status $BLUE "Starting backend with hot reload..."
+            print_status "$BLUE" "Starting backend with hot reload..."
             make dev
             ;;
         "full")
-            print_status $BLUE "Starting complete development environment..."
+            print_status "$BLUE" "Starting complete development environment..."
             make dev-full
             ;;
         "databases")
-            print_status $BLUE "Starting development databases only..."
+            print_status "$BLUE" "Starting development databases only..."
             docker-compose -f docker-compose.dev.yml up -d postgres-dev
             ;;
         "monitoring")
-            print_status $BLUE "Starting with monitoring tools..."
+            print_status "$BLUE" "Starting with monitoring tools..."
             docker-compose -f docker-compose.dev.yml --profile monitoring up -d
             ;;
         "mariadb")
-            print_status $BLUE "Starting with MariaDB instead of PostgreSQL..."
+            print_status "$BLUE" "Starting with MariaDB instead of PostgreSQL..."
             docker-compose -f docker-compose.dev.yml --profile mariadb up -d
             ;;
         *)
-            print_status $RED "Unknown environment type: $env_type"
+            print_status "$RED" "Unknown environment type: $env_type"
             echo "Available types: backend-only, full, databases, monitoring, mariadb"
             return 1
             ;;
@@ -260,14 +260,14 @@ start_environment() {
 stop_environment() {
     print_header "Stopping Development Environment"
 
-    print_status $YELLOW "Stopping all development services..."
+    print_status "$YELLOW" "Stopping all development services..."
     docker-compose -f docker-compose.dev.yml down
 
     if [ "$1" = "--clean" ]; then
-        print_status $YELLOW "Cleaning up volumes and data..."
+        print_status "$YELLOW" "Cleaning up volumes and data..."
         docker-compose -f docker-compose.dev.yml down -v --remove-orphans
         make test-db-clean
-        print_status $GREEN "Development environment cleaned"
+        print_status "$GREEN" "Development environment cleaned"
     fi
 }
 
@@ -332,7 +332,7 @@ case "${1:-status}" in
         show_help
         ;;
     *)
-        print_status $RED "Unknown command: $1"
+        print_status "$RED" "Unknown command: $1"
         echo "Use '$0 help' for available commands"
         exit 1
         ;;

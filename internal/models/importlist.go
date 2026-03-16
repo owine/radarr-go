@@ -89,7 +89,7 @@ type ImportListSettings struct {
 
 // Value implements the driver.Valuer interface for database storage
 func (s ImportListSettings) Value() (driver.Value, error) {
-	return json.Marshal(s)
+	return json.Marshal(s) //nolint:gosec // G117: APIKey field is intentionally serialized for DB storage
 }
 
 // Scan implements the sql.Scanner interface for database retrieval

@@ -1,6 +1,8 @@
 # Radarr-Go Advanced Features Documentation
 
-This comprehensive guide covers Radarr-Go's advanced features that differentiate it from the original Radarr, including sophisticated task scheduling, multi-provider notifications, intelligent health monitoring, and automated file organization systems.
+This comprehensive guide covers Radarr-Go's advanced features that differentiate it from the original Radarr,
+including sophisticated task scheduling, multi-provider notifications, intelligent health monitoring, and
+automated file organization systems.
 
 ## Table of Contents
 
@@ -535,7 +537,7 @@ Advanced metadata:
 
 ##### Basic Template
 
-```
+```text
 {MovieTitle} ({MovieYear}) [{Quality}]
 ```
 
@@ -543,7 +545,7 @@ Result: `Avatar (2009) [Bluray-1080p].mkv`
 
 ##### Advanced Template with Media Info
 
-```
+```text
 {MovieTitle} ({MovieYear}) [{Quality} {MediaInfo.VideoCodec} {MediaInfo.AudioCodec}]-{ReleaseGroup}
 ```
 
@@ -551,7 +553,7 @@ Result: `Avatar (2009) [Bluray-1080p x264 DTS]-SPARKS.mkv`
 
 ##### Collection-Based Organization
 
-```
+```text
 {Collection}/{MovieTitle} ({MovieYear}) [{Quality}]
 ```
 
@@ -1149,4 +1151,6 @@ logging:
 
 ---
 
-This comprehensive documentation covers Radarr-Go's advanced features. For additional support, consult the official documentation or community forums. Regular updates to this documentation reflect new features and improvements in the Radarr-Go system.
+This comprehensive documentation covers Radarr-Go's advanced features. For additional support, consult the
+official documentation or community forums. Regular updates to this documentation reflect new features and
+improvements in the Radarr-Go system.

@@ -1,6 +1,8 @@
 # Docker Compose Consolidation Guide
 
-This guide explains the new consolidated Docker Compose architecture for Radarr Go, designed to eliminate duplication and simplify development workflows. All files are **Docker Compose v2 compatible** with deprecated `version:` fields removed.
+This guide explains the new consolidated Docker Compose architecture for Radarr Go, designed to eliminate
+duplication and simplify development workflows. All files are **Docker Compose v2 compatible** with deprecated
+`version:` fields removed.
 
 ## 📋 Requirements
 
@@ -54,7 +56,7 @@ make prod-down            # Stop production services
 
 ### Core Files (Consolidated)
 
-```
+```text
 ├── docker-compose.yml              # 🎯 BASE - All services with profiles
 ├── docker-compose.override.yml     # 🔧 DEV DEFAULTS - Auto-loaded for development
 

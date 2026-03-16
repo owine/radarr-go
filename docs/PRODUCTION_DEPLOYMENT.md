@@ -4,7 +4,9 @@
 
 ## Overview
 
-This guide provides comprehensive production deployment strategies for Radarr Go, covering containerized deployments, orchestration platforms, monitoring setup, and operational best practices. Radarr Go offers significant advantages over the original .NET version:
+This guide provides comprehensive production deployment strategies for Radarr Go, covering containerized
+deployments, orchestration platforms, monitoring setup, and operational best practices. Radarr Go offers
+significant advantages over the original .NET version:
 
 - **Single Binary Deployment** - No runtime dependencies beyond database
 - **60% Lower Memory Usage** - Efficient resource utilization

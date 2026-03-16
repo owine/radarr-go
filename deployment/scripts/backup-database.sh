@@ -25,7 +25,8 @@ error() {
 
 # Create backup
 create_backup() {
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_file="$BACKUP_DIR/radarr_backup_$timestamp.sql"
     local compressed_file="$backup_file.gz"
     local encrypted_file="$compressed_file.enc"
@@ -82,7 +83,8 @@ create_backup() {
 
     # Verify backup
     if [ -f "$final_backup_file" ] && [ -s "$final_backup_file" ]; then
-        local backup_size=$(stat -f%z "$final_backup_file" 2>/dev/null || stat -c%s "$final_backup_file" 2>/dev/null || echo "unknown")
+        local backup_size
+        backup_size=$(stat -f%z "$final_backup_file" 2>/dev/null || stat -c%s "$final_backup_file" 2>/dev/null || echo "unknown")
         log "Backup completed successfully: $final_backup_file (size: $backup_size bytes)"
     else
         error "Backup verification failed"
@@ -117,7 +119,8 @@ cleanup_old_backups() {
     log "Cleanup completed. Removed $deleted_count old backup files."
 
     # Show remaining backups
-    local remaining_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f | wc -l)
+    local remaining_count
+    remaining_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f | wc -l)
     log "Remaining backups: $remaining_count"
 }
 
@@ -135,7 +138,8 @@ verify_connection() {
 # Test backup restore (optional)
 test_restore() {
     local backup_file="$1"
-    local test_db="radarr_test_restore_$(date +%s)"
+    local test_db
+    test_db="radarr_test_restore_$(date +%s)"
 
     log "Testing backup restore with test database: $test_db"
 
@@ -173,7 +177,8 @@ test_restore() {
 
 # Generate backup report
 generate_backup_report() {
-    local report_file="$BACKUP_DIR/backup_report_$(date +%Y%m%d).txt"
+    local report_file
+    report_file="$BACKUP_DIR/backup_report_$(date +%Y%m%d).txt"
 
     {
         echo "Radarr Database Backup Report"
@@ -191,8 +196,10 @@ generate_backup_report() {
         echo "==============="
         find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | \
             sort -r | head -10 | while read -r backup; do
-            local size=$(stat -f%z "$backup" 2>/dev/null || stat -c%s "$backup" 2>/dev/null || echo "unknown")
-            local date=$(basename "$backup" | sed 's/radarr_backup_\([0-9]\{8\}_[0-9]\{6\}\).*/\1/' | sed 's/_/ /' | sed 's/\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\) \([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1-\2-\3 \4:\5:\6/')
+            local size
+            size=$(stat -f%z "$backup" 2>/dev/null || stat -c%s "$backup" 2>/dev/null || echo "unknown")
+            local date
+            date=$(basename "$backup" | sed 's/radarr_backup_\([0-9]\{8\}_[0-9]\{6\}\).*/\1/' | sed 's/_/ /' | sed 's/\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\) \([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1-\2-\3 \4:\5:\6/')
             echo "$date - $(basename "$backup") ($size bytes)"
         done
         echo ""
@@ -200,7 +207,8 @@ generate_backup_report() {
         echo "Storage Usage:"
         echo "=============="
         echo "Total backup files: $(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | wc -l)"
-        local total_size=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" -exec stat -f%z {} \; 2>/dev/null | awk '{sum+=$1} END {print sum+0}' || echo "0")
+        local total_size
+        total_size=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" -exec stat -f%z {} \; 2>/dev/null | awk '{sum+=$1} END {print sum+0}' || echo "0")
         echo "Total backup size: $total_size bytes"
         echo "Available space: $(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')KB"
         echo ""
@@ -234,7 +242,8 @@ main() {
     create_backup
 
     # Find the latest backup for testing
-    local latest_backup=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | sort -r | head -1)
+    local latest_backup
+    latest_backup=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | sort -r | head -1)
 
     # Test restore (optional)
     if [ "${TEST_RESTORE:-false}" = "true" ] && [ -n "$latest_backup" ]; then

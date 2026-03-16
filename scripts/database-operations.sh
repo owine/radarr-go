@@ -99,7 +99,8 @@ backup_postgres() {
         log_info "PostgreSQL backup completed successfully"
 
         # Get backup file size for validation
-        local backup_size=$(stat -c%s "$backup_file" 2>/dev/null || stat -f%z "$backup_file" 2>/dev/null || echo "unknown")
+        local backup_size
+        backup_size=$(stat -c%s "$backup_file" 2>/dev/null || stat -f%z "$backup_file" 2>/dev/null || echo "unknown")
         log_info "Backup file size: $backup_size bytes"
 
         # Verify backup integrity
@@ -145,7 +146,8 @@ backup_mysql() {
         log_info "MySQL/MariaDB backup completed successfully"
 
         # Get backup file size for validation
-        local backup_size=$(stat -c%s "$backup_file" 2>/dev/null || stat -f%z "$backup_file" 2>/dev/null || echo "unknown")
+        local backup_size
+        backup_size=$(stat -c%s "$backup_file" 2>/dev/null || stat -f%z "$backup_file" 2>/dev/null || echo "unknown")
         log_info "Backup file size: $backup_size bytes"
 
         # Basic validation - check if file contains expected content
@@ -164,7 +166,8 @@ backup_mysql() {
 # Main backup function with retention policy
 create_backup() {
     local backup_type="${1:-daily}"
-    local timestamp=$(date +"$DATE_FORMAT")
+    local timestamp
+    timestamp=$(date +"$DATE_FORMAT")
     local backup_file="$BACKUP_DIR/$backup_type/radarr_${DB_TYPE}_${backup_type}_${timestamp}.sql"
 
     setup_backup_dir
@@ -543,7 +546,8 @@ test_restore_postgres() {
         log_info "✓ Restore test successful"
 
         # Validate restored data
-        local table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$test_db_name" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
+        local table_count
+        table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$test_db_name" -t -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';" 2>/dev/null | tr -d ' ')
         log_info "✓ Restored $table_count tables"
 
         # Cleanup test database
@@ -580,7 +584,8 @@ test_restore_mysql() {
         log_info "✓ Restore test successful"
 
         # Validate restored data
-        local table_count=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -D "$test_db_name" -sNe "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$test_db_name';" 2>/dev/null)
+        local table_count
+        table_count=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -D "$test_db_name" -sNe "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$test_db_name';" 2>/dev/null)
         log_info "✓ Restored $table_count tables"
 
         # Cleanup test database
@@ -658,7 +663,8 @@ monitor_mysql_connections() {
 
 # Generate database report
 generate_report() {
-    local report_file="$BACKUP_DIR/database_report_$(date +"$DATE_FORMAT").txt"
+    local report_file
+    report_file="$BACKUP_DIR/database_report_$(date +"$DATE_FORMAT").txt"
     setup_backup_dir
 
     log_info "Generating database report: $report_file"

@@ -813,7 +813,7 @@ server:
 
 **HAProxy**:
 
-```
+```text
 backend radarr_backend
     balance roundrobin
     option httpchk GET /ping

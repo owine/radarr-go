@@ -9,7 +9,9 @@
 
 ## 🎯 Overview
 
-Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API while delivering significant performance improvements and enhanced features. This document outlines compatibility guarantees, migration paths, and new capabilities.
+Radarr Go provides **100% backward compatibility** with the Radarr v3 REST API while delivering significant
+performance improvements and enhanced features. This document outlines compatibility guarantees, migration paths,
+and new capabilities.
 
 ## ✅ Compatibility Guarantees
 
@@ -412,28 +414,28 @@ def connect_websocket(api_url, api_key):
 
 **1. Performance Differences**
 
-```
+```text
 Issue: Responses seem slower than expected
 Solution: Check database optimization and connection pooling settings
 ```
 
 **2. Authentication Problems**
 
-```
+```text
 Issue: API key not working
 Solution: Verify API key format and check for any URL encoding issues
 ```
 
 **3. Missing Features**
 
-```
+```text
 Issue: Third-party tool reports missing endpoints
 Solution: Check if tool is using deprecated endpoints; update tool or use compatibility shims
 ```
 
 **4. Database Migration Issues**
 
-```
+```text
 Issue: Data not migrating correctly
 Solution: Use the migration tool or manual export/import process
 ```

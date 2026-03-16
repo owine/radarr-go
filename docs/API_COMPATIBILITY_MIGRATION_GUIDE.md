@@ -4,7 +4,9 @@ This guide provides comprehensive information about API compatibility between or
 
 ## Overview
 
-Radarr Go maintains **100% backward compatibility** with Radarr v3 API while introducing enhanced features and performance improvements. This means existing API clients can seamlessly switch to Radarr Go without any code changes.
+Radarr Go maintains **100% backward compatibility** with Radarr v3 API while introducing enhanced features and
+performance improvements. This means existing API clients can seamlessly switch to Radarr Go without any code
+changes.
 
 ## API Compatibility Matrix
 

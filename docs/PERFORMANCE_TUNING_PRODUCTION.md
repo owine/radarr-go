@@ -13,7 +13,6 @@ This guide provides comprehensive performance optimization strategies for Radarr
 7. [Network Optimization](#network-optimization)
 8. [API Performance Tuning](#api-performance-tuning)
 9. [Monitoring and Profiling](#monitoring-and-profiling)
-10. [Automated Performance Scripts](#automated-performance-scripts)
 
 ## Overview
 
@@ -1672,4 +1671,6 @@ case "${1:-all}" in
 esac
 ```
 
-This comprehensive performance tuning guide covers all major aspects of optimizing Radarr Go for production use, including database optimization, Go runtime tuning, memory management, concurrent processing, and comprehensive monitoring and profiling tools.
+This comprehensive performance tuning guide covers all major aspects of optimizing Radarr Go for production use,
+including database optimization, Go runtime tuning, memory management, concurrent processing, and comprehensive
+monitoring and profiling tools.

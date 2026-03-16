@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2155,SC2034
 # Database Monitoring and Health Check Script for Radarr Go
 # Monitors database performance, replication lag, connection health, and alerting
 #
@@ -506,7 +507,8 @@ run_maintenance() {
             " >/dev/null 2>&1
 
             # Check for bloated indexes
-            local bloated_indexes=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "
+            local bloated_indexes
+            bloated_indexes=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "
                 SELECT COUNT(*) FROM (
                     SELECT
                         schemaname,

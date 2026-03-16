@@ -13,7 +13,6 @@ This comprehensive troubleshooting guide covers common issues and solutions when
 7. [Database-Related Problems](#database-related-problems)
 8. [Common Error Codes and Solutions](#common-error-codes-and-solutions)
 9. [Debugging Tools and Techniques](#debugging-tools-and-techniques)
-10. [Performance Optimization](#performance-optimization)
 
 ## Authentication Issues
 
@@ -1879,4 +1878,6 @@ if __name__ == "__main__":
     # debugger.interactive_debug_session()
 ```
 
-This completes the comprehensive Radarr Go API Troubleshooting Guide. The guide covers all major issues developers might encounter when working with the API, provides practical solutions, and includes debugging tools to help identify and resolve problems quickly.
+This completes the comprehensive Radarr Go API Troubleshooting Guide. The guide covers all major issues developers
+might encounter when working with the API, provides practical solutions, and includes debugging tools to help
+identify and resolve problems quickly.

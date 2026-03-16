@@ -101,7 +101,7 @@ func (s *Server) handleUpdateCollection(c *gin.Context) {
 	}
 
 	var updates models.MovieCollection
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	if err = c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}

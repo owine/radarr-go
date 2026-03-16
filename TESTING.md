@@ -653,4 +653,6 @@ go test -cpuprofile=cpu.prof -memprofile=mem.prof ./internal/services
 3. **Create realistic but minimal** datasets
 4. **Document complex test scenarios**
 
-This testing infrastructure provides a solid foundation for maintaining high code quality and preventing regressions in the Radarr Go project. The combination of unit tests, integration tests, and performance tests ensures comprehensive coverage across all components.
+This testing infrastructure provides a solid foundation for maintaining high code quality and preventing
+regressions in the Radarr Go project. The combination of unit tests, integration tests, and performance tests
+ensures comprehensive coverage across all components.

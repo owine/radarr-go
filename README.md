@@ -168,7 +168,8 @@ Environment variables use the `RADARR_` prefix:
 - Uses native Go driver (no CGO required)
 - InnoDB engine with UTF8MB4 support
 
-Both databases use optimized, database-specific migration files located in `migrations/mysql/` and `migrations/postgres/` respectively, ensuring optimal performance and compatibility for each database system.
+Both databases use optimized, database-specific migration files located in `migrations/mysql/` and
+`migrations/postgres/` respectively, ensuring optimal performance and compatibility for each database system.
 
 ## Development
 

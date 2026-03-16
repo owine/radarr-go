@@ -4,7 +4,9 @@
 
 ## Overview
 
-Radarr Go uses a hierarchical configuration system that prioritizes environment variables over YAML file settings. This allows for flexible deployment across different environments while maintaining configuration as code.
+Radarr Go uses a hierarchical configuration system that prioritizes environment variables over YAML file
+settings. This allows for flexible deployment across different environments while maintaining configuration as
+code.
 
 ## Configuration Priority (Highest to Lowest)
 

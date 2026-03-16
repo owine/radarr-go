@@ -80,7 +80,7 @@ status, _ := client.GetSystemStatus(context.Background())
 
 Visit the **Swagger UI** for interactive API testing:
 
-```
+```text
 http://localhost:7878/swagger-ui/
 ```
 
@@ -106,7 +106,7 @@ http://localhost:7878/swagger-ui/
 
 ## 🏗️ Architecture Overview
 
-```
+```text
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Your App      │    │   Radarr Go     │    │   External      │
 │                 │    │                 │    │   Services      │

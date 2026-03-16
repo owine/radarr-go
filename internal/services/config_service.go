@@ -282,7 +282,7 @@ func (s *ConfigService) getDiskUsage(path string) (*DiskUsage, error) {
 
 	// Find the mount point by walking up the directory tree
 	for {
-		if _, err := os.Stat(absPath); err == nil {
+		if _, err = os.Stat(absPath); err == nil {
 			break
 		}
 		parent := filepath.Dir(absPath)
@@ -458,10 +458,10 @@ func (s *ConfigService) CreateConfigurationBackup(name, description string) (*mo
 	}
 
 	// Collect all configuration data
-	hostConfig, _ := s.GetHostConfig()
-	namingConfig, _ := s.GetNamingConfig()
-	mediaConfig, _ := s.GetMediaManagementConfig()
-	appSettings, _ := s.GetAppSettings()
+	hostConfig, _ := s.GetHostConfig()             //nolint:errcheck // Backup uses available config
+	namingConfig, _ := s.GetNamingConfig()         //nolint:errcheck // Backup uses available config
+	mediaConfig, _ := s.GetMediaManagementConfig() //nolint:errcheck // Backup uses available config
+	appSettings, _ := s.GetAppSettings()           //nolint:errcheck // Backup uses available config
 
 	backup.HostConfig = hostConfig
 	backup.NamingConfig = namingConfig

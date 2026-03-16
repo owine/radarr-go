@@ -675,7 +675,7 @@ internal/
 
 Use conventional commits:
 
-```
+```bash
 feat(api): add movie search endpoint
 fix(database): resolve connection pool leak
 docs(readme): update installation instructions

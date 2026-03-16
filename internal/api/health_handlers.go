@@ -113,8 +113,8 @@ func (s *Server) handleGetHealthIssues(c *gin.Context) {
 
 // parseHealthIssuesPagination parses pagination parameters from request
 func (s *Server) parseHealthIssuesPagination(c *gin.Context) (page, pageSize int) {
-	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))          //nolint:errcheck // DefaultQuery fallback handles error
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20")) //nolint:errcheck // DefaultQuery fallback handles error
 	return page, pageSize
 }
 
@@ -293,7 +293,7 @@ func (s *Server) handleGetDiskSpace(c *gin.Context) {
 
 // handleGetPerformanceMetrics returns performance metrics with optional time range
 func (s *Server) handleGetPerformanceMetrics(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100")) //nolint:errcheck // DefaultQuery fallback handles error
 
 	var since, until *time.Time
 	if sinceParam := c.Query("since"); sinceParam != "" {

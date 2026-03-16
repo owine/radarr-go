@@ -14,7 +14,7 @@ This guide provides comprehensive security hardening strategies for production R
 
 ## Security Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    Internet                             │
 └─────────────────────────┬───────────────────────────────┘

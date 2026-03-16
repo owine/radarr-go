@@ -119,7 +119,8 @@ validate_foreign_keys() {
             export PGPASSWORD="$POSTGRES_PASSWORD"
 
             # Check for constraint violations
-            local violations=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$test_db" -t -c "
+            local violations
+            violations=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$test_db" -t -c "
                 SELECT
                     tc.table_name,
                     tc.constraint_name,
@@ -134,7 +135,8 @@ validate_foreign_keys() {
             ;;
         "mysql")
             # Check for constraint violations
-            local violations=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$test_db" -e "
+            local violations
+            violations=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$test_db" -e "
                 SELECT
                     TABLE_NAME,
                     CONSTRAINT_NAME,
@@ -164,7 +166,8 @@ test_migration_sequence() {
     create_test_database "$db_type" "$test_db"
 
     # Get migrations in order
-    local migrations=($(get_migrations "$db_type"))
+    local migrations
+    mapfile -t migrations < <(get_migrations "$db_type")
     log "Found ${#migrations[@]} migrations for $db_type"
 
     # Apply all migrations
@@ -261,8 +264,10 @@ cross_validate_schemas() {
     create_test_database "mysql" "$my_db"
 
     # Apply all migrations to both
-    local pg_migrations=($(get_migrations "postgres"))
-    local my_migrations=($(get_migrations "mysql"))
+    local pg_migrations
+    mapfile -t pg_migrations < <(get_migrations "postgres")
+    local my_migrations
+    mapfile -t my_migrations < <(get_migrations "mysql")
 
     if [ ${#pg_migrations[@]} -ne ${#my_migrations[@]} ]; then
         log "WARNING" "PostgreSQL has ${#pg_migrations[@]} migrations, MariaDB has ${#my_migrations[@]} migrations"
@@ -281,13 +286,15 @@ cross_validate_schemas() {
     log "Comparing table structures between databases..."
 
     export PGPASSWORD="$POSTGRES_PASSWORD"
-    local pg_tables=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$pg_db" -t -c "
+    local pg_tables
+    pg_tables=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$pg_db" -t -c "
         SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'public'
         ORDER BY table_name;
     " | tr -d ' ' | sort)
 
-    local my_tables=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$my_db" -e "
+    local my_tables
+    my_tables=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$my_db" -e "
         SELECT table_name FROM information_schema.tables
         WHERE table_schema = '$my_db'
         ORDER BY table_name;
@@ -357,10 +364,12 @@ validate_migration_issues() {
     # Check for missing migration files
     for db_type in postgres mysql; do
         local migration_dir="${PROJECT_ROOT}/migrations/${db_type}"
-        local migrations=($(find "$migration_dir" -name "*_*.up.sql" | sort))
+        local migrations
+        mapfile -t migrations < <(find "$migration_dir" -name "*_*.up.sql" | sort)
 
         for migration_file in "${migrations[@]}"; do
-            local basename=$(basename "$migration_file" .up.sql)
+            local basename
+            basename=$(basename "$migration_file" .up.sql)
             local down_file="${migration_dir}/${basename}.down.sql"
 
             if [ ! -f "$down_file" ]; then
@@ -372,7 +381,8 @@ validate_migration_issues() {
 
     # Check for gap in migration sequence
     for db_type in postgres mysql; do
-        local numbers=($(find "${PROJECT_ROOT}/migrations/${db_type}" -name "*.up.sql" | sed 's/.*\/\([0-9]*\)_.*/\1/' | sort -n))
+        local numbers
+        mapfile -t numbers < <(find "${PROJECT_ROOT}/migrations/${db_type}" -name "*.up.sql" | sed 's/.*\/\([0-9]*\)_.*/\1/' | sort -n)
         local expected=1
 
         for num in "${numbers[@]}"; do
@@ -400,13 +410,15 @@ test_performance_with_data() {
     log "Testing migration performance with large dataset ($db_type)..."
 
     # Apply all migrations first
-    local migrations=($(get_migrations "$db_type"))
+    local migrations
+    mapfile -t migrations < <(get_migrations "$db_type")
     for migration in "${migrations[@]}"; do
         run_migration "$db_type" "$test_db" "$migration" "up"
     done
 
     # Insert large dataset (simplified for speed)
-    local start_time=$(date +%s)
+    local start_time
+    start_time=$(date +%s)
 
     case "$db_type" in
         "postgres")
@@ -447,15 +459,15 @@ test_performance_with_data() {
             # Insert movies in batches
             for i in $(seq 1 1000 10000); do
                 local end=$((i + 999))
-                if [ $end -gt 10000 ]; then
+                if [ "$end" -gt 10000 ]; then
                     end=10000
                 fi
 
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$test_db" -e "
                     INSERT INTO movies (tmdb_id, title, title_slug, quality_profile_id) VALUES
-                    $(for j in $(seq $i $end); do
+                    $(for j in $(seq "$i" "$end"); do
                         echo "($j, 'Movie $j', 'movie-$j', 1)"
-                        [ $j -lt $end ] && echo ","
+                        [ "$j" -lt "$end" ] && echo ","
                     done);
                 " >/dev/null 2>&1
             done
@@ -490,7 +502,8 @@ test_query_performance() {
     )
 
     for query in "${queries[@]}"; do
-        local start_time=$(date +%s%3N)  # milliseconds
+        local start_time
+        start_time=$(date +%s%3N)  # milliseconds
 
         case "$db_type" in
             "postgres")
@@ -504,7 +517,8 @@ test_query_performance() {
                 ;;
         esac
 
-        local end_time=$(date +%s%3N)
+        local end_time
+        end_time=$(date +%s%3N)
         local duration=$((end_time - start_time))
 
         log "INFO" "$db_type query took ${duration}ms: $(echo "$query" | cut -c1-50)..."

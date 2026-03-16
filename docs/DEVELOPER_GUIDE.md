@@ -16,7 +16,7 @@
 
 Radarr-Go follows a sophisticated layered architecture with clear separation of concerns and dependency injection patterns:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    HTTP API Layer                           │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐    │
@@ -86,7 +86,7 @@ type Container struct {
 
 The project implements a **hybrid database strategy** combining GORM and sqlc:
 
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐
 │      GORM       │    │       SQLC       │
 │                 │    │                  │
@@ -126,7 +126,7 @@ The project implements a **hybrid database strategy** combining GORM and sqlc:
 
 The task service implements a sophisticated worker pool pattern:
 
-```
+```text
                     TaskService
                         │
         ┌───────────────┼───────────────┐
@@ -163,7 +163,7 @@ The task service implements a sophisticated worker pool pattern:
 
 The project includes WebSocket integration for real-time updates:
 
-```
+```text
 Client Browser ←─── WebSocket ←─── API Server
       │                              │
       │                              │
@@ -188,7 +188,7 @@ Client Browser ←─── WebSocket ←─── API Server
 
 1. **Package Structure**:
 
-   ```
+   ```text
    internal/
    ├── api/          # HTTP handlers and routing
    ├── services/     # Business logic layer
@@ -259,7 +259,7 @@ Client Browser ←─── WebSocket ←─── API Server
 
 Follow conventional commits:
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body]
@@ -269,7 +269,7 @@ Follow conventional commits:
 
 Examples:
 
-```
+```bash
 feat(api): add movie search endpoint with TMDB integration
 fix(database): resolve connection pool exhaustion under high load
 docs(developer): update architecture diagrams and contribution guide
@@ -328,7 +328,7 @@ make build                  # Current platform only
 
 The project implements a comprehensive testing strategy across multiple layers:
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │                Unit Tests                       │
 │  • Service logic testing                       │
@@ -1144,4 +1144,7 @@ func (s *MovieService) GetMovie(ctx context.Context, id int) (*models.Movie, err
 }
 ```
 
-This comprehensive developer guide provides the foundation for maintaining high code quality while enabling rapid contributor onboarding to the radarr-go project. The architecture patterns, testing strategies, and security considerations ensure that new features can be added safely and efficiently while maintaining the project's excellent standards.
+This comprehensive developer guide provides the foundation for maintaining high code quality while enabling rapid
+contributor onboarding to the radarr-go project. The architecture patterns, testing strategies, and security
+considerations ensure that new features can be added safely and efficiently while maintaining the project's
+excellent standards.

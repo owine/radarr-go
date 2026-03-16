@@ -113,15 +113,15 @@ func Load(configPath, dataDir string) (*Config, error) {
 	vip.SetEnvPrefix("RADARR")
 
 	// Map nested config keys to environment variables
-	_ = vip.BindEnv("database.type", "RADARR_DATABASE_TYPE")
-	_ = vip.BindEnv("database.host", "RADARR_DATABASE_HOST")
-	_ = vip.BindEnv("database.port", "RADARR_DATABASE_PORT")
-	_ = vip.BindEnv("database.database", "RADARR_DATABASE_DATABASE")
-	_ = vip.BindEnv("database.username", "RADARR_DATABASE_USERNAME")
-	_ = vip.BindEnv("database.password", "RADARR_DATABASE_PASSWORD")
-	_ = vip.BindEnv("database.max_connections", "RADARR_DATABASE_MAX_CONNECTIONS")
-	_ = vip.BindEnv("server.port", "RADARR_SERVER_PORT")
-	_ = vip.BindEnv("log.level", "RADARR_LOG_LEVEL")
+	_ = vip.BindEnv("database.type", "RADARR_DATABASE_TYPE")                       //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.host", "RADARR_DATABASE_HOST")                       //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.port", "RADARR_DATABASE_PORT")                       //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.database", "RADARR_DATABASE_DATABASE")               //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.username", "RADARR_DATABASE_USERNAME")               //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.password", "RADARR_DATABASE_PASSWORD")               //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("database.max_connections", "RADARR_DATABASE_MAX_CONNECTIONS") //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("server.port", "RADARR_SERVER_PORT")                           //nolint:errcheck // BindEnv never fails
+	_ = vip.BindEnv("log.level", "RADARR_LOG_LEVEL")                               //nolint:errcheck // BindEnv never fails
 
 	var config Config
 	if err := vip.Unmarshal(&config); err != nil {

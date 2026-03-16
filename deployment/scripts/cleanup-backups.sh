@@ -30,7 +30,8 @@ cleanup_by_age() {
     # Find old backup files
     while IFS= read -r -d '' backup_file; do
         if [ -f "$backup_file" ]; then
-            local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+            local file_size
+            file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
             log "Removing old backup: $(basename "$backup_file") (${file_size} bytes)"
 
             # Remove backup and metadata
@@ -60,7 +61,8 @@ cleanup_by_size() {
 
     while IFS= read -r -d '' backup_file; do
         if [ -f "$backup_file" ]; then
-            local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+            local file_size
+            file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
             current_size=$((current_size + file_size))
             backup_files+=("$backup_file:$file_size")
         fi
@@ -82,18 +84,21 @@ cleanup_by_size() {
     for backup_info in $(printf '%s\n' "${backup_files[@]}" | while read -r line; do
         local file_path="${line%:*}"
         local file_size="${line##*:}"
-        local mod_time=$(stat -f%m "$file_path" 2>/dev/null || stat -c%Y "$file_path" 2>/dev/null || echo "0")
+        local mod_time
+        mod_time=$(stat -f%m "$file_path" 2>/dev/null || stat -c%Y "$file_path" 2>/dev/null || echo "0")
         echo "$mod_time:$file_path:$file_size"
     done | sort -n); do
 
-        local file_path=$(echo "$backup_info" | cut -d: -f2)
-        local file_size=$(echo "$backup_info" | cut -d: -f3)
+        local file_path
+        file_path=$(echo "$backup_info" | cut -d: -f2)
+        local file_size
+        file_size=$(echo "$backup_info" | cut -d: -f3)
 
         if [ $current_size -le $max_size_bytes ]; then
             break
         fi
 
-        log "Removing backup to free space: $(basename "$file_path") ($(human_readable_size $file_size))"
+        log "Removing backup to free space: $(basename "$file_path") ($(human_readable_size "$file_size"))"
         rm -f "$file_path" "${file_path}.meta" 2>/dev/null || true
 
         current_size=$((current_size - file_size))
@@ -113,7 +118,8 @@ cleanup_by_free_space() {
     log "Checking free space requirement (min: ${MIN_FREE_SPACE_GB}GB)..."
 
     # Get available space
-    local free_space_kb=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
+    local free_space_kb
+    free_space_kb=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
     local free_space_bytes=$((free_space_kb * 1024))
 
     log "Current free space: $(human_readable_size $free_space_bytes)"
@@ -135,9 +141,10 @@ cleanup_by_free_space() {
             continue
         fi
 
-        local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+        local file_size
+        file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
 
-        log "Removing backup for space: $(basename "$backup_file") ($(human_readable_size $file_size))"
+        log "Removing backup for space: $(basename "$backup_file") ($(human_readable_size "$file_size"))"
         rm -f "$backup_file" "${backup_file}.meta" 2>/dev/null || true
 
         deleted_size=$((deleted_size + file_size))
@@ -152,7 +159,7 @@ cleanup_by_free_space() {
              find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" 2>/dev/null)
 
     if [ $deleted_count -gt 0 ]; then
-        log "Removed $deleted_count backups to free space (freed $(human_readable_size $deleted_size))"
+        log "Removed $deleted_count backups to free space (freed $(human_readable_size "$deleted_size"))"
     fi
 }
 
@@ -171,8 +178,9 @@ cleanup_corrupted_backups() {
         local reason=""
 
         # Check file size (should be > 1KB for valid backup)
-        local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
-        if [ $file_size -lt 1024 ]; then
+        local file_size
+        file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+        if [ "$file_size" -lt 1024 ]; then
             is_corrupted=true
             reason="file too small (${file_size} bytes)"
         fi
@@ -188,7 +196,8 @@ cleanup_corrupted_backups() {
         # Check if encrypted file is valid (basic check)
         if [ "$is_corrupted" = "false" ] && [[ "$backup_file" == *.enc ]]; then
             # Check if file starts with "Salted__" (OpenSSL encrypted files)
-            local file_header=$(head -c 8 "$backup_file" 2>/dev/null | od -A n -t c | tr -d ' \n' || echo "")
+            local file_header
+            file_header=$(head -c 8 "$backup_file" 2>/dev/null | od -A n -t c | tr -d ' \n' || echo "")
             if [[ "$file_header" != *"Salted__"* ]]; then
                 is_corrupted=true
                 reason="invalid encrypted file header"
@@ -264,11 +273,11 @@ cleanup_logs() {
 human_readable_size() {
     local bytes="$1"
 
-    if [ $bytes -lt 1024 ]; then
+    if [ "$bytes" -lt 1024 ]; then
         echo "${bytes}B"
-    elif [ $bytes -lt $((1024 * 1024)) ]; then
+    elif [ "$bytes" -lt $((1024 * 1024)) ]; then
         echo "$((bytes / 1024))KB"
-    elif [ $bytes -lt $((1024 * 1024 * 1024)) ]; then
+    elif [ "$bytes" -lt $((1024 * 1024 * 1024)) ]; then
         echo "$((bytes / 1024 / 1024))MB"
     else
         echo "$((bytes / 1024 / 1024 / 1024))GB"
@@ -277,7 +286,8 @@ human_readable_size() {
 
 # Generate cleanup report
 generate_cleanup_report() {
-    local report_file="$BACKUP_DIR/cleanup_report_$(date +%Y%m%d).txt"
+    local report_file
+    report_file="$BACKUP_DIR/cleanup_report_$(date +%Y%m%d).txt"
 
     {
         echo "Backup Cleanup Report"
@@ -291,29 +301,34 @@ generate_cleanup_report() {
 
         echo "Current Status:"
         echo "==============="
-        local backup_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | wc -l)
+        local backup_count
+        backup_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | wc -l)
         echo "Total backups: $backup_count"
 
         local total_size=0
         while IFS= read -r -d '' backup_file; do
-            local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+            local file_size
+            file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
             total_size=$((total_size + file_size))
         done < <(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" -print0 2>/dev/null || true)
 
         echo "Total backup size: $(human_readable_size $total_size)"
 
-        local free_space_kb=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
+        local free_space_kb
+        free_space_kb=$(df "$BACKUP_DIR" | awk 'NR==2 {print $4}')
         local free_space_bytes=$((free_space_kb * 1024))
-        echo "Free space: $(human_readable_size $free_space_bytes)"
+        echo "Free space: $(human_readable_size "$free_space_bytes")"
         echo ""
 
         echo "Recent Backups:"
         echo "==============="
         find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | \
             sort -r | head -5 | while read -r backup; do
-            local size=$(stat -f%z "$backup" 2>/dev/null || stat -c%s "$backup" 2>/dev/null || echo "unknown")
-            local date=$(basename "$backup" | sed 's/radarr_backup_\([0-9]\{8\}_[0-9]\{6\}\).*/\1/' | sed 's/_/ /' | sed 's/\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\) \([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1-\2-\3 \4:\5:\6/')
-            echo "$date - $(basename "$backup") ($(human_readable_size $size))"
+            local size
+            size=$(stat -f%z "$backup" 2>/dev/null || stat -c%s "$backup" 2>/dev/null || echo "unknown")
+            local date
+            date=$(basename "$backup" | sed 's/radarr_backup_\([0-9]\{8\}_[0-9]\{6\}\).*/\1/' | sed 's/_/ /' | sed 's/\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\) \([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1-\2-\3 \4:\5:\6/')
+            echo "$date - $(basename "$backup") ($(human_readable_size "$size"))"
         done
         echo ""
 
@@ -345,15 +360,17 @@ main() {
     generate_cleanup_report
 
     # Final status
-    local final_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | wc -l)
+    local final_count
+    final_count=$(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" | wc -l)
     local final_size=0
 
     while IFS= read -r -d '' backup_file; do
-        local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
+        local file_size
+        file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo "0")
         final_size=$((final_size + file_size))
     done < <(find "$BACKUP_DIR" -name "radarr_backup_*.sql.gz*" -type f -not -name "*.meta" -print0 2>/dev/null || true)
 
-    log "Cleanup completed. Remaining: $final_count backups ($(human_readable_size $final_size))"
+    log "Cleanup completed. Remaining: $final_count backups ($(human_readable_size "$final_size"))"
 }
 
 # Handle command line arguments

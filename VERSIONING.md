@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document defines the comprehensive versioning strategy for Radarr Go, a complete rewrite of the Radarr movie collection manager from C#/.NET to Go. Our versioning approach ensures compatibility, predictability, and clear communication of changes to users while supporting our goal of 100% API compatibility with Radarr v3.
+This document defines the comprehensive versioning strategy for Radarr Go, a complete rewrite of the Radarr movie
+collection manager from C#/.NET to Go. Our versioning approach ensures compatibility, predictability, and clear
+communication of changes to users while supporting our goal of 100% API compatibility with Radarr v3.
 
 ## Current Status
 
@@ -17,7 +19,7 @@ Radarr Go follows [Semantic Versioning 2.0.0](https://semver.org/) with project-
 
 ### Version Format
 
-```
+```text
 MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ```
 

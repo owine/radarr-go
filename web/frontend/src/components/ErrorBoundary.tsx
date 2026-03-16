@@ -207,6 +207,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 }
 
 // Hook for handling async errors in function components
+// eslint-disable-next-line react-refresh/only-export-components
 export const useErrorBoundary = () => {
   const [error, setError] = React.useState<Error | null>(null);
 

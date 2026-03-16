@@ -73,6 +73,8 @@ func GetDefaultNamingConfig() *NamingConfig {
 }
 
 // GetAvailableTokens returns all available naming tokens
+//
+//nolint:gosec // G101: These are naming template tokens, not credentials
 func GetAvailableTokens() []NamingToken {
 	return []NamingToken{
 		// Movie Tokens

@@ -4,7 +4,9 @@
 
 ## 📋 **Executive Summary**
 
-This implementation plan translates the high-level PROJECT_ROADMAP.md into specific, actionable tasks assigned to specialized Claude Code agents. Each phase includes detailed task assignments, agent responsibilities, dependencies, and **specific prompts for agent invocation**.
+This implementation plan translates the high-level PROJECT_ROADMAP.md into specific, actionable tasks assigned to
+specialized Claude Code agents. Each phase includes detailed task assignments, agent responsibilities, dependencies,
+and **specific prompts for agent invocation**.
 
 **Plan Structure:**
 
@@ -1594,7 +1596,9 @@ Each agent prompt includes:
 
 ## 🎯 **Conclusion**
 
-This implementation plan provides actionable, complete prompts for specialized Claude Code agents to execute the radarr-go project roadmap. Each prompt includes sufficient context and specific deliverables to enable successful task completion while maintaining project coherence and quality standards.
+This implementation plan provides actionable, complete prompts for specialized Claude Code agents to execute the
+radarr-go project roadmap. Each prompt includes sufficient context and specific deliverables to enable successful task
+completion while maintaining project coherence and quality standards.
 
 **Ready for Immediate Execution:**
 

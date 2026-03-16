@@ -1074,7 +1074,9 @@ Archive Strategy:
 
 ## 🎯 **Conclusion**
 
-This comprehensive roadmap transforms radarr-go from an excellent backend implementation to a complete, production-ready movie management system. The plan acknowledges the significant frontend development effort while building upon the exceptional backend foundation already established.
+This comprehensive roadmap transforms radarr-go from an excellent backend implementation to a complete,
+production-ready movie management system. The plan acknowledges the significant frontend development effort while
+building upon the exceptional backend foundation already established.
 
 **Key Success Factors:**
 
@@ -1084,7 +1086,9 @@ This comprehensive roadmap transforms radarr-go from an excellent backend implem
 4. **Community Engagement**: User feedback incorporated early and often
 5. **Performance First**: Optimization planned from the beginning
 
-With proper execution of this roadmap, radarr-go will achieve its goal of becoming a superior replacement for the original Radarr application, providing users with familiar functionality backed by Go's performance advantages and modern development practices.
+With proper execution of this roadmap, radarr-go will achieve its goal of becoming a superior replacement for the
+original Radarr application, providing users with familiar functionality backed by Go's performance advantages and
+modern development practices.
 
 ---
 

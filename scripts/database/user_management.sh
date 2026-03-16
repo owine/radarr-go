@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2155
 # Database User Management Script for Radarr Go
 # Manages database users, permissions, and access control with least privilege principle
 #

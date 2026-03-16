@@ -847,8 +847,8 @@ func (s *Server) parseQueueQueryParams(c *gin.Context) queueQueryParams {
 
 	params.IncludeUnknownMovieItems = c.DefaultQuery("includeUnknownMovieItems", falseBoolString) == trueBoolString
 	params.IncludeMovie = c.DefaultQuery("includeMovie", falseBoolString) == trueBoolString
-	params.Page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	params.PageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	params.Page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))          //nolint:errcheck // DefaultQuery fallback handles error
+	params.PageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", "20")) //nolint:errcheck // DefaultQuery fallback handles error
 	params.SortKey = c.DefaultQuery("sortKey", "timeleft")
 	params.SortDirection = c.DefaultQuery("sortDirection", "ascending")
 
@@ -1322,7 +1322,7 @@ func (s *Server) handleUpdateRootFolder(c *gin.Context) {
 	}
 
 	var rootFolder models.RootFolder
-	if err := c.ShouldBindJSON(&rootFolder); err != nil {
+	if err = c.ShouldBindJSON(&rootFolder); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid root folder data"})
 		return
 	}
@@ -2146,8 +2146,8 @@ func (s *Server) handleRunCleanup(c *gin.Context) {
 
 // handleGetFileOrganizations returns file organization records
 func (s *Server) handleGetFileOrganizations(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))  //nolint:errcheck // DefaultQuery fallback handles error
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0")) //nolint:errcheck // DefaultQuery fallback handles error
 
 	organizations, err := s.services.FileOrganizationService.GetFileOrganizations(limit, offset)
 	if err != nil {
@@ -2310,8 +2310,8 @@ func (s *Server) handlePreviewNaming(c *gin.Context) {
 func (s *Server) handleGetFileOperations(c *gin.Context) {
 	status := models.FileOperationStatus(c.Query("status"))
 	operationType := models.FileOperationType(c.Query("type"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))  //nolint:errcheck // DefaultQuery fallback handles error
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0")) //nolint:errcheck // DefaultQuery fallback handles error
 
 	operations, err := s.services.FileOperationService.GetOperations(status, operationType, limit, offset)
 	if err != nil {

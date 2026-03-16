@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2329
 set -euo pipefail
 
 # Enhanced Version Analysis and Strategy Implementation
@@ -95,7 +96,7 @@ elif [[ "$IS_PRE_1_0" == "true" ]]; then
 fi
 
 # Generate Docker tags based on VERSIONING.md strategy
-# shellcheck disable=SC2317  # Function called indirectly via command-line argument
+# shellcheck disable=SC2317  # Function is called via command substitution in the --docker-tags handler below
 generate_docker_tags() {
   local base_image="${1:-ghcr.io/owner/repo}"
   local current_date

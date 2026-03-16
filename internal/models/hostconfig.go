@@ -136,7 +136,7 @@ const (
 
 // Value implements the driver.Valuer interface for database storage
 func (ps ProxySettings) Value() (driver.Value, error) {
-	return json.Marshal(ps)
+	return json.Marshal(ps) //nolint:gosec // G117: Password field is intentionally serialized for DB storage
 }
 
 // Scan implements the sql.Scanner interface for database retrieval

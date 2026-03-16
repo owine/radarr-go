@@ -55,7 +55,7 @@ type DatabaseManager struct {
 
 // NewDatabaseManager creates a new database manager instance
 func NewDatabaseManager() *DatabaseManager {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec // G118: cancel is stored in struct and called in Cleanup()
 	return &DatabaseManager{
 		runningServices: make(map[string]bool),
 		ctx:             ctx,
@@ -245,7 +245,7 @@ func (dm *DatabaseManager) waitForServiceHealthy(serviceName string) error {
 
 // isServiceHealthy checks if a Docker service is healthy
 func (dm *DatabaseManager) isServiceHealthy(serviceName string) bool {
-	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile, "ps", "-q", serviceName)
+	cmd := exec.CommandContext(dm.ctx, "docker-compose", "-f", testComposeFile, "ps", "-q", serviceName) //nolint:gosec // G204: args are constants/validated
 	output, err := cmd.Output()
 	if err != nil {
 		return false

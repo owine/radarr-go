@@ -41,7 +41,7 @@ MARKDOWNLINT_CONFIG=.markdownlint.json
 YAML_FILES=$(shell find . -name '*.yml' -o -name '*.yaml' | grep -v node_modules | grep -v vendor)
 JSON_FILES=$(shell find . -name '*.json' | grep -v node_modules | grep -v vendor | grep -v '.git' | grep -v 'tsconfig' | grep -v radarr-source)
 MARKDOWN_FILES=$(shell find . -name '*.md' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
-SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor)
+SHELL_FILES=$(shell find . -name '*.sh' | grep -v node_modules | grep -v vendor | grep -v radarr-source)
 
 # Tool versions (renovate-managed)
 # renovate: datasource=go depName=github.com/air-verse/air
@@ -309,10 +309,11 @@ lint-go:
 # Lint frontend TypeScript/React code
 lint-frontend:
 	@echo "Linting frontend code..."
-	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
+	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ] && [ -d "$(FRONTEND_DIR)/node_modules" ]; then \
 		cd $(FRONTEND_DIR) && $(NODE_CMD) run lint; \
 	else \
-		echo "Frontend not found or package.json missing. Skipping frontend linting."; \
+		echo "Frontend not found or dependencies not installed. Skipping frontend linting."; \
+		echo "  Run 'cd $(FRONTEND_DIR) && npm install' to enable frontend linting."; \
 	fi
 
 # Lint YAML files

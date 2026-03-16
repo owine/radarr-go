@@ -350,7 +350,7 @@ wait_for_services() {
     while [ $attempt -lt $max_attempts ]; do
         local all_healthy=true
 
-        for service in ${services}; do
+        for service in "${services[@]}"; do
             local health_status
             health_status=$(docker inspect "$service" --format='{{.State.Health.Status}}' 2>/dev/null || echo "none")
 

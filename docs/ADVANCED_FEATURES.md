@@ -1,6 +1,7 @@
 # Radarr-Go Advanced Features Documentation
 
-This comprehensive guide covers the advanced capabilities that differentiate Radarr-Go from the original Radarr implementation, focusing on enhanced performance, sophisticated automation, and powerful management features.
+This comprehensive guide covers the advanced capabilities that differentiate Radarr-Go from the original Radarr
+implementation, focusing on enhanced performance, sophisticated automation, and powerful management features.
 
 ## Table of Contents
 
@@ -1497,4 +1498,6 @@ Radarr-Go performs comprehensive configuration validation on startup:
 ./radarr --generate-config > config.yaml
 ```
 
-This comprehensive feature documentation showcases the advanced capabilities that make Radarr-Go a superior choice for modern movie collection management, emphasizing performance, reliability, and extensive customization options.
+This comprehensive feature documentation showcases the advanced capabilities that make Radarr-Go a superior choice
+for modern movie collection management, emphasizing performance, reliability, and extensive customization
+options.

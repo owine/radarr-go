@@ -108,7 +108,7 @@ func (s *FileOrganizationService) prepareOrganization(
 	// Extract media info if enabled
 	var mediaInfo *models.MediaInfo
 	if namingConfig.EnableMediaInfo {
-		mediaInfo, _ = s.mediaInfoService.ExtractMediaInfo(ctx, sourcePath)
+		mediaInfo, _ = s.mediaInfoService.ExtractMediaInfo(ctx, sourcePath) //nolint:errcheck // MediaInfo extraction is optional
 	}
 
 	// Generate destination path
@@ -353,8 +353,8 @@ func (s *FileOrganizationService) performFileCopy(sourcePath, destPath string) e
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer func() {
-		if err := sourceFile.Close(); err != nil {
-			s.logger.Warn("Failed to close source file", "path", sourcePath, "error", err)
+		if closeErr := sourceFile.Close(); closeErr != nil {
+			s.logger.Warn("Failed to close source file", "path", sourcePath, "error", closeErr)
 		}
 	}()
 
@@ -363,8 +363,8 @@ func (s *FileOrganizationService) performFileCopy(sourcePath, destPath string) e
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
 	defer func() {
-		if err := destFile.Close(); err != nil {
-			s.logger.Warn("Failed to close destination file", "path", destPath, "error", err)
+		if closeErr := destFile.Close(); closeErr != nil {
+			s.logger.Warn("Failed to close destination file", "path", destPath, "error", closeErr)
 		}
 	}()
 

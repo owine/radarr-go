@@ -1,13 +1,13 @@
 # Radarr Go API - Practical Integration Examples
 
-This comprehensive guide provides production-ready examples and integration patterns for effectively using the Radarr Go API. Each example includes complete error handling, best practices, and real-world usage patterns.
+This comprehensive guide provides production-ready examples and integration patterns for effectively using the
+Radarr Go API. Each example includes complete error handling, best practices, and real-world usage patterns.
 
 ## Table of Contents
 
-1. [Third-Party Client Examples](#third-party-client-examples)
-2. [Common Integration Patterns](#common-integration-patterns)
-3. [Automation Examples](#automation-examples)
-4. [Troubleshooting Guide](#troubleshooting-guide)
+1. [Common Integration Patterns](#common-integration-patterns)
+2. [Automation Examples](#automation-examples)
+3. [Troubleshooting Guide](#troubleshooting-guide)
 
 ---
 
@@ -3685,18 +3685,6 @@ For questions, issues, or contributions to this guide, please visit the [Radarr 
 
 *This guide covers Radarr Go v0.9.0-alpha and maintains 100% compatibility with Radarr v3 API.*
 
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create comprehensive third-party client integration examples", "activeForm": "Creating third-party client integration examples", "status": "completed"}, {"content": "Develop common integration patterns and workflows", "activeForm": "Developing common integration patterns and workflows", "status": "completed"}, {"content": "Build automation examples for various use cases", "activeForm": "Building automation examples for various use cases", "status": "completed"}, {"content": "Create comprehensive troubleshooting guide for API integration", "activeForm": "Creating comprehensive troubleshooting guide for API integration", "status": "completed"}]
-
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create comprehensive third-party client integration examples", "activeForm": "Creating third-party client integration examples", "status": "completed"}, {"content": "Develop common integration patterns and workflows", "activeForm": "Developing common integration patterns and workflows", "status": "completed"}, {"content": "Build automation examples for various use cases", "activeForm": "Building automation examples for various use cases", "status": "completed"}, {"content": "Create comprehensive troubleshooting guide for API integration", "activeForm": "Creating comprehensive troubleshooting guide for API integration", "status": "in_progress"}]
-
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create comprehensive third-party client integration examples", "activeForm": "Creating third-party client integration examples", "status": "completed"}, {"content": "Develop common integration patterns and workflows", "activeForm": "Developing common integration patterns and workflows", "status": "completed"}, {"content": "Build automation examples for various use cases", "activeForm": "Building automation examples for various use cases", "status": "in_progress"}, {"content": "Create comprehensive troubleshooting guide for API integration", "activeForm": "Creating comprehensive troubleshooting guide for API integration", "status": "pending"}]
-
 ### Python Client with Requests Library
 
 Complete Python client implementation with advanced features:
@@ -6445,7 +6433,3 @@ This completes the first section of comprehensive third-party client integration
 3. **Best practices** for each language/platform
 4. **Comprehensive documentation** and usage examples
 5. **Real-world usage patterns** for integration scenarios
-
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create comprehensive third-party client integration examples", "activeForm": "Creating third-party client integration examples", "status": "completed"}, {"content": "Develop common integration patterns and workflows", "activeForm": "Developing common integration patterns and workflows", "status": "in_progress"}, {"content": "Build automation examples for various use cases", "activeForm": "Building automation examples for various use cases", "status": "pending"}, {"content": "Create comprehensive troubleshooting guide for API integration", "activeForm": "Creating comprehensive troubleshooting guide for API integration", "status": "pending"}]

@@ -3,7 +3,9 @@
 **Version**: v0.9.0-alpha
 **Last Updated**: September 2025
 
-**Important**: This guide covers installation of Radarr Go v0.9.0-alpha and later versions. For version migration guidance, see [MIGRATION.md](../MIGRATION.md). For complete versioning information, see [VERSIONING.md](../VERSIONING.md).
+**Important**: This guide covers installation of Radarr Go v0.9.0-alpha and later versions. For version migration
+guidance, see [MIGRATION.md](../MIGRATION.md). For complete versioning information, see
+[VERSIONING.md](../VERSIONING.md).
 
 ## Table of Contents
 
@@ -1906,4 +1908,6 @@ tail -20 "$LOG_FILE"
 
 ---
 
-This comprehensive installation guide should enable users to successfully deploy radarr-go in production environments within 30 minutes for experienced users. The guide covers all major platforms, provides detailed troubleshooting information, and includes best practices for security and performance optimization.
+This comprehensive installation guide should enable users to successfully deploy radarr-go in production environments
+within 30 minutes for experienced users. The guide covers all major platforms, provides detailed troubleshooting
+information, and includes best practices for security and performance optimization.

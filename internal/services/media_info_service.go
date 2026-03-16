@@ -62,7 +62,7 @@ func (s *MediaInfoService) extractWithFFProbe(ctx context.Context, filePath stri
 		return nil, fmt.Errorf("ffprobe not found")
 	}
 
-	cmd := exec.CommandContext(ctx, "ffprobe",
+	cmd := exec.CommandContext(ctx, "ffprobe", //nolint:gosec // G204: filePath is validated by caller
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_format",
@@ -84,7 +84,7 @@ func (s *MediaInfoService) extractWithMediaInfo(ctx context.Context, filePath st
 		return nil, fmt.Errorf("mediainfo not found")
 	}
 
-	cmd := exec.CommandContext(ctx, "mediainfo", "--Output=JSON", filePath)
+	cmd := exec.CommandContext(ctx, "mediainfo", "--Output=JSON", filePath) //nolint:gosec // G204: filePath is validated by caller
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("mediainfo execution failed: %w", err)
@@ -415,7 +415,7 @@ func (s *MediaInfoService) GetVideoFileDuration(ctx context.Context, filePath st
 	// For now, return a placeholder implementation
 
 	// In a real implementation, this would use ffprobe or mediainfo to get duration
-	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "quiet", "-show_entries",
+	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "quiet", "-show_entries", //nolint:gosec // G204: filePath is validated by caller
 		"format=duration", "-of", "csv=p=0", filePath)
 
 	output, err := cmd.Output()

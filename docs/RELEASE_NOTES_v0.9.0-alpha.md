@@ -6,7 +6,9 @@
 
 ## 🎉 Welcome to Radarr Go Alpha
 
-We're excited to announce the first alpha release of **Radarr Go** - a complete, high-performance rewrite of the Radarr movie collection manager in Go. This release represents a major milestone with near production-ready functionality and comprehensive feature coverage.
+We're excited to announce the first alpha release of **Radarr Go** - a complete, high-performance rewrite of the
+Radarr movie collection manager in Go. This release represents a major milestone with near production-ready
+functionality and comprehensive feature coverage.
 
 ## ⚡ Why Radarr Go?
 

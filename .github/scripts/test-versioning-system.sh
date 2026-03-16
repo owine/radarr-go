@@ -28,7 +28,7 @@ echo "🔍 Testing Version Analyzer Script"
 echo "---------------------------------"
 
 for test_case in "${TEST_CASES[@]}"; do
-  IFS='|' read -r version expected_type <<< "$test_case"
+  IFS='|' read -r version _ <<< "$test_case"
 
   echo "Testing: $version"
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable=SC1091
 # Radarr-Go Database Monitoring and Alerting Script
 # Provides continuous monitoring, alerting, and performance tracking
 
@@ -24,7 +24,6 @@ REPLICATION_LAG_THRESHOLD=10 # seconds
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Source the database operations script for common functions
@@ -45,7 +44,8 @@ log_monitoring() {
 send_alert() {
     local severity="$1"
     local message="$2"
-    local alert_message="$(date '+%Y-%m-%d %H:%M:%S') [$severity] $message"
+    local alert_message
+    alert_message="$(date '+%Y-%m-%d %H:%M:%S') [$severity] $message"
 
     echo "$alert_message" >> "$ALERTS_FILE"
     log_monitoring "ALERT [$severity]: $message"
@@ -67,7 +67,8 @@ send_alert() {
 
 # Collect database metrics
 collect_metrics() {
-    local timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    local timestamp
+    timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     local metrics="{\"timestamp\":\"$timestamp\""
 
     case "$DB_TYPE" in
@@ -94,7 +95,8 @@ collect_metrics() {
 collect_postgres_metrics() {
     export PGPASSWORD="$DB_PASSWORD"
 
-    local metrics=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
+    local metrics
+    metrics=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
         WITH connection_stats AS (
             SELECT
                 count(*) as total_connections,
@@ -159,7 +161,8 @@ collect_postgres_metrics() {
 
 # Collect MySQL/MariaDB specific metrics
 collect_mysql_metrics() {
-    local metrics=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -sN -e "
+    local metrics
+    metrics=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -sN -e "
         SELECT CONCAT(
             '\"connections\": {',
             '\"total\": ', (SELECT VARIABLE_VALUE FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME = 'Threads_connected'), ', ',
@@ -191,7 +194,8 @@ check_health_and_alert() {
     log_monitoring "Starting health check"
 
     # Collect current metrics
-    local current_metrics=$(collect_metrics)
+    local current_metrics
+    current_metrics=$(collect_metrics)
     log_monitoring "Collected metrics: $current_metrics"
 
     # Parse metrics for alerting (requires jq for proper JSON parsing)
@@ -213,14 +217,17 @@ check_health_and_alert() {
 # Check connection pool usage
 check_connection_threshold() {
     local metrics="$1"
-    local usage_percent=$(echo "$metrics" | jq -r '.connections.usage_percent // 0')
+    local usage_percent
+    usage_percent=$(echo "$metrics" | jq -r '.connections.usage_percent // 0')
 
     if (( $(echo "$usage_percent > $CONNECTION_THRESHOLD" | bc -l) )); then
         send_alert "WARNING" "Connection pool usage high: ${usage_percent}% (threshold: ${CONNECTION_THRESHOLD}%)"
     fi
 
-    local total_connections=$(echo "$metrics" | jq -r '.connections.total // 0')
-    local max_connections=$(echo "$metrics" | jq -r '.connections.max // 100')
+    local total_connections
+    total_connections=$(echo "$metrics" | jq -r '.connections.total // 0')
+    local max_connections
+    max_connections=$(echo "$metrics" | jq -r '.connections.max // 100')
 
     if (( total_connections >= max_connections - 5 )); then
         send_alert "CRITICAL" "Connection pool nearly exhausted: $total_connections/$max_connections"
@@ -230,14 +237,16 @@ check_connection_threshold() {
 # Check query performance
 check_query_performance() {
     local metrics="$1"
-    local long_queries=$(echo "$metrics" | jq -r '.queries.long_running // 0')
-    local max_duration=$(echo "$metrics" | jq -r '.queries.max_duration // 0')
+    local long_queries
+    long_queries=$(echo "$metrics" | jq -r '.queries.long_running // 0')
+    local max_duration
+    max_duration=$(echo "$metrics" | jq -r '.queries.max_duration // 0')
 
     if (( long_queries > 0 )); then
         send_alert "WARNING" "Long running queries detected: $long_queries queries (max duration: ${max_duration}s)"
     fi
 
-    if (( $(echo "$max_duration > $(($QUERY_TIME_THRESHOLD * 2))" | bc -l) )); then
+    if (( $(echo "$max_duration > $((QUERY_TIME_THRESHOLD * 2))" | bc -l) )); then
         send_alert "CRITICAL" "Very long query detected: ${max_duration}s duration"
     fi
 }
@@ -245,14 +254,18 @@ check_query_performance() {
 # Check database size growth
 check_database_size() {
     local metrics="$1"
-    local size_bytes=$(echo "$metrics" | jq -r '.database.size_bytes // 0')
-    local size_gb=$(echo "scale=2; $size_bytes / 1024 / 1024 / 1024" | bc)
+    local size_bytes
+    size_bytes=$(echo "$metrics" | jq -r '.database.size_bytes // 0')
+    local size_gb
+    size_gb=$(echo "scale=2; $size_bytes / 1024 / 1024 / 1024" | bc)
 
     # Check if size is growing rapidly (comparison with previous measurements)
     if [[ -f "$METRICS_FILE" ]]; then
-        local prev_size=$(tail -2 "$METRICS_FILE" | head -1 | jq -r '.database.size_bytes // 0' 2>/dev/null || echo "0")
+        local prev_size
+        prev_size=$(tail -2 "$METRICS_FILE" | head -1 | jq -r '.database.size_bytes // 0' 2>/dev/null || echo "0")
         if [[ "$prev_size" != "0" ]] && (( size_bytes > prev_size )); then
-            local growth_mb=$(echo "scale=2; ($size_bytes - $prev_size) / 1024 / 1024" | bc)
+            local growth_mb
+            growth_mb=$(echo "scale=2; ($size_bytes - $prev_size) / 1024 / 1024" | bc)
             if (( $(echo "$growth_mb > 100" | bc -l) )); then
                 send_alert "INFO" "Database size grew by ${growth_mb}MB (current size: ${size_gb}GB)"
             fi
@@ -263,7 +276,8 @@ check_database_size() {
 # Check replication lag
 check_replication_lag() {
     local metrics="$1"
-    local lag_seconds=$(echo "$metrics" | jq -r '.replication.lag_seconds // 0')
+    local lag_seconds
+    lag_seconds=$(echo "$metrics" | jq -r '.replication.lag_seconds // 0')
 
     if (( $(echo "$lag_seconds > $REPLICATION_LAG_THRESHOLD" | bc -l) )); then
         send_alert "WARNING" "Replication lag detected: ${lag_seconds}s (threshold: ${REPLICATION_LAG_THRESHOLD}s)"
@@ -273,7 +287,8 @@ check_replication_lag() {
 # Check for waiting locks
 check_locks() {
     local metrics="$1"
-    local waiting_locks=$(echo "$metrics" | jq -r '.locks.waiting // 0')
+    local waiting_locks
+    waiting_locks=$(echo "$metrics" | jq -r '.locks.waiting // 0')
 
     if (( waiting_locks > 0 )); then
         send_alert "WARNING" "Database locks detected: $waiting_locks waiting locks"
@@ -305,7 +320,8 @@ monitor_system_resources() {
 
     # CPU usage
     if command -v top >/dev/null 2>&1; then
-        local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+        local cpu_usage
+        cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
         if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
             send_alert "WARNING" "High CPU usage: ${cpu_usage}%"
         fi
@@ -313,7 +329,8 @@ monitor_system_resources() {
 
     # Memory usage
     if command -v free >/dev/null 2>&1; then
-        local mem_usage=$(free | grep Mem | awk '{printf "%.1f", $3/$2 * 100.0}')
+        local mem_usage
+        mem_usage=$(free | grep Mem | awk '{printf "%.1f", $3/$2 * 100.0}')
         if (( $(echo "$mem_usage > $MEMORY_THRESHOLD" | bc -l) )); then
             send_alert "WARNING" "High memory usage: ${mem_usage}%"
         fi
@@ -321,7 +338,8 @@ monitor_system_resources() {
 
     # Disk usage for data directory
     if [[ -d "$PROJECT_ROOT/data" ]]; then
-        local disk_usage=$(df "$PROJECT_ROOT/data" | tail -1 | awk '{print $5}' | sed 's/%//')
+        local disk_usage
+        disk_usage=$(df "$PROJECT_ROOT/data" | tail -1 | awk '{print $5}' | sed 's/%//')
         if (( disk_usage > DISK_THRESHOLD )); then
             send_alert "WARNING" "High disk usage: ${disk_usage}%"
         fi
@@ -512,7 +530,7 @@ analyze_performance() {
     # Analyze connection patterns
     echo "Connection Usage Patterns:"
     if command -v jq >/dev/null 2>&1; then
-        cat "$METRICS_FILE" | jq -r '.connections.usage_percent' | tail -n 100 | \
+        jq -r '.connections.usage_percent' "$METRICS_FILE" | tail -n 100 | \
         awk '{
             sum += $1; count++;
             if($1 > max) max = $1;
@@ -529,7 +547,7 @@ analyze_performance() {
     # Analyze query performance
     echo "Query Performance:"
     if command -v jq >/dev/null 2>&1; then
-        cat "$METRICS_FILE" | jq -r '.queries.max_duration' | tail -n 100 | \
+        jq -r '.queries.max_duration' "$METRICS_FILE" | tail -n 100 | \
         awk '{
             sum += $1; count++;
             if($1 > max) max = $1

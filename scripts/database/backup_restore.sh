@@ -88,14 +88,16 @@ test_connection() {
 # Generate backup filename
 get_backup_filename() {
     local db_type="$1"
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
     echo "${BACKUP_DIR}/radarr_${db_type}_${timestamp}.sql"
 }
 
 # Backup database with comprehensive options
 backup_database() {
     local db_type="$1"
-    local backup_file=$(get_backup_filename "$db_type")
+    local backup_file
+    backup_file=$(get_backup_filename "$db_type")
 
     setup_backup_dir
     check_dependencies "$db_type"
@@ -148,7 +150,8 @@ backup_database() {
     esac
 
     # Compress backup if large
-    local file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo 0)
+    local file_size
+    file_size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null || echo 0)
     if [ "$file_size" -gt 52428800 ]; then  # 50MB
         log "Compressing backup (size: $file_size bytes)"
         gzip "$backup_file"
@@ -272,7 +275,8 @@ validate_restored_database() {
             export PGPASSWORD="$POSTGRES_PASSWORD"
 
             # Check critical tables exist
-            local table_count=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+            local table_count
+            table_count=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
                 -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('movies', 'quality_definitions', 'quality_profiles');" | tr -d ' ')
 
             if [ "$table_count" -ne 3 ]; then
@@ -281,7 +285,8 @@ validate_restored_database() {
             ;;
         "mariadb"|"mysql")
             # Check critical tables exist
-            local table_count=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" \
+            local table_count
+            table_count=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" \
                 -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$MYSQL_DB' AND table_name IN ('movies', 'quality_definitions', 'quality_profiles');" -s)
 
             if [ "$table_count" -ne 3 ]; then
@@ -298,7 +303,7 @@ cleanup_old_backups() {
     log "Cleaning up backups older than $BACKUP_RETENTION_DAYS days"
 
     if [ -d "$BACKUP_DIR" ]; then
-        find "$BACKUP_DIR" -name "radarr_*.sql*" -mtime +$BACKUP_RETENTION_DAYS -type f -exec rm -f {} \;
+        find "$BACKUP_DIR" -name "radarr_*.sql*" -mtime +"$BACKUP_RETENTION_DAYS" -type f -exec rm -f {} \;
         log "Old backups cleaned up"
     fi
 }
@@ -350,7 +355,8 @@ validate_schema_specific() {
             export PGPASSWORD="$POSTGRES_PASSWORD"
 
             # Check for foreign key constraint violations
-            local fk_violations=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "
+            local fk_violations
+            fk_violations=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "
                 SELECT COUNT(*) FROM (
                     SELECT tc.table_name, tc.constraint_name
                     FROM information_schema.table_constraints tc
@@ -368,7 +374,8 @@ validate_schema_specific() {
             ;;
         "mariadb"|"mysql")
             # Check for foreign key constraint violations
-            local fk_violations=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" -e "
+            local fk_violations
+            fk_violations=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DB" -e "
                 SELECT COUNT(*) FROM (
                     SELECT CONSTRAINT_NAME
                     FROM information_schema.REFERENTIAL_CONSTRAINTS
@@ -405,7 +412,8 @@ performance_test() {
 # Database-specific performance test
 performance_test_specific() {
     local db_type="$1"
-    local temp_db="radarr_perf_test_$(date +%s)"
+    local temp_db
+    temp_db="radarr_perf_test_$(date +%s)"
 
     log "Creating temporary database $temp_db for performance testing..."
 
@@ -426,7 +434,8 @@ performance_test_specific() {
 
             # Insert test data (10k movies)
             log "Inserting 10,000 test movies for performance testing..."
-            local start_time=$(date +%s)
+            local start_time
+            start_time=$(date +%s)
 
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$temp_db" -c "
                 INSERT INTO movies (tmdb_id, title, title_slug, year, monitored, quality_profile_id, added)
@@ -444,7 +453,8 @@ performance_test_specific() {
             log "PostgreSQL: Inserted 10k movies in ${insert_time}s"
 
             # Test query performance
-            local query_start=$(date +%s)
+            local query_start
+            query_start=$(date +%s)
             psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$temp_db" -c "
                 SELECT COUNT(*) FROM movies WHERE monitored = true AND year >= 2020;
             " >/dev/null 2>&1
@@ -470,20 +480,21 @@ performance_test_specific() {
 
             # Insert test data (10k movies)
             log "Inserting 10,000 test movies for performance testing..."
-            local start_time=$(date +%s)
+            local start_time
+            start_time=$(date +%s)
 
             # Generate test data in batches for better performance
             for i in $(seq 1 100 10000); do
                 local end=$((i + 99))
-                if [ $end -gt 10000 ]; then
+                if [ "$end" -gt 10000 ]; then
                     end=10000
                 fi
 
                 mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$temp_db" -e "
                     INSERT INTO movies (tmdb_id, title, title_slug, year, monitored, quality_profile_id, added) VALUES
-                    $(for j in $(seq $i $end); do
+                    $(for j in $(seq "$i" "$end"); do
                         echo "($j, 'Test Movie $j', 'test-movie-$j', $((2000 + j % 24)), $((j % 2)), 1, NOW() - INTERVAL $j DAY)"
-                        [ $j -lt $end ] && echo ","
+                        [ "$j" -lt "$end" ] && echo ","
                     done)
                 " >/dev/null 2>&1
             done
@@ -492,7 +503,8 @@ performance_test_specific() {
             log "MariaDB: Inserted 10k movies in ${insert_time}s"
 
             # Test query performance
-            local query_start=$(date +%s)
+            local query_start
+            query_start=$(date +%s)
             mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$temp_db" -e "
                 SELECT COUNT(*) FROM movies WHERE monitored = true AND year >= 2020;
             " >/dev/null 2>&1

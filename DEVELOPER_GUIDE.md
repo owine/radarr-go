@@ -18,7 +18,7 @@ This comprehensive guide enables new contributors to understand the sophisticate
 
 Radarr-go implements a sophisticated multi-tier enterprise architecture designed for high performance, maintainability, and extensibility:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     HTTP API Layer (Gin)                       │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -122,7 +122,7 @@ The task system (`/Users/owine/Git/radarr-go/internal/services/task_service.go`)
 
 #### Worker Pool Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Task Scheduler                               │
 │  ┌───────────────────────────────────────────────────────────┐  │
@@ -388,7 +388,7 @@ make fmt           # Format code
 
 #### Commit Message Format (Conventional Commits)
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body]
@@ -1368,4 +1368,5 @@ func apiKeyMiddleware(validAPIKey string) gin.HandlerFunc {
 }
 ```
 
-This comprehensive developer guide provides new contributors with the knowledge needed to understand radarr-go's sophisticated architecture and contribute effectively while maintaining the project's high code quality standards.
+This comprehensive developer guide provides new contributors with the knowledge needed to understand radarr-go's
+sophisticated architecture and contribute effectively while maintaining high code quality standards.

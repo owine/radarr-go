@@ -4,7 +4,9 @@
 **Configuration Format**: YAML + Environment Variables
 **Location**: `config.yaml` or custom path via `--config` flag
 
-This document provides a comprehensive reference for all configuration options available in Radarr Go. The configuration system supports hierarchical YAML configuration files with environment variable overrides for flexible deployment scenarios.
+This document provides a comprehensive reference for all configuration options available in Radarr Go. The
+configuration system supports hierarchical YAML configuration files with environment variable overrides for
+flexible deployment scenarios.
 
 ## Configuration Loading Order
 
@@ -546,25 +548,25 @@ Radarr Go validates configuration at startup and provides detailed error message
 
 **Invalid Database Type**:
 
-```
+```text
 Error: unsupported database type 'sqlite', supported types: postgres, mariadb, mysql
 ```
 
 **Missing Required Fields**:
 
-```
+```text
 Error: TMDB API key is required for movie metadata retrieval
 ```
 
 **Invalid Port Range**:
 
-```
+```text
 Error: server port must be between 1 and 65535, got: 70000
 ```
 
 **Invalid Directory Permissions**:
 
-```
+```text
 Error: cannot create data directory '/protected/path': permission denied
 ```
 

@@ -7,11 +7,15 @@
 
 ## Overview
 
-Radarr Go v0.9.0-alpha represents a major milestone in the complete rewrite of Radarr from C#/.NET to Go. This release achieves near feature-complete parity with the original Radarr while delivering significant performance improvements, simplified deployment, and enterprise-grade reliability.
+Radarr Go v0.9.0-alpha represents a major milestone in the complete rewrite of Radarr from C#/.NET to Go. This
+release achieves near feature-complete parity with the original Radarr while delivering significant performance
+improvements, simplified deployment, and enterprise-grade reliability.
 
 ## What is Radarr Go?
 
-Radarr Go is a complete ground-up rewrite of the popular Radarr movie collection manager, built with modern Go technologies and cloud-native principles. It maintains 100% API compatibility with Radarr v3, ensuring seamless migration and compatibility with existing tools and integrations.
+Radarr Go is a complete ground-up rewrite of the popular Radarr movie collection manager, built with modern Go
+technologies and cloud-native principles. It maintains 100% API compatibility with Radarr v3, ensuring seamless
+migration and compatibility with existing tools and integrations.
 
 ## Key Highlights
 
@@ -138,7 +142,7 @@ Radarr Go is a complete ground-up rewrite of the popular Radarr movie collection
 
 ### Memory Usage
 
-```
+```text
 Original Radarr (.NET): ~400-600MB
 Radarr Go: ~80-150MB
 Improvement: 60-80% reduction
@@ -146,7 +150,7 @@ Improvement: 60-80% reduction
 
 ### Response Times
 
-```
+```text
 Movie List (1000+ movies):
 - Original Radarr: ~800ms
 - Radarr Go: ~150ms
@@ -165,7 +169,7 @@ Database Queries:
 
 ### Resource Efficiency
 
-```
+```text
 CPU Usage (idle): ~2-3% vs ~8-12% (75% reduction)
 Startup Time: ~3-5 seconds vs ~15-30 seconds (6x faster)
 Memory Allocation: Minimal GC pressure vs frequent collections
@@ -720,7 +724,9 @@ All releases include SHA256 checksums and GPG signatures for verification.
 
 ---
 
-**Radarr Go v0.9.0-alpha** represents a major leap forward in movie collection management software. With significant performance improvements, enterprise-grade reliability, and complete API compatibility, it provides a robust foundation for the future of automated movie management.
+**Radarr Go v0.9.0-alpha** represents a major leap forward in movie collection management software. With significant
+performance improvements, enterprise-grade reliability, and complete API compatibility, it provides a robust
+foundation for the future of automated movie management.
 
 For questions, support, or contributions, please visit our [GitHub repository](https://github.com/radarr/radarr-go) or join our [community discussions](https://github.com/radarr/radarr-go/discussions).
 

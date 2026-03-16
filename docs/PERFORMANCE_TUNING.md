@@ -1192,4 +1192,5 @@ monitor_performance
 | **Large (5000-20000 movies)** | 4 CPU, 1GB RAM, 30 DB connections |
 | **Enterprise (> 20000 movies)** | 8+ CPU, 2GB+ RAM, 50+ DB connections |
 
-This performance tuning guide provides comprehensive optimization strategies for Radarr Go deployments. Following these recommendations will help you achieve optimal performance for your specific use case and scale.
+This performance tuning guide provides comprehensive optimization strategies for Radarr Go deployments. Following
+these recommendations will help you achieve optimal performance for your specific use case and scale.

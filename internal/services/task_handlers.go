@@ -42,7 +42,7 @@ func (h *RefreshMovieHandler) Execute(
 
 	updateProgress(10, "Fetching movie from database")
 
-	if err := h.checkContext(ctx); err != nil {
+	if err = h.checkContext(ctx); err != nil {
 		return err
 	}
 

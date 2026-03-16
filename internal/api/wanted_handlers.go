@@ -240,7 +240,7 @@ func (s *Server) handleUpdateWantedPriority(c *gin.Context) {
 		Priority models.WantedPriority `json:"priority" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&priorityUpdate); err != nil {
+	if err = c.ShouldBindJSON(&priorityUpdate); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid request body: %s", err.Error())})
 		return
 	}

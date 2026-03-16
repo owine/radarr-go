@@ -13,8 +13,8 @@ Welcome to the comprehensive API documentation for Radarr Go! This documentation
 ### 👨‍💻 Developer Resources
 
 - **[Developer Integration Examples](DEVELOPER_INTEGRATION_EXAMPLES.md)** - Comprehensive code examples in multiple languages
-- **[Client Libraries](#client-libraries)** - Ready-to-use SDK examples
-- **[Advanced Patterns](#advanced-integration-patterns)** - Production-ready integration patterns
+- **[Client Libraries](./API_DOCUMENTATION_README.md#-client-libraries)** - Ready-to-use SDK examples
+- **[Advanced Patterns](./API_INTEGRATION_PRACTICAL_EXAMPLES.md#-advanced-integration-patterns)** - Production-ready integration patterns
 
 ## 🎯 Key Features
 
@@ -42,7 +42,7 @@ Welcome to the comprehensive API documentation for Radarr Go! This documentation
 
 The easiest way to explore the API is through the interactive Swagger UI:
 
-```
+```text
 http://your-radarr-go-instance:7878/static/swagger-ui.html
 ```
 
@@ -384,6 +384,8 @@ If migrating from original Radarr, see the **[Migration Guide](API_COMPATIBILITY
 4. **Copy the example code** from the integration guide
 5. **Build amazing integrations** with Radarr Go!
 
-The Radarr Go API is designed to be powerful, performant, and developer-friendly. Whether you're building a simple script or a comprehensive movie management application, this documentation will help you get started quickly and build robust integrations.
+The Radarr Go API is designed to be powerful, performant, and developer-friendly. Whether you're building a
+simple script or a comprehensive movie management application, this documentation will help you get started
+quickly and build robust integrations.
 
 **Happy coding! 🚀**

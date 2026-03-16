@@ -132,7 +132,7 @@ export function useEnhancedQuery<T>(
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const staleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isOnlineRef = useRef(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Computed states
   const isSuccess = !isLoading && !error && data !== undefined;
@@ -140,7 +140,7 @@ export function useEnhancedQuery<T>(
   const hasData = data !== undefined;
   const isEmpty = hasData && (Array.isArray(data) ? data.length === 0 : typeof data === 'object' && data !== null ? Object.keys(data).length === 0 : false);
   const canRetry = isError && retryCount < (options.maxRetries || 3);
-  const isOffline = !isOnlineRef.current;
+  const isOffline = !isOnline;
 
   // Execute query function
   const executeQuery = useCallback(async (showLoading = true): Promise<void> => {
@@ -233,7 +233,6 @@ export function useEnhancedQuery<T>(
 
         retryTimeoutRef.current = setTimeout(() => {
           setRetryCount(prev => prev + 1);
-          executeQuery(false);
         }, delay);
       }
     }
@@ -329,14 +328,14 @@ export function useEnhancedQuery<T>(
     };
 
     const handleOnline = () => {
-      isOnlineRef.current = true;
+      setIsOnline(true);
       if (options.refetchOnReconnect) {
         refetch();
       }
     };
 
     const handleOffline = () => {
-      isOnlineRef.current = false;
+      setIsOnline(false);
     };
 
     if (options.refetchOnFocus) {
@@ -360,12 +359,14 @@ export function useEnhancedQuery<T>(
     };
   }, [options.refetchOnFocus, options.refetchOnVisibilityChange, options.refetchOnReconnect, refetch]);
 
-  // Initial fetch
+  // Initial fetch and retry on retryCount change
   useEffect(() => {
-    if (options.refetchOnMount !== false) {
+    if (retryCount > 0) {
+      executeQuery(false);
+    } else if (options.refetchOnMount !== false) {
       executeQuery();
     }
-  }, [executeQuery, options.refetchOnMount]);
+  }, [executeQuery, options.refetchOnMount, retryCount]);
 
   // Cleanup
   useEffect(() => {

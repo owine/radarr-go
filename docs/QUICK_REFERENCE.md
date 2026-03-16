@@ -261,7 +261,7 @@ func BenchmarkMovieService_GetMovie(b *testing.B) {
 
 ## File Locations
 
-```
+```text
 radarr-go/
 ├── cmd/radarr/main.go              # Application entry point
 ├── internal/
@@ -289,7 +289,7 @@ radarr-go/
 
 ### Commit Message Format
 
-```
+```bash
 feat(api): add movie search endpoint
 fix(database): resolve connection pool exhaustion
 docs(developer): update architecture diagrams

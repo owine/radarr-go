@@ -6,8 +6,6 @@ This comprehensive guide provides practical examples and integration patterns fo
 
 1. [Client Examples](#client-examples)
 2. [Common Integration Patterns](#common-integration-patterns)
-3. [Automation Examples](#automation-examples)
-4. [Troubleshooting Guide](#troubleshooting-guide)
 
 ## Overview
 

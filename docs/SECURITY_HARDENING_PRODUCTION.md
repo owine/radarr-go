@@ -1,6 +1,7 @@
 # Security Hardening for Production
 
-This guide provides comprehensive security hardening recommendations for Radarr Go production deployments, covering network security, authentication, authorization, container security, and compliance best practices.
+This guide provides comprehensive security hardening recommendations for Radarr Go production deployments,
+covering network security, authentication, authorization, container security, and compliance best practices.
 
 ## Table of Contents
 
@@ -9,11 +10,6 @@ This guide provides comprehensive security hardening recommendations for Radarr 
 3. [Authentication and Authorization](#authentication-and-authorization)
 4. [API Security](#api-security)
 5. [Container Security](#container-security)
-6. [Database Security](#database-security)
-7. [File System Security](#file-system-security)
-8. [SSL/TLS Configuration](#ssltls-configuration)
-9. [Monitoring and Auditing](#monitoring-and-auditing)
-10. [Automated Security Scripts](#automated-security-scripts)
 
 ## Overview
 
@@ -1677,4 +1673,6 @@ case "${1:-all}" in
 esac
 ```
 
-This security hardening guide provides comprehensive security measures including network security, authentication enhancements, API security, container hardening, and automated security scanning tools. The implementation covers both preventive measures and monitoring capabilities for production deployments.
+This security hardening guide provides comprehensive security measures including network security, authentication
+enhancements, API security, container hardening, and automated security scanning tools. The implementation covers
+both preventive measures and monitoring capabilities for production deployments.

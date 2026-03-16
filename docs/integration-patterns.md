@@ -1170,4 +1170,6 @@ async function setupRealTimeMonitoring() {
 setupRealTimeMonitoring().catch(console.error);
 ```
 
-This completes the Common Integration Patterns section. The patterns shown here provide production-ready solutions for the most common Radarr Go API integration scenarios, with comprehensive error handling, rate limiting, and real-world considerations.
+This completes the Common Integration Patterns section. The patterns shown here provide production-ready solutions for
+the most common Radarr Go API integration scenarios, with comprehensive error handling, rate limiting, and
+real-world considerations.

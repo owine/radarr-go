@@ -27,8 +27,8 @@ func BenchmarkMovieService_Search(b *testing.B) {
 			for i := 0; i < 10; i++ {
 				factory.CreateMovie(func(m *models.Movie) {
 					m.TmdbID = 12345 + i
-					m.Title = "Search Test Movie " + string(rune('A'+i))
-					m.TitleSlug = "search-test-movie-" + string(rune('a'+i))
+					m.Title = "Search Test Movie " + string(rune('A'+rune(i)))     //nolint:gosec // G115: i is bounded 0-9
+					m.TitleSlug = "search-test-movie-" + string(rune('a'+rune(i))) //nolint:gosec // G115: i is bounded 0-9
 					m.QualityProfileID = profile.ID
 				})
 			}

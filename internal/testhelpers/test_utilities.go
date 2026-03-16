@@ -177,7 +177,7 @@ func (ctx *TestContext) setupIsolatedDatabase(t *testing.T, dbType string,
 
 	// Setup cleanup for isolated schema
 	ctx.CleanupFuncs = append(ctx.CleanupFuncs, func() {
-		_ = ctx.dropIsolatedSchema(baseTestDB, schemaName)
+		_ = ctx.dropIsolatedSchema(baseTestDB, schemaName) //nolint:errcheck // Best-effort cleanup
 	})
 
 	// Create database configuration for isolated schema

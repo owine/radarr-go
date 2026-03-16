@@ -30,7 +30,9 @@ if [[ -z "$EXISTING_TAGS" ]]; then
 fi
 
 echo "📊 Found existing tags:"
-echo "$EXISTING_TAGS" | sed 's/^/   - /'
+echo "$EXISTING_TAGS" | while IFS= read -r tag; do
+  echo "   - $tag"
+done
 
 # Get the latest stable and prerelease versions
 LATEST_STABLE=$(echo "$EXISTING_TAGS" | grep -v -E "-(alpha|beta|rc)" | tail -1 | sed 's/^v//' || echo "")
@@ -55,8 +57,10 @@ compare_versions() {
   local ver2="$2"
 
   # Remove prerelease suffixes for base version comparison
-  local base1=$(echo "$ver1" | sed 's/-.*$//')
-  local base2=$(echo "$ver2" | sed 's/-.*$//')
+  local base1
+  base1="${ver1%-*}"
+  local base2
+  base2="${ver2%-*}"
 
   read -r maj1 min1 pat1 <<< "$(parse_version "$base1")"
   read -r maj2 min2 pat2 <<< "$(parse_version "$base2")"
@@ -154,7 +158,7 @@ if [[ -n "$LATEST_STABLE" ]]; then
   read -r new_maj new_min new_pat <<< "$(parse_version "$VERSION")"
 
   # Remove prerelease for increment validation
-  VERSION_BASE=$(echo "$VERSION" | sed 's/-.*$//')
+  VERSION_BASE="${VERSION%-*}"
   read -r new_maj new_min new_pat <<< "$(parse_version "$VERSION_BASE")"
 
   echo ""

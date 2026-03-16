@@ -15,7 +15,7 @@ This guide provides comprehensive monitoring and alerting solutions for producti
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Radarr Go     │───▶│   Prometheus     │───▶│    Grafana      │
 │   (Metrics)     │    │  (Collection)    │    │ (Visualization) │
