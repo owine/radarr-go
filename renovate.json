@@ -297,42 +297,42 @@
       "matchManagers": [
         "gomod"
       ],
-      "matchPackagePatterns": [
-        "^golang\\.org/x/"
-      ],
-      "groupName": "Go stdlib extensions (golang.org/x)"
+      "groupName": "Go stdlib extensions (golang.org/x)",
+      "matchPackageNames": [
+        "/^golang\\.org/x//"
+      ]
     },
     {
       "description": "Group TypeScript type definitions - low risk, high noise",
       "matchManagers": [
         "npm"
       ],
-      "matchPackagePatterns": [
-        "^@types/"
-      ],
       "groupName": "TypeScript type definitions",
-      "automerge": true
+      "automerge": true,
+      "matchPackageNames": [
+        "/^@types//"
+      ]
     },
     {
       "description": "Group Gin web framework and related packages",
       "matchManagers": [
         "gomod"
       ],
-      "matchPackagePatterns": [
-        "^github\\.com/gin-gonic/",
-        "^github\\.com/gin-contrib/"
-      ],
-      "groupName": "Gin framework"
+      "groupName": "Gin framework",
+      "matchPackageNames": [
+        "/^github\\.com/gin-gonic//",
+        "/^github\\.com/gin-contrib//"
+      ]
     },
     {
       "description": "Group google.golang.org indirect dependencies",
       "matchManagers": [
         "gomod"
       ],
-      "matchPackagePatterns": [
-        "^google\\.golang\\.org/"
-      ],
-      "groupName": "Google Go dependencies"
+      "groupName": "Google Go dependencies",
+      "matchPackageNames": [
+        "/^google\\.golang\\.org//"
+      ]
     },
     {
       "description": "Security updates - immediate processing with highest priority",
