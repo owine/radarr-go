@@ -115,10 +115,8 @@ jobs:
 
       - name: Install dependencies and tools (cache-aware optimized)
         run: |
-          # Optimize Go module downloads with parallel fetching
-          echo "Downloading Go modules with optimizations..."
           go env -w GOPROXY="https://proxy.golang.org,direct"
-          go mod download -x
+          go mod download
           go work sync
 
           # Install ESLint and frontend dependencies with proper peer dependency resolution
@@ -317,9 +315,8 @@ jobs:
 
       - name: Download Go modules
         run: |
-          echo "Downloading Go modules with optimizations..."
           go env -w GOPROXY="https://proxy.golang.org,direct"
-          go mod download -x
+          go mod download
           go work sync
 
       # Cache Go build artifacts
@@ -437,13 +434,7 @@ jobs:
             go.sum
             go.work.sum
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: build-artifacts
-          path: ./artifacts
-
-      # Restore build cache for faster test compilation (read-only, v3)
+      # Restore build cache for faster test compilation (read-only)
       - name: Restore Go build cache
         uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
@@ -461,22 +452,13 @@ jobs:
           mkdir -p data movies web/static web/templates
           cp config.ci.postgres.yml data/config.yml
 
-      - name: Run comprehensive tests with optimized parallelization
+      - name: Run tests
         run: |
-          # Run unit tests with package parallelization only (faster for small test suites)
-          echo "Running unit tests with package parallelization..."
           go test -v -race \
             -p 4 \
             -coverprofile=coverage-postgres.out \
             -timeout 10m \
             ./...
-
-          # Run benchmarks and examples sequentially (avoid background overhead)
-          echo "Running benchmark tests..."
-          go test -bench=. -benchmem -run=^$ -p 2 ./...
-
-          echo "Running example tests..."
-          go test -run=Example -p 2 ./...
         env:
           RADARR_DATABASE_TYPE: postgres
           RADARR_DATABASE_HOST: localhost
@@ -496,11 +478,11 @@ jobs:
 
       - name: Integration test
         run: |
-          # Use Linux amd64 binary for postgres testing
-          chmod +x artifacts/radarr-linux-amd64
+          # Build a quick test binary (uses build cache from test compilation)
+          CGO_ENABLED=0 go build -o radarr-test ./cmd/radarr
 
           # Start application with timeout
-          timeout 30s artifacts/radarr-linux-amd64 \
+          timeout 30s ./radarr-test \
             --data ./data --config ./data/config.yml &
           RADARR_PID=$!
           sleep 10
@@ -560,13 +542,7 @@ jobs:
             go.sum
             go.work.sum
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: build-artifacts
-          path: ./artifacts
-
-      # Restore build cache for faster test compilation (read-only, v3)
+      # Restore build cache for faster test compilation (read-only)
       - name: Restore Go build cache
         uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
@@ -584,27 +560,13 @@ jobs:
           mkdir -p data movies web/static web/templates
           cp config.ci.mariadb.yml data/config.yml
 
-      - name: Run comprehensive tests with parallelization
+      - name: Run tests
         run: |
-          # Run tests with parallel execution for faster completion
-          echo "Running parallel unit tests..."
           go test -v -race \
-            -p 4 -parallel 4 \
+            -p 4 \
             -coverprofile=coverage-mariadb.out \
             -timeout 10m \
             ./...
-
-          # Run benchmarks and examples in parallel (background)
-          echo "Running benchmark tests in parallel..."
-          go test -bench=. -benchmem -run=^$ -p 2 ./... &
-          BENCH_PID=$!
-
-          echo "Running example tests in parallel..."
-          go test -run=Example -p 2 ./... &
-          EXAMPLE_PID=$!
-
-          # Wait for parallel tests to complete
-          wait $BENCH_PID $EXAMPLE_PID
         env:
           RADARR_DATABASE_TYPE: mariadb
           RADARR_DATABASE_HOST: localhost
@@ -624,11 +586,11 @@ jobs:
 
       - name: Integration test
         run: |
-          # Use Linux amd64 binary for mariadb testing
-          chmod +x artifacts/radarr-linux-amd64
+          # Build a quick test binary (uses build cache from test compilation)
+          CGO_ENABLED=0 go build -o radarr-test ./cmd/radarr
 
           # Start application with timeout
-          timeout 30s artifacts/radarr-linux-amd64 \
+          timeout 30s ./radarr-test \
             --data ./data --config ./data/config.yml &
           RADARR_PID=$!
           sleep 10
@@ -722,63 +684,12 @@ jobs:
           compression-level: 9
 
       - name: Create deployment summary
+        env:
+          META_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           {
-            echo "## 🚀 Optimized CI Pipeline Results"
-            echo ""
-            echo "### 💰 Cost Optimizations Applied"
-            echo "- ✅ Consolidated 6 separate test jobs into 2 efficient database tests"
-            echo "- ✅ Eliminated expensive macOS runners (savings: ~80% on runner costs)"
-            echo "- ✅ Combined quality checks, security, and builds in single job"
-            echo "- ✅ Parallel cross-compilation replaces multiple platform-specific jobs"
-            echo ""
-            echo "### ⚡ Speed Optimizations Applied"
-            echo "- ✅ Enhanced Go module and build caching across jobs"
-            echo "- ✅ Parallel security checks and tool installation"
-            echo "- ✅ Parallel cross-compilation of all platform binaries"
-            echo "- ✅ Reduced job dependencies and setup overhead"
-            echo ""
-            echo "### 📦 Published Artifacts"
+            echo "## Published Artifacts"
             echo "- **Branch**: ${{ github.ref_name }}"
             echo "- **Commit**: ${{ github.sha }}"
-            echo "- **Docker Images**: ${{ steps.meta.outputs.tags }}"
-            echo ""
-            echo "### 🔍 Available Binaries"
-            ls -la artifacts/
-            echo ""
-            echo "### 🐳 Docker Usage"
-            echo ""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-              echo "**Development Build (Latest from main):**"
-              echo "\`\`\`bash"
-              echo "# Latest nightly build"
-              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly"
-              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly"
-              echo ""
-              echo "# Specific commit build"
-              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}"
-              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}"
-              echo "\`\`\`"
-            elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-              echo "**Pull Request Build:**"
-              echo "\`\`\`bash"
-              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}"
-              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}"
-              echo "\`\`\`"
-            else
-              echo "\`\`\`bash"
-              echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
-              echo "docker run -d -p 7878:7878 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
-              echo "\`\`\`"
-            fi
-            echo ""
-            echo "### 🏷️ Available Tags"
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-              echo "- \`:nightly\` - Latest development build"
-              echo "- \`:dev-latest\` - Alias for latest development build"
-              echo "- \`:commit-${{ github.sha }}\` - This specific commit"
-              echo "- \`:$(date +%Y.%m.%d)-nightly\` - Dated nightly build"
-            elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-              echo "- \`:pr-${{ github.event.number }}\` - Pull request build"
-            fi
+            echo "- **Docker Tags**: $META_TAGS"
           } >> "$GITHUB_STEP_SUMMARY"
