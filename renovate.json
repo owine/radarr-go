@@ -24,6 +24,9 @@
     "dependencies"
   ],
   "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 3,
+  "minimumReleaseAge": "3 days",
   "customManagers": [
     {
       "customType": "regex",
@@ -219,6 +222,24 @@
       ]
     },
     {
+      "description": "Group React ecosystem major updates to keep react/react-dom/router in sync",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-redux",
+        "react-router-dom",
+        "@reduxjs/toolkit",
+        "@types/react",
+        "@types/react-dom",
+        "@types/react-redux",
+        "@types/react-router-dom"
+      ],
+      "groupName": "React major ecosystem"
+    },
+    {
       "description": "Group ESLint ecosystem major updates to avoid peer dependency conflicts",
       "matchUpdateTypes": [
         "major"
@@ -256,7 +277,7 @@
       "groupName": "PostCSS major ecosystem"
     },
     {
-      "description": "Group GORM ecosystem major updates to keep drivers in sync",
+      "description": "Group GORM and database driver major updates to keep drivers in sync",
       "matchUpdateTypes": [
         "major"
       ],
@@ -264,9 +285,54 @@
         "gorm.io/gorm",
         "gorm.io/driver/postgres",
         "gorm.io/driver/mysql",
-        "gorm.io/hints"
+        "gorm.io/hints",
+        "github.com/jackc/pgx/v5",
+        "github.com/go-sql-driver/mysql",
+        "github.com/golang-migrate/migrate/v4"
       ],
-      "groupName": "GORM major ecosystem"
+      "groupName": "Database ecosystem major"
+    },
+    {
+      "description": "Group Go standard library extensions (golang.org/x/*) - tightly coupled releases",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackagePatterns": [
+        "^golang\\.org/x/"
+      ],
+      "groupName": "Go stdlib extensions (golang.org/x)"
+    },
+    {
+      "description": "Group TypeScript type definitions - low risk, high noise",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackagePatterns": [
+        "^@types/"
+      ],
+      "groupName": "TypeScript type definitions",
+      "automerge": true
+    },
+    {
+      "description": "Group Gin web framework and related packages",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackagePatterns": [
+        "^github\\.com/gin-gonic/",
+        "^github\\.com/gin-contrib/"
+      ],
+      "groupName": "Gin framework"
+    },
+    {
+      "description": "Group google.golang.org indirect dependencies",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackagePatterns": [
+        "^google\\.golang\\.org/"
+      ],
+      "groupName": "Google Go dependencies"
     },
     {
       "description": "Security updates - immediate processing with highest priority",
@@ -277,7 +343,8 @@
       "addLabels": [
         "security"
       ],
-      "prPriority": 10
+      "prPriority": 10,
+      "minimumReleaseAge": "0 days"
     }
   ]
 }
