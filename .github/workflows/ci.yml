@@ -16,7 +16,7 @@ env:
   # renovate: datasource=golang-version depName=golang
   GO_VERSION: '1.26.1'
   # renovate: datasource=node-version depName=node
-  NODE_VERSION: '24.14.0'
+  NODE_VERSION: '24.14.1'
   CACHE_VERSION: 'v4'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
