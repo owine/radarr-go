@@ -246,7 +246,7 @@ services:
 
   # Redis cache
   redis:
-    image: redis:8.6.1-alpine
+    image: redis:8.6.2-alpine
     container_name: radarr-redis
     restart: unless-stopped
 
@@ -314,7 +314,7 @@ services:
 
   # Nginx reverse proxy
   nginx:
-    image: nginx:1.29.3-alpine
+    image: nginx:1.29.4-alpine
     container_name: radarr-nginx
     restart: unless-stopped
 

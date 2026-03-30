@@ -81,7 +81,7 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:12.4.1@sha256:e932bd6ed0e026595b08483cd0141e5103e1ab7ff8604839ff899b8dc54cabcb
+    image: grafana/grafana:12.4.2@sha256:83749231c3835e390a3144e5e940203e42b9589761f20ef3169c716e734ad505
     container_name: radarr-grafana
     restart: unless-stopped
 
@@ -261,7 +261,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:3.6.7
+    image: grafana/loki:3.6.8
     container_name: radarr-loki
     restart: unless-stopped
 
@@ -322,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:3.6.7
+    image: grafana/promtail:3.6.8
     container_name: radarr-promtail
     restart: unless-stopped
 
