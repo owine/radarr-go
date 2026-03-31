@@ -261,7 +261,7 @@ services:
 
   # Loki - Log aggregation
   loki:
-    image: grafana/loki:3.6.8
+    image: grafana/loki:3.7.0
     container_name: radarr-loki
     restart: unless-stopped
 
