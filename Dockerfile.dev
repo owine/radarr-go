@@ -18,7 +18,7 @@ ENV TZ=UTC
 
 # Install air for hot reload
 # renovate: datasource=go depName=github.com/air-verse/air
-RUN go install github.com/air-verse/air@v1.64.5
+RUN go install github.com/air-verse/air@v1.65.0
 
 # Install other development tools
 # renovate: datasource=go depName=github.com/golang-migrate/migrate/v4
