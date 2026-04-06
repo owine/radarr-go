@@ -4,7 +4,7 @@
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
-    image: prom/prometheus:3.10.0
+    image: prom/prometheus:3.11.0
     container_name: radarr-prometheus
     restart: unless-stopped
 
@@ -322,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:3.6.8
+    image: grafana/promtail:3.6.9
     container_name: radarr-promtail
     restart: unless-stopped
 
@@ -379,7 +379,7 @@ services:
 
   # Node Exporter - System metrics
   node-exporter:
-    image: prom/node-exporter:1.10.2
+    image: prom/node-exporter:1.11.0
     container_name: radarr-node-exporter
     restart: unless-stopped
 
