@@ -161,7 +161,7 @@ services:
 
   # Email Testing (Development)
   mailpit:
-    image: axllent/mailpit:v1.29.5
+    image: axllent/mailpit:v1.29.6
     container_name: radarr-mailpit
     restart: unless-stopped
     ports:
@@ -174,7 +174,7 @@ services:
 
   # Basic Monitoring - Prometheus
   prometheus:
-    image: prom/prometheus:v3.10.0
+    image: prom/prometheus:v3.11.0
     container_name: radarr-prometheus
     restart: unless-stopped
     ports:
@@ -218,7 +218,7 @@ services:
 
   # Distributed Tracing - Jaeger
   jaeger:
-    image: jaegertracing/all-in-one:1.67.0
+    image: jaegertracing/all-in-one:1.68.0
     container_name: radarr-jaeger
     restart: unless-stopped
     ports:
