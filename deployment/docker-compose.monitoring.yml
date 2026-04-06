@@ -322,7 +322,7 @@ services:
 
   # Promtail - Log collection
   promtail:
-    image: grafana/promtail:3.6.9
+    image: grafana/promtail:3.6.10
     container_name: radarr-promtail
     restart: unless-stopped
 
