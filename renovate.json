@@ -11,14 +11,14 @@
     ":enableVulnerabilityAlerts",
     ":rebaseStalePrs",
     ":semanticCommits",
-    ":semanticPrefixFixDepsChoreOthers",
-    ":automergeMinor",
-    ":automergeLinters",
-    ":automergeDigest"
+    ":semanticPrefixFixDepsChoreOthers"
   ],
   "timezone": "America/Chicago",
   "schedule": [
     "on monday"
+  ],
+  "automergeSchedule": [
+    "at any time"
   ],
   "labels": [
     "dependencies"
@@ -63,142 +63,6 @@
       "pinDigests": true
     },
     {
-      "description": "Group all Node.js version updates together",
-      "matchDatasources": [
-        "docker",
-        "node-version"
-      ],
-      "matchPackageNames": [
-        "node"
-      ],
-      "groupName": "Node.js version updates",
-      "addLabels": [
-        "node"
-      ]
-    },
-    {
-      "description": "Group all Go version updates together",
-      "matchDatasources": [
-        "docker",
-        "golang-version"
-      ],
-      "matchPackageNames": [
-        "golang",
-        "go"
-      ],
-      "groupName": "Go version updates",
-      "addLabels": [
-        "go"
-      ]
-    },
-    {
-      "description": "Group PostgreSQL version updates across dev and CI",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "postgres"
-      ],
-      "groupName": "PostgreSQL version updates",
-      "addLabels": [
-        "database",
-        "postgres"
-      ]
-    },
-    {
-      "description": "Group MariaDB version updates across dev and CI",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "mariadb"
-      ],
-      "groupName": "MariaDB version updates",
-      "addLabels": [
-        "database",
-        "mariadb"
-      ]
-    },
-    {
-      "description": "Go ecosystem labels",
-      "matchManagers": [
-        "gomod"
-      ],
-      "addLabels": [
-        "go"
-      ]
-    },
-    {
-      "description": "npm ecosystem labels",
-      "matchManagers": [
-        "npm"
-      ],
-      "addLabels": [
-        "npm"
-      ]
-    },
-    {
-      "description": "Docker ecosystem labels",
-      "matchManagers": [
-        "dockerfile",
-        "docker-compose"
-      ],
-      "addLabels": [
-        "docker"
-      ]
-    },
-    {
-      "description": "GitHub Actions ecosystem labels",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "addLabels": [
-        "github-actions"
-      ]
-    },
-    {
-      "description": "Group all GitHub Actions updates into a single PR",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "groupName": "GitHub Actions"
-    },
-    {
-      "description": "Group all Docker image digest and version updates",
-      "matchManagers": [
-        "dockerfile",
-        "docker-compose"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "digest"
-      ],
-      "groupName": "Docker non-major updates"
-    },
-    {
-      "description": "Group all Go module non-major updates into a single PR",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "Go module non-major updates"
-    },
-    {
-      "description": "Group all npm non-major updates into a single PR",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "groupName": "npm non-major updates"
-    },
-    {
       "description": "Docker-compose updates - disable digest pinning",
       "matchManagers": [
         "docker-compose"
@@ -213,126 +77,25 @@
       "pinDigests": true
     },
     {
-      "description": "Major updates - separate PRs for manual review",
+      "description": "Group all non-major updates into a single PR",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "groupName": "all non-major dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Major updates - separate PRs for review",
       "matchUpdateTypes": [
         "major"
       ],
       "addLabels": [
         "major"
-      ]
-    },
-    {
-      "description": "Group React ecosystem major updates to keep react/react-dom/router in sync",
-      "matchUpdateTypes": [
-        "major"
       ],
-      "matchPackageNames": [
-        "react",
-        "react-dom",
-        "react-redux",
-        "react-router-dom",
-        "@reduxjs/toolkit",
-        "@types/react",
-        "@types/react-dom",
-        "@types/react-redux",
-        "@types/react-router-dom"
-      ],
-      "groupName": "React major ecosystem"
-    },
-    {
-      "description": "Group ESLint ecosystem major updates to avoid peer dependency conflicts",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "matchPackageNames": [
-        "eslint",
-        "@eslint/js",
-        "typescript-eslint",
-        "eslint-plugin-react-hooks",
-        "eslint-plugin-react-refresh"
-      ],
-      "groupName": "ESLint major ecosystem"
-    },
-    {
-      "description": "Group Vite ecosystem major updates to keep plugins compatible",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "matchPackageNames": [
-        "vite",
-        "@vitejs/plugin-react"
-      ],
-      "groupName": "Vite major ecosystem"
-    },
-    {
-      "description": "Group PostCSS ecosystem major updates together",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "matchPackageNames": [
-        "postcss",
-        "autoprefixer",
-        "postcss-preset-env"
-      ],
-      "groupName": "PostCSS major ecosystem"
-    },
-    {
-      "description": "Group GORM and database driver major updates to keep drivers in sync",
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "matchPackageNames": [
-        "gorm.io/gorm",
-        "gorm.io/driver/postgres",
-        "gorm.io/driver/mysql",
-        "gorm.io/hints",
-        "github.com/jackc/pgx/v5",
-        "github.com/go-sql-driver/mysql",
-        "github.com/golang-migrate/migrate/v4"
-      ],
-      "groupName": "Database ecosystem major"
-    },
-    {
-      "description": "Group Go standard library extensions (golang.org/x/*) - tightly coupled releases",
-      "matchManagers": [
-        "gomod"
-      ],
-      "groupName": "Go stdlib extensions (golang.org/x)",
-      "matchPackageNames": [
-        "/^golang\\.org/x//"
-      ]
-    },
-    {
-      "description": "Group TypeScript type definitions - low risk, high noise",
-      "matchManagers": [
-        "npm"
-      ],
-      "groupName": "TypeScript type definitions",
-      "automerge": true,
-      "matchPackageNames": [
-        "/^@types//"
-      ]
-    },
-    {
-      "description": "Group Gin web framework and related packages",
-      "matchManagers": [
-        "gomod"
-      ],
-      "groupName": "Gin framework",
-      "matchPackageNames": [
-        "/^github\\.com/gin-gonic//",
-        "/^github\\.com/gin-contrib//"
-      ]
-    },
-    {
-      "description": "Group google.golang.org indirect dependencies",
-      "matchManagers": [
-        "gomod"
-      ],
-      "groupName": "Google Go dependencies",
-      "matchPackageNames": [
-        "/^google\\.golang\\.org//"
-      ]
+      "automerge": false
     },
     {
       "description": "Security updates - immediate processing with highest priority",
