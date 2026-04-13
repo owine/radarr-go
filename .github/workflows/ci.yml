@@ -14,7 +14,7 @@ concurrency:
 
 env:
   # renovate: datasource=golang-version depName=golang
-  GO_VERSION: '1.26.1'
+  GO_VERSION: '1.26.2'
   # renovate: datasource=node-version depName=node
   NODE_VERSION: '24.14.1'
   CACHE_VERSION: 'v4'
@@ -389,7 +389,7 @@ jobs:
           echo "✅ Build version validation completed"
 
       - name: Store build artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: build-artifacts
           path: artifacts/
@@ -660,7 +660,7 @@ jobs:
             type=raw,value=pr-{{.Number}},enable=${{ github.event_name == 'pull_request' }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           file: ./Dockerfile.artifacts
@@ -676,7 +676,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: published-artifacts-${{ github.ref_name }}
           path: artifacts/
