@@ -314,7 +314,7 @@ services:
 
   # Nginx reverse proxy
   nginx:
-    image: nginx:1.29.7-alpine
+    image: nginx:1.29.8-alpine
     container_name: radarr-nginx
     restart: unless-stopped
 
@@ -460,7 +460,7 @@ services:
 
   # SSL certificate management (Let's Encrypt)
   certbot:
-    image: certbot/certbot:v5.4.0
+    image: certbot/certbot:v5.5.0
     container_name: radarr-certbot
     restart: "no"
 
