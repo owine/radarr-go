@@ -314,7 +314,7 @@ services:
 
   # Nginx reverse proxy
   nginx:
-    image: nginx:1.29.8-alpine
+    image: nginx:1.30.0-alpine
     container_name: radarr-nginx
     restart: unless-stopped
 

@@ -118,7 +118,7 @@ services:
 
   # Frontend Development Server (React)
   radarr-frontend:
-    image: node:24.14.1-alpine
+    image: node:24.15.0-alpine
     container_name: radarr-frontend
     ports:
       - "3000:3000"  # React dev server
@@ -161,7 +161,7 @@ services:
 
   # Email Testing (Development)
   mailpit:
-    image: axllent/mailpit:v1.29.6
+    image: axllent/mailpit:v1.29.7
     container_name: radarr-mailpit
     restart: unless-stopped
     ports:
@@ -197,7 +197,7 @@ services:
 
   # Basic Monitoring - Grafana
   grafana:
-    image: grafana/grafana:12.4.2
+    image: grafana/grafana:12.4.3
     container_name: radarr-grafana
     restart: unless-stopped
     ports:
